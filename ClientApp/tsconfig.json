@@ -1,0 +1,53 @@
+{
+	"compilerOptions": {
+		"baseUrl": "src",
+		"target": "es6",
+		"lib": [
+			"es5",
+			"es6",
+			"es2020",
+			"dom",
+			"dom.iterable",
+			"esnext"
+		],
+		"noImplicitAny": false,
+		"noEmitOnError": true,
+		"removeComments": false,
+		"sourceMap": true,
+		"allowSyntheticDefaultImports": true,
+		"experimentalDecorators": true,
+		"allowJs": true,
+		"skipLibCheck": true,
+		"strict": true,
+		"forceConsistentCasingInFileNames": true,
+		"noFallthroughCasesInSwitch": true,
+		"module": "esnext",
+		"moduleResolution": "node",
+		"resolveJsonModule": true,
+		"isolatedModules": true,
+		"esModuleInterop": true,
+		"noEmit": true,
+		"jsx": "react-jsx",
+		"types": [
+			"react-router-dom",
+			"styled-components",
+			"node"
+		],
+		"typeRoots": [
+			"src/types.d.ts",
+			"src/global.ts"
+		],
+		"paths": {
+			"components": ["src/components"],
+			"pages": ["src/pages"],
+			"types": ["src/types"],
+			"utils": ["src/utils"]
+		}
+	},
+	"exclude": [
+		"node_modules"
+	],
+	"include": [
+		"src/*"
+	]
+}

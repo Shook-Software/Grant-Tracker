@@ -1,0 +1,47 @@
+{
+	"compilerOptions": {
+		"baseUrl": "./src",
+		"lib": [
+			"ES6",
+			"dom",
+			"dom.iterable",
+			"esnext"
+		],
+		"noImplicitAny": false,
+		"noEmitOnError": true,
+		"removeComments": false,
+		"sourceMap": true,
+		"target": "es6",
+		"module": "esnext",
+		"moduleResolution": "node",
+		"esModuleInterop": true,
+		"allowSyntheticDefaultImports": true,
+		"experimentalDecorators": true,
+		"allowJs": true,
+		"skipLibCheck": true,
+		"strict": true,
+		"forceConsistentCasingInFileNames": true,
+		"resolveJsonModule": true,
+		"isolatedModules": true,
+		"noEmit": true,
+		"jsx": "react-jsx",
+		"types": [
+			"react",
+			"react-dom",
+			"react-router-dom",
+			"styled-components",
+			"@testing-library/jest-dom\"",
+			"jest",
+			"node"
+		],
+		"noFallthroughCasesInSwitch": true
+	},
+	"exclude": [
+		"./node_modules",
+		"wwwroot",
+		"./src/components/Deprecated"
+	],
+	"include": [
+		"./src"
+	]
+}

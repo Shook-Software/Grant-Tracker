@@ -1,0 +1,16 @@
+On startup tomorrow: Making student page look better with Card.Header utilized
+
+
+9/6/2022
+Clean up backend code and models
+
+
+**Something that seriously needs doing**
+Refactor components/StudentAttendance
+
+
+Registration Object in backend could be changed to just return the conflicts or  null
+
+StudentPage session registrations need to be refactored to display the same as InstructorPage sessions
+
+Why is a StudentRegistration class inside of SimpleSessionView.cs?
