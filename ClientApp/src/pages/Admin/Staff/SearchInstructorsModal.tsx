@@ -109,8 +109,18 @@ export default ({ addInstructor, handleClose }): JSX.Element => {
   const [state, setState] = useState<any[]>([])
   const [dropdownOptions, setOptions] = useState<DropdownOption[]>([])
 
+  function handleInstructorSearch (name: string, badgeNumber: string) {
+    api
+      .get('instructor/search', {params: {name, badgeNumber}})
+      .then(res => {
+        setState(res.data)
+      })
+      .catch(err => {})
+  }
+
   useEffect(() => {
-    api.get('dropdown/view/instructorStatus')
+    api
+      .get('dropdown/view/instructorStatus')
       .then(res => setOptions(res.data))
       .catch(err => console.warn(err))
   }, [])
@@ -120,7 +130,7 @@ export default ({ addInstructor, handleClose }): JSX.Element => {
   return (
     <>
       <Modal.Body className='d-flex flex-column align-items-center'>
-        <Search handleChange={setState} />
+        <Search handleChange={handleInstructorSearch} />
         <Table columns={columns} dataset={state} />
       </Modal.Body>
       <Modal.Footer>

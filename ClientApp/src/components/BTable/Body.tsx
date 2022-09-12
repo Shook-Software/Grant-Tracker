@@ -55,6 +55,7 @@ function sortDataset (
   sortDirection: SortDirection,
   columns: Column[]
 ): object[] {
+  if (!dataset || dataset.length === 0) return []
   if (sortDirection === SortDirection.None) return dataset
 
   let column: Column = columns[sortIndex]
@@ -105,7 +106,9 @@ export const Body = ({
     columns
   )
 
-  const Rows: JSX.Element[] = sortedDataset.map((item, index) =>
+  console.log(sortedDataset)
+
+  const Rows: JSX.Element[] = sortedDataset?.map((item, index) =>
     createRow(columns, item, indexed, index, rowProps)
   )
 

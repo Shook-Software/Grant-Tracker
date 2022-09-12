@@ -104,8 +104,8 @@ namespace GrantTracker.Utilities.OnStartup
 			var user = context.User;
 			foreach (var requirement in context.PendingRequirements)
 			{
-				context.Succeed(requirement);
-				continue;
+				//context.Succeed(requirement);
+				//continue;
 				if (requirement is ClaimsAuthorizationRequirement claimsRequirement)
 				{
 					var requiredClaimType = claimsRequirement.ClaimType;

@@ -24,17 +24,17 @@ namespace GrantTracker.Utilities.OnStartup
 		{
 			builder.Services.AddDbContext<GrantTrackerContext>(options =>
 			{
-				options.UseSqlServer(config.GetConnectionString("GrantTrackerLocal"));
+				options.UseSqlServer(config.GetConnectionString("GrantTracker"));
 			});
 
 			builder.Services.AddDbContext<InterfaceDbContext>(options =>
 			{
-				options.UseSqlServer(config.GetConnectionString("InterfaceLocal"));
+				options.UseSqlServer(config.GetConnectionString("InterfaceDb"));
 			});
 
 			builder.Services.AddDbContext<SynergyEODContext>(options =>
 			{
-				options.UseSqlServer(config.GetConnectionString("SynergyLocal"));
+				options.UseSqlServer(config.GetConnectionString("SynergyEOD"));
 			});
 
 			builder.Services.AddScoped<IDropdownRepository, DropdownRepository>();

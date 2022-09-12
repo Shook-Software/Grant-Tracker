@@ -9,7 +9,7 @@ interface Filter {
 }
 
 interface Props {
-  handleChange: (name) => void
+  handleChange: (name: string, badgeNumber: string) => void
 }
 
 export default ({ handleChange }: Props): JSX.Element => {
@@ -19,7 +19,7 @@ export default ({ handleChange }: Props): JSX.Element => {
   })
 
   function filterStaff(): void {
-    handleChange(filter.name)
+    handleChange(filter.name, filter.badgeNumber)
   }
 
   return (
