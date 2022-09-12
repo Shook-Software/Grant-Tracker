@@ -19,11 +19,7 @@ import { mod } from 'utils/Math'
 //ToDo
 //Create a visual indicator to open the absolute dropdown, just cause
 
-interface Props
-  extends Omit<
-  Omit<React.SelectHTMLAttributes<HTMLSelectElement>, 'value'>,
-  'onChange'
-  > {
+interface Props extends Omit<Omit<React.SelectHTMLAttributes<HTMLSelectElement>, 'value'>,'onChange'> {
   value: LocalTime
   onChange: (input: LocalTime) => void
 }
@@ -111,12 +107,19 @@ export const TimeInput = ({
   }, [])
 
   useEffect(() => {
+    setTime(value.withHour(value.hour()))
+  }, [value])
+
+  useEffect(() => {
     stateRef.current.time = time
   }, [time])
+
+  console.log('refreshed inner input', simplifiedTime)
 
   //Move this aria stuff into something else, make it a button
   return (
     <Container
+      key={`${simplifiedTime.hour}-${simplifiedTime.minute}`}
       tabIndex={-1}
       isCollapsed={isCollapsed}
       ref={containerRef}
