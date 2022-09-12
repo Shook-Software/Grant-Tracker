@@ -1,7 +1,8 @@
 ﻿using GrantTracker.Dal.Models.Dto;
 using GrantTracker.Dal.Models.Views;
+using GrantTracker.Dal.Schema;
 
-namespace GrantTracker.Dal.Repositories.StaffRepository
+namespace GrantTracker.Dal.Repositories.InstructorRepository
 {
 	public interface IInstructorRepository
 	{
@@ -11,7 +12,9 @@ namespace GrantTracker.Dal.Repositories.StaffRepository
 
 		public Task<InstructorSchoolYearView> GetInstructorSchoolYearAsync(Guid instructorSchoolYearGuid);
 
-		public Task AddInstructorAsync(InstructorDto person);
+		public Task Create(InstructorDto person);
+
+		public Task CreateAsync(List<InstructorSchoolYear> instructorSchoolYears); //create an instructorOrgYear repo for this
 
 		public Task UpdateInstructorAsync(Guid instructorSchoolYearGuid, InstructorSchoolYearView instructor);
 	}

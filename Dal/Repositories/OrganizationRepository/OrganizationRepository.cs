@@ -4,7 +4,7 @@ using GrantTracker.Dal.Repositories.DevRepository;
 using Microsoft.EntityFrameworkCore;
 using GrantTracker.Dal.Models.Views;
 
-namespace GrantTracker.Dal.Repositories.OrganizationYearRepository
+namespace GrantTracker.Dal.Repositories.OrganizationRepository
 {
 	public class OrganizationRepository : RepositoryBase, IOrganizationRepository
 	{
@@ -15,7 +15,7 @@ namespace GrantTracker.Dal.Repositories.OrganizationYearRepository
 		}
 
 		//Used for views, any use for dropdown options will be in DropdownRepo/Controller
-		public async Task<List<OrganizationYearView>> GetYearsAsync()
+		public async Task<List<OrganizationYearView>> GetOrganizationYearsAsync()
 		{
 			var orgYears = await _grantContext
 				.OrganizationYears
@@ -54,6 +54,16 @@ namespace GrantTracker.Dal.Repositories.OrganizationYearRepository
 				.SingleAsync();
 
 			return OrganizationYearView.FromDatabase(organizationYear);
+		}
+
+		public async Task<List<Organization>> GetOrganizationsAsync(Guid yearGuid)
+		{
+			return await _grantContext
+				.OrganizationYears
+				.Where(oy => oy.YearGuid == yearGuid)
+				.Include(oy => oy.Organization)
+				.Select(oy => oy.Organization)
+				.ToListAsync();
 		}
 	}
 }

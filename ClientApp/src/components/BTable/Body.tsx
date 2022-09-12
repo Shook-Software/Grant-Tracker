@@ -21,7 +21,7 @@ function createRow (
   return (
     <tr
       key={row[rowProps?.key]}
-      onClick={event => rowProps?.onClick(event, row) || null}
+      onClick={event => rowProps.onClick? rowProps?.onClick(event, row) : null}
       style={{ cursor: rowProps?.onClick ? 'pointer' : 'auto' }}
     >
       {[

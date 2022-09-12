@@ -13,15 +13,15 @@ namespace GrantTracker.Dal.Models.Dto
 		private bool HasTimeConflict(List<TimeScheduleView> existingTimeSchedules, TimeScheduleView newTimeSchedule)
 		{
 			return existingTimeSchedules.Any(existingTimeSchedule =>
-				{
-					//if new end time is after the existing start time, and the new start time is before the existing end time
-					if (existingTimeSchedule.StartTime < newTimeSchedule.EndTime && existingTimeSchedule.EndTime > newTimeSchedule.StartTime)
-						return true;
-					//ensure that the two sessions don't have the same start and end time
-					else if (existingTimeSchedule.StartTime == newTimeSchedule.StartTime && existingTimeSchedule.EndTime == newTimeSchedule.EndTime)
-						return true;
-					return false;
-				});
+			{
+				//if new end time is after the existing start time, and the new start time is before the existing end time
+				if (existingTimeSchedule.StartTime < newTimeSchedule.EndTime && existingTimeSchedule.EndTime > newTimeSchedule.StartTime)
+					return true;
+				//ensure that the two sessions don't have the same start and end time
+				else if (existingTimeSchedule.StartTime == newTimeSchedule.StartTime && existingTimeSchedule.EndTime == newTimeSchedule.EndTime)
+					return true;
+				return false;
+			});
 		}
 
 		public void SetConflicts(List<DayScheduleView> existingSchedules)

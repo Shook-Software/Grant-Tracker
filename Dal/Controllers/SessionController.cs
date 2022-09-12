@@ -69,7 +69,23 @@ namespace GrantTracker.Dal.Controllers
 		public async Task<ActionResult<List<SessionErrorMessage>>> RegisterStudent(Guid sessionGuid, [FromBody] StudentRegistrationDto newRegistration)
 		{
 			//check if student is already in our database
-			var studentSchoolYear = await newRegistration.Student.EnsureStudentExistsAsync(_studentRepository, newRegistration);
+			var studentSchoolYear = await _studentRepository.GetSingleAsync(newRegistration.Student.MatricNumber);
+
+			//if they don't exist, add them
+			if (studentSchoolYear is null)
+			{
+				StudentDto newStudent = new()
+				{
+					FirstName = newRegistration.Student.FirstName,
+					LastName = newRegistration.Student.LastName,
+					MatricNumber = newRegistration.Student.MatricNumber,
+					Grade = newRegistration.Student.Grade
+				};
+
+				await _studentRepository.AddAsync(newStudent);
+
+				studentSchoolYear = await _studentRepository.GetSingleAsync(newStudent.MatricNumber);
+			}
 
 			//if they don't exist, add them
 			if (studentSchoolYear is null)
@@ -106,6 +122,17 @@ namespace GrantTracker.Dal.Controllers
 			}
 
 			return Ok();
+		}
+
+		[HttpPost("{destinationSessionGuid:guid}/registration/copy")]
+		public async Task<ActionResult<List<string>>> CopyStudentRegistrations(Guid destinationSessionGuid, [FromBody] List<Guid> studentSchoolYearGuids)
+		{
+			var conflicts = await _sessionRepository.ValidateStudentRegistrationsAsync(destinationSessionGuid, studentSchoolYearGuids);
+
+			if (conflicts.Count > 0)
+				return Conflict(conflicts);
+
+			return Created($"{destinationSessionGuid}/registration", studentSchoolYearGuids);
 		}
 
 		[HttpPost("{sessionGuid:guid}/attendance")]

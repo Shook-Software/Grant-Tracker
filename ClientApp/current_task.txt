@@ -14,3 +14,7 @@ Registration Object in backend could be changed to just return the conflicts or 
 StudentPage session registrations need to be refactored to display the same as InstructorPage sessions
 
 Why is a StudentRegistration class inside of SimpleSessionView.cs?
+
+I honestly thing returning Views from repositories is a mistake. We should convert them to a view IN the controllers. Definitely the best way to go
+
+Editor->involved instructor fetching needs to be passed user current organization to properly display the selected instructors. Low priority as this only effects admin

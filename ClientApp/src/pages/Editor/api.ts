@@ -28,9 +28,7 @@ export function fetchSession(sessionGuid: string): Promise<SessionForm> {
 	return new Promise((resolve, reject) => {
 		api.get<SessionDomain>(`session/${sessionGuid}`)
 			.then(res => {
-				console.log('before', res.data)
 				const session: SessionForm = Session.toFormModel(res.data)
-				console.log('after', session)
 				resolve(session)
 			})
 			.catch(err => console.warn(err))

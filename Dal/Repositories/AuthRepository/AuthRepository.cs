@@ -24,6 +24,7 @@ namespace GrantTracker.Dal.Repositories.AuthRepository
 		{
 			return await _grantContext.UserIdentities
 				.AsNoTracking()
+				.Include(user => user.SchoolYear).ThenInclude(i => i.OrganizationYear).ThenInclude(o => o.Organization)
 				.Include(user => user.SchoolYear).ThenInclude(i => i.OrganizationYear).ThenInclude(o => o.Year)
 				.Include(user => user.SchoolYear).ThenInclude(i => i.Instructor)
 				.Where(user => user.SchoolYear.OrganizationYear.Year.YearGuid == _currentYearGuid) //to be replaced with a filter eventually
@@ -132,15 +133,15 @@ namespace GrantTracker.Dal.Repositories.AuthRepository
 		await _grantContext.SaveChangesAsync();
 	}
 
-		public async Task RemoveUserAsync(Guid userGuid)
+		public async Task DeleteUserAsync(Guid userOrganizationYearGuid)
 		{
-			var existingUser = await _grantContext.Persons.FindAsync(userGuid);
+			var userIdentity = await _grantContext.UserIdentities.FindAsync(userOrganizationYearGuid);
 
-			if (existingUser is null)
-				throw new ArgumentException(String.Format("Cannot find an existing user with the given Guid.", nameof(userGuid)));
+			if (userIdentity is null)
+				throw new ArgumentException(String.Format("Cannot find an existing user identity with the given guid.", nameof(userOrganizationYearGuid)));
 
-			//_grantContext.UserIdentities.Remove(existingUser.Identity);
-			//await _grantContext.SaveChangesAsync();
+			_grantContext.UserIdentities.Remove(userIdentity);
+			await _grantContext.SaveChangesAsync();
 		}
 
 		public async Task<Guid> GetOrganizationYearGuid(Guid organizationGuid, Guid yearGuid)

@@ -1,4 +1,4 @@
-﻿using GrantTracker.Dal.Repositories.OrganizationYearRepository;
+﻿using GrantTracker.Dal.Repositories.OrganizationRepository;
 using GrantTracker.Dal.Schema;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

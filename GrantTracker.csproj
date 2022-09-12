@@ -119,6 +119,7 @@
   <ItemGroup>
     <Folder Include="ClientApp\dist\" />
     <Folder Include="Migrations\" />
+    <Folder Include="Tests\" />
   </ItemGroup>
 
   <Target Name="DebugEnsureNodeEnv" BeforeTargets="Build" Condition=" '$(Configuration)' == 'Debug' And !Exists('$(SpaRoot)node_modules') ">

@@ -22,6 +22,8 @@ import {
   DropdownOptions
 } from './api'
 import { SessionForm } from 'Models/Session'
+import { User } from 'utils/authentication'
+import { useAdminPage } from 'pages/Admin'
 
 interface TabProps {
   guid: string | undefined
@@ -58,7 +60,7 @@ const TabSelector = ({ guid }: TabProps): JSX.Element => (
 
 //finish validation once confirmed with Liz today
 //for now..
-export default () => {
+export default ({user}: {user: User}) => {
   const navigate = useNavigate()
   const { sessionGuid } = useParams()
 
@@ -146,7 +148,8 @@ export default () => {
                   reducerDispatch: dispatch,
                   dropdownData,
                   touched,
-                  errors
+                  errors,
+                  user
                 }}
               />
             </Form>
@@ -162,7 +165,8 @@ export type Context = {
   dropdownData: DropdownOptions
   values: SessionForm
   touched
-  errors
+  errors,
+  user: User
 }
 
 export function useSession (): Context {

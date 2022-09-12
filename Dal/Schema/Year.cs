@@ -12,12 +12,12 @@ namespace GrantTracker.Dal.Schema
 
 	public class Year
 	{
-		public Guid YearGuid { get; set; }
+		public Guid YearGuid { get; set; } = Guid.NewGuid();
 		public short SchoolYear { get; set; }
 		public Quarter Quarter { get; set; }
 		public DateOnly StartDate { get; set; }
 		public DateOnly EndDate { get; set; }
-		public bool IsCurrentSchoolYear { get; set; }
+		public bool IsCurrentSchoolYear { get; set; } = false;
 
 		public virtual ICollection<OrganizationYear> Organizations { get; set; }
 

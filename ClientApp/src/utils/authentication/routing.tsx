@@ -1,5 +1,4 @@
 import {Link, LinkProps} from 'react-router-dom'
-import {Authentication, AuthUserType} from './index'
 
 interface ProtectedLinkProps extends LinkProps {
     auth: Authentication

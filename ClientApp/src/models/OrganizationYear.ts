@@ -1,3 +1,5 @@
+import { LocalDate } from "@js-joda/core"
+
 export interface OrganizationView {
   guid: string
   name: string
@@ -21,4 +23,6 @@ export interface YearView {
   guid: string
   schoolYear: string
   quarter: Quarter
+  startDate?: LocalDate
+  endDate?: LocalDate
 }

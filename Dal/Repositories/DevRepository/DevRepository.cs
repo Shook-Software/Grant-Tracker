@@ -47,5 +47,12 @@ namespace GrantTracker.Dal.Repositories.DevRepository
 				.Select(ExceptionLogView.FromDatabase)
 				.ToList();
 		}
+
+		public async Task CreateUsersAsync(List<Identity> identities)
+		{
+			identities = identities.Distinct().ToList();
+			await _grantContext.AddRangeAsync(identities);
+			await _grantContext.SaveChangesAsync();
+		}
 	}
 }

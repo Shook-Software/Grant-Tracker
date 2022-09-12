@@ -12,7 +12,7 @@ namespace GrantTracker.Dal.Repositories.AuthRepository
 
 		public Task AddUserAsync(UserIdentityView identity);
 
-		public Task RemoveUserAsync(Guid userGuid);
+		public Task DeleteUserAsync(Guid userGuid);
 
 		public Task<Guid> GetOrganizationYearGuid(Guid organizationGuid, Guid yearGuid);
 

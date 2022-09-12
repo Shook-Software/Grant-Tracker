@@ -100,8 +100,8 @@ export abstract class Session {
       objective: obj.objective.guid,
       type: obj.sessionType.guid,
       instructors: obj.instructors.map(reg => ({
-        guid: reg.instructorSchoolYearGuid,
-        label: `${reg.firstName} ${reg.lastName}`
+        guid: reg.guid,
+        label: `${reg.instructor.firstName} ${reg.instructor.lastName}`
       })),
       fundingSource: obj.fundingSource.guid,
       organizationType: obj.organizationType.guid,

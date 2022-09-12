@@ -174,6 +174,69 @@ namespace GrantTracker.Dal.Repositories.SessionRepository
 			});
 		}
 
+		private bool HasTimeConflict(SessionTimeSchedule existingTimeSchedule, SessionTimeSchedule newTimeSchedule)
+		{
+				//if new end time is after the existing start time, and the new start time is before the existing end time
+			if (existingTimeSchedule.StartTime < newTimeSchedule.EndTime && existingTimeSchedule.EndTime > newTimeSchedule.StartTime)
+				return true;
+			//ensure that the two sessions don't have the same start and end time
+			else if (existingTimeSchedule.StartTime == newTimeSchedule.StartTime && existingTimeSchedule.EndTime == newTimeSchedule.EndTime)
+				return true;
+			return false;
+		}
+
+		//Initially, we're going to copy over entire schedules, with no selective day of week, but we MAY add that in future releases
+		public async Task<List<string>> ValidateStudentRegistrationsAsync(Guid destinationSessionGuid, List<Guid> studentSchoolYearGuids)
+		{
+			List<string> validationErrors = new();
+
+			var sessionSchedule = await _grantContext
+				.Sessions
+				.Where(s => s.SessionGuid == destinationSessionGuid)
+				.Include(s => s.DaySchedules).ThenInclude(ds => ds.TimeSchedules)
+				.SelectMany(s => s.DaySchedules)
+				.ToListAsync();
+
+			List<StudentRegistration> existingStudentRegistrations = await _grantContext
+				.StudentRegistrations
+				.Where(sr => studentSchoolYearGuids.Contains(sr.StudentSchoolYearGuid))
+				.Include(sr => sr.StudentSchoolYear).ThenInclude(ssy => ssy.Student)
+				.Include(sr => sr.DaySchedule).ThenInclude(ds => ds.TimeSchedules)
+				.ToListAsync();
+
+			//it isn't as bad as it looks
+			//for each day of the week (most will be skipped)
+			foreach (DayOfWeek weekday in Enum.GetValues(typeof(DayOfWeek)))
+			{
+				var newDaySchedule = sessionSchedule.Find(ss => ss.DayOfWeek == weekday);
+				if (newDaySchedule == null)
+					continue;
+
+				var registrationsOnDay = existingStudentRegistrations.Where(sr => sr.DaySchedule.DayOfWeek == weekday).ToList();
+
+				//... then for each start and end time on this day for the session...
+				foreach (SessionTimeSchedule newTimeSchedule in newDaySchedule.TimeSchedules)
+					//...get each existing registration
+					foreach (var registration in registrationsOnDay)
+					//...compare their start and end times to the new session's
+						foreach (var existingTimeSchedule in registration.DaySchedule.TimeSchedules)
+						{
+							if (HasTimeConflict(existingTimeSchedule, newTimeSchedule))
+							{
+								//check how the ui looks if someone conflicts every student registration on an attempted copy
+								validationErrors.Add($"{registration.StudentSchoolYear.Student.FirstName} {registration.StudentSchoolYear.Student.LastName} has a conflict with an existing registration on {weekday} from {existingTimeSchedule.StartTime.ToShortTimeString()} to {existingTimeSchedule.EndTime.ToShortTimeString()}");
+							}
+						}
+			}
+
+			return validationErrors;
+		}
+
+		public async Task CopyStudentRegistrationsAsync(Guid sourceSessionGuid, Guid destinationSessionGuid)
+		{
+
+		}
+
 		//this should honestly just be remove student async, not multiple.
 		public async Task RemoveStudentAsync(Guid studentYearGuid, List<Guid> dayScheduleGuids)
 		{

@@ -19,11 +19,14 @@ namespace GrantTracker.Dal.Repositories.SessionRepository
 
 		public Task<bool> GetStatusAsync(Guid sessionGuid);
 
-		//public Task<List<Session>> GetAllByInstructorAsync(Guid instructorGuid);
-
 		public Task<List<StudentRegistrationView>> GetStudentRegistrationsAsync(Guid sessionGuid, int dayOfWeek = -1);
 
 		public Task<Registration> RegisterStudentAsync(Guid sessionGuid, List<Guid> scheduleGuids, Guid studentGuid);
+
+		public Task<List<string>> ValidateStudentRegistrationsAsync(Guid sessionGuid, List<Guid> studentSchoolYearGuids);
+
+		public Task CopyStudentRegistrationsAsync(Guid sourceSessionGuid, Guid destinationSessionGuid); 
+		//public Task CopyStudentRegistrationsAsync(Guid sessionGuid, List<Guid> studentSchoolYearGuids);
 
 		public Task RemoveStudentAsync(Guid studentSchoolYearGuid, List<Guid> dayScheduleGuids);
 	}

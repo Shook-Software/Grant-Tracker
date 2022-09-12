@@ -135,6 +135,10 @@ export class User implements IUser {
     }
   }
 
+  public get userGuid (): string {
+    return this._userGuid
+  }
+
   public get firstName (): string {
    return this._firstName
   } 
@@ -145,6 +149,10 @@ export class User implements IUser {
 
   public get badgeNumber (): string {
     return this._badgeNumber
+  }
+
+  public get userOrganizationYearGuid (): string {
+    return this._userOrganizationYearGuid
   }
 
   public get organizationName (): string {

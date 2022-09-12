@@ -1,15 +1,12 @@
-import {
-  Form,
-  Container,
-  Row,
-  Col,
-  ListGroup,
-  CloseButton
-} from 'react-bootstrap'
+import {useEffect, useState} from 'react'
+import { Form, Container, Row, Col, ListGroup, CloseButton } from 'react-bootstrap'
 
 import { useSession } from '../index'
-import SearchDropdown from 'components/Input/SearchDropdown'
 import Dropdown from 'components/Input/Dropdown'
+import SelectSearch from 'components/Input/SelectSearch'
+import { DropdownOption } from 'Models/Session'
+
+import api from 'utils/api'
 
 //Second Section - Instructor/Funding
 ////Instructor -- Searchable Dropdown
@@ -18,8 +15,9 @@ import Dropdown from 'components/Input/Dropdown'
 ////Organization Type -- Dropdown
 ////Partnership Type -- Dropdown
 
-export default (props): JSX.Element => {
-  const { reducerDispatch, dropdownData, values } = useSession()
+export default (): JSX.Element => {
+  const { reducerDispatch, dropdownData, values, user } = useSession()
+  const [instructors, setInstructors] = useState<DropdownOption[]>([])
   document.title = `${values.guid ? 'Edit' : 'New'} Session - Involved`
 
   if (!values)
@@ -28,12 +26,29 @@ export default (props): JSX.Element => {
     )
 
   function handleInstructorAddition (guid: string, label: string): void {
-    reducerDispatch({ type: 'addInstructor', payload: { guid, label } })
+    if (!values.instructors.find(i => i.guid === guid))
+      reducerDispatch({ type: 'addInstructor', payload: { guid, label } })
   }
 
   function handleInstructorRemoval (guid: string): void {
     reducerDispatch({ type: 'removeInstructor', payload: guid })
   }
+
+  console.log(instructors)
+
+  useEffect(() => {
+    api
+      .get('instructor', {params: {name: '', organizationGuid: user.organization.guid, yearGuid: user.year.guid}})
+      .then(res => {
+        res.data = res.data.filter(item => !values.instructors.find(value => value.guid === item.guid))
+        setInstructors(res.data.map(isy => ({
+            guid: isy.guid,
+            label: `${isy.instructor.firstName} ${isy.instructor.lastName}`
+          })
+        ))
+      })
+      .catch(err => console.warn(err))
+  }, [values.instructors])
 
   return (
     <Container>
@@ -80,11 +95,16 @@ export default (props): JSX.Element => {
       <Row className='m-3 pb-5'>
         <Col>
           <Form.Group>
-            <Form.Label>Instructor Name</Form.Label>
-            <SearchDropdown
-              values={values.instructors}
-              label={'Select Instructor...'}
-              onChange={handleInstructorAddition}
+            <Form.Label>Instructor(s)</Form.Label>
+            <SelectSearch 
+              id='select-instructors'
+              options={instructors.map(option => ({name: option.label, value: option.guid}))}
+              multiple={true}
+              value={''}
+              handleChange={(guid: string) => {
+                const instructor = instructors.filter(i => i.guid === guid)[0]
+                handleInstructorAddition(instructor.guid, instructor.label)
+              }}
             />
           </Form.Group>
         </Col>
@@ -107,3 +127,12 @@ export default (props): JSX.Element => {
     </Container>
   )
 }
+
+/*
+
+            <SearchDropdown
+              values={values.instructors}
+              label={'Select Instructor...'}
+              onChange={handleInstructorAddition}
+            />
+            */

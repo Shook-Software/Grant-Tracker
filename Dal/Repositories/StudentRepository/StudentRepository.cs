@@ -124,6 +124,8 @@ namespace GrantTracker.Dal.Repositories.StudentRepository
 			return await _grantContext.StudentSchoolYears
 				.AsNoTracking()
 				.Include(ssy => ssy.Student)
+				.Include(ssy => ssy.OrganizationYear).ThenInclude(oy => oy.Organization)
+				.Include(ssy => ssy.OrganizationYear).ThenInclude(oy => oy.Year)
 				.Include(ssy => ssy.SessionRegistrations)
 				.Where(ssy => ssy.Student.MatricNumber == matricNumber && ssy.OrganizationYear.Year.IsCurrentSchoolYear == true)
 				.Select(ssy => StudentSchoolYearWithRecordsView.FromDatabase(ssy))

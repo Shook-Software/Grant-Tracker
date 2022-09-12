@@ -1,5 +1,5 @@
 ﻿using GrantTracker.Dal.Models.Dto;
-using GrantTracker.Dal.Repositories.StaffRepository;
+using GrantTracker.Dal.Repositories.InstructorRepository;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using GrantTracker.Dal.Models.Views;
@@ -43,7 +43,7 @@ namespace GrantTracker.Dal.Controllers
 		[HttpPost("add")]
 		public async Task<IActionResult> AddInstructor(InstructorDto instructor)
 		{
-			await _instructorRepository.AddInstructorAsync(instructor);
+			await _instructorRepository.Create(instructor);
 			return NoContent();
 		}
 

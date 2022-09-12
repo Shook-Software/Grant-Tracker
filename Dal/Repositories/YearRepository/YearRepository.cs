@@ -15,12 +15,6 @@ namespace GrantTracker.Dal.Repositories.YearRepository
 		{
 		}
 
-		//I don't know how useful this would actually be.
-		public IQueryable GetCurrentYear()
-		{
-			return _grantContext.Years.Where(year => year.IsCurrentSchoolYear == true);
-		}
-
 		public async Task<List<Year>> GetAsync()
 		{
 			return await _grantContext.Years.ToListAsync();
@@ -35,28 +29,11 @@ namespace GrantTracker.Dal.Repositories.YearRepository
 
 		public async Task AddAsync(Year yearModel)
 		{
-			static bool DateIsBetween(DateOnly date, DateOnly startDate, DateOnly endDate)
-			{
-				return date > startDate && date < endDate;
-			};
-
 			await UseDeveloperLog(async () =>
 			{
-				//validate
-				var existingYears = await this.GetAsync();
-				if (existingYears.Any(y => y.SchoolYear == yearModel.SchoolYear && y.Quarter == yearModel.Quarter))
-					throw new Exception("A school year with the provided year and quarter already exists.");
-
-				//for the given year in newGrantYear, ensure the start and end date do not overlap another SchoolYear of that year.
-				if (existingYears
-				.Where(y => y.SchoolYear == yearModel.SchoolYear)
-				.Any(y => DateIsBetween(yearModel.StartDate, y.StartDate, y.EndDate) || DateIsBetween(yearModel.EndDate, y.StartDate, y.EndDate))
-				)
-					throw new Exception("The new year's start and end date cannot fall between the existing start and end dates for an already existing record.");
-
 				await _grantContext.AddAsync(new Year
 				{
-					YearGuid = Guid.NewGuid(),
+					YearGuid = yearModel.YearGuid,
 					SchoolYear = yearModel.SchoolYear,
 					Quarter = yearModel.Quarter,
 					StartDate = yearModel.StartDate,
@@ -88,6 +65,38 @@ namespace GrantTracker.Dal.Repositories.YearRepository
 
 				await _grantContext.SaveChangesAsync();
 			});
+		}
+
+		public async Task<List<string>> ValidateYearAsync(Year year)
+		{
+			static bool DateIsBetween(DateOnly date, DateOnly startDate, DateOnly endDate)
+			{
+				return date > startDate && date < endDate;
+			};
+
+			List<string> validationErrors = new();
+			var existingYears = await this.GetAsync();
+
+			var yearHasSameQuarterAsExistingSameYear = existingYears.Any(y => y.SchoolYear == year.SchoolYear && y.Quarter == year.Quarter);
+
+			if (yearHasSameQuarterAsExistingSameYear)
+				validationErrors.Add("A school year with the provided year and quarter already exists.");
+
+
+			var endDateIsBeforeStartDate = year.StartDate > year.EndDate;
+
+			if (endDateIsBeforeStartDate)
+				validationErrors.Add("End date cannot be before the start date.");
+
+
+			var yearIntersectsExistingYears = existingYears
+				.Where(y => y.SchoolYear == year.SchoolYear)
+				.Any(y => DateIsBetween(year.StartDate, y.StartDate, y.EndDate) || DateIsBetween(year.EndDate, y.StartDate, y.EndDate));
+
+			if (yearIntersectsExistingYears)
+				validationErrors.Add("The new year's start and end date cannot fall between the existing start and end dates for an already existing record.");
+
+			return validationErrors;
 		}
 	}
 }

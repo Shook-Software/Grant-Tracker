@@ -13,6 +13,8 @@ import { DropdownOption } from 'types/Session'
 
 import paths from 'utils/routing/paths'
 import api from 'utils/api'
+import Dropdown from 'components/Input/Dropdown'
+import { StudentRegistrationDomain } from 'Models/StudentRegistration'
 
 function dropdownOptionTransform (value: DropdownOption): string {
   return value.label
@@ -74,6 +76,28 @@ export default (): JSX.Element => {
   const [state, setState] = useState<SimpleSessionView[]>([])
   const [isLoading, setIsLoading] = useState<boolean>(false) //can we make a custom hook for loading?
 
+  const [firstSession, setFirstSession] = useState<string>('')
+  const [secondSession, setSecondSession] = useState<string>('')
+
+  function handleCopy (): void {
+    var studentSchoolYearGuids: string[] = []
+    api
+    .get<StudentRegistrationDomain[]>(`session/${firstSession}/registration`)
+    .then(res => {
+      //sorted for ease of display
+      studentSchoolYearGuids = res.data.map(i => i.studentSchoolYear.guid).filter((guid, index, self) => self.indexOf(guid) === index)
+
+      api
+        .post(`session/${secondSession}/registration/copy`, studentSchoolYearGuids)
+        .then(res => console.log(res))
+        .catch(err => console.log(err))
+    })
+    .catch(err => {
+      console.warn(err)
+    })
+    
+  }
+
   function fetchSessions (params) {
     if (user.organization.guid && user.year.guid) {
       setIsLoading(true)
@@ -128,6 +152,28 @@ export default (): JSX.Element => {
         ) : (
           <Table columns={columns} dataset={state} rowProps={{key: 'sessionGuid'}} />
         )}
+      </Container>
+
+      <Container>
+        Copy registrations from...
+        <Dropdown
+          value={firstSession}
+          options={state.map(s => ({
+            guid: s.sessionGuid,
+            label: s.name
+          }))}
+          onChange={(guid: string) => setFirstSession(guid)}
+        />
+        to
+        <Dropdown
+          value={secondSession}
+          options={state.map(s => ({
+            guid: s.sessionGuid,
+            label: s.name
+          }))}
+          onChange={(guid: string) => setSecondSession(guid)}
+        />
+        <Button onClick={() => handleCopy()}>Submit</Button>
       </Container>
     </>
   )

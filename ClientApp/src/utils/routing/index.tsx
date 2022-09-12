@@ -4,6 +4,8 @@ import paths from './paths'
 import HomePage from 'pages/Home'
 import AdminPage from 'pages/Admin'
 
+import Reporting from 'pages/Reporting'
+
 import SessionEditor from 'pages/Editor'
 import SessionOverview from 'pages/Editor/Session/Overview'
 import SessionInvolved from 'pages/Editor/Session/Involved'
@@ -73,7 +75,7 @@ export default (user: User): RouteObject[] => [
             children: [
               {
                 index: true,
-                element: <div />
+                element: <Reporting />
               },
             ]
           }
@@ -86,12 +88,12 @@ export default (user: User): RouteObject[] => [
     children: [
       {
         path: paths.Edit.Sessions.path,
-        element: <SessionEditor />,
+        element: <SessionEditor user={user} />,
         children: editSessionChildren
       },
       {
         path: paths.Edit.Sessions.path + '/:sessionGuid',
-        element: <SessionEditor />,
+        element: <SessionEditor user={user} />,
         children: editSessionChildren
       }
     ]

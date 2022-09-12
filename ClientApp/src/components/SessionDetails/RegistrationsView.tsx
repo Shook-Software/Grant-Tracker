@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Button, CloseButton, Modal, Form } from 'react-bootstrap'
+import { Button, CloseButton, Modal, Form, Row } from 'react-bootstrap'
 import { useNavigate } from 'react-router-dom'
 
 import Table, { Column } from 'components/BTable'
@@ -126,18 +126,15 @@ export default ({
     setModalData(values)
   }
 
-  function handleClose (
-    scheduleGuids: string[],
-    studentSchoolYearGuid: string
-  ) {
-    setModalIsOpen(false)
+  function handleClose (scheduleGuids: string[], studentSchoolYearGuid: string) {
+    if (scheduleGuids?.length !== 0) {
+      onChange(scheduleGuids, studentSchoolYearGuid)
+    }
 
-    if (scheduleGuids !== []) onChange(scheduleGuids, studentSchoolYearGuid)
+    setModalIsOpen(false)
   }
 
   const dataset = groupRegistrationsByStudent(registrations)
-
-  console.log(dataset)
 
   return (
     <div className='position-relative'>

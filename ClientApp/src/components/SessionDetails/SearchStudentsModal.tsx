@@ -124,6 +124,7 @@ function getConflictResponse (
 }
 
 interface Props {
+  sessionGuid: string
   show: boolean
   handleClose: () => void
   handleChange: (value: any) => void
@@ -132,6 +133,7 @@ interface Props {
 
 //Ask Matt about having addStudent here or passed to handleChange in the parent
 export default ({
+  sessionGuid,
   show,
   handleClose,
   handleChange,
@@ -145,7 +147,7 @@ export default ({
   function addStudent (student): void {
     const fullName: string = `${student.firstName} ${student.lastName}`
     api
-      .post(`session/registration`, {
+      .post(`session/${sessionGuid}/registration`, {
         student,
         dayScheduleGuids: schedule
       })
@@ -207,7 +209,7 @@ export default ({
                 <Form.Label>{day.dayOfWeek}</Form.Label>&nbsp;
                 <Form.Check
                   inline
-                  defaultChecked={true}
+                  defaultChecked={schedule.find(guid => guid === day.dayScheduleGuid)}
                   style={{ display: 'inline-block' }}
                   onChange={event => {
                     if (event.target.checked)

@@ -34,7 +34,8 @@ export default ({ handleChange }: Props): JSX.Element => {
 
   function filterStudents(): void {
     setIsLoading(true)
-    api.get('students/synergy', { params: { ...filter } })
+    api
+      .get('student/synergy', { params: { ...filter } })
       .then(res => handleChange(res.data))
       .catch(err => console.warn(err))
       .finally(() => setIsLoading(false))

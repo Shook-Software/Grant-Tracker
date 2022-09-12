@@ -3,7 +3,7 @@ using GrantTracker.Dal.EmployeeDb;
 using GrantTracker.Dal.Models.Dto;
 using GrantTracker.Dal.Models.Views;
 using GrantTracker.Dal.Repositories.DevRepository;
-using GrantTracker.Dal.Repositories.StaffRepository;
+using GrantTracker.Dal.Repositories.InstructorRepository;
 using GrantTracker.Dal.Schema;
 using GrantTracker.Utilities;
 using Microsoft.EntityFrameworkCore;
@@ -89,7 +89,7 @@ namespace GrantTracker.Dal.Repositories.InstructorRepository
 			return InstructorSchoolYearView.FromDatabase(instructorSchoolYear, organizationYears);
 		}
 
-		public async Task AddInstructorAsync(InstructorDto instructor)
+		public async Task Create(InstructorDto instructor)
 		{
 			var existingInstructor = await _grantContext.Instructors
 				.Where(i => i.BadgeNumber == instructor.BadgeNumber)
@@ -122,6 +122,13 @@ namespace GrantTracker.Dal.Repositories.InstructorRepository
 			};
 
 			await _grantContext.InstructorSchoolYears.AddAsync(newInstructorSchoolYear);
+			await _grantContext.SaveChangesAsync();
+		}
+
+		public async Task CreateAsync(List<InstructorSchoolYear> instructorSchoolYears)
+		{
+			instructorSchoolYears.ForEach(isy => isy.Identity = null);
+			await _grantContext.AddRangeAsync(instructorSchoolYears);
 			await _grantContext.SaveChangesAsync();
 		}
 

@@ -1,6 +1,6 @@
 ﻿using GrantTracker.Dal.Models.Dto;
 using GrantTracker.Dal.Repositories.AuthRepository;
-using GrantTracker.Dal.Repositories.StaffRepository;
+using GrantTracker.Dal.Repositories.InstructorRepository;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using GrantTracker.Dal.Schema;
@@ -60,6 +60,13 @@ namespace GrantTracker.Dal.Controllers
 			});
 
 			return Ok();
+		}
+
+		[HttpDelete("")]
+		public async Task<IActionResult> DeleteUser(Guid userOrganizationYearGuid)
+		{
+			await _authRepository.DeleteUserAsync(userOrganizationYearGuid);
+			return NoContent();
 		}
 
 		//[HttpPut("user")]

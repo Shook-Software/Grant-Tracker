@@ -22,6 +22,7 @@ import Header from './Header'
 import Overview from './Overview'
 import Instructors from './Instructors'
 import Scheduling from './Scheduling'
+import { rejects } from 'assert'
 
 //
 
@@ -62,17 +63,19 @@ export default ({}) => {
     getStudentRegistrationsAsync()
   }
 
-  function removeStudentRegistrationsAsync (scheduleGuids: string[], studentSchoolYearGuid: string) {
-    api
-      .delete('session/registration', {
-        params: {
-          studentSchoolYearGuid,
-          dayScheduleGuid: scheduleGuids
-        }
-      })
-      .then(res => /*dosomething*/ {})
-      .catch()
-      .finally(() => getStudentRegistrationsAsync())
+  function removeStudentRegistrationsAsync (scheduleGuids: string[], studentSchoolYearGuid: string): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      api
+        .delete('session/registration', {
+          params: {
+            studentSchoolYearGuid,
+            dayScheduleGuid: scheduleGuids
+          }
+        })
+        .then(res => {resolve()})
+        .catch(err => {reject()})
+        .finally(() => getStudentRegistrationsAsync())
+    })
   }
 
   function getStudentRegistrationsAsync (): void {
@@ -97,7 +100,7 @@ export default ({}) => {
           studentSchoolYearGuid: record.studentSchoolYear.guid,
           attendance: record.attendance
         }))
-      console.log(instructorRecords)
+        
       const instructorRecordsParam = instructorRecords
         .filter(record => record.isPresent !== false)
         .map(record => ({
@@ -218,6 +221,7 @@ export default ({}) => {
       </Card>
       <RemoveSessionModal sessionGuid={sessionGuid} session={session} show={showSessionDeleteModal} handleClose={handleSessionDeletion} />
       <SearchStudentsModal
+        sessionGuid={session.guid}
         show={showStudentModal}
         handleClose={() => setShowStudentModal(false)}
         handleChange={() => null}
