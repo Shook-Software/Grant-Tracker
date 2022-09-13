@@ -179,7 +179,7 @@ export default ({ options, value, onChange, width, show = false, disableOverlay 
 
   useEffect(() => {
     setIndex(options.findIndex(o => o.guid === value))
-  }, [value])
+  }, [value, options])
 
   useEffect(() => {
     if (show) {
