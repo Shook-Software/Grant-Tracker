@@ -43,7 +43,7 @@ namespace GrantTracker.Dal.Controllers
 		[HttpPost("add")]
 		public async Task<IActionResult> AddInstructor(InstructorDto instructor)
 		{
-			await _instructorRepository.Create(instructor);
+			await _instructorRepository.CreateAsync(instructor);
 			return NoContent();
 		}
 

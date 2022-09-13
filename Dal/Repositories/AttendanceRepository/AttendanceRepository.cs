@@ -2,6 +2,7 @@
 using GrantTracker.Dal.Repositories.DevRepository;
 using GrantTracker.Dal.Schema;
 using GrantTracker.Utilities;
+using Microsoft.EntityFrameworkCore;
 
 namespace GrantTracker.Dal.Repositories.AttendanceRepository
 {
@@ -13,6 +14,22 @@ namespace GrantTracker.Dal.Repositories.AttendanceRepository
 		{
 
 		}
+
+
+		public async Task<List<DateOnly>> GetAttendanceDatesAsync(Guid sessionGuid)
+		{
+			var attendance = await _grantContext
+				.StudentAttendanceRecords
+				.AsNoTracking()
+				.Where(sar => sar.SessionGuid == sessionGuid)
+				.Select(sar => sar.InstanceDate)
+				.ToListAsync();
+
+			return attendance
+				.Distinct()
+				.ToList();
+		}
+
 
 		public async Task AddAttendanceAsync(Guid sessionGuid, SessionAttendanceDto sessionAttendance)
 		{

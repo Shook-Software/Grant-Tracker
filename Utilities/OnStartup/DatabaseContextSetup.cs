@@ -14,7 +14,6 @@ using GrantTracker.Dal.Repositories.YearRepository;
 using GrantTracker.Dal.Schema;
 using GrantTracker.Dal.SynergySchema;
 using Microsoft.EntityFrameworkCore;
-using GrantTracker.Dal.Repositories.InstructorRepository;
 
 namespace GrantTracker.Utilities.OnStartup
 {

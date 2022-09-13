@@ -1,77 +1,81 @@
 import { LocalDate, LocalTime } from '@js-joda/core'
-import { StudentRecord } from 'Models/StudentAttendance'
+import { InstructorRecord, StudentRecord, SubstituteRecord } from 'Models/StudentAttendance'
 import { TimeScheduleView } from 'Models/TimeSchedule'
 
 export interface AttendanceForm {
   defaultSchedule: TimeScheduleView[]
   date: LocalDate
   studentRecords: StudentRecord[]
-  instructorRecords: any[]
+  instructorRecords: InstructorRecord[]
+  substituteRecords: SubstituteRecord[]
 }
 
 export type ReducerAction =
-  | {
-      type: 'addSubstitute'
-      payload: any
-    }
-  | {
-      type: 'scheduleStartShift'
-      payload: { index: number; startTime: LocalTime }
-    }
-  | {
-      type: 'scheduleEndShift'
-      payload: { index: number; endTime: LocalTime }
-    }
-  | {
-      type: 'instructorRecords'
-      payload: any[]
-    }
-  | {
-      type: 'instructorPresence'
-      payload: { instructorSchoolYearGuid: string; isPresent: boolean }
-    }
-  | {
-      type: 'instructorStartTime'
-      payload: { instructorSchoolYearGuid: string; startTime: LocalTime }
-    }
-  | {
-      type: 'instructorEndTime'
-      payload: { instructorSchoolYearGuid: string; endTime: LocalTime }
-    }
+  | { type: 'addSubstitute'; payload: any }
+  | { type: 'substituteStartTime'; payload: { nameString: string, index: number, startTime: LocalTime }}
+  | { type: 'substituteEndTime'; payload: { nameString: string, index: number, endTime: LocalTime }}
+
+  | { type: 'scheduleStartShift'; payload: { index: number; startTime: LocalTime } }
+  | { type: 'scheduleEndShift'; payload: { index: number; endTime: LocalTime } }
+
+  | { type: 'instructorRecords'; payload: InstructorRecord[] }
+  | { type: 'instructorPresence'; payload: { guid: string; isPresent: boolean }}
+  | { type: 'instructorStartTime'; payload: { guid: string; startTime: LocalTime } }
+  | { type: 'instructorEndTime'; payload: { guid: string; endTime: LocalTime } }
+
   | { type: 'instanceDate'; payload: string }
+
   | { type: 'studentRecords'; payload: StudentRecord[] }
   | { type: 'studentPresence'; payload: { guid: string; isPresent: boolean } }
-  | {
-      type: 'studentStartTime'
-      payload: { guid: string; index: number; startTime: LocalTime }
-    }
-  | {
-      type: 'studentEndTime'
-      payload: { guid: string; index: number; endTime: LocalTime }
-    }
+  | { type: 'studentStartTime'; payload: { guid: string; index: number; startTime: LocalTime } }
+  | { type: 'studentEndTime'; payload: { guid: string; index: number; endTime: LocalTime } }
 
 //add in validation
 export function reducer (
   state: AttendanceForm,
   action: ReducerAction
 ): AttendanceForm {
+  let substituteRecord
+  let record
   switch (action.type) {
-    /*case 'addSubstitute':
-      var newRecords = [
-        ...state.substituteRecords,
-        {
-          ...action.payload,
-          attendance: state.defaultSchedule
-        }
-      ]
+    
+    case 'addSubstitute':
+      substituteRecord = {
+        substitute: {
+          id: action.payload.firstName + action.payload.lastName,
+          ...action.payload
+        },
+        attendance: [...state.defaultSchedule]
+      }
+      
+      return { ...state, substituteRecords: [...state.substituteRecords, substituteRecord]}
 
-      return { ...state, substituteRecords: newRecords }*/
+    case 'substituteStartTime':
+      record = state.substituteRecords.find(record => record.substitute.id === action.payload.nameString) as SubstituteRecord
+      record.startTime = action.payload.startTime
+      return { ...state, substituteRecords: [...state.substituteRecords] }
+      
+    case 'substituteEndTime':
+      record = state.substituteRecords.find(record => record.substitute.id === action.payload.nameString) as SubstituteRecord
+      record.endTime = action.payload.endTime
+      return { ...state, substituteRecords: [...state.substituteRecords] }
+
 
     case 'scheduleStartShift':
-      state.defaultSchedule[action.payload.index].startTime =
-        action.payload.startTime
+      state.defaultSchedule[action.payload.index].startTime = action.payload.startTime
 
-      var newStudentRecords = state.studentRecords.map(record => {
+      //iterate all student records and apply the new starttime to the appropriate item
+      const adjustedStartTimeStudentRecords = state.studentRecords.map(record => {
+        record.attendance = record.attendance.map((timeRecord, index) => {
+          if (index === action.payload.index)
+            timeRecord.startTime = action.payload.startTime
+
+          return timeRecord
+        })
+        return record
+      })
+
+      const adjustedStartTimeInstructorRecords = state.instructorRecords.map(record => {
         record.attendance = record.attendance.map((att, index) => {
           if (index === action.payload.index)
             att.startTime = action.payload.startTime
@@ -81,7 +85,7 @@ export function reducer (
         return record
       })
 
-      var newInstructorRecords = state.instructorRecords.map(record => {
+      const adjustedStartTimeSubstituteRecords = state.substituteRecords.map(record => {
         record.attendance = record.attendance.map((att, index) => {
           if (index === action.payload.index)
             att.startTime = action.payload.startTime
@@ -90,28 +94,18 @@ export function reducer (
         })
         return record
       })
-
-      /*var newSubRecords = state.substituteRecords.map(record => {
-        record.attendance = record.attendance.map((att, index) => {
-          if (index === action.payload.index)
-            att.startTime = action.payload.startTime
-
-          return att
-        })
-        return record
-      })*/
 
       return {
         ...state,
-        studentRecords: newStudentRecords,
-        instructorRecords: newInstructorRecords
+        studentRecords: adjustedStartTimeStudentRecords,
+        instructorRecords: adjustedStartTimeInstructorRecords,
+        substituteRecords: adjustedStartTimeSubstituteRecords
       }
 
     case 'scheduleEndShift':
-      state.defaultSchedule[action.payload.index].endTime =
-        action.payload.endTime
+      state.defaultSchedule[action.payload.index].endTime = action.payload.endTime
 
-      var newStudentRecords = state.studentRecords.map(record => {
+      const adjustedEndTimeStudentRecords = state.studentRecords.map(record => {
         record.attendance = record.attendance.map((att, index) => {
           if (index === action.payload.index)
             att.endTime = action.payload.endTime
@@ -121,7 +115,7 @@ export function reducer (
         return record
       })
 
-      var newInstructorRecords = state.instructorRecords.map(record => {
+      const adjustedEndTimeInstructorRecords = state.instructorRecords.map(record => {
         record.attendance = record.attendance.map((att, index) => {
           if (index === action.payload.index)
             att.endTime = action.payload.endTime
@@ -131,7 +125,7 @@ export function reducer (
         return record
       })
 
-      /*var newSubRecords = state.substituteRecords.map(record => {
+      const adjustedEndTimeSubstituteRecords = state.substituteRecords.map(record => {
         record.attendance = record.attendance.map((att, index) => {
           if (index === action.payload.index)
             att.endTime = action.payload.endTime
@@ -139,80 +133,33 @@ export function reducer (
           return att
         })
         return record
-      })*/
+      })
 
       return {
         ...state,
-        studentRecords: newStudentRecords,
-        instructorRecords: newInstructorRecords
+        studentRecords: adjustedEndTimeStudentRecords,
+        instructorRecords: adjustedEndTimeInstructorRecords,
+        substituteRecords: adjustedEndTimeSubstituteRecords
       }
 
     case 'instructorRecords':
       return { ...state, instructorRecords: action.payload }
 
     case 'instructorPresence':
-      var instructorRecord = state.instructorRecords.find(
-        record =>
-          record.instructor.instructorSchoolYearGuid ==
-          action.payload.instructorSchoolYearGuid
-      )
-
-      instructorRecord.isPresent = action.payload.isPresent
-      //just rewrite this someday later
-      return { ...state, instructorRecords: state.instructorRecords }
+      record = state.instructorRecords.find(record => record.instructorSchoolYear.guid == action.payload.guid) as InstructorRecord
+      record.isPresent = action.payload.isPresent
+      return { ...state, instructorRecords: [...state.instructorRecords] }
 
     case 'instructorStartTime':
-      /*var alteredRecords: StudentRecord[] = state.studentRecords.map(record => {
-        record.attendance[action.payload.index].startTime = action.payload.startTime
-        return record
-
-
-
-      return {
-        ...state,
-        defaultSchedule: state.defaultSchedule.map((schedule, index) => {
-          if (action.payload.index === index)
-            return { ...schedule, startTime: action.payload.startTime }
-          return schedule
-        }),
-        studentRecords: alteredRecords
-      }
-
-      })*/
-
-      var record: any = state.instructorRecords.find(
-        record =>
-          record.instructor.studentSchoolYearGuid ===
-          action.payload.instructorSchoolYearGuid
-      )
-
+      record = state.instructorRecords.find(record => record.instructorSchoolYear.guid === action.payload.guid) as InstructorRecord
       record.startTime = action.payload.startTime
-      return { ...state }
+      return { ...state, instructorRecords: [...state.instructorRecords] }
 
     case 'instructorEndTime':
-      /*var alteredRecords: StudentRecord[] = state.studentRecords.map(record => {
-        record.attendance[action.payload.index].endTime = action.payload.endTime
-        return record
-      })
-
-      return {
-        ...state,
-        defaultSchedule: state.defaultSchedule.map((schedule, index) => {
-          if (action.payload.index === index)
-            return { ...schedule, endTime: action.payload.endTime }
-          return schedule
-        }),
-        studentRecords: alteredRecords
-      }*/
-
-      var record: any = state.instructorRecords.find(
-        record =>
-          record.instructor.studentSchoolYearGuid ===
-          action.payload.instructorSchoolYearGuid
-      )
-
+      console.log(action, state.instructorRecords)
+      record = state.instructorRecords.find(record => record.instructorSchoolYear.guid === action.payload.guid)  as InstructorRecord
       record.endTime = action.payload.endTime
-      return { ...state }
+      return { ...state, instructorRecords: [...state.instructorRecords] }
 
     case 'instanceDate':
       return { ...state, date: LocalDate.parse(action.payload) }
@@ -222,43 +169,27 @@ export function reducer (
 
     case 'studentPresence':
       //Might not update unless we update the reference itself to a new object
-      var record: StudentRecord = state.studentRecords.find(
-        record => record.student.studentSchoolYearGuid === action.payload.guid
-      )!
+      record = state.studentRecords.find(record => record.studentSchoolYear.guid === action.payload.guid) as StudentRecord
       record.isPresent = action.payload.isPresent
-      return { ...state }
+      return { ...state, studentRecords: [...state.studentRecords] }
 
     case 'studentStartTime':
-      var record: StudentRecord = state.studentRecords.find(
-        record => record.student.studentSchoolYearGuid === action.payload.guid
-      )!
-      record.attendance[action.payload.index].startTime =
-        action.payload.startTime
+      record = state.studentRecords.find(record => record.studentSchoolYear.guid === action.payload.guid) as StudentRecord
+      record.attendance[action.payload.index].startTime = action.payload.startTime
 
-      if (
-        action.payload.startTime.isAfter(
-          record.attendance[action.payload.index].endTime
-        )
-      )
-        record.attendance[action.payload.index].endTime =
-          action.payload.startTime
-      return { ...state }
+      if (action.payload.startTime.isAfter(record.attendance[action.payload.index].endTime))
+        record.attendance[action.payload.index].endTime = action.payload.startTime
+
+      return { ...state, studentRecords: [...state.studentRecords] }
 
     case 'studentEndTime':
-      var record: StudentRecord = state.studentRecords.find(
-        record => record.student.studentSchoolYearGuid === action.payload.guid
-      )!
+      record = state.studentRecords.find(record => record.studentSchoolYear.guid === action.payload.guid) as StudentRecord
       record.attendance[action.payload.index].endTime = action.payload.endTime
 
-      if (
-        action.payload.endTime.isBefore(
-          record.attendance[action.payload.index].startTime
-        )
-      )
-        record.attendance[action.payload.index].startTime =
-          action.payload.endTime
+      if (action.payload.endTime.isBefore(record.attendance[action.payload.index].startTime))
+        record.attendance[action.payload.index].startTime = action.payload.endTime
 
-      return { ...state }
+      return { ...state, studentRecords: [...state.studentRecords] }
 
     default:
       return state

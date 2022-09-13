@@ -16,7 +16,7 @@ function recursiveObjectSearch (object: any) {
 
 export default axios.create({
   withCredentials: true,
-  baseURL: ''
+  baseURL: 'http://localhost:44394'
   /*transformResponse: [
 		(data, headers) => {
 			try {

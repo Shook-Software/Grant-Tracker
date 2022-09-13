@@ -1,12 +1,3 @@
-On startup tomorrow: Making student page look better with Card.Header utilized
-
-
-9/6/2022
-Clean up backend code and models
-
-
-**Something that seriously needs doing**
-Refactor components/StudentAttendance
 
 
 Registration Object in backend could be changed to just return the conflicts or  null
@@ -18,3 +9,10 @@ Why is a StudentRegistration class inside of SimpleSessionView.cs?
 I honestly thing returning Views from repositories is a mistake. We should convert them to a view IN the controllers. Definitely the best way to go
 
 Editor->involved instructor fetching needs to be passed user current organization to properly display the selected instructors. Low priority as this only effects admin
+
+ADD MATT
+034350
+
+email halley, copy shannon, andrew and matt to copy MDSN (visual studio licenses) to new email
+
+do database correction

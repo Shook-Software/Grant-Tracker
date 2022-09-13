@@ -1,15 +1,11 @@
 import { useReducer } from 'react'
 import { Button, Modal } from 'react-bootstrap'
-import {
-  LocalDate,
-  TemporalAdjusters,
-  DayOfWeek as JodaDoW
-} from '@js-joda/core'
+import { LocalDate, TemporalAdjusters, DayOfWeek as JodaDoW } from '@js-joda/core'
 
 import AttendanceForm from './AttendanceForm'
 
 import { DayOfWeek } from 'Models/DayOfWeek'
-import { StudentRecord } from 'Models/StudentAttendance'
+import { InstructorRecord, StudentRecord, SubstituteRecord } from 'Models/StudentAttendance'
 import { DayScheduleView } from 'Models/DaySchedule'
 
 import { reducer } from './state'
@@ -21,38 +17,32 @@ interface Props {
   handleSubmit: (
     date: LocalDate,
     studentRecords: StudentRecord[],
-    instructorRecords: any[]
+    instructorRecords: InstructorRecord[],
+    substituteRecords: SubstituteRecord[]
   ) => Promise<void>
 }
 
-function mutateStudents (studentRegs, daySchedule) {
-  let studentRegistrations = studentRegs.filter(reg => reg.daySchedule.dayOfWeek == daySchedule.dayOfWeek)
+function createDefaultStudentRecords (studentRegistrations, daySchedule): StudentRecord[] {
+  studentRegistrations = studentRegistrations.filter(reg => reg.daySchedule.dayOfWeek == daySchedule.dayOfWeek)
 
-  const studentRecords: StudentRecord[] = studentRegistrations.map(registration => ({
+  return studentRegistrations.map(registration => ({
       isPresent: true,
       attendance: registration.daySchedule.timeSchedules,
       studentSchoolYear: registration.studentSchoolYear
     })
   )
-
-  return studentRecords
 }
 
-function mutateInstructors (instructorRegs, daySchedule) {
-  let instructorRegistrations = instructorRegs
-
-  const instructorRecords: any[] = instructorRegistrations.map(registration => {
-    let form: any = {
+function createDefaultInstructorRecords (instructorRegistrations, daySchedule)/*: InstructorRecord[]*/ {
+  return instructorRegistrations.map(registration => ({
       isPresent: true,
       attendance: daySchedule.timeSchedules,
       instructorSchoolYear: registration
-    }
-
-    return form
-  })
-
-  return instructorRecords
+    })
+  )
 }
+
+
 
 export default ({
   registrations,
@@ -61,22 +51,17 @@ export default ({
   handleSubmit
 }: Props): JSX.Element => {
   const today: LocalDate = LocalDate.now()
-  const lastWeekdate: LocalDate =
-    today.dayOfWeek() === JodaDoW.of(DayOfWeek.toInt(daySchedule.dayOfWeek))
+  const latestDateOnWeekday: LocalDate = today.dayOfWeek() === JodaDoW.of(DayOfWeek.toInt(daySchedule.dayOfWeek))
       ? today
-      : today.with(
-          TemporalAdjusters.previous(
-            JodaDoW.of(DayOfWeek.toInt(daySchedule.dayOfWeek))
-          )
-        )
+      : today.with(TemporalAdjusters.previous(JodaDoW.of(DayOfWeek.toInt(daySchedule.dayOfWeek))))
+
   const [state, dispatch] = useReducer(reducer, {
     defaultSchedule: daySchedule.timeSchedules,
-    date: lastWeekdate,
-    studentRecords: mutateStudents(registrations.students, daySchedule),
-    instructorRecords: mutateInstructors(registrations.instructors, daySchedule)
+    date: latestDateOnWeekday,
+    studentRecords: createDefaultStudentRecords(registrations.students, daySchedule),
+    instructorRecords: createDefaultInstructorRecords(registrations.instructors, daySchedule),
+    substituteRecords: []
   })
-
-  console.log(registrations)
 
   return (
     <Modal
@@ -92,7 +77,6 @@ export default ({
       </Modal.Header>
       <Modal.Body>
         <AttendanceForm
-          schedule={daySchedule}
           state={state}
           dispatch={dispatch}
         />
@@ -104,7 +88,8 @@ export default ({
             handleSubmit(
               state.date,
               state.studentRecords,
-              state.instructorRecords
+              state.instructorRecords,
+              state.substituteRecords
             )
           }
         >

@@ -28,7 +28,7 @@ namespace GrantTracker.Utilities
 			 .Include(u => u.SchoolYear).ThenInclude(i => i.Instructor)
 			 .Include(u => u.SchoolYear).ThenInclude(i => i.OrganizationYear).ThenInclude(o => o.Organization)
 			 .Include(u => u.SchoolYear).ThenInclude(i => i.OrganizationYear).ThenInclude(o => o.Year)
-			 .Where(u => u.SchoolYear.Instructor.BadgeNumber == badgeNumber && u.SchoolYear.OrganizationYear.Year.YearGuid == _currentYearGuid)
+			 .Where(u => u.SchoolYear.Instructor.BadgeNumber == "407982" && u.SchoolYear.OrganizationYear.Year.YearGuid == _currentYearGuid)
 			 .Select(u => new UserIdentity
 			 {
 				 UserGuid = u.SchoolYear.InstructorGuid,

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Modal, Alert, Container, Row, Col, Spinner } from 'react-bootstrap'
+import { Modal, Alert, Container, Row, Col, Spinner, Button } from 'react-bootstrap'
 import { Link } from 'react-router-dom'
 
 import Table, { Column } from 'components/BTable'
@@ -40,9 +40,11 @@ const columns: Column[] = [
     sortable: false,
     transform: (value: string) => (
       <div className='d-flex justify-content-center'>
-        <Link to={value} style={{ color: 'inherit' }}>
-          View
-        </Link>
+        <Button size='sm'>
+          <Link to={value} style={{ color: 'inherit' }}>
+            View
+          </Link>
+        </Button>
       </div>
     )
   }

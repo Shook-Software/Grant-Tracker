@@ -106,8 +106,6 @@ export const Body = ({
     columns
   )
 
-  console.log(sortedDataset)
-
   const Rows: JSX.Element[] = sortedDataset?.map((item, index) =>
     createRow(columns, item, indexed, index, rowProps)
   )

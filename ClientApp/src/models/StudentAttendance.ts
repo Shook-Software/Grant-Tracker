@@ -1,8 +1,8 @@
 import { LocalDate } from '@js-joda/core'
 import { DateOnly } from './DateOnly'
-import { StudentSchoolYear, StudentSchoolYearWithRecordsView } from 'Models/Student'
+import { StudentSchoolYearWithRecordsView } from 'Models/Student'
 import { TimeScheduleForm } from './TimeSchedule'
-import { Session, SessionDomain, SessionView } from './Session'
+import { InstructorSchoolYearView } from './Instructor'
 
 //change to form or something
 export interface StudentAttendanceDto {
@@ -15,6 +15,23 @@ export interface StudentRecord {
   isPresent: boolean
   attendance: TimeScheduleForm[]
   studentSchoolYear: StudentSchoolYearWithRecordsView
+}
+
+export interface InstructorRecord {
+  isPresent: boolean
+  attendance: TimeScheduleForm[]
+  instructorSchoolYear: InstructorSchoolYearView
+}
+
+export interface SubstituteRecord {
+  substitute: {
+    id: string
+    firstName: string
+    lastName: string
+    badgeNumber: string
+    statusGuid: string
+  },
+  attendance: TimeScheduleForm[]
 }
 
 export interface AttendanceDomain {

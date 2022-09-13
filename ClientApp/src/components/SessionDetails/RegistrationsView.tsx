@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Button, CloseButton, Modal, Form, Row } from 'react-bootstrap'
+import { Button, Button, Modal, Form } from 'react-bootstrap'
 import { useNavigate } from 'react-router-dom'
 
 import Table, { Column } from 'components/BTable'
@@ -34,16 +34,21 @@ const byStudentColumns = (handleRemoveStudent): Column[] => [
       )
   },
   {
-    label: 'Remove',
+    label: '',
     attributeKey: '',
     sortable: false,
     transform: (value: string): JSX.Element => (
-      <CloseButton
-        onClick={event => {
-          event.stopPropagation()
-          handleRemoveStudent(value)
-        }}
-      />
+      <div className='d-flex justify-content-center'>
+        <Button
+          variant='danger'
+          onClick={event => {
+            event.stopPropagation()
+            handleRemoveStudent(value)
+          }}
+        >
+          Remove
+        </Button>
+      </div>
     ),
     cellProps: { style: { width: 'min-content' } }
   }

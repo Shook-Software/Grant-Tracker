@@ -13,7 +13,18 @@ namespace GrantTracker.Dal.Models.Views
 
 	public class StatusView
 	{
+		public Guid Guid { get; set; }
+		public string Abbreviation { get; set; }
+		public string Label { get; set; }
+		public string Description { get; set; }
 
+		public static StatusView FromDatabase(InstructorStatus status) => new()
+		{
+			Guid = status.Guid,
+			Abbreviation = status.Abbreviation,
+			Label = status.Label,
+			Description = status.Description
+		};
 	}
 
 	public class InstructorView
@@ -40,7 +51,7 @@ namespace GrantTracker.Dal.Models.Views
 		public string OrganizationName { get; set; }
 		public short SchoolYear { get; set; }
 		public Quarter Quarter { get; set; }
-		public InstructorStatus Status { get; set; }
+		public StatusView Status { get; set; }
 		public List<OrganizationView> Organizations { get; set; } //populate years with only whichever this staff member has
 		public List<EnrollmentView> EnrollmentRecords { get; set; }
 		public List<AttendanceRecordView> AttendanceRecords { get; set; }
@@ -51,7 +62,7 @@ namespace GrantTracker.Dal.Models.Views
 			Instructor = InstructorView.FromDatabase(instructorSchoolYear.Instructor),
 			Year = instructorSchoolYear.OrganizationYear != null ? YearView.FromDatabase(instructorSchoolYear.OrganizationYear.Year) : null,
 			OrganizationName = instructorSchoolYear.OrganizationYear?.Organization?.Name,
-			Status = instructorSchoolYear.Status,
+			Status = StatusView.FromDatabase(instructorSchoolYear.Status),
 			Organizations = organizationYears?
 				.GroupBy(oy => oy.OrganizationGuid)
 				.Select(oy => new OrganizationView

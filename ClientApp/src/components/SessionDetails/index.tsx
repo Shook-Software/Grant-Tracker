@@ -12,7 +12,7 @@ import RegistrationsView from './RegistrationsView'
 import { DayScheduleView } from 'Models/DaySchedule'
 import { Session, SessionDomain, SessionView } from 'Models/Session'
 import { StudentRegistration, StudentRegistrationDomain, StudentRegistrationView } from 'Models/StudentRegistration'
-import { StudentAttendanceDto, StudentRecord } from 'Models/StudentAttendance'
+import { InstructorRecord, StudentAttendanceDto, StudentRecord, SubstituteRecord } from 'Models/StudentAttendance'
 
 import api from 'utils/api'
 
@@ -91,7 +91,12 @@ export default ({}) => {
       })
   }
 
-  function submitAttendance (date: LocalDate, studentRecords: StudentRecord[], instructorRecords: any[]): Promise<void> {
+  function submitAttendance (
+    date: LocalDate, 
+    studentRecords: StudentRecord[],
+    instructorRecords: InstructorRecord[], 
+    substituteRecords: SubstituteRecord[]
+  ): Promise<void> {
     return new Promise((resolve, reject) => {
     
       const studentRecordsParam = studentRecords
@@ -112,7 +117,8 @@ export default ({}) => {
         sessionGuid,
         date,
         studentRecords: studentRecordsParam.filter(stu => stu),
-        instructorRecords: instructorRecordsParam
+        instructorRecords: instructorRecordsParam,
+        substituteRecords: substituteRecords
       }
 
       api
@@ -208,6 +214,17 @@ export default ({}) => {
                       onChange={removeStudentRegistrationsAsync}
                     />
                   </Card.Text>
+                </Card.Body>
+              </Card>
+            </Col>
+          </Row>
+          <Row className='pt-3'>
+            <Col>
+              <Card>
+                <Card.Body>
+                  <Card.Title>
+                    Attendance History (under construction)
+                  </Card.Title>
                 </Card.Body>
               </Card>
             </Col>

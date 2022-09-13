@@ -89,10 +89,36 @@ namespace GrantTracker.Dal.Repositories.InstructorRepository
 			return InstructorSchoolYearView.FromDatabase(instructorSchoolYear, organizationYears);
 		}
 
-		public async Task Create(InstructorDto instructor)
+		public async Task<InstructorSchoolYearView> GetInstructorSchoolYearAsync(string badgeNumber)
+		{
+			var instructorSchoolYear = await _grantContext
+				.InstructorSchoolYears
+				.Include(isy => isy.OrganizationYear).ThenInclude(oy => oy.Organization)
+				.Include(isy => isy.OrganizationYear).ThenInclude(oy => oy.Year)
+				.Include(isy => isy.Instructor)
+				.Include(isy => isy.Status)
+				.Include(isy => isy.Identity)
+				.Include(isy => isy.SessionRegistrations).ThenInclude(sr => sr.Session).ThenInclude(s => s.DaySchedules).ThenInclude(day => day.TimeSchedules)
+				.Include(isy => isy.AttendanceRecords)
+				.Where(isy => isy.Instructor.BadgeNumber == badgeNumber && isy.OrganizationYearGuid == _identity.OrganizationYearGuid)
+				.SingleAsync();
+
+			//A list of other school years
+			var organizationYears = await _grantContext
+				.Instructors
+				.Include(i => i.InstructorSchoolYears).ThenInclude(isy => isy.OrganizationYear).ThenInclude(oy => oy.Organization)
+				.Include(i => i.InstructorSchoolYears).ThenInclude(isy => isy.OrganizationYear).ThenInclude(oy => oy.Year)
+				.Where(i => i.PersonGuid == instructorSchoolYear.InstructorGuid)
+				.Select(i => i.InstructorSchoolYears.Select(isy => isy.OrganizationYear).ToList())
+				.SingleAsync();
+
+			return InstructorSchoolYearView.FromDatabase(instructorSchoolYear, organizationYears);
+		}
+
+		public async Task<Guid> CreateAsync(InstructorDto instructor)
 		{
 			var existingInstructor = await _grantContext.Instructors
-				.Where(i => i.BadgeNumber == instructor.BadgeNumber)
+				.Where(i => !instructor.BadgeNumber.IsNullOrEmpty() && i.BadgeNumber == instructor.BadgeNumber)
 				.FirstOrDefaultAsync();
 
 			if (existingInstructor is null)
@@ -123,6 +149,8 @@ namespace GrantTracker.Dal.Repositories.InstructorRepository
 
 			await _grantContext.InstructorSchoolYears.AddAsync(newInstructorSchoolYear);
 			await _grantContext.SaveChangesAsync();
+
+			return newInstructorSchoolYear.InstructorSchoolYearGuid;
 		}
 
 		public async Task CreateAsync(List<InstructorSchoolYear> instructorSchoolYears)

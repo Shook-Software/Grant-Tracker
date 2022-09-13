@@ -4,6 +4,7 @@ using GrantTracker.Dal.Models.Views;
 using GrantTracker.Dal.Repositories.AttendanceRepository;
 using GrantTracker.Dal.Repositories.SessionRepository;
 using GrantTracker.Dal.Repositories.StudentRepository;
+using GrantTracker.Dal.Repositories.InstructorRepository;
 using GrantTracker.Dal.Schema;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -18,12 +19,14 @@ namespace GrantTracker.Dal.Controllers
 		private readonly ISessionRepository _sessionRepository;
 		private readonly IStudentRepository _studentRepository;
 		private readonly IAttendanceRepository _attendanceRepository;
+		private readonly IInstructorRepository _instructorRepository;
 
-		public SessionController(ISessionRepository sessionRepository, IStudentRepository studentRepository, IAttendanceRepository attendanceRepository)
+		public SessionController(ISessionRepository sessionRepository, IStudentRepository studentRepository, IAttendanceRepository attendanceRepository, IInstructorRepository instructorRepository)
 		{
 			_sessionRepository = sessionRepository;
 			_studentRepository = studentRepository;
 			_attendanceRepository = attendanceRepository;
+			_instructorRepository = instructorRepository;
 		}
 		#region Get
 
@@ -54,6 +57,52 @@ namespace GrantTracker.Dal.Controllers
 			var students = await _sessionRepository.GetStudentRegistrationsAsync(sessionGuid, dayOfWeek);
 			return Ok(students);
 		}
+
+		[HttpGet("{sessionGuid:guid}/attendance/openDates")]
+		public async Task<ActionResult<List<DateOnly>>> GetOpenAttendanceDates(Guid sessionGuid, DayOfWeek dayOfWeek)
+		{
+			var session = await _sessionRepository.GetAsync(sessionGuid);
+			DateOnly startDate = session.FirstSession;
+			DateOnly endDate = session.LastSession;
+
+			List<DateOnly> GetWeekdaysBetween(DayOfWeek dayOfWeek, DateOnly startDate, DateOnly endDate)
+			{
+				List<DateOnly> openDates = new();
+
+				//check out yield return as an iterable
+				DateOnly currentDate;
+				if (startDate.DayOfWeek < dayOfWeek)
+				{
+					currentDate = startDate.AddDays(dayOfWeek - startDate.DayOfWeek);
+				}
+				else if (startDate.DayOfWeek > dayOfWeek)
+				{
+					currentDate = startDate.AddDays((int)DayOfWeek.Saturday - (int)startDate.DayOfWeek + (int)dayOfWeek + 1);
+				}
+				else
+				{
+					currentDate = startDate;
+				}
+
+				openDates.Add(currentDate);
+				while (currentDate < endDate)
+				{
+					currentDate = currentDate.AddDays(7);
+					openDates.Add(currentDate);
+				}
+
+				openDates.Sort();
+				return openDates;
+			}
+			
+
+			List<DateOnly> attendanceDates = await _attendanceRepository.GetAttendanceDatesAsync(sessionGuid);
+
+			var openDates = GetWeekdaysBetween(dayOfWeek, startDate, endDate).Where(openDate => !attendanceDates.Any(closedDate => closedDate == openDate)).ToList();
+
+			return Ok(openDates);
+		}
+
 		#endregion Get
 
 		#region Post
@@ -124,6 +173,8 @@ namespace GrantTracker.Dal.Controllers
 			return Ok();
 		}
 
+
+
 		[HttpPost("{destinationSessionGuid:guid}/registration/copy")]
 		public async Task<ActionResult<List<string>>> CopyStudentRegistrations(Guid destinationSessionGuid, [FromBody] List<Guid> studentSchoolYearGuids)
 		{
@@ -135,6 +186,8 @@ namespace GrantTracker.Dal.Controllers
 			return Created($"{destinationSessionGuid}/registration", studentSchoolYearGuids);
 		}
 
+
+		//THIS NEEDS TO USE THE TARGETED ORGGUID AND YEARGUID otherwise we'll have reporting issues when Liz fills things in
 		[HttpPost("{sessionGuid:guid}/attendance")]
 		public async Task<IActionResult> SubmitAttendance(Guid sessionGuid, [FromBody] SessionAttendanceDto sessionAttendance)
 		{
@@ -142,6 +195,29 @@ namespace GrantTracker.Dal.Controllers
 
 			if (sessionAttendance.SessionGuid == Guid.Empty)
 				throw new ArgumentException("SessionGuid cannot be empty.", nameof(sessionAttendance));
+
+			List<InstructorAttendanceDto> substituteAttendance = new();
+			foreach (var substituteRecord in sessionAttendance.SubstituteRecords)
+			{
+				Guid instructorSchoolYearGuid;
+				bool substituteHasBadgeNumber = !substituteRecord.Substitute.BadgeNumber.IsNullOrEmpty();
+
+				if (substituteHasBadgeNumber)
+					instructorSchoolYearGuid = (await _instructorRepository.GetInstructorSchoolYearAsync(substituteRecord.Substitute.BadgeNumber)).Guid;
+				else
+					instructorSchoolYearGuid = await _instructorRepository.CreateAsync(substituteRecord.Substitute);
+
+				InstructorAttendanceDto instructorAttendanceRecord = new()
+				{
+					InstructorSchoolYearGuid = instructorSchoolYearGuid,
+					Attendance = substituteRecord.Attendance
+				};
+
+				substituteAttendance.Add(instructorAttendanceRecord);
+			}
+
+			sessionAttendance.InstructorRecords.AddRange(substituteAttendance);
+			sessionAttendance.InstructorRecords = sessionAttendance.InstructorRecords.Distinct().ToList(); //ensure the substitutes haven't introduced a duplication error
 
 			await _attendanceRepository.AddAttendanceAsync(sessionGuid, sessionAttendance);
 			return NoContent();

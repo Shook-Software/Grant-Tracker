@@ -114,8 +114,6 @@ export const TimeInput = ({
     stateRef.current.time = time
   }, [time])
 
-  console.log('refreshed inner input', simplifiedTime)
-
   //Move this aria stuff into something else, make it a button
   return (
     <Container
