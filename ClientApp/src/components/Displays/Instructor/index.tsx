@@ -8,10 +8,12 @@ import Table, { Column } from 'components/BTable'
 import ListItem from 'components/Item'
 import EnrollmentDisplay from './Enrollment'
 
-import api from 'utils/api'
-
 import { InstructorSchoolYearView, InstructorView } from 'Models/Instructor'
 import { Quarter } from 'models/OrganizationYear'
+import { DropdownOption } from 'Models/Session'
+
+import api from 'utils/api'
+
 //name
 //badge number
 //status
@@ -58,7 +60,6 @@ const flattenOrganizationHistory = (organizations: any) => {
       }]
     })
   })
-  console.log(flattenedHistory)
   return flattenedHistory
 }
 

@@ -94,7 +94,6 @@ namespace GrantTracker.Dal.Controllers
 				openDates.Sort();
 				return openDates;
 			}
-			
 
 			List<DateOnly> attendanceDates = await _attendanceRepository.GetAttendanceDatesAsync(sessionGuid);
 
@@ -178,10 +177,20 @@ namespace GrantTracker.Dal.Controllers
 		[HttpPost("{destinationSessionGuid:guid}/registration/copy")]
 		public async Task<ActionResult<List<string>>> CopyStudentRegistrations(Guid destinationSessionGuid, [FromBody] List<Guid> studentSchoolYearGuids)
 		{
-			var conflicts = await _sessionRepository.ValidateStudentRegistrationsAsync(destinationSessionGuid, studentSchoolYearGuids);
+			List<Guid> scheduleGuids = (await _sessionRepository.GetAsync(destinationSessionGuid)).DaySchedules.Select(ds => ds.DayScheduleGuid).ToList();
+			List<string> conflicts = await _sessionRepository.ValidateStudentRegistrationsAsync(destinationSessionGuid, studentSchoolYearGuids);
 
 			if (conflicts.Count > 0)
 				return Conflict(conflicts);
+
+			List<Task> tasks = new();
+			foreach (var studentSchoolYearGuid in studentSchoolYearGuids)
+			{
+				Task newTask = _sessionRepository.RegisterStudentAsync(destinationSessionGuid, scheduleGuids, studentSchoolYearGuid);
+				tasks.Add(newTask);
+			}
+
+			Task.WaitAll(tasks.ToArray());
 
 			return Created($"{destinationSessionGuid}/registration", studentSchoolYearGuids);
 		}

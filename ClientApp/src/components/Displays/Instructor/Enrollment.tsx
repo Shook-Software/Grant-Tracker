@@ -95,7 +95,10 @@ export default ({enrollments}: Props): JSX.Element => {
         onChange={(e) => handleSearchTermChange(e.target.value)}
         style={{borderBottomLeftRadius: 0, borderBottomRightRadius: 0}}
       />
-      <Table dataset={enrollments} columns={enrollmentColumns} />
+      <Table 
+        columns={enrollmentColumns} 
+        dataset={enrollments.filter(e => e.sessionName.toLocaleLowerCase().includes(searchTerm))} 
+      />
     </>
   )
 }

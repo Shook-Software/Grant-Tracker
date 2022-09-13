@@ -217,7 +217,7 @@ export default ({ options, value, onChange, width, show = false, disableOverlay 
         }}
         props={props}
       >
-        {activeIndex !== -1 ? activeOption?.abbreviation || activeOption?.label : value}
+        <div>{activeIndex !== -1 ? activeOption?.abbreviation || activeOption?.label : value}</div>
       </DropdownController>
       <OptionList
         data-testid='dropdown-option-list'

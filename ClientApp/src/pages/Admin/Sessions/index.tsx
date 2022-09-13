@@ -1,20 +1,19 @@
 import { useState, useEffect } from 'react'
-import { Container, Spinner } from 'react-bootstrap'
+import { Container, Row, Col, Spinner, Form, Button, Card } from 'react-bootstrap'
 import { Link } from 'react-router-dom'
 
-import Search from './Search'
-import Button from 'components/Input/Button'
-import Table, { Column } from 'components/BTable'
+import CopyRegistrations from './CopyRegistrations'
 import { useAdminPage, Context } from 'pages/Admin'
+import AddButton from 'components/Input/Button'
+import Table, { Column } from 'components/BTable'
 
 import { DayOfWeek } from 'Models/DayOfWeek'
-import { SimpleSessionView } from 'models/Session'
+import { SimpleSessionView } from 'Models/Session'
 import { DropdownOption } from 'types/Session'
+import { StudentRegistrationDomain } from 'Models/StudentRegistration'
 
 import paths from 'utils/routing/paths'
 import api from 'utils/api'
-import Dropdown from 'components/Input/Dropdown'
-import { StudentRegistrationDomain } from 'Models/StudentRegistration'
 
 function dropdownOptionTransform (value: DropdownOption): string {
   return value.label
@@ -61,9 +60,11 @@ const columns: Column[] = [
     sortable: false,
     transform: (value: string) => (
       <div className='d-flex justify-content-center'>
-        <Link to={value} style={{ color: 'inherit' }}>
-          View
-        </Link>
+        <Button className='p-0' size='sm'>
+          <Link className='p-3' to={value} style={{ color: 'inherit' }}>
+            View
+          </Link>
+        </Button>
       </div>
     )
   }
@@ -75,28 +76,7 @@ export default (): JSX.Element => {
   const { user }: Context = useAdminPage()
   const [state, setState] = useState<SimpleSessionView[]>([])
   const [isLoading, setIsLoading] = useState<boolean>(false) //can we make a custom hook for loading?
-
-  const [firstSession, setFirstSession] = useState<string>('')
-  const [secondSession, setSecondSession] = useState<string>('')
-
-  function handleCopy (): void {
-    var studentSchoolYearGuids: string[] = []
-    api
-    .get<StudentRegistrationDomain[]>(`session/${firstSession}/registration`)
-    .then(res => {
-      //sorted for ease of display
-      studentSchoolYearGuids = res.data.map(i => i.studentSchoolYear.guid).filter((guid, index, self) => self.indexOf(guid) === index)
-
-      api
-        .post(`session/${secondSession}/registration/copy`, studentSchoolYearGuids)
-        .then(res => console.log(res))
-        .catch(err => console.log(err))
-    })
-    .catch(err => {
-      console.warn(err)
-    })
-    
-  }
+  const [searchTerm, setSearchTerm] = useState<string>('')
 
   function fetchSessions (params) {
     if (user.organization.guid && user.year.guid) {
@@ -122,8 +102,9 @@ export default (): JSX.Element => {
     }
   }
 
-  const handleChange = (filter): void => {
-    fetchSessions(filter)
+  function handleSearchTermChange(term) {
+    term = term.toLocaleLowerCase()
+    setSearchTerm(term)
   }
 
   useEffect(() => {
@@ -132,16 +113,14 @@ export default (): JSX.Element => {
 
   return (
     <>
-      <Button
+      <AddButton
         as={Link}
         to={`${paths.Edit.path}/${paths.Edit.Sessions.path}/overview`}
       >
         Add New Session
-      </Button>
+      </AddButton>
 
-      <Search handleChange={handleChange} />
-
-      <Container className='px-3'>
+      <Container className='pt-3'>
         <h5>Sessions for {user.organizationName}</h5>
         {isLoading ? (
           <Spinner animation='border' />
@@ -150,31 +129,33 @@ export default (): JSX.Element => {
             <p>No sessions found...</p>
           </div>
         ) : (
-          <Table columns={columns} dataset={state} rowProps={{key: 'sessionGuid'}} />
+          <div className='pt-1'>
+            <Form.Control 
+              type='text' 
+              className='w-25 border-bottom-0'
+              placeholder='Filter sessions...'
+              value={searchTerm} 
+              onChange={(e) => handleSearchTermChange(e.target.value)}
+              style={{borderBottomLeftRadius: 0, borderBottomRightRadius: 0}}
+            />
+            <Table 
+              columns={columns} 
+              dataset={state.filter(e => e.name.toLocaleLowerCase().includes(searchTerm))} 
+              rowProps={{key: 'sessionGuid'}} 
+            />
+          </div>
         )}
       </Container>
 
-      <Container>
-        Copy registrations from...
-        <Dropdown
-          value={firstSession}
-          options={state.map(s => ({
-            guid: s.sessionGuid,
-            label: s.name
-          }))}
-          onChange={(guid: string) => setFirstSession(guid)}
-        />
-        to
-        <Dropdown
-          value={secondSession}
-          options={state.map(s => ({
-            guid: s.sessionGuid,
-            label: s.name
-          }))}
-          onChange={(guid: string) => setSecondSession(guid)}
-        />
-        <Button onClick={() => handleCopy()}>Submit</Button>
-      </Container>
+      <Card>
+        <Card.Header className='d-flex justify-content-center'>
+          <h3>Tools</h3>
+        </Card.Header>
+        <Card.Body>
+          Copy Registrations:
+          <CopyRegistrations state={state} />
+        </Card.Body>
+      </Card>
     </>
   )
 }

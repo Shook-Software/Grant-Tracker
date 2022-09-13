@@ -64,6 +64,7 @@ export const Option = styled.div<OptionProps>`
   flex: 1;
 
   text-align: center;
+  overflow-wrap: break-word;
 
   ${props => {
     if (props.isActive)

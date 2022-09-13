@@ -53,21 +53,21 @@ namespace GrantTracker.Dal.Models.Views
 	{
 		public Guid SessionGuid { get; set; }
 		public string Name { get; set; }
-		public SessionType SessionType { get; set; }
-		public Activity Activity { get; set; }
+		public DropdownOption SessionType { get; set; }
+		public DropdownOption Activity { get; set; }
 		public bool Recurring { get; set; } = false;
 		public List<DayScheduleView> DaySchedules { get; set; }
-		public List<SessionGrade> SessionGrades { get; set; }
+		public List<GradeView> SessionGrades { get; set; }
 
 		public static SimpleSessionView FromDatabase(Session session) => new()
 		{
 			SessionGuid = session.SessionGuid,
 			Name = session.Name,
-			SessionType = session.SessionType,
-			Activity = session.Activity,
+			SessionType = DropdownOption.FromDatabase(session.SessionType),
+			Activity = DropdownOption.FromDatabase(session.Activity),
 			Recurring = session.Recurring,
 			DaySchedules = session.DaySchedules.Select(DayScheduleView.FromDatabase).ToList(),
-			SessionGrades = session.SessionGrades.ToList()
+			SessionGrades = session.SessionGrades.Select(GradeView.FromDatabase).ToList()
 		};
 	}
 }

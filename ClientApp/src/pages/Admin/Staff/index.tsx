@@ -40,8 +40,8 @@ const columns: Column[] = [
     sortable: false,
     transform: (value: string) => (
       <div className='d-flex justify-content-center'>
-        <Button size='sm'>
-          <Link to={value} style={{ color: 'inherit' }}>
+        <Button className='p-0' size='sm'>
+          <Link className='p-3' to={value} style={{ color: 'inherit' }}>
             View
           </Link>
         </Button>
@@ -106,7 +106,11 @@ export default (): JSX.Element => {
               <p>No instructors found...</p>
             </div>
           ) : (
-            <Table columns={columns} dataset={state} rowProps={{key: 'guid'}} />
+            <Table 
+              columns={columns} 
+              dataset={state} 
+              rowProps={{key: 'guid'}} 
+            />
           )}
         </Col>
       </Row>

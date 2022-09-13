@@ -6,6 +6,14 @@
 		public string Abbreviation { get; set; }
 		public string Label { get; set; }
 		public string Description { get; set; }
+
+		public static DropdownOption FromDatabase<T>(T option) where T : class, IDropdown => new()
+		{
+			Guid = option.Guid,
+			Abbreviation = option.Abbreviation,
+			Label = option.Label,
+			Description = option.Description
+		};
 	}
 
 	public interface IDropdown

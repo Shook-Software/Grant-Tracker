@@ -2,25 +2,6 @@
 
 namespace GrantTracker.Dal.Models.Views
 {
-
-	public class GradeView
-	{
-		public Guid Guid { get; set; }
-		public Guid SessionGuid { get; set; }
-		public Guid GradeGuid { get; set; }
-		public LookupValue Grade { get; set; }
-		public static GradeView FromDatabase(SessionGrade grade)
-		{
-			return new()
-			{
-				Guid = grade.Guid,
-				SessionGuid = grade.SessionGuid,
-				GradeGuid = grade.GradeGuid,
-				Grade = grade.Grade
-			};
-		}
-	}
-
 	public class SessionView
 	{
 		public Guid Guid { get; set; }
@@ -29,16 +10,16 @@ namespace GrantTracker.Dal.Models.Views
 		public DateOnly LastSession { get; set; }
 		public bool Recurring { get; set; } = false;
 		public Organization Organization { get; set; }
-		public SessionType SessionType { get; set; }
-		public Activity Activity { get; set; }
-		public Objective Objective { get; set; }
-		public FundingSource FundingSource { get; set; }
-		public OrganizationType OrganizationType { get; set; }
-		public PartnershipType PartnershipType { get; set; }
+		public DropdownOption SessionType { get; set; }
+		public DropdownOption Activity { get; set; }
+		public DropdownOption Objective { get; set; }
+		public DropdownOption FundingSource { get; set; }
+		public DropdownOption OrganizationType { get; set; }
+		public DropdownOption PartnershipType { get; set; }
 
 		public List<DayScheduleView> DaySchedules { get; set; }
 		public List<InstructorSchoolYearView> Instructors { get; set; }
-		public List<SessionGrade> SessionGrades { get; set; }
+		public List<GradeView> SessionGrades { get; set; }
 
 		public static SessionView FromDatabase(Session session) => new()
 		{
@@ -48,15 +29,15 @@ namespace GrantTracker.Dal.Models.Views
 			LastSession = session.LastSession,
 			Recurring = session.Recurring,
 			Organization = session.OrganizationYear?.Organization,
-			SessionType = session.SessionType,
-			Activity = session.Activity,
-			Objective = session.Objective,
-			FundingSource = session.FundingSource,
-			OrganizationType = session.OrganizationType,
-			PartnershipType = session.PartnershipType,
+			SessionType = DropdownOption.FromDatabase(session.SessionType),
+			Activity = DropdownOption.FromDatabase(session.Activity),
+			Objective = DropdownOption.FromDatabase(session.Objective),
+			FundingSource = DropdownOption.FromDatabase(session.FundingSource),
+			OrganizationType = DropdownOption.FromDatabase(session.OrganizationType),
+			PartnershipType = DropdownOption.FromDatabase(session.PartnershipType),
 			DaySchedules = session.DaySchedules.Select(d => DayScheduleView.FromDatabase(d)).ToList(),
 			Instructors = session.InstructorRegistrations.Select(reg => InstructorSchoolYearView.FromDatabase(reg.InstructorSchoolYear)).ToList(),
-			SessionGrades = session.SessionGrades.ToList()
+			SessionGrades = session.SessionGrades.Select(GradeView.FromDatabase).ToList()
 		};
 	}
 
