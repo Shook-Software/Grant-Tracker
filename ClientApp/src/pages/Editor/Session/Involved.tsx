@@ -6,7 +6,7 @@ import Dropdown from 'components/Input/Dropdown'
 import SelectSearch from 'components/Input/SelectSearch'
 import { DropdownOption } from 'Models/Session'
 
-import api from 'utils/api'
+import api, { AxiosIdentityConfig } from 'utils/api'
 
 //Second Section - Instructor/Funding
 ////Instructor -- Searchable Dropdown
@@ -34,11 +34,9 @@ export default (): JSX.Element => {
     reducerDispatch({ type: 'removeInstructor', payload: guid })
   }
 
-  console.log(instructors)
-
   useEffect(() => {
     api
-      .get('instructor', {params: {name: '', organizationGuid: user.organization.guid, yearGuid: user.year.guid}})
+      .get('instructor', {params: {organizationYearGuid: AxiosIdentityConfig.identity.organizationYearGuid}})
       .then(res => {
         res.data = res.data.filter(item => !values.instructors.find(value => value.guid === item.guid))
         setInstructors(res.data.map(isy => ({

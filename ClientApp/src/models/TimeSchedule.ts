@@ -16,6 +16,7 @@ export interface TimeScheduleView {
 }
 
 export interface TimeScheduleForm {
+  guid: string | undefined
   startTime: LocalTime
   endTime: LocalTime
 }
@@ -37,6 +38,7 @@ export abstract class TimeSchedule {
 
   public static toFormModel(obj: TimeScheduleDomain): TimeScheduleForm {
     return {
+      guid: obj.timeScheduleGuid,
       startTime: TimeOnly.toLocalTime(obj.startTime),
       endTime: TimeOnly.toLocalTime(obj.endTime)
     }

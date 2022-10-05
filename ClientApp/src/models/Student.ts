@@ -1,6 +1,6 @@
 import { GradeString } from './Grade'
 import { StudentRegistration, StudentRegistrationView, StudentRegistrationDomain } from './StudentRegistration'
-import { Attendance, AttendanceView, AttendanceDomain } from './StudentAttendance'
+import { StudentAttendance, AttendanceView, AttendanceDomain, StudentAttendanceView, StudentAttendanceDomain } from './StudentAttendance'
 import { OrganizationYearView } from './OrganizationYear'
 
 export interface StudentView {
@@ -20,13 +20,13 @@ export interface StudentSchoolYearView {
 
 export interface StudentSchoolYearWithRecordsDomain
   extends StudentSchoolYearView {
-  attendance: AttendanceDomain[]
+  attendanceRecords: StudentAttendanceDomain[]
   registrations: StudentRegistrationDomain[]
 }
 
 export interface StudentSchoolYearWithRecordsView
   extends StudentSchoolYearView {
-  attendance: AttendanceView[]
+  attendance: StudentAttendanceView[]
   registrations: StudentRegistrationView[]
 }
 
@@ -36,7 +36,7 @@ export abstract class StudentSchoolYear {
   ): StudentSchoolYearWithRecordsView {
     return {
       ...obj,
-      attendance: obj.attendance.map(att => Attendance.toViewModel(att)),
+      attendance: obj.attendanceRecords.map(att => StudentAttendance.toViewModel(att)),
       registrations: obj.registrations.map(reg =>
         StudentRegistration.toViewModel(reg)
       )

@@ -9,7 +9,7 @@ export interface ApiResult {
   message?: string[]
 }
 
-export default ({ apiResult }: { apiResult: ApiResult | undefined }): JSX.Element => {
+export default ({ apiResult, scroll = true }: { apiResult: ApiResult | undefined, scroll: boolean }): JSX.Element => {
   const [show, setShow] = useState<boolean>(true)
   const alertRef: React.Ref<HTMLDivElement | null> = useRef(null)
 
@@ -18,7 +18,7 @@ export default ({ apiResult }: { apiResult: ApiResult | undefined }): JSX.Elemen
 
   useEffect(() => {
     setShow(true)
-    if (alertRef && alertRef.current) {
+    if (scroll && alertRef && alertRef.current) { 
       alertRef.current.scrollIntoView()
     }
   }, [apiResult])
@@ -28,14 +28,14 @@ export default ({ apiResult }: { apiResult: ApiResult | undefined }): JSX.Elemen
 
   return (
     <Alert
-      className='my-3'
+      className=''
       variant={variant}
       onClose={() => setShow(false)}
       dismissible
       ref={alertRef}
     >
-      <Alert.Heading>{result}</Alert.Heading>
-      <p>{apiResult.message?.map(string => (<>{WordBreak(string)}<br /></>))}</p>
+      <h4 className='p-0 m-0'>{result}</h4>
+      <p className='p-0 m-0'>{apiResult.message?.map(string => (<>{WordBreak(string)}<br /></>))}</p>
     </Alert>
   )
 }

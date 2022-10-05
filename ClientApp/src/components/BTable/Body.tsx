@@ -22,7 +22,7 @@ function createRow (
     <tr
       key={row[rowProps?.key]}
       onClick={event => rowProps.onClick? rowProps?.onClick(event, row) : null}
-      style={{ cursor: rowProps?.onClick ? 'pointer' : 'auto' }}
+      style={{ cursor: rowProps?.onClick ? 'pointer' : 'auto', height: '1px', backgroundColor: index % 2 == 0 ? '#CCE2FD' : '#D5E5F8'}}
     >
       {[
         isIndexed ? <td key='index'>{index}</td> : null,
@@ -32,12 +32,12 @@ function createRow (
           if (col.transform) {
             value =
               col.attributeKey === ''
-                ? col.transform(row)
-                : col.transform(row[col.attributeKey])
+                ? col.transform(row, index)
+                : col.transform(row[col.attributeKey], index)
           }
 
           return (
-            <td className='h-100' key={col.key} {...col.cellProps}>
+            <td key={col.key} {...col.cellProps}>
               {value}
             </td>
           )
@@ -69,8 +69,8 @@ function sortDataset (
       firstValue = column.sortTransform(firstValue)
       secondValue = column.sortTransform(secondValue)
     } else if (column.transform) {
-      firstValue = column.transform(firstValue)
-      secondValue = column.transform(secondValue)
+      firstValue = column.transform(firstValue, null)
+      secondValue = column.transform(secondValue, null)
     }
 
     if (firstValue > secondValue)

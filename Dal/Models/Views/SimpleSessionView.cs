@@ -11,6 +11,7 @@ namespace GrantTracker.Dal.Models.Views
 
 	public class StudentRegistrationDto
 	{
+		public Guid YearGuid { get; set; }
 		public List<Guid> DayScheduleGuids { get; set; }
 		public StudentDto Student { get; set; }
 	}
@@ -53,6 +54,7 @@ namespace GrantTracker.Dal.Models.Views
 	{
 		public Guid SessionGuid { get; set; }
 		public string Name { get; set; }
+		public OrganizationYearView OrganizationYear { get; set; }
 		public DropdownOption SessionType { get; set; }
 		public DropdownOption Activity { get; set; }
 		public bool Recurring { get; set; } = false;
@@ -63,6 +65,7 @@ namespace GrantTracker.Dal.Models.Views
 		{
 			SessionGuid = session.SessionGuid,
 			Name = session.Name,
+			OrganizationYear = OrganizationYearView.FromDatabase(session.OrganizationYear),
 			SessionType = DropdownOption.FromDatabase(session.SessionType),
 			Activity = DropdownOption.FromDatabase(session.Activity),
 			Recurring = session.Recurring,

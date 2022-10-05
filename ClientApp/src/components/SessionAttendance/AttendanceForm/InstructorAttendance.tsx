@@ -1,13 +1,14 @@
 import { useState } from 'react'
 import { Row, Form, Button } from 'react-bootstrap'
-import { LocalTime } from '@js-joda/core'
 
-import SubstituteModal from './SubstituteModal'
 import AttendanceTimeInput, { TimeInputType } from './TimeInput'
-import Table, { Column } from 'components/BTable'
+import Table, { Column, SortDirection } from 'components/BTable'
+import AddInstructorModal from 'components/Modals/AddInstructorModal'
 
-import type { InstructorRecord, StudentRecord } from 'Models/StudentAttendance'
+
+import type { InstructorRecord } from 'Models/StudentAttendance'
 import type { AttendanceRecord } from './TimeInput'
+import { ApiResult } from 'components/ApiResultAlert'
 
 
 const columnsBuilder = (dispatch): Column[] => [
@@ -26,13 +27,13 @@ const columnsBuilder = (dispatch): Column[] => [
     }
   },
   {
-    label: 'First Name',
-    attributeKey: 'instructorSchoolYear.instructor.firstName',
+    label: 'Last Name',
+    attributeKey: 'instructorSchoolYear.instructor.lastName',
     sortable: true
   },
   {
-    label: 'Last Name',
-    attributeKey: 'instructorSchoolYear.instructor.lastName',
+    label: 'First Name',
+    attributeKey: 'instructorSchoolYear.instructor.firstName',
     sortable: true
   },
   {
@@ -90,9 +91,30 @@ export default ({state, dispatch}): JSX.Element => {
 
   const columns: Column[] = columnsBuilder(dispatch)
 
+  function addInternalInstructor (instructor, instructorSchoolYearGuid): Promise<ApiResult> {
+    return new Promise((resolve, reject) => {
+      const payload = instructorSchoolYearGuid ? { instructor, instructorSchoolYearGuid } :  { instructor }
+      dispatch({type: 'addSubstitute', payload})
+      resolve({
+        label: `${instructor.firstName} ${instructor.lastName}`,
+        success: true
+      })
+    })
+  }
+  
+  function addExternalInstructor (instructor): Promise<ApiResult> {
+    return new Promise((resolve, reject) => {
+      dispatch({type: 'addSubstitute', payload: { instructor }})
+      resolve({
+        label: `${instructor.firstName} ${instructor.lastName}`,
+        success: true
+      })
+    })
+  }
+
   return (
     <Row className='my-3  px-3'>
-      <h5 className='p-1'>Instructor Attendance</h5>
+      <h5 className='p-0'>Instructor Attendance</h5>
       <Button 
         style={{width: 'fit-content', marginBottom: '0.5rem'}} 
         onClick={() => setShowModal(true)}
@@ -102,6 +124,7 @@ export default ({state, dispatch}): JSX.Element => {
       <Table
         columns={columns}
         dataset={state.instructorRecords}
+        defaultSort={{index: 1, direction: SortDirection.Ascending}}
         rowProps={{
           onClick: (event, record): void => {
             dispatch({
@@ -114,7 +137,13 @@ export default ({state, dispatch}): JSX.Element => {
           }
         }}
       />
-      <SubstituteModal show={showModal} onClose={() => setShowModal(false)} dispatch={dispatch} />
+      <AddInstructorModal 
+        show={showModal} 
+        handleClose={() => setShowModal(false)} 
+        onInternalChange={addInternalInstructor} 
+        onExternalChange={addExternalInstructor}
+        variant='attendance'
+      />
     </Row>
   )
 }

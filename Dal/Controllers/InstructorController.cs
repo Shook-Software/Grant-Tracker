@@ -20,15 +20,15 @@ namespace GrantTracker.Dal.Controllers
 		}
 
 		[HttpGet("")]
-		public async Task<ActionResult<List<InstructorSchoolYearView>>> GetInstructors(string name, Guid organizationGuid, Guid yearGuid)
+		public async Task<ActionResult<List<InstructorSchoolYearViewModel>>> GetInstructors(string name, Guid organizationYearGuid)
 		{
-			var instructors = await _instructorRepository.GetInstructorsAsync(name, organizationGuid, yearGuid);
+			var instructors = await _instructorRepository.GetInstructorsAsync(organizationYearGuid);
 			return Ok(instructors);
 		}
 
 		//should we in some way umbrella this under Organization/OrganizationYear control?
 		[HttpGet("{instructorSchoolYearGuid:guid}")]
-		public async Task<ActionResult<InstructorSchoolYearView>> GetInstructor(Guid instructorSchoolYearGuid)
+		public async Task<ActionResult<InstructorSchoolYearViewModel>> GetInstructor(Guid instructorSchoolYearGuid)
 		{
 			var instructorSchoolYear = await _instructorRepository.GetInstructorSchoolYearAsync(instructorSchoolYearGuid);
 			return Ok(instructorSchoolYear);
@@ -41,9 +41,9 @@ namespace GrantTracker.Dal.Controllers
 		}
 
 		[HttpPost("add")]
-		public async Task<IActionResult> AddInstructor(InstructorDto instructor)
+		public async Task<IActionResult> AddInstructor(InstructorDto instructor, Guid organizationYearGuid)
 		{
-			await _instructorRepository.CreateAsync(instructor);
+			await _instructorRepository.CreateAsync(instructor, organizationYearGuid);
 			return NoContent();
 		}
 
@@ -54,7 +54,7 @@ namespace GrantTracker.Dal.Controllers
 		}
 
 		[HttpPatch("{instructorSchoolYearGuid:guid}/status")]
-		public async Task<IActionResult> AlterInstructorStatus(Guid instructorSchoolYearGuid, [FromBody] InstructorSchoolYearView instructorSchoolYear)
+		public async Task<IActionResult> AlterInstructorStatus(Guid instructorSchoolYearGuid, [FromBody] InstructorSchoolYearViewModel instructorSchoolYear)
 		{
 			await _instructorRepository.UpdateInstructorAsync(instructorSchoolYearGuid, instructorSchoolYear);
 			return NoContent();

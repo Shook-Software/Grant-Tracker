@@ -9,6 +9,7 @@ using GrantTracker.Dal.Repositories.SessionRepository;
 using GrantTracker.Dal.Repositories.InstructorRepository;
 using GrantTracker.Dal.Repositories.AttendanceRepository;
 using GrantTracker.Dal.Repositories.StudentRepository;
+using GrantTracker.Dal.Repositories.StudentSchoolYearRepository;
 using GrantTracker.Dal.Repositories.UserRepository;
 using GrantTracker.Dal.Repositories.YearRepository;
 using GrantTracker.Dal.Schema;
@@ -42,6 +43,7 @@ namespace GrantTracker.Utilities.OnStartup
 			builder.Services.AddScoped<IInstructorRepository, InstructorRepository>();
 			builder.Services.AddScoped<IAttendanceRepository, AttendanceRepository>();
 			builder.Services.AddScoped<IStudentRepository, StudentRepository>();
+			builder.Services.AddScoped<IStudentSchoolYearRepository, StudentSchoolYearRepository>();
 			builder.Services.AddScoped<IAuthRepository, AuthRepository>();
 			builder.Services.AddScoped<ILookupRepository, LookupRepository>();
 			builder.Services.AddScoped<IDevRepository, DevRepository>();

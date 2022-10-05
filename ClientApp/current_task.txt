@@ -16,3 +16,35 @@ ADD MATT
 email halley, copy shannon, andrew and matt to copy MDSN (visual studio licenses) to new email
 
 do database correction
+
+Querying parts of a student or session may be a better play, especially with how complex some of these models get.
+
+Today 9/16/2022 - Do that shit with the API sending org and year most of the time, and/or ensure it doesn't load the organizations on like, any rerender other than the initial page entry
+
+check if getting organizations should be in dropdowns or locked behind developer or auth (probably should)
+
+Things to poke around tomorrow
+Posting new coordinators/admin (500 error)
+Registering a student to a class from synergy. (lots of 00000 guids, what the hell is it sending?)
+Instructor status patch returns a 404 error
+
+//lesser priority, could send a guid with student registration and add those that have an empty guid tbh
+
+
+BIGGER TASK
+
+Make sure stuff like registration pulls stuff from the CURRENT student school year, or at least the one targeted for a session
+This may require a mediumish rewrite but we need to check all that stuff.
+
+Change registration references on front-end as Master Student List
+
+//Attendance modal generic'ing
+
+todo: get default times for whatever day is trying to be edited.
+
+
+//
+If a session has no more open attendance dates, the attendance menu does not open nor displays why it is on isLoading forever
+
+Adding subs may create more records than desired in staff.. We need a way of uniquely tracking them without creating them twice potentially.
+We can try and solve this in a tabbed 'Add Existing Instructor/Add new Instructor or sub' menu

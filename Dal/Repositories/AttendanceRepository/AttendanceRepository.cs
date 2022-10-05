@@ -1,4 +1,5 @@
 ﻿using GrantTracker.Dal.Models.Dto;
+using GrantTracker.Dal.Models.Views;
 using GrantTracker.Dal.Repositories.DevRepository;
 using GrantTracker.Dal.Schema;
 using GrantTracker.Utilities;
@@ -15,11 +16,28 @@ namespace GrantTracker.Dal.Repositories.AttendanceRepository
 
 		}
 
+		//needs auth fix
+		public async Task<List<AttendanceViewModel>> GetAttendanceRecordsAsync(Guid sessionGuid)
+		{
+			var records = await _grantContext
+				.AttendanceRecords
+				.AsNoTracking()
+				.Where(record => record.SessionGuid == sessionGuid)
+				.Include(ar => ar.StudentAttendance).ThenInclude(sa => sa.StudentSchoolYear).ThenInclude(ssy => ssy.Student)
+				.Include(ar => ar.StudentAttendance).ThenInclude(sa => sa.TimeRecords)
+				.Include(ar => ar.StudentAttendance).ThenInclude(sa => sa.FamilyAttendance)
+				.Include(ar => ar.InstructorAttendance).ThenInclude(ia => ia.InstructorSchoolYear).ThenInclude(isy => isy.Instructor)
+				.Include(ar => ar.InstructorAttendance).ThenInclude(ia => ia.InstructorSchoolYear).ThenInclude(isy => isy.Status)
+				.Include(ar => ar.InstructorAttendance).ThenInclude(ia => ia.TimeRecords)
+				.ToListAsync();
+
+			return records.Select(AttendanceViewModel.FromDatabase).ToList();
+		}
 
 		public async Task<List<DateOnly>> GetAttendanceDatesAsync(Guid sessionGuid)
 		{
 			var attendance = await _grantContext
-				.StudentAttendanceRecords
+				.AttendanceRecords
 				.AsNoTracking()
 				.Where(sar => sar.SessionGuid == sessionGuid)
 				.Select(sar => sar.InstanceDate)
@@ -29,7 +47,6 @@ namespace GrantTracker.Dal.Repositories.AttendanceRepository
 				.Distinct()
 				.ToList();
 		}
-
 
 		public async Task AddAttendanceAsync(Guid sessionGuid, SessionAttendanceDto sessionAttendance)
 		{
@@ -48,32 +65,90 @@ namespace GrantTracker.Dal.Repositories.AttendanceRepository
 						throw new ArgumentException("One of the records contained an empty InstructorSchoolYearGuid. InstructorSchoolYearGuid cannot be empty.", nameof(sessionAttendance));
 				}
 
-				//get student attendance
-				var studentRecords = sessionAttendance.StudentRecords
-					.Select(s => new StudentAttendance()
-					{
-						StudentSchoolYearGuid = s.StudentSchoolYearGuid,
-						SessionGuid = sessionGuid,
-						MinutesAttended = (short)s.Attendance.Aggregate(0, (sum, current) => sum + (int)(current.EndTime - current.StartTime).TotalMinutes),
-						InstanceDate = sessionAttendance.Date
+				Guid attendanceGuid = Guid.NewGuid();
+				var newAttendanceRecord = new AttendanceRecord()
+				{
+					Guid = attendanceGuid,
+					SessionGuid = sessionGuid,
+					InstanceDate = sessionAttendance.Date,
+					InstructorAttendance = sessionAttendance.InstructorRecords
+					.Select(i => {
+						Guid instructorAttendanceRecordGuid = Guid.NewGuid();
+						return new InstructorAttendanceRecord()
+						{
+							Guid = instructorAttendanceRecordGuid,
+							InstructorSchoolYearGuid = i.InstructorSchoolYearGuid,
+							AttendanceRecordGuid = attendanceGuid,
+							TimeRecords = i.Attendance
+							.Select(time => new InstructorAttendanceTimeRecord()
+							{
+								Guid = Guid.NewGuid(),
+								InstructorAttendanceRecordGuid = instructorAttendanceRecordGuid,
+								EntryTime = time.StartTime,
+								ExitTime = time.EndTime
+							})
+							.ToList()
+						};
 					})
-					.ToList();
+					.ToList(),
+					StudentAttendance = sessionAttendance.StudentRecords
+						.Select(i => {
+							Guid studentAttendanceRecordGuid = Guid.NewGuid();
+							return new StudentAttendanceRecord()
+							{
+								Guid = studentAttendanceRecordGuid,
+								StudentSchoolYearGuid = i.StudentSchoolYearGuid,
+								AttendanceRecordGuid = attendanceGuid,
+								TimeRecords = i.Attendance
+								.Select(time => new StudentAttendanceTimeRecord()
+								{
+									Guid = Guid.NewGuid(),
+									StudentAttendanceRecordGuid = studentAttendanceRecordGuid,
+									EntryTime = time.StartTime,
+									ExitTime = time.EndTime
+								})
+								.ToList()
+							};
+						})
+					.ToList()
+				};
 
-				//get instructor attendance
-				var instructorRecords = sessionAttendance.InstructorRecords
-					.Select(s => new InstructorAttendance()
-					{
-						InstructorSchoolYearGuid = s.InstructorSchoolYearGuid,
-						SessionGuid = sessionGuid,
-						MinutesAttended = (short)s.Attendance.Aggregate(0, (sum, current) => sum + (int)(current.EndTime - current.StartTime).TotalMinutes),
-						InstanceDate = sessionAttendance.Date
-					})
-					.ToList();
-
-				await _grantContext.StudentAttendanceRecords.AddRangeAsync(studentRecords);
-				await _grantContext.InstructorAttendanceRecords.AddRangeAsync(instructorRecords);
+				await _grantContext.AttendanceRecords.AddAsync(newAttendanceRecord);
 				await _grantContext.SaveChangesAsync();
 			});
+		}
+
+		public async Task EditAttendanceAsync(Guid attendanceGuid, SessionAttendanceDto sessionAttendance)
+		{
+			//Remove the existing record and all of it's components
+			var existingAttendanceRecord = await _grantContext
+				.AttendanceRecords
+				.Include(ar => ar.StudentAttendance).ThenInclude(sa => sa.FamilyAttendance)
+				.Include(ar => ar.InstructorAttendance)
+				.Where(ar => ar.Guid == attendanceGuid)
+				.FirstAsync();
+
+			_grantContext.RemoveRange(existingAttendanceRecord.StudentAttendance.SelectMany(sa => sa.FamilyAttendance).ToList()); 
+
+			if (existingAttendanceRecord.InstructorAttendance != null && existingAttendanceRecord.InstructorAttendance.Count > 0)
+				_grantContext.RemoveRange(existingAttendanceRecord.InstructorAttendance);
+
+			if (existingAttendanceRecord.StudentAttendance != null && existingAttendanceRecord.StudentAttendance.Count > 0)
+				_grantContext.RemoveRange(existingAttendanceRecord.StudentAttendance);
+
+			try
+			{
+				_grantContext.Remove(existingAttendanceRecord);
+
+				await this.AddAttendanceAsync(sessionAttendance.SessionGuid, sessionAttendance);
+			}
+			catch (Exception e)
+			{
+				//re-add data if the call fails, as to not entirely lose the record without recourse.
+				await _grantContext.AddAsync(existingAttendanceRecord);
+				await _grantContext.SaveChangesAsync();
+				throw;
+			}
 		}
 	}
 }

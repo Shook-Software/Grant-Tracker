@@ -1,7 +1,7 @@
 ﻿import { Session, SessionForm, SessionDomain } from 'Models/Session'
 import { DropdownOption } from 'types/Session'
 
-import api from 'utils/api'
+import api, { AxiosIdentityConfig } from 'utils/api'
 
 export interface DropdownOptions {
 	sessionTypes: DropdownOption[]
@@ -48,9 +48,15 @@ export function submitSession(sessionState: SessionForm): Promise<SessionDomain 
 				.catch(err => { reject() })
 		}
 		else {
-			api.post('session', sessionState)
+			console.log(AxiosIdentityConfig.identity.organizationYearGuid)
+			console.log({...sessionState, organizationYearGuid: AxiosIdentityConfig.identity.organizationYearGuid})
+			api.post('session', {
+				...sessionState,
+				organizationYearGuid: AxiosIdentityConfig.identity.organizationYearGuid
+			})
 				.then(res => { resolve(res.data.guid) })
 				.catch(err => { reject() })
+		
 		}
 	})
 }

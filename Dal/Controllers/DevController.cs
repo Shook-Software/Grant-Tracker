@@ -51,16 +51,17 @@ namespace GrantTracker.Dal.Controllers
 		}
 
 		[HttpGet("authentication")]
-		public async Task<ActionResult<List<UserIdentity>>> GetUserAuthentication()
+		public async Task<ActionResult<List<UserIdentity>>> GetUserAuthentication(Guid yearGuid)
 		{
-			var users = await _authRepository.GetUsersAsync();
+			var users = await _authRepository.GetUsersAsync(yearGuid);
 			return Ok(users);
 		}
 
-		[HttpGet("organizations")]
-		public async Task<ActionResult<Organization>> GetOrganizations()
+		[HttpGet("organizationYear")]
+		public async Task<ActionResult<List<OrganizationYearView>>> GetOrganizations(Guid yearGuid)
 		{
-			return Ok();
+			var organizationYears = await _authRepository.GetOrganizationYearsForYear(yearGuid);
+			return Ok(organizationYears);
 		}
 
 		#region School Year Controls
@@ -73,7 +74,7 @@ namespace GrantTracker.Dal.Controllers
 		}
 
 		[HttpPatch("year")]
-		public async Task<IActionResult> SetActiveYear(Year yearModel)
+		public async Task<IActionResult> SetActiveYear([FromBody] Year yearModel)
 		{
 			if (yearModel is null)
 				throw new Exception("Parameter object cannot be null.");

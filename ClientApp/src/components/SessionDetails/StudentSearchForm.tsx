@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { Form, Container, Row, Col, Button, Spinner } from 'react-bootstrap'
 
 import GradeSelect from 'components/Input/GradeSelect'
-import CollapsibleSearchForm from '../../pages/Admin/SearchWrapper'
 
 import api from 'utils/api'
 
@@ -42,7 +41,7 @@ export default ({ handleChange }: Props): JSX.Element => {
   }
 
   return (
-    <CollapsibleSearchForm label='Students'>
+    <Container>
       <Form
         onSubmit={(event) => {
           event.preventDefault()
@@ -75,6 +74,16 @@ export default ({ handleChange }: Props): JSX.Element => {
                 <Form.Text className='text-muted'>(optional)</Form.Text>
               </Form.Group>
             </Col>
+            <Col className='d-flex flex-column justify-content-center'>
+              <Form.Group className='pt-2'>
+                <Button type='submit'>
+                  {isLoading ? <Spinner className='m-1' as='span' animation='border' role='status' size='sm' aria-hidden='true'>
+                    <span className='visually-hidden'>Loading...</span>
+                  </Spinner> : null }
+                  Search
+                </Button>
+              </Form.Group>
+            </Col>
           </Row>
           <Row lg={1} className='mb-3'>
             <Col>
@@ -88,18 +97,8 @@ export default ({ handleChange }: Props): JSX.Element => {
               </Form.Group>
             </Col>
           </Row>
-          <Row>
-            <Col>
-              <Button type='submit'>
-                {isLoading ? <Spinner className='m-1' as='span' animation='border' role='status' size='sm' aria-hidden='true'>
-                  <span className='visually-hidden'>Loading...</span>
-                </Spinner> : null }
-                Search
-              </Button>
-            </Col>
-          </Row>
         </Container>
       </Form>
-    </CollapsibleSearchForm>
+    </Container>
   )
 }

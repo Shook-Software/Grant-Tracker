@@ -42,12 +42,15 @@ const TimeScheduling = ({
     else if (changeType === 'end' && startTime.isAfter(endTime))
       startTime = endTime
 
+    //Only uncomment this if you've fixed the outsideClick issue that doesn't trigger soon enough
+    //shit still sucks oh well
     today.timeSchedules[index] = { startTime, endTime }
 
     if (today.recurs) {
       dispatch({ type: 'scheduleDayTime', payload: { dayIndex, day: today } })
       return
     }
+    
 
     dispatch({
       type: 'singleSessionTimeSchedule',
@@ -274,7 +277,72 @@ export default (): JSX.Element => {
         </Form.Group>
       </Row>
       <Row className='m-3'>
-        <Col>
+        
+      </Row>
+      <Row className='m-3'>
+        {values.recurring ? (
+          <Form.Group
+            style={{ display: values.recurring || true ? 'block' : 'none' }}
+            key={schedule.toString()}
+          >
+            <DayScheduling
+              //key={`sunday-${schedule[0].startTime.toString()}-${schedule[0].endTime.toString()}}`}
+              label='Sunday'
+              id='reoccurs-on-sunday'
+              schedule={{...schedule}}
+              dispatch={reducerDispatch}
+            />
+            <DayScheduling
+              //key={`monday-${schedule[1].startTime.toString()}-${schedule[1].endTime.toString()}}`}
+              label='Monday'
+              id='reoccurs-on-monday'
+              schedule={{...schedule}}
+              dispatch={reducerDispatch}
+            />
+            <DayScheduling
+              //key={`tuesday-${schedule[2].startTime.toString()}-${schedule[2].endTime.toString()}}`}
+              label='Tuesday'
+              id='reoccurs-on-tuesday'
+              schedule={{...schedule}}
+              dispatch={reducerDispatch}
+            />
+            <DayScheduling
+              //key={`wednesday-${schedule[3].startTime.toString()}-${schedule[3].endTime.toString()}}`}
+              label='Wednesday'
+              id='reoccurs-on-wednesday'
+              schedule={{...schedule}}
+              dispatch={reducerDispatch}
+            />
+            <DayScheduling
+              //key={`thursday-${schedule[4].startTime.toString()}-${schedule[4].endTime.toString()}}`}
+              label='Thursday'
+              id='reoccurs-on-thursday'
+              schedule={{...schedule}}
+              dispatch={reducerDispatch}
+            />
+            <DayScheduling
+              //key={`friday-${schedule[5].startTime.toString()}-${schedule[5].endTime.toString()}}`}
+              label='Friday'
+              id='reoccurs-on-friday'
+              schedule={{...schedule}}
+              dispatch={reducerDispatch}
+            />
+            <DayScheduling
+              //key={`saturday-${schedule[6].startTime.toString()}-${schedule[6].endTime.toString()}}`}
+              label='Saturday'
+              id='reoccurs-on-saturday'
+              schedule={{...schedule}}
+              dispatch={reducerDispatch}
+            />
+          </Form.Group>
+        ) : null}
+      </Row>
+    </Container>
+  )
+}
+
+/*
+<Col>
           <Form.Check
             label='Recurring?'
             id='is-recurring'
@@ -287,64 +355,4 @@ export default (): JSX.Element => {
             }
           />
         </Col>
-      </Row>
-      <Row className='m-3'>
-        {values.recurring ? (
-          <Form.Group
-            style={{ display: values.recurring || true ? 'block' : 'none' }}
-          >
-            <DayScheduling
-              //key={`sunday-${schedule[0].startTime.toString()}-${schedule[0].endTime.toString()}}`}
-              label='Sunday'
-              id='reoccurs-on-sunday'
-              schedule={schedule}
-              dispatch={reducerDispatch}
-            />
-            <DayScheduling
-              //key={`monday-${schedule[1].startTime.toString()}-${schedule[1].endTime.toString()}}`}
-              label='Monday'
-              id='reoccurs-on-monday'
-              schedule={schedule}
-              dispatch={reducerDispatch}
-            />
-            <DayScheduling
-              //key={`tuesday-${schedule[2].startTime.toString()}-${schedule[2].endTime.toString()}}`}
-              label='Tuesday'
-              id='reoccurs-on-tuesday'
-              schedule={schedule}
-              dispatch={reducerDispatch}
-            />
-            <DayScheduling
-              //key={`wednesday-${schedule[3].startTime.toString()}-${schedule[3].endTime.toString()}}`}
-              label='Wednesday'
-              id='reoccurs-on-wednesday'
-              schedule={schedule}
-              dispatch={reducerDispatch}
-            />
-            <DayScheduling
-              //key={`thursday-${schedule[4].startTime.toString()}-${schedule[4].endTime.toString()}}`}
-              label='Thursday'
-              id='reoccurs-on-thursday'
-              schedule={schedule}
-              dispatch={reducerDispatch}
-            />
-            <DayScheduling
-              //key={`friday-${schedule[5].startTime.toString()}-${schedule[5].endTime.toString()}}`}
-              label='Friday'
-              id='reoccurs-on-friday'
-              schedule={schedule}
-              dispatch={reducerDispatch}
-            />
-            <DayScheduling
-              //key={`saturday-${schedule[6].startTime.toString()}-${schedule[6].endTime.toString()}}`}
-              label='Saturday'
-              id='reoccurs-on-saturday'
-              schedule={schedule}
-              dispatch={reducerDispatch}
-            />
-          </Form.Group>
-        ) : null}
-      </Row>
-    </Container>
-  )
-}
+*/

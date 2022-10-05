@@ -1,10 +1,9 @@
 import { Navigation, Link, ProtectedLink } from 'components/Navigation'
 import { IdentityClaim } from 'utils/authentication'
 
-export default ({ paths, user, orgYearOptions, orgYearChange }): JSX.Element => (
+export default ({ paths, user, orgYearChange }): JSX.Element => (
   <Navigation 
     user={user}
-    orgYearOptions={orgYearOptions}
     orgYearChange={orgYearChange}
   >
     <Link

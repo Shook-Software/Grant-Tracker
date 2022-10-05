@@ -2,14 +2,14 @@
 
 namespace GrantTracker.Dal.Models.Views
 {
-	public class StudentView
+	public class StudentViewModel
 	{
 		public Guid Guid { get; set; }
 		public string FirstName { get; set; }
 		public string LastName { get; set; }
 		public string MatricNumber { get; set; }
 
-		public static StudentView FromDatabase(Student stu) => new()
+		public static StudentViewModel FromDatabase(Student stu) => new()
 		{
 			Guid = stu.PersonGuid,
 			FirstName = stu.FirstName,
@@ -18,40 +18,52 @@ namespace GrantTracker.Dal.Models.Views
 		};
 	}
 
-	public class StudentSchoolYearView
+	public class StudentSchoolYearViewModel
 	{
 		public Guid Guid { get; set; }
-		public StudentView Student { get; set; }
+		public StudentViewModel Student { get; set; }
 		public OrganizationYearView OrganizationYear { get; set; }
 		public string Grade { get; set; }
-		public int MinutesAttended { get; set; }
 
-		public static StudentSchoolYearView FromDatabase(StudentSchoolYear ssy) => new()
+		public static StudentSchoolYearViewModel FromDatabase(StudentSchoolYear ssy) => new()
 		{
 			Guid = ssy.StudentSchoolYearGuid,
-			Student = StudentView.FromDatabase(ssy.Student),
+			Student = ssy.Student != null ? StudentViewModel.FromDatabase(ssy.Student) : null,
 			Grade = ssy.Grade,
-			MinutesAttended = ssy.AttendanceRecords?.Aggregate(0, (total, next) => total + next.MinutesAttended) ?? 0,
+			
+			//MinutesAttended = ssy.AttendanceRecords?.Aggregate(0, (total, next) => total + next.MinutesAttended) ?? 0,
 		};
 	}
 
-	public class StudentSchoolYearWithRecordsView : StudentSchoolYearView
+	public class StudentSchoolYearWithRecordsViewModel : StudentSchoolYearViewModel
 	{
-		public List<AttendanceView> Attendance { get; set; }
+		public List<StudentAttendanceViewModel> AttendanceRecords { get; set; }
 		public List<StudentRegistrationView> Registrations { get; set; }
 
-		public static new StudentSchoolYearWithRecordsView FromDatabase(StudentSchoolYear ssy)
+		public static new StudentSchoolYearWithRecordsViewModel FromDatabase(StudentSchoolYear ssy) => new()
 		{
-			return new()
-			{
-				Guid = ssy.StudentSchoolYearGuid,
-				Student = StudentView.FromDatabase(ssy.Student),
-				Grade = ssy.Grade,
-				MinutesAttended = ssy.AttendanceRecords?.Aggregate(0, (total, next) => total + next.MinutesAttended) ?? 0,
-				OrganizationYear = OrganizationYearView.FromDatabase(ssy.OrganizationYear),
-				Registrations = ssy.SessionRegistrations?.Select(reg => StudentRegistrationView.FromDatabase(reg)).ToList(),
-				Attendance = ssy.AttendanceRecords?.Select(AttendanceView.FromDatabase).ToList()
-			};
-		}
+			Guid = ssy.StudentSchoolYearGuid,
+			Student = StudentViewModel.FromDatabase(ssy.Student),
+			Grade = ssy.Grade,
+			OrganizationYear = OrganizationYearView.FromDatabase(ssy.OrganizationYear),
+			Registrations = ssy.SessionRegistrations?.Select(reg => StudentRegistrationView.FromDatabase(reg)).ToList(),
+			AttendanceRecords = ssy.AttendanceRecords
+				.Select(ar => new StudentAttendanceViewModel()
+				{
+					Guid = ar.Guid,
+					AttendanceRecord = new AttendanceViewModel()
+					{
+						Guid = ar.AttendanceRecord.Guid,
+						InstanceDate = ar.AttendanceRecord.InstanceDate,
+						Session = new AttendanceViewModel.AttendanceSessionViewModel()
+						{
+							Guid = ar.AttendanceRecord.SessionGuid,
+							Name = ar.AttendanceRecord.Session.Name
+						}
+					},
+					TimeRecords = ar.TimeRecords.Select(time => AttendanceTimeRecordViewModel.FromDatabase(time)).ToList()
+				})
+				.ToList()
+		};
 	}
 }

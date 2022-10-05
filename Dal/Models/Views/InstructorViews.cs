@@ -43,7 +43,7 @@ namespace GrantTracker.Dal.Models.Views
 		};
 	}
 
-	public class InstructorSchoolYearView
+	public class InstructorSchoolYearViewModel
 	{
 		public Guid Guid { get; set; }
 		public InstructorView Instructor { get; set; }
@@ -56,7 +56,7 @@ namespace GrantTracker.Dal.Models.Views
 		public List<EnrollmentView> EnrollmentRecords { get; set; }
 		public List<AttendanceRecordView> AttendanceRecords { get; set; }
 
-		public static InstructorSchoolYearView FromDatabase(InstructorSchoolYear instructorSchoolYear, List<OrganizationYear> organizationYears = null) => new()
+		public static InstructorSchoolYearViewModel FromDatabase(InstructorSchoolYear instructorSchoolYear, List<OrganizationYear> organizationYears = null) => new()
 		{
 			Guid = instructorSchoolYear.InstructorSchoolYearGuid,
 			Instructor = InstructorView.FromDatabase(instructorSchoolYear.Instructor),

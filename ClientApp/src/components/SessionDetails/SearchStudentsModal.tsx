@@ -4,26 +4,23 @@ import {
   Button,
   Container,
   Row,
-  Col,
   Form,
   Popover,
   OverlayTrigger
 } from 'react-bootstrap'
-import { DateTimeFormatter } from '@js-joda/core'
-import { Locale } from '@js-joda/locale_en-us'
 
 import Table, { Column } from 'components/BTable'
 import Alert, { ApiResult } from 'components/ApiResultAlert'
 import Search from './StudentSearchForm'
 
-import { DaySchedule, DayScheduleView } from 'Models/DaySchedule'
+import { DayScheduleView } from 'Models/DaySchedule'
 
-import api from 'utils/api'
+import api, { AxiosIdentityConfig } from 'utils/api'
 
 //@ts-ignore
 const StudentPopover = forwardRef(
   ({ values, handleAddStudent, ...props }, ref): JSX.Element => {
-    const fullName: string = `${values.firstName} ${values.lastName}`
+    const fullName: string = `${values.student.firstName} ${values.student.lastName}`
 
     return (
       <Popover
@@ -37,6 +34,7 @@ const StudentPopover = forwardRef(
           <Button
             className='my-2'
             onClick={() => {
+              console.log(values)
               handleAddStudent(values)
               //add the student, successfully or not, then trigger the pop-up to be closed.
               document.body.click()
@@ -53,12 +51,12 @@ const StudentPopover = forwardRef(
 const columnsBuilder = (handleAddStudent, schedule): Column[] => [
   {
     label: 'First Name',
-    attributeKey: 'firstName',
+    attributeKey: 'student.firstName',
     sortable: true
   },
   {
     label: 'Last Name',
-    attributeKey: 'lastName',
+    attributeKey: 'student.lastName',
     sortable: true
   },
   {
@@ -69,11 +67,11 @@ const columnsBuilder = (handleAddStudent, schedule): Column[] => [
   },
   {
     label: 'Matric Number',
-    attributeKey: 'matricNumber',
+    attributeKey: 'student.matricNumber',
     sortable: true
   },
   {
-    key: 'addInstructor',
+    key: 'addStudent',
     label: 'Add',
     attributeKey: '',
     sortable: false,
@@ -92,7 +90,7 @@ const columnsBuilder = (handleAddStudent, schedule): Column[] => [
             }
             rootClose
           >
-            <Button disabled={schedule.length === 0}>+</Button>
+            <Button /*disabled={schedule.length === 0}*/>+</Button>
           </OverlayTrigger>
         </div>
       )
@@ -100,40 +98,47 @@ const columnsBuilder = (handleAddStudent, schedule): Column[] => [
   }
 ]
 
-function getConflictResponse (
-  message: string,
-  fullName: string
-): string[] {
-  return [
-    'An issue was present with adding the student ',
-    fullName,
-    ...message.split('\n')
-  ]
-  //lets just return a string FROM the server.
-  /*return [
-    `The following registrations for ${fullName} conflict with a pre-existing registration:`,
-    ...conflicts.map(conflict => (
-      `
-      ${conflict.dayOfWeek},
-      ${conflict.startTime.format(DateTimeFormatter.ofPattern("hh:mm a").withLocale(Locale.ENGLISH))}
-      to
-      ${conflict.endTime.format(DateTimeFormatter.ofPattern("hh:mm a").withLocale(Locale.ENGLISH))}
-      `
-    ))
-  ]*/
+const Schedule = ({scheduling, schedule, setSchedule}): JSX.Element => {
+  if (!scheduling)
+    return <></>
+
+  return (
+    <>
+    <Form.Text>Add student to the following weekday(s)</Form.Text>
+      {scheduling?.map(day => (
+        <Form.Group
+          controlId={day.dayOfWeek}
+          style={{ width: 'fit-content' }}
+        >
+          <Form.Label>{day.dayOfWeek}</Form.Label>&nbsp;
+          <Form.Check
+            inline
+            defaultChecked={schedule.find(guid => guid === day.dayScheduleGuid)}
+            style={{ display: 'inline-block' }}
+            onChange={event => {
+              if (event.target.checked)
+                setSchedule([...schedule, day.dayScheduleGuid])
+              else
+                setSchedule(
+                  schedule.filter(item => item !== day.dayScheduleGuid)
+                )
+            }}
+          />
+        </Form.Group>
+      ))}
+    </>
+  )
 }
 
 interface Props {
-  sessionGuid: string
   show: boolean
   handleClose: () => void
-  handleChange: (value: any) => void
-  scheduling: DayScheduleView[]
+  handleChange: (value: any, ) => Promise<any>
+  scheduling: DayScheduleView[] | null
 }
 
-//Ask Matt about having addStudent here or passed to handleChange in the parent
+//refactor handleChange to do something, that way we can reuse this component
 export default ({
-  sessionGuid,
   show,
   handleClose,
   handleChange,
@@ -145,12 +150,9 @@ export default ({
   const tableRef: React.Ref<HTMLDivElement | null> = useRef(null)
 
   function addStudent (student): void {
-    const fullName: string = `${student.firstName} ${student.lastName}`
-    api
-      .post(`session/${sessionGuid}/registration`, {
-        student,
-        dayScheduleGuids: schedule
-      })
+    const fullName: string = `${student.student.firstName} ${student.student.lastName}`
+
+    handleChange({student, schedule})
       .then(res => {
         setApiResult({
           label: fullName,
@@ -158,21 +160,19 @@ export default ({
         })
       })
       .catch(err => {
-        if (err.response.statusText === 'Conflict') {
-          //const conflicts: DayScheduleView[] = [] //err.response.data.map(item => DaySchedule.toViewModel(item))
-          setApiResult({
-            label: fullName,
-            success: false,
-            message: err.response.data.map(item => item.message)
-          })
-        }
+        setApiResult({
+          label: fullName,
+          success: false,
+          message: err.response.data
+        })
       })
   }
 
   const columns: Column[] = columnsBuilder(addStudent, schedule)
 
   useEffect(() => {
-    setSchedule(scheduling.map(day => day.dayScheduleGuid))
+    if (scheduling)
+      setSchedule(scheduling.map(day => day.dayScheduleGuid))
   }, [])
 
   useEffect(() => {
@@ -200,28 +200,7 @@ export default ({
             <Search handleChange={setState} />
           </Row>
           <Row className='w-50'>
-            <Form.Text>Add student to the following weekday(s)</Form.Text>
-            {scheduling?.map(day => (
-              <Form.Group
-                controlId={day.dayOfWeek}
-                style={{ width: 'fit-content' }}
-              >
-                <Form.Label>{day.dayOfWeek}</Form.Label>&nbsp;
-                <Form.Check
-                  inline
-                  defaultChecked={schedule.find(guid => guid === day.dayScheduleGuid)}
-                  style={{ display: 'inline-block' }}
-                  onChange={event => {
-                    if (event.target.checked)
-                      setSchedule([...schedule, day.dayScheduleGuid])
-                    else
-                      setSchedule(
-                        schedule.filter(item => item !== day.dayScheduleGuid)
-                      )
-                  }}
-                />
-              </Form.Group>
-            ))}
+            <Schedule scheduling={scheduling} schedule={schedule} setSchedule={setSchedule} />
           </Row>
           <Row className='w-50'  ref={tableRef}>
             {state.length === 0 ? (

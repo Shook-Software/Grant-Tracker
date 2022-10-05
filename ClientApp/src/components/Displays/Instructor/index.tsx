@@ -93,43 +93,7 @@ const BasicDetails = ({instructor: instructorSchoolYear, onChange}: BasicDetails
 
       <ListItem 
         label='Badge Number:'
-        value={
-          badgeNumberEdit.currentlyEditing 
-          ? 
-            <span>
-              <input 
-                type='text' 
-                value={badgeNumberEdit.value} 
-                onChange={(event) => {
-                  setBadgeNumberEdit({...badgeNumberEdit, value: event.target.value})
-                }}
-              />
-              <Button
-                className='my-2'
-                size='sm'
-                onClick={() => {
-                  onChange({...instructorSchoolYear, instructor: {...instructor, badgeNumber: badgeNumberEdit.value}})
-                  setStatusEdit({...badgeNumberEdit, currentlyEditing: false})
-                }}
-              >
-                Save Changes
-              </Button>
-            </span>
-          : 
-            <span>
-              {instructor.badgeNumber || 'N/A'}
-              <Button 
-                className='mx-3'
-                size='sm'
-                onClick={() => {
-                  setBadgeNumberEdit({...badgeNumberEdit, currentlyEditing: true})
-                  setStatusEdit({...statusEdit, currentlyEditing: false})
-                }}
-              >
-                Edit
-              </Button>
-            </span>
-        }
+        value={instructor.badgeNumber}
       />
 
       <ListItem 
@@ -201,7 +165,10 @@ export default (): JSX.Element => {
       return
 
     api
-      .patch(`staff/${instructorSchoolYear.guid}/status`, instructorSchoolYear)
+      .patch(`instructor/${instructorSchoolYear.guid}/status`, {
+        instructor: instructorSchoolYear.instructor,
+        status: instructorSchoolYear.status
+      })
       .then(res => {
         fetchInstructor(instructorSchoolYearGuid)
       })

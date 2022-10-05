@@ -1,6 +1,7 @@
 ﻿using GrantTracker.Dal.Models.Dto;
 using GrantTracker.Dal.Repositories.AuthRepository;
 using GrantTracker.Dal.Repositories.InstructorRepository;
+using GrantTracker.Dal.Repositories.OrganizationYearRepository;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using GrantTracker.Dal.Schema;
@@ -15,15 +16,17 @@ namespace GrantTracker.Dal.Controllers
 	{
 		private readonly IAuthRepository _authRepository;
 		private readonly IInstructorRepository _staffRepository;
+		private readonly IOrganizationYearRepository _organizationYearRepository;
 
-		public AuthController(IAuthRepository repository, IInstructorRepository staffRepository)
+		public AuthController(IAuthRepository repository, IInstructorRepository staffRepository, IOrganizationYearRepository organizationYearRepository)
 		{
 			_authRepository = repository;
 			_staffRepository = staffRepository;
+			_organizationYearRepository = organizationYearRepository;
 		}
 
 		[HttpGet("")]
-		public async Task<ActionResult<UserIdentityView>> Get()
+		public ActionResult<UserIdentityView> Get()
 		{
 			var identity = _authRepository.GetIdentity();
 			return Ok(identity);
@@ -34,7 +37,7 @@ namespace GrantTracker.Dal.Controllers
 		public async Task<ActionResult<Guid>> GetOrganizationYearGuid(Guid organizationGuid, Guid yearGuid)
 		{
 			//if user is an admin
-			Guid organizationYearGuid = await _authRepository.GetOrganizationYearGuid(organizationGuid, yearGuid);
+			Guid organizationYearGuid = await _organizationYearRepository.GetGuidAsync(organizationGuid, yearGuid);
 			return Ok(organizationYearGuid);
 		}
 
@@ -48,7 +51,7 @@ namespace GrantTracker.Dal.Controllers
 		[HttpPost("")]
 		public async Task<IActionResult> AddUser(Props props)
 		{
-			EmployeeDto employee = (await _staffRepository.SearchSynergyStaffAsync("", props.BadgeNumber)).ElementAt(0);
+			EmployeeDto employee = (await _staffRepository.SearchSynergyStaffAsync("", props.BadgeNumber)).FirstOrDefault();
 
 			await _authRepository.AddUserAsync(new UserIdentityView()
 			{

@@ -1,6 +1,5 @@
 import api from 'utils/api'
 import { OrganizationYearView, OrganizationView, Quarter, YearView } from 'models/OrganizationYear'
-import { resolve } from 'path'
 
 export enum IdentityClaim {
   Administrator = 0,
@@ -114,13 +113,19 @@ export class User implements IUser {
     return new Promise((resolve, reject) => {
       if (organizationGuid) {
         api
-        .get<OrganizationYearView[]>('dropdown/year', { params: {organizationGuid}})
-        .then(res => {
-          resolve(res.data)
-        })
+          .get<OrganizationYearView[]>('dropdown/year', { params: {organizationGuid}})
+          .then(res => {
+            resolve(res.data)
+          })
       }
       else { console.warn('No organizationGuid provided for user.getOrganizationYearsAsync')}
     })
+  }
+
+  public setYear (year: OrganizationYearView | undefined): void {
+    if (year) {
+      this._currentYear = year
+    }
   }
 
   public setOrganization (organization: OrganizationView | undefined): void {
@@ -129,9 +134,9 @@ export class User implements IUser {
     }
   }
 
-  public setOrganizationYear (organizationYear: OrganizationYearView | undefined): void {
-    if (organizationYear) {
-      this._currentYear = organizationYear
+  public setOrganizationYear (organizationYearGuid: string | undefined): void {
+    if (organizationYearGuid) {
+      this._currentOrganizationYearGuid = organizationYearGuid
     }
   }
 

@@ -1,9 +1,5 @@
 //node_modules
-import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
 import { Container, Row, Col } from 'react-bootstrap'
-import { DateTimeFormatter, LocalDate } from '@js-joda/core'
-import { Locale } from '@js-joda/locale_en-us'
 
 //local components
 import AttendanceTimeInput, { TimeInputType } from './TimeInput'
@@ -12,16 +8,19 @@ import AttendanceTimeInput, { TimeInputType } from './TimeInput'
 import Dropdown from 'components/Input/Dropdown'
 
 //types
+import { AttendanceForm, ReducerAction } from '../state'
 import type { AttendanceRecord } from './TimeInput'
 import type { DropdownOption } from 'Models/Session'
 
-import api from 'utils/api'
-import { DateOnly } from 'Models/DateOnly'
 
+interface Props {
+  state: AttendanceForm
+  dispatch: (action: ReducerAction) => void
+  dateOptions: DropdownOption[]
+}
 
-export default ({state, dispatch}): JSX.Element => {
-  const { sessionGuid } = useParams()
-  const [dateOptions, setDateOptions] = useState<DropdownOption[]>([])
+export default ({state, dispatch, dateOptions}: Props): JSX.Element => {
+  //const [dateOptions, setDateOptions] = useState<DropdownOption[]>([])
 
   const defaultAttendance: AttendanceRecord[] = state.defaultSchedule.map(schedule => ({
     personGuid: '',
@@ -29,27 +28,8 @@ export default ({state, dispatch}): JSX.Element => {
     endTime: schedule.endTime
   }))
 
-  useEffect(() => {
-    api
-      .get(`session/${sessionGuid}/attendance/openDates`)
-      .then(res => {
-        const options: DropdownOption[] = res.data.map(date => {
-          const localDate: LocalDate = DateOnly.toLocalDate(date)
-          return {
-            guid: localDate.toString(),
-            label: localDate.format(DateTimeFormatter.ofPattern('MMMM dd').withLocale(Locale.ENGLISH))
-          }
-        })
-        console.log(options)
-        if (options.length !== 0) {
-          dispatch({type: 'instanceDate', payload: options[0].guid})
-          setDateOptions(options)
-        }
-      })
-  }, [])
-
   return (
-    <Container>
+    <Container className='p-0'>
       <Row lg={5} className='px-1'>
         <Col>
           <label htmlFor='date-select'>Session Date</label>
@@ -69,7 +49,7 @@ export default ({state, dispatch}): JSX.Element => {
           <AttendanceTimeInput 
             records={defaultAttendance}
             inputType={TimeInputType.Start}
-            onChange={(guid, time, index) => dispatch({
+            onChange={(_, time, index) => dispatch({
               type: 'scheduleStartShift',
               payload: { index, startTime: time }
             })}
@@ -80,7 +60,7 @@ export default ({state, dispatch}): JSX.Element => {
           <AttendanceTimeInput 
             records={defaultAttendance}
             inputType={TimeInputType.End}
-            onChange={(guid, time, index) => dispatch({
+            onChange={(_, time, index) => dispatch({
               type: 'scheduleEndShift',
               payload: { index, endTime: time}
             })}

@@ -1,8 +1,9 @@
-import { LocalDate } from '@js-joda/core'
+import { LocalDate, LocalTime } from '@js-joda/core'
 import { DateOnly } from './DateOnly'
-import { StudentSchoolYearWithRecordsView } from 'Models/Student'
+import { StudentSchoolYearView, StudentSchoolYearWithRecordsView } from 'Models/Student'
 import { TimeScheduleForm } from './TimeSchedule'
 import { InstructorSchoolYearView } from './Instructor'
+import { TimeOnly } from './TimeOnly'
 
 //change to form or something
 export interface StudentAttendanceDto {
@@ -35,24 +36,68 @@ export interface SubstituteRecord {
 }
 
 export interface AttendanceDomain {
-  sessionGuid: string
-  sessionName: string
-  minutesAttended: number
+  guid: string
+  session: {
+    guid: string
+    name: string
+  }
   instanceDate: DateOnly
+  //arrays that can be null
 }
 
 export interface AttendanceView {
-  sessionGuid: string
-  sessionName: string
-  minutesAttended: number
+  guid: string
+  session: {
+    guid: string
+    name: string
+  }
   instanceDate: LocalDate
+  studentAttendanceRecords: StudentAttendanceView[]
+  //arrays that can be null
 }
 
-export abstract class Attendance {
-  public static toViewModel (obj: AttendanceDomain): AttendanceView {
+export interface StudentAttendanceDomain {
+  guid: string
+  attendanceRecord: AttendanceDomain | null
+  studentSchoolYear: StudentSchoolYearView
+  timeRecords: AttendanceTimeRecordDomain[]
+}
+
+export interface StudentAttendanceView {
+  guid: string
+  attendanceRecord: AttendanceView | null
+  studentSchoolYear: StudentSchoolYearView
+  timeRecords: AttendanceTimeRecordView[]
+}
+
+export interface AttendanceTimeRecordDomain {
+  guid: string
+  entryTime: TimeOnly
+  exitTime: TimeOnly
+}
+
+export interface AttendanceTimeRecordView {
+  guid: string
+  entryTime: LocalTime
+  exitTime: LocalTime
+}
+
+export abstract class StudentAttendance {
+  public static toViewModel (obj: StudentAttendanceDomain): StudentAttendanceView {
+    if (!obj) return obj
+    
     return {
       ...obj,
-      instanceDate: DateOnly.toLocalDate(obj.instanceDate)
+      attendanceRecord: obj.attendanceRecord ? {
+        guid: obj.attendanceRecord.guid,
+        instanceDate: DateOnly.toLocalDate(obj.attendanceRecord.instanceDate),
+        session: {...obj.attendanceRecord.session}
+      } : null,
+      timeRecords: obj.timeRecords.map(time => ({
+        guid: time.guid,
+        entryTime: TimeOnly.toLocalTime(time.entryTime),
+        exitTime: TimeOnly.toLocalTime(time.exitTime)
+      }))
     }
   }
 }

@@ -1,41 +1,55 @@
 import { Link } from 'react-router-dom'
 import { Container } from 'react-bootstrap'
-import { LocalDate, DateTimeFormatter } from '@js-joda/core'
+import { LocalDate, DateTimeFormatter, LocalTime } from '@js-joda/core'
 import { Locale } from '@js-joda/locale_en-us'
 
 import Table, { Column, SortDirection } from 'components/BTable'
 
-import { AttendanceView } from 'Models/StudentAttendance'
+import { AttendanceTimeRecordView, AttendanceView, StudentAttendanceView } from 'Models/StudentAttendance'
 
 const columns: Column[] = [
   {
     label: 'Session',
     attributeKey: '',
+    key: 'ss',
     sortable: true,
-    transform: (value: AttendanceView) => (
-      <Link to={`/home/admin/sessions/${value.sessionGuid}`}>
-        {value.sessionName}
+    transform: (value: StudentAttendanceView) => (
+      <Link to={`/home/admin/sessions/${value.attendanceRecord?.session.guid}`}>
+        {value.attendanceRecord?.session.name}
       </Link>
     )
   },
   {
     label: 'Date',
-    attributeKey: 'instanceDate',
+    attributeKey: 'attendanceRecord',
     sortable: true,
-    transform: (date: LocalDate): string =>
-      date.format(
-        DateTimeFormatter.ofPattern('MMM, dd').withLocale(Locale.ENGLISH)
-      )
+    transform: (record: AttendanceView): string => record.instanceDate.format(DateTimeFormatter.ofPattern('MMMM, dd').withLocale(Locale.ENGLISH))
   },
   {
-    label: 'Minutes Attended',
-    attributeKey: 'minutesAttended',
-    sortable: true
+    label: 'Time Records',
+    attributeKey: 'timeRecords',
+    sortable: false,
+    transform: (timeRecord: AttendanceTimeRecordView[]) => <Table columns={tempColumns} dataset={timeRecord} className='m-0' />,
+    cellProps: {className: 'h-100 p-0'}
+  }
+]
+
+const tempColumns: Column[] = [
+  {
+    label: 'Arrived at',
+    attributeKey: 'entryTime',
+    sortable: true,
+    transform: (time: LocalTime) => time.format(DateTimeFormatter.ofPattern('hh:mm a').withLocale(Locale.ENGLISH))
+  },
+  {
+    label: 'Left at',
+    attributeKey: 'exitTime',
+    sortable: true,
+    transform: (time: LocalTime) => time.format(DateTimeFormatter.ofPattern('hh:mm a').withLocale(Locale.ENGLISH))
   }
 ]
 
 export default ({ attendance }): JSX.Element => {
-  console.log(attendance)
   if (!attendance) return <></>
 
   return (

@@ -13,23 +13,26 @@ interface Props {
 
 
 export const Header = ({ columns, indexed, setSortIndex }: Props): JSX.Element => {
-  function createColumnHeaders(columns: Column[]): JSX.Element[] {
-    return columns.map((col, index) => (
-      <HeaderCell
-        key={col.key}
-        id={col.key}
-        className='px-2'
-        sortable={col.sortable}
-        onClick={() => {
-          if (col.sortable) {
-            setSortIndex(index)
-          }
-        }}
-        {...col.cellProps}
-      >
-        {col.label}
-      </HeaderCell>
-    ))
+  function createColumnHeaders(columns: Column[]): JSX.Element | JSX.Element[] {
+    return columns.map((col, index) => 
+        col.headerTransform 
+        ? col.headerTransform()
+        : 
+        <HeaderCell
+          key={col.key}
+          id={col.key}
+          className='px-2'
+          sortable={col.sortable}
+          onClick={() => {
+            if (col.sortable) {
+              setSortIndex(index)
+            }
+          }}
+          {...col.headerProps}
+        >
+          {col.label}
+        </HeaderCell>
+    )
   }
 
   const HeaderCells: JSX.Element[] = indexed

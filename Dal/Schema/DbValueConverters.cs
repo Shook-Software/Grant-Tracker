@@ -25,4 +25,10 @@ namespace GrantTracker.Dal.Schema
 		public IdentityClaimConverter() : base(claim => (byte)claim, claim => (IdentityClaim)claim)
 		{ }
 	}
+
+	public class FamilyMemberConverter : ValueConverter<FamilyMember, byte>
+	{
+		public FamilyMemberConverter() : base(member => (byte)member, member => (FamilyMember)member)
+		{ }
+	}
 }

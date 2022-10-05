@@ -7,7 +7,7 @@ import Dropdown from 'components/Input/Dropdown'
 import { DropdownOption } from 'Models/Session'
 
 import { User } from 'utils/authentication'
-import api from 'utils/api'
+import api, { AxiosIdentityConfig } from 'utils/api'
 
 interface UserDeletionProps {
   user: User
@@ -104,15 +104,14 @@ const createColumns = (onChange): Column[] => ([
 
 
 
-const AddUserModal = ({organizations, show, setShow, onChange}): JSX.Element => {
-  document.title = 'GT - Config / Auth'
+const AddUserModal = ({organizationYears, show, setShow, onChange}): JSX.Element => {
   const [organizationYearGuid, setOrganizationYearGuid] = useState<string>('')
   const [badgeNumber, setBadgeNumber] = useState<string>('')
   const [claimType, setClaimType] = useState<string>('1')
 
-  const options: DropdownOption[] = organizations.map(org => ({
-    guid: org.organizationYearGuid,
-    label: org.name
+  const options: DropdownOption[] = organizationYears.map(orgYear => ({
+    guid: orgYear.guid,
+    label: orgYear.organization.name
   }))
 
   const claimOptions: DropdownOption[] = [
@@ -172,8 +171,9 @@ const AddUserModal = ({organizations, show, setShow, onChange}): JSX.Element => 
 
 //add something to prevent a user from removing themselves... Cause they totally could fuck it up like that
 export default (): JSX.Element => {
+  document.title = 'GT - Config / Auth'
   const [users, setUsers] = useState<User[]>([])
-  const [organizations, setOrganizations] = useState<DropdownOption[]>([])
+  const [organizationYears, setOrganizations] = useState<DropdownOption[]>([])
   const [show, setShow] = useState<boolean>(false)
   const [userHasChanged, setUserHasChanged] = useState<{user: string, action: 'added' | 'removed'}>() 
   const columns: Column[] = useMemo(() => createColumns(deleteUserAsync), [users])
@@ -181,7 +181,9 @@ export default (): JSX.Element => {
   function fetchUsersAsync(): Promise<User[]> {
     return new Promise((resolve, reject) => {
       api
-        .get<User[]>('developer/authentication')
+        .get<User[]>('developer/authentication', { params: {
+          yearGuid: AxiosIdentityConfig.identity.yearGuid
+        }})
         .then(res => {
           resolve(res.data)
         })
@@ -190,9 +192,14 @@ export default (): JSX.Element => {
   }
   
   function addUserAsync (organizationYearGuid, badgeNumber, claimType) {
+
     return new Promise((resolve, reject) => {
       api
-        .post('user', { organizationYearGuid, badgeNumber, claimType })
+        .post('user', { 
+          organizationYearGuid,
+          badgeNumber, 
+          claimType 
+        })
         .then(res => {
           resolve(res)
           setUserHasChanged({user: 'A new user', action: 'added'})
@@ -213,15 +220,16 @@ export default (): JSX.Element => {
   }
   
   useEffect(() => {
-    fetchUsersAsync()
-      .then(res => {setUsers(res)})
+    fetchUsersAsync().then(res => {setUsers(res)})
 
-    api
-      .get('dropdown/organization')
-      .then(res => {
-        setOrganizations(res.data)
-      })
-  }, [])
+      api
+        .get('/developer/organizationYear', { params: {
+          yearGuid: AxiosIdentityConfig.identity.yearGuid, 
+        }})
+        .then(res => {
+          setOrganizations(res.data)
+        })
+  }, [AxiosIdentityConfig.identity.yearGuid])
 
   useEffect(() => {
     fetchUsersAsync()
@@ -237,7 +245,7 @@ export default (): JSX.Element => {
       {userHasChanged?.user ? <Alert variant='success'>{userHasChanged.user} has been {userHasChanged.action}.</Alert> : null}
       <Table dataset={users} columns={columns} rowProps={{key: 'userOrganizationYearGuid'}} />
       <AddUserModal
-        organizations={organizations}
+        organizationYears={organizationYears}
         show={show}
         setShow={() => setShow(false)}
         onChange={addUserAsync}

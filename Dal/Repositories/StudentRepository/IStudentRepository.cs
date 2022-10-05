@@ -5,17 +5,19 @@ namespace GrantTracker.Dal.Repositories.StudentRepository
 {
 	public interface IStudentRepository
 	{
-		public Task AddAsync(StudentDto newStudent);
+		public Task<StudentViewModel> CreateIfNotExistsAsync(StudentDto student);
+		public Task<StudentViewModel> CreateAsync(StudentDto newStudent);
 
-		public Task<List<StudentSchoolYearView>> GetAsync(string name, Guid organizationGuid, Guid yearGuid);
+		public Task<List<StudentSchoolYearViewModel>> GetAsync(string name, Guid organizationGuid, Guid yearGuid);
 
-		public Task<StudentSchoolYearWithRecordsView> GetAsync(Guid studentYearGuid, Guid organizationYearGuid = new Guid());
+		public Task<StudentSchoolYearWithRecordsViewModel> GetAsync(Guid studentYearGuid, Guid organizationYearGuid = new Guid());
 
-		public Task<StudentSchoolYearWithRecordsView> GetSingleAsync(string matricNumber);
+		public Task<StudentSchoolYearWithRecordsViewModel> GetSingleAsync(string matricNumber);
 
-		public Task<List<StudentView>> SearchSynergyAsync(StudentFilter filter);
+		public Task<List<StudentSchoolYearViewModel>> SearchSynergyAsync(StudentFilter filter);
 
 		public Task SyncStudentsWithSynergyAsync();
+
 
 		//public Task<List<Student>> Get(List<Guid> students);
 

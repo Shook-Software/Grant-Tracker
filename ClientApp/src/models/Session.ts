@@ -168,7 +168,7 @@ export abstract class Session {
   public static createDefaultForm (): SessionForm {
     let baseSchedule = DaySchedule.DaySchedule.createWeeklySchedule()
     let today = LocalDate.now()
-    baseSchedule[today.dayOfWeek().value()] = {
+    /*baseSchedule[today.dayOfWeek().value()] = {
       dayOfWeek: DayOfWeek.toString(today.dayOfWeek().value()),
       recurs: false,
       timeSchedules: [
@@ -177,7 +177,7 @@ export abstract class Session {
           endTime: LocalTime.MIDNIGHT
         }
       ]
-    }
+    }*/
 
     return {
       name: '',
@@ -190,7 +190,7 @@ export abstract class Session {
       partnershipType: '',
       firstSessionDate: today,
       lastSessionDate: today,
-      recurring: false,
+      recurring: true,
       scheduling: baseSchedule,
       grades: []
     }

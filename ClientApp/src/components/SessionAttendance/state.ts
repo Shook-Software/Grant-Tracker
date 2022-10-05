@@ -1,10 +1,13 @@
 import { LocalDate, LocalTime } from '@js-joda/core'
+import { DayOfWeek, DayOfWeekNumeric } from 'Models/DayOfWeek'
+import { StudentSchoolYearView, StudentSchoolYearWithRecordsView } from 'Models/Student'
 import { InstructorRecord, StudentRecord, SubstituteRecord } from 'Models/StudentAttendance'
 import { TimeScheduleView } from 'Models/TimeSchedule'
 
 export interface AttendanceForm {
   defaultSchedule: TimeScheduleView[]
   date: LocalDate
+  dayOfWeek: DayOfWeekNumeric
   studentRecords: StudentRecord[]
   instructorRecords: InstructorRecord[]
   substituteRecords: SubstituteRecord[]
@@ -25,26 +28,23 @@ export type ReducerAction =
 
   | { type: 'instanceDate'; payload: string }
 
+  | { type: 'addStudent'; payload: StudentSchoolYearView }
   | { type: 'studentRecords'; payload: StudentRecord[] }
   | { type: 'studentPresence'; payload: { guid: string; isPresent: boolean } }
+  | { type: 'allStudentPresence'; payload: boolean }
   | { type: 'studentStartTime'; payload: { guid: string; index: number; startTime: LocalTime } }
   | { type: 'studentEndTime'; payload: { guid: string; index: number; endTime: LocalTime } }
 
 //add in validation
-export function reducer (
-  state: AttendanceForm,
-  action: ReducerAction
-): AttendanceForm {
+export function reducer (state: AttendanceForm, action: ReducerAction): AttendanceForm {
   let substituteRecord
   let record
   switch (action.type) {
     
     case 'addSubstitute':
       substituteRecord = {
-        substitute: {
-          id: action.payload.firstName + action.payload.lastName,
-          ...action.payload
-        },
+        instructorSchoolYearGuid: action.payload.instructorSchoolYearGuid,
+        substitute: {...action.payload.instructor},
         attendance: [...state.defaultSchedule]
       }
       
@@ -164,6 +164,14 @@ export function reducer (
     case 'instanceDate':
       return { ...state, date: LocalDate.parse(action.payload) }
 
+    case 'addStudent':
+      const newStudentRecord: StudentRecord = {
+        isPresent: true,
+        attendance: [...state.defaultSchedule],
+        studentSchoolYear: action.payload as StudentSchoolYearWithRecordsView
+      }
+      return { ...state, studentRecords: [...state.studentRecords, newStudentRecord] }
+
     case 'studentRecords':
       return { ...state, studentRecords: action.payload }
 
@@ -172,6 +180,16 @@ export function reducer (
       record = state.studentRecords.find(record => record.studentSchoolYear.guid === action.payload.guid) as StudentRecord
       record.isPresent = action.payload.isPresent
       return { ...state, studentRecords: [...state.studentRecords] }
+
+    case 'allStudentPresence':
+      return { 
+        ...state, 
+        studentRecords: state.studentRecords
+          .map(record => ({
+            ...record,
+            isPresent: action.payload
+          })) 
+    }
 
     case 'studentStartTime':
       record = state.studentRecords.find(record => record.studentSchoolYear.guid === action.payload.guid) as StudentRecord

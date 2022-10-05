@@ -61,6 +61,29 @@ namespace GrantTracker.Migrations
                     b.HasComment("Lookup table for session activity types.");
                 });
 
+            modelBuilder.Entity("GrantTracker.Dal.Schema.AttendanceRecord", b =>
+                {
+                    b.Property<Guid>("Guid")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("InstanceDate")
+                        .HasColumnType("date")
+                        .HasComment("Specific date that the session took place on. Only one record is allowed per diem.");
+
+                    b.Property<Guid>("SessionGuid")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Guid");
+
+                    b.HasIndex("SessionGuid", "InstanceDate")
+                        .IsUnique();
+
+                    b.ToTable("AttendanceRecord", "GTkr");
+
+                    b.HasComment("Base record for attendance on a given date.");
+                });
+
             modelBuilder.Entity("GrantTracker.Dal.Schema.AuditLog", b =>
                 {
                     b.Property<Guid>("Guid")
@@ -137,34 +160,23 @@ namespace GrantTracker.Migrations
 
             modelBuilder.Entity("GrantTracker.Dal.Schema.FamilyAttendance", b =>
                 {
-                    b.Property<Guid>("AttendanceGuid")
+                    b.Property<Guid>("Guid")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("FamilyMemberGuid")
+                    b.Property<byte>("FamilyMember")
+                        .HasColumnType("tinyint");
+
+                    b.Property<Guid>("StudentAttendanceRecordGuid")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime>("InstanceDate")
-                        .HasColumnType("date")
-                        .HasComment("Specific date that the session took place on.");
+                    b.HasKey("Guid");
 
-                    b.Property<short>("MinutesAttended")
-                        .HasColumnType("smallint")
-                        .HasComment("Total number of minutes attended by a family member for the instance of a session.");
-
-                    b.Property<Guid>("SessionGuid")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("AttendanceGuid");
-
-                    b.HasIndex("SessionGuid");
-
-                    b.HasIndex("FamilyMemberGuid", "SessionGuid", "InstanceDate")
-                        .IsUnique();
+                    b.HasIndex("StudentAttendanceRecordGuid");
 
                     b.ToTable("FamilyAttendance", "GTkr");
 
-                    b.HasComment("Audit log for family attendance, contains any change that updates family hours.");
+                    b.HasComment("Log for family attendance, tied to studentAttendanceRecords,");
                 });
 
             modelBuilder.Entity("GrantTracker.Dal.Schema.FundingSource", b =>
@@ -220,36 +232,52 @@ namespace GrantTracker.Migrations
                     b.HasComment("User authentication for assignment of authorization claims. Only display this information to top-level users. Never send it to the front-end otherwise.");
                 });
 
-            modelBuilder.Entity("GrantTracker.Dal.Schema.InstructorAttendance", b =>
+            modelBuilder.Entity("GrantTracker.Dal.Schema.InstructorAttendanceRecord", b =>
                 {
-                    b.Property<Guid>("InstructorAttendanceGuid")
+                    b.Property<Guid>("Guid")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime>("InstanceDate")
-                        .HasColumnType("date")
-                        .HasComment("Specific date that the session took place on.");
+                    b.Property<Guid>("AttendanceRecordGuid")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("InstructorSchoolYearGuid")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<short>("MinutesAttended")
-                        .HasColumnType("smallint")
-                        .HasComment("Total number of minutes attended by an instructor for the instance of a session.");
+                    b.HasKey("Guid");
 
-                    b.Property<Guid>("SessionGuid")
-                        .HasColumnType("uniqueidentifier");
+                    b.HasIndex("AttendanceRecordGuid");
 
-                    b.HasKey("InstructorAttendanceGuid");
-
-                    b.HasIndex("SessionGuid");
-
-                    b.HasIndex("InstructorSchoolYearGuid", "SessionGuid", "InstanceDate")
+                    b.HasIndex("InstructorSchoolYearGuid", "AttendanceRecordGuid")
                         .IsUnique();
 
-                    b.ToTable("InstructorAttendance", "GTkr");
+                    b.ToTable("InstructorAttendanceRecord", "GTkr");
 
-                    b.HasComment("Audit log for instructor attendance, contains any change that updates instructor hours.");
+                    b.HasComment("Records for instructor attendance, stemming from a base attendance record for an instance date.");
+                });
+
+            modelBuilder.Entity("GrantTracker.Dal.Schema.InstructorAttendanceTimeRecord", b =>
+                {
+                    b.Property<Guid>("Guid")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<TimeSpan>("EntryTime")
+                        .HasColumnType("time");
+
+                    b.Property<TimeSpan>("ExitTime")
+                        .HasColumnType("time");
+
+                    b.Property<Guid>("InstructorAttendanceRecordGuid")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Guid");
+
+                    b.HasIndex("InstructorAttendanceRecordGuid");
+
+                    b.ToTable("InstructorAttendanceTimeRecord", "GTkr");
+
+                    b.HasComment("Records for instructor attendance, with the start and end times. Multiple can exist for a single day.");
                 });
 
             modelBuilder.Entity("GrantTracker.Dal.Schema.InstructorRegistration", b =>
@@ -584,28 +612,6 @@ namespace GrantTracker.Migrations
                     b.HasComment("Basic information that is ubiquitous to all people stored for use in the Grant Tracker.");
                 });
 
-            modelBuilder.Entity("GrantTracker.Dal.Schema.Relationship", b =>
-                {
-                    b.Property<Guid>("StudentGuid")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("FamilyMemberGuid")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Relation")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
-                        .HasComment("A short textual descriptor of how a student and family member are related. Father, Mother, brother, cousin, etc.");
-
-                    b.HasKey("StudentGuid", "FamilyMemberGuid");
-
-                    b.HasIndex("FamilyMemberGuid");
-
-                    b.ToTable("StudentFamily", "GTkr");
-
-                    b.HasComment("A many to many table that relates students and family members.");
-                });
-
             modelBuilder.Entity("GrantTracker.Dal.Schema.Session", b =>
                 {
                     b.Property<Guid>("SessionGuid")
@@ -786,36 +792,52 @@ namespace GrantTracker.Migrations
                     b.HasComment("Lookup table for session types.");
                 });
 
-            modelBuilder.Entity("GrantTracker.Dal.Schema.StudentAttendance", b =>
+            modelBuilder.Entity("GrantTracker.Dal.Schema.StudentAttendanceRecord", b =>
                 {
-                    b.Property<Guid>("StudentAttendanceGuid")
+                    b.Property<Guid>("Guid")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime>("InstanceDate")
-                        .HasColumnType("date")
-                        .HasComment("Specific date that the session took place on.");
-
-                    b.Property<short>("MinutesAttended")
-                        .HasColumnType("smallint")
-                        .HasComment("Total number of minutes attended by a student for the instance of a session.");
-
-                    b.Property<Guid>("SessionGuid")
+                    b.Property<Guid>("AttendanceRecordGuid")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("StudentSchoolYearGuid")
                         .HasColumnType("uniqueidentifier");
 
-                    b.HasKey("StudentAttendanceGuid");
+                    b.HasKey("Guid");
 
-                    b.HasIndex("SessionGuid");
+                    b.HasIndex("AttendanceRecordGuid");
 
-                    b.HasIndex("StudentSchoolYearGuid", "SessionGuid", "InstanceDate")
+                    b.HasIndex("StudentSchoolYearGuid", "AttendanceRecordGuid")
                         .IsUnique();
 
-                    b.ToTable("StudentAttendance", "GTkr");
+                    b.ToTable("StudentAttendanceRecord", "GTkr");
 
-                    b.HasComment("Audit log for student attendance, contains any change that updates student hours.");
+                    b.HasComment("Records for student attendance, stemming from a base attendance record for an instance date. Only one can exist per base record.");
+                });
+
+            modelBuilder.Entity("GrantTracker.Dal.Schema.StudentAttendanceTimeRecord", b =>
+                {
+                    b.Property<Guid>("Guid")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<TimeSpan>("EntryTime")
+                        .HasColumnType("time");
+
+                    b.Property<TimeSpan>("ExitTime")
+                        .HasColumnType("time");
+
+                    b.Property<Guid>("StudentAttendanceRecordGuid")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Guid");
+
+                    b.HasIndex("StudentAttendanceRecordGuid");
+
+                    b.ToTable("StudentAttendanceTimeRecord", "GTkr");
+
+                    b.HasComment("Records for student attendance, with the start and end times. Multiple can exist for a single day.");
                 });
 
             modelBuilder.Entity("GrantTracker.Dal.Schema.StudentRegistration", b =>
@@ -900,13 +922,6 @@ namespace GrantTracker.Migrations
                     b.HasCheckConstraint("CK_StartDate_Before_EndDate", "[StartDate] < [EndDate]");
                 });
 
-            modelBuilder.Entity("GrantTracker.Dal.Schema.FamilyMember", b =>
-                {
-                    b.HasBaseType("GrantTracker.Dal.Schema.Person");
-
-                    b.HasDiscriminator().HasValue("Family");
-                });
-
             modelBuilder.Entity("GrantTracker.Dal.Schema.Instructor", b =>
                 {
                     b.HasBaseType("GrantTracker.Dal.Schema.Person");
@@ -931,6 +946,17 @@ namespace GrantTracker.Migrations
                     b.HasDiscriminator().HasValue("Student");
                 });
 
+            modelBuilder.Entity("GrantTracker.Dal.Schema.AttendanceRecord", b =>
+                {
+                    b.HasOne("GrantTracker.Dal.Schema.Session", "Session")
+                        .WithMany("AttendanceRecords")
+                        .HasForeignKey("SessionGuid")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Session");
+                });
+
             modelBuilder.Entity("GrantTracker.Dal.Schema.ExceptionLog", b =>
                 {
                     b.HasOne("GrantTracker.Dal.Schema.InstructorSchoolYear", "InstructorSchoolYear")
@@ -944,20 +970,13 @@ namespace GrantTracker.Migrations
 
             modelBuilder.Entity("GrantTracker.Dal.Schema.FamilyAttendance", b =>
                 {
-                    b.HasOne("GrantTracker.Dal.Schema.FamilyMember", "FamilyMember")
-                        .WithMany("AttendanceRecords")
-                        .HasForeignKey("FamilyMemberGuid")
-                        .OnDelete(DeleteBehavior.Restrict)
+                    b.HasOne("GrantTracker.Dal.Schema.StudentAttendanceRecord", "StudentAttendanceRecord")
+                        .WithMany("FamilyAttendance")
+                        .HasForeignKey("StudentAttendanceRecordGuid")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("GrantTracker.Dal.Schema.Session", "Session")
-                        .WithMany("FamilyAttendance")
-                        .HasForeignKey("SessionGuid")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("FamilyMember");
-
-                    b.Navigation("Session");
+                    b.Navigation("StudentAttendanceRecord");
                 });
 
             modelBuilder.Entity("GrantTracker.Dal.Schema.Identity", b =>
@@ -971,23 +990,34 @@ namespace GrantTracker.Migrations
                     b.Navigation("SchoolYear");
                 });
 
-            modelBuilder.Entity("GrantTracker.Dal.Schema.InstructorAttendance", b =>
+            modelBuilder.Entity("GrantTracker.Dal.Schema.InstructorAttendanceRecord", b =>
                 {
+                    b.HasOne("GrantTracker.Dal.Schema.AttendanceRecord", "AttendanceRecord")
+                        .WithMany("InstructorAttendance")
+                        .HasForeignKey("AttendanceRecordGuid")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("GrantTracker.Dal.Schema.InstructorSchoolYear", "InstructorSchoolYear")
                         .WithMany("AttendanceRecords")
                         .HasForeignKey("InstructorSchoolYearGuid")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("GrantTracker.Dal.Schema.Session", "Session")
-                        .WithMany("InstructorAttendance")
-                        .HasForeignKey("SessionGuid")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                    b.Navigation("AttendanceRecord");
 
                     b.Navigation("InstructorSchoolYear");
+                });
 
-                    b.Navigation("Session");
+            modelBuilder.Entity("GrantTracker.Dal.Schema.InstructorAttendanceTimeRecord", b =>
+                {
+                    b.HasOne("GrantTracker.Dal.Schema.InstructorAttendanceRecord", "InstructorAttendanceRecord")
+                        .WithMany("TimeRecords")
+                        .HasForeignKey("InstructorAttendanceRecordGuid")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("InstructorAttendanceRecord");
                 });
 
             modelBuilder.Entity("GrantTracker.Dal.Schema.InstructorRegistration", b =>
@@ -1064,25 +1094,6 @@ namespace GrantTracker.Migrations
                     b.Navigation("Organization");
 
                     b.Navigation("Year");
-                });
-
-            modelBuilder.Entity("GrantTracker.Dal.Schema.Relationship", b =>
-                {
-                    b.HasOne("GrantTracker.Dal.Schema.FamilyMember", "FamilyMember")
-                        .WithMany("Relationships")
-                        .HasForeignKey("FamilyMemberGuid")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("GrantTracker.Dal.Schema.Student", "Student")
-                        .WithMany("Relationships")
-                        .HasForeignKey("StudentGuid")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("FamilyMember");
-
-                    b.Navigation("Student");
                 });
 
             modelBuilder.Entity("GrantTracker.Dal.Schema.Session", b =>
@@ -1184,11 +1195,11 @@ namespace GrantTracker.Migrations
                     b.Navigation("DaySchedule");
                 });
 
-            modelBuilder.Entity("GrantTracker.Dal.Schema.StudentAttendance", b =>
+            modelBuilder.Entity("GrantTracker.Dal.Schema.StudentAttendanceRecord", b =>
                 {
-                    b.HasOne("GrantTracker.Dal.Schema.Session", "Session")
+                    b.HasOne("GrantTracker.Dal.Schema.AttendanceRecord", "AttendanceRecord")
                         .WithMany("StudentAttendance")
-                        .HasForeignKey("SessionGuid")
+                        .HasForeignKey("AttendanceRecordGuid")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
@@ -1198,9 +1209,20 @@ namespace GrantTracker.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("Session");
+                    b.Navigation("AttendanceRecord");
 
                     b.Navigation("StudentSchoolYear");
+                });
+
+            modelBuilder.Entity("GrantTracker.Dal.Schema.StudentAttendanceTimeRecord", b =>
+                {
+                    b.HasOne("GrantTracker.Dal.Schema.StudentAttendanceRecord", "StudentAttendanceRecord")
+                        .WithMany("TimeRecords")
+                        .HasForeignKey("StudentAttendanceRecordGuid")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("StudentAttendanceRecord");
                 });
 
             modelBuilder.Entity("GrantTracker.Dal.Schema.StudentRegistration", b =>
@@ -1246,9 +1268,21 @@ namespace GrantTracker.Migrations
                     b.Navigation("Sessions");
                 });
 
+            modelBuilder.Entity("GrantTracker.Dal.Schema.AttendanceRecord", b =>
+                {
+                    b.Navigation("InstructorAttendance");
+
+                    b.Navigation("StudentAttendance");
+                });
+
             modelBuilder.Entity("GrantTracker.Dal.Schema.FundingSource", b =>
                 {
                     b.Navigation("Sessions");
+                });
+
+            modelBuilder.Entity("GrantTracker.Dal.Schema.InstructorAttendanceRecord", b =>
+                {
+                    b.Navigation("TimeRecords");
                 });
 
             modelBuilder.Entity("GrantTracker.Dal.Schema.InstructorSchoolYear", b =>
@@ -1303,17 +1337,13 @@ namespace GrantTracker.Migrations
 
             modelBuilder.Entity("GrantTracker.Dal.Schema.Session", b =>
                 {
+                    b.Navigation("AttendanceRecords");
+
                     b.Navigation("DaySchedules");
-
-                    b.Navigation("FamilyAttendance");
-
-                    b.Navigation("InstructorAttendance");
 
                     b.Navigation("InstructorRegistrations");
 
                     b.Navigation("SessionGrades");
-
-                    b.Navigation("StudentAttendance");
                 });
 
             modelBuilder.Entity("GrantTracker.Dal.Schema.SessionDaySchedule", b =>
@@ -1328,6 +1358,13 @@ namespace GrantTracker.Migrations
                     b.Navigation("Sessions");
                 });
 
+            modelBuilder.Entity("GrantTracker.Dal.Schema.StudentAttendanceRecord", b =>
+                {
+                    b.Navigation("FamilyAttendance");
+
+                    b.Navigation("TimeRecords");
+                });
+
             modelBuilder.Entity("GrantTracker.Dal.Schema.StudentSchoolYear", b =>
                 {
                     b.Navigation("AttendanceRecords");
@@ -1340,13 +1377,6 @@ namespace GrantTracker.Migrations
                     b.Navigation("Organizations");
                 });
 
-            modelBuilder.Entity("GrantTracker.Dal.Schema.FamilyMember", b =>
-                {
-                    b.Navigation("AttendanceRecords");
-
-                    b.Navigation("Relationships");
-                });
-
             modelBuilder.Entity("GrantTracker.Dal.Schema.Instructor", b =>
                 {
                     b.Navigation("InstructorSchoolYears");
@@ -1354,8 +1384,6 @@ namespace GrantTracker.Migrations
 
             modelBuilder.Entity("GrantTracker.Dal.Schema.Student", b =>
                 {
-                    b.Navigation("Relationships");
-
                     b.Navigation("StudentSchoolYears");
                 });
 #pragma warning restore 612, 618

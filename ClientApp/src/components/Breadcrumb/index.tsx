@@ -14,7 +14,7 @@ export default ({ items, activeItem }): JSX.Element => {
         linkAs={props => <span>{props.children}</span>}
         active={isActive}
       >
-        {isActive ? item : <Link to={pathRef.toLowerCase()}>{item}</Link>}
+        <Link to={pathRef.toLowerCase()}>{item}</Link>
       </Breadcrumb.Item>
     )
   })

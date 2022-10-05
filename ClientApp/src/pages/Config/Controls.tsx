@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Tab, Nav, Row, Col, Modal, Form } from 'react-bootstrap'
+import { Tab, Nav, Row, Col, Modal, Form, Button } from 'react-bootstrap'
 
 import Table, { Column } from 'components/BTable'
 import Button from 'components/Input/Button'
@@ -10,6 +10,7 @@ import { DropdownOption } from 'Models/Session'
 import { Quarter, YearView } from 'models/OrganizationYear'
 import Dropdown from 'components/Input/Dropdown'
 import { LocalDate, Year } from '@js-joda/core'
+import { DateOnly } from 'Models/DateOnly'
 
 const columns: Column[] = [
   {
@@ -39,6 +40,21 @@ const columns: Column[] = [
     attributeKey: 'isCurrentSchoolYear',
     transform: (isCurrent: boolean) => isCurrent ? 'Yes' : 'No',
     sortable: true
+  },
+  {
+    label: 'Set Active',
+    attributeKey: '',
+    transform: (year) => <Button onClick={() => {
+      year.isCurrentSchoolYear = true
+      year.startDate = DateOnly.toLocalDate(year.startDate)
+      year.endDate = DateOnly.toLocalDate(year.endDate)
+      api
+        .patch('developer/year', year)
+        .then(res => console.log(res))
+    }}>
+      Set Active Year
+    </Button>,
+    sortable: false
   }
   //extra statistics
 ]

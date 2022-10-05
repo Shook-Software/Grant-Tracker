@@ -88,8 +88,7 @@ export default ({ }) => {
               Help! Something isn't working correctly, what do I do?
             </div>
             <div style={{ marginLeft: '2.5rem' }}>
-              Please report your issue to ethan.shook2@tusd1.org, with all relevant details so that the underlying cause of the issue may be ascertained..
-              I will address the issue to be fixed in the next update.
+              Please <a href='https://forms.office.com/r/0Hq5fsxHze'>report</a> your issue, with all relevant details so that the underlying cause of the issue may be ascertained.
             </div>
           </div>
         </ListGroup.Item>
@@ -100,8 +99,8 @@ export default ({ }) => {
               I don't see my question listed.
             </div>
             <div style={{ marginLeft: '2.5rem' }}>
-              If there is a pressing question, please feel free to email ethan.shook2@tusd1.org.
-              I will address the question, and possibly add it to this FAQ.
+              If there is a pressing question, please email Elizabeth.Baldry@tusd1.org.
+              Otherwise, please fill out an entry at <a href='https://forms.office.com/r/0Hq5fsxHze'>https://forms.office.com/r/0Hq5fsxHze</a>.
             </div>
           </div>
         </ListGroup.Item>
@@ -109,7 +108,13 @@ export default ({ }) => {
 
 
 
-      <Container className='my-3'>
+    
+    </PageContainer >
+  )
+}
+
+/*
+  <Container className='my-3'>
         <h3>Changelog</h3>
         <h6>Version 1.1.1 - June 6th, 2022</h6>
         <Tab.Container defaultActiveKey='/home/help#fixes'>
@@ -187,6 +192,4 @@ export default ({ }) => {
           </Row>
         </Tab.Container>
       </Container>
-    </PageContainer >
-  )
-}
+      */

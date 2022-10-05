@@ -39,7 +39,6 @@ namespace GrantTracker.Dal.Schema
 	public class Student : Person
 	{
 		public string MatricNumber { get; set; }
-		public virtual ICollection<Relationship> Relationships { get; set; }
 		public virtual ICollection<StudentSchoolYear> StudentSchoolYears { get; set; }
 
 		public new static void Setup(ModelBuilder builder)
@@ -51,11 +50,6 @@ namespace GrantTracker.Dal.Schema
 			entity.HasMany(e => e.StudentSchoolYears)
 				.WithOne(e => e.Student)
 				.HasForeignKey(e => e.StudentGuid);
-
-			entity.HasMany(e => e.Relationships)
-				.WithOne(e => e.Student)
-				.HasForeignKey(e => e.StudentGuid)
-				.OnDelete(DeleteBehavior.Cascade);
 
 			/// /Properties
 

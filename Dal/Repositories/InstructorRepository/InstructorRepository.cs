@@ -24,36 +24,23 @@ namespace GrantTracker.Dal.Repositories.InstructorRepository
 		public async Task<List<EmployeeDto>> SearchSynergyStaffAsync(string name, string badgeNumber)
 		{
 			//employee db results
-			var employees = await _staffContext
+			return await _staffContext
 				.Employees
 				.Where(e => name.IsNullOrEmpty() || (e.GivenName + " " + e.Sn).Contains(name))
 				.Where(e => badgeNumber.IsNullOrEmpty() || e.EmployeeId.Contains(badgeNumber))
 				.Select(e => EmployeeDto.FromDatabase(e))
 				.ToListAsync();
-
-			//grant tracker results
-			//This might get too large after time
-			var existingEmployees = await _grantContext
-				.InstructorSchoolYears
-				.Where(emp => emp.OrganizationYearGuid == _identity.OrganizationYearGuid)
-				//.Where(isy => instructor school year equals the desired organizationYear, not just the current one) //see above
-				.Include(isy => isy.Instructor)
-				.ToListAsync();
-
-			//return employees that don't already exist in grant tracker for the given organizationYear
-			return employees
-				.Where(emp => existingEmployees.All(existingEmp => emp.BadgeNumber?.Trim() != existingEmp.Instructor.BadgeNumber?.Trim()))
-				.ToList();
 		}
 
-		public async Task<List<InstructorSchoolYearView>> GetInstructorsAsync(string name, Guid organizationGuid, Guid yearGuid)
+		public async Task<List<InstructorSchoolYearViewModel>> GetInstructorsAsync(Guid organizationYearGuid)
 		{
-			return await _grantContext.InstructorSchoolYears
+			return await _grantContext
+				.InstructorSchoolYears
+				.AsNoTracking()
 				.Include(isy => isy.Instructor)
 				.Include(isy => isy.Status)
-				.Where(isy => isy.OrganizationYear.OrganizationGuid == organizationGuid && isy.OrganizationYear.YearGuid == yearGuid)
-				.Where(isy => name.IsNullOrEmpty() || (isy.Instructor.FirstName + " " + isy.Instructor.LastName).Contains(name))
-				.Select(isy => InstructorSchoolYearView.FromDatabase(isy, null))
+				.Where(isy => isy.OrganizationYearGuid == organizationYearGuid)
+				.Select(isy => InstructorSchoolYearViewModel.FromDatabase(isy, null))
 				.ToListAsync();
 		}
 
@@ -61,12 +48,13 @@ namespace GrantTracker.Dal.Repositories.InstructorRepository
 		//think on it
 		//have a way to see duplicated instructors for deletion around this process
 
-		public async Task<InstructorSchoolYearView> GetInstructorSchoolYearAsync(Guid instructorSchoolYearGuid)
+		public async Task<InstructorSchoolYearViewModel> GetInstructorSchoolYearAsync(Guid instructorSchoolYearGuid)
 		{
 			//we could probably put these in two different functions and connect them from there
 			//all info for the given schoolYear
 			var instructorSchoolYear = await _grantContext
 				.InstructorSchoolYears
+				.AsNoTracking()
 				.Include(isy => isy.OrganizationYear).ThenInclude(oy => oy.Organization)
 				.Include(isy => isy.OrganizationYear).ThenInclude(oy => oy.Year)
 				.Include(isy => isy.Instructor)
@@ -86,13 +74,14 @@ namespace GrantTracker.Dal.Repositories.InstructorRepository
 				.Select(i => i.InstructorSchoolYears.Select(isy => isy.OrganizationYear).ToList())
 				.SingleAsync();
 
-			return InstructorSchoolYearView.FromDatabase(instructorSchoolYear, organizationYears);
+			return InstructorSchoolYearViewModel.FromDatabase(instructorSchoolYear, organizationYears);
 		}
 
-		public async Task<InstructorSchoolYearView> GetInstructorSchoolYearAsync(string badgeNumber)
+		public async Task<InstructorSchoolYearViewModel> GetInstructorSchoolYearAsync(string badgeNumber, Guid organizationYearGuid)
 		{
 			var instructorSchoolYear = await _grantContext
 				.InstructorSchoolYears
+				.AsNoTracking()
 				.Include(isy => isy.OrganizationYear).ThenInclude(oy => oy.Organization)
 				.Include(isy => isy.OrganizationYear).ThenInclude(oy => oy.Year)
 				.Include(isy => isy.Instructor)
@@ -100,7 +89,7 @@ namespace GrantTracker.Dal.Repositories.InstructorRepository
 				.Include(isy => isy.Identity)
 				.Include(isy => isy.SessionRegistrations).ThenInclude(sr => sr.Session).ThenInclude(s => s.DaySchedules).ThenInclude(day => day.TimeSchedules)
 				.Include(isy => isy.AttendanceRecords)
-				.Where(isy => isy.Instructor.BadgeNumber == badgeNumber && isy.OrganizationYearGuid == _identity.OrganizationYearGuid)
+				.Where(isy => isy.Instructor.BadgeNumber == badgeNumber && isy.OrganizationYearGuid == organizationYearGuid)
 				.SingleAsync();
 
 			//A list of other school years
@@ -112,15 +101,20 @@ namespace GrantTracker.Dal.Repositories.InstructorRepository
 				.Select(i => i.InstructorSchoolYears.Select(isy => isy.OrganizationYear).ToList())
 				.SingleAsync();
 
-			return InstructorSchoolYearView.FromDatabase(instructorSchoolYear, organizationYears);
+			return InstructorSchoolYearViewModel.FromDatabase(instructorSchoolYear, organizationYears);
 		}
 
-		public async Task<Guid> CreateAsync(InstructorDto instructor)
+		public async Task<Guid> CreateAsync(InstructorDto instructor, Guid organizationYearGuid)
 		{
-			var existingInstructor = await _grantContext.Instructors
-				.Where(i => !instructor.BadgeNumber.IsNullOrEmpty() && i.BadgeNumber == instructor.BadgeNumber)
+			bool badgeNumberIsNullOrEmpty = instructor.BadgeNumber.IsNullOrEmpty();
+			//ensure instructor exists
+			var existingInstructor = await _grantContext
+				.Instructors
+				.AsNoTracking()
+				.Where(i => !badgeNumberIsNullOrEmpty && i.BadgeNumber == instructor.BadgeNumber)
 				.FirstOrDefaultAsync();
 
+			//if not, create the person
 			if (existingInstructor is null)
 			{
 				var newGuid = Guid.NewGuid();
@@ -137,13 +131,16 @@ namespace GrantTracker.Dal.Repositories.InstructorRepository
 				existingInstructor = await _grantContext.Instructors.FindAsync(newGuid);
 			}
 
-			if (_grantContext.InstructorSchoolYears.Any(isy => isy.OrganizationYearGuid == _identity.OrganizationYearGuid && isy.InstructorGuid == existingInstructor.PersonGuid))
-				throw new Exception("User already exists in this organization for the current school year!");
+			var instructorSchoolYear = await _grantContext.InstructorSchoolYears.Where(isy => isy.OrganizationYearGuid == organizationYearGuid && isy.InstructorGuid == existingInstructor.PersonGuid).SingleOrDefaultAsync();
+			if (instructorSchoolYear != null)
+				return instructorSchoolYear.InstructorSchoolYearGuid;
+				//throw new Exception("User already exists in this organization for the current school year!");
 
+			//Create the instructor school year for the target organization
 			var newInstructorSchoolYear = new InstructorSchoolYear()
 			{
 				InstructorGuid = existingInstructor.PersonGuid,
-				OrganizationYearGuid = _identity.OrganizationYearGuid,
+				OrganizationYearGuid = organizationYearGuid,
 				StatusGuid = instructor.StatusGuid
 			};
 
@@ -160,7 +157,7 @@ namespace GrantTracker.Dal.Repositories.InstructorRepository
 			await _grantContext.SaveChangesAsync();
 		}
 
-		public async Task UpdateInstructorAsync(Guid instructorSchoolYearGuid, InstructorSchoolYearView instructorSchoolYear)
+		public async Task UpdateInstructorAsync(Guid instructorSchoolYearGuid, InstructorSchoolYearViewModel instructorSchoolYear)
 		{
 			var dbInstructorSchoolYear = await _grantContext.InstructorSchoolYears.FindAsync(instructorSchoolYearGuid);
 

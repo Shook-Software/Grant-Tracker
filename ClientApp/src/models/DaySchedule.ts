@@ -57,13 +57,13 @@ export abstract class DaySchedule {
   public static createWeeklySchedule (): WeeklySchedule {
     const today: LocalDate = LocalDate.now()
 
-    return daysOfWeekNumeric.map(day => ({
+    return [...daysOfWeekNumeric.map(day => ({
       dayOfWeek: DayOfWeek.toString(day),
       recurs: false,
       timeSchedules: (day === today.dayOfWeek().value()
         ? []
         : []) as TimeScheduleForm[]
-    })) as WeeklySchedule
+    })) as WeeklySchedule]
   }
 
   public static toViewModel (obj: DayScheduleDomain): DayScheduleView {

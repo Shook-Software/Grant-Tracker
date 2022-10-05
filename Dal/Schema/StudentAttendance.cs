@@ -2,25 +2,25 @@
 
 namespace GrantTracker.Dal.Schema
 {
-	public class StudentAttendance
+	public class StudentAttendanceRecord
 	{
-		public Guid StudentAttendanceGuid { get; set; }
+		public Guid Guid { get; set; }
 		public Guid StudentSchoolYearGuid { get; set; }
 		public virtual StudentSchoolYear StudentSchoolYear { get; set; }
-		public Guid SessionGuid { get; set; }
-		public virtual Session Session { get; set; }
-		public short MinutesAttended { get; set; }
-		public DateOnly InstanceDate { get; set; }
+		public Guid AttendanceRecordGuid { get; set; }
+		public virtual AttendanceRecord AttendanceRecord { get; set; }
+		public virtual ICollection<FamilyAttendance> FamilyAttendance { get; set; }
+		public virtual ICollection<StudentAttendanceTimeRecord> TimeRecords { get; set; }
 
 		public static void Setup(ModelBuilder builder)
 		{
-			var entity = builder.Entity<StudentAttendance>();
+			var entity = builder.Entity<StudentAttendanceRecord>();
 
-			entity.ToTable("StudentAttendance", "GTkr")
-				.HasComment("Audit log for student attendance, contains any change that updates student hours.")
-				.HasKey(e => e.StudentAttendanceGuid);
+			entity.ToTable("StudentAttendanceRecord", "GTkr")
+				.HasComment("Records for student attendance, stemming from a base attendance record for an instance date. Only one can exist per base record.")
+				.HasKey(e => e.Guid);
 
-			entity.HasIndex(e => new { e.StudentSchoolYearGuid, e.SessionGuid, e.InstanceDate })
+			entity.HasIndex(e => new { e.StudentSchoolYearGuid, e.AttendanceRecordGuid })
 				.IsUnique();
 
 			/// /Relations
@@ -30,9 +30,9 @@ namespace GrantTracker.Dal.Schema
 				.HasForeignKey(e => e.StudentSchoolYearGuid)
 				.OnDelete(DeleteBehavior.Restrict);
 
-			entity.HasOne(e => e.Session)
+			entity.HasOne(e => e.AttendanceRecord)
 				.WithMany(s => s.StudentAttendance)
-				.HasForeignKey(e => e.SessionGuid)
+				.HasForeignKey(e => e.AttendanceRecordGuid)
 				.OnDelete(DeleteBehavior.Restrict);
 
 			/// /Properties
@@ -41,19 +41,9 @@ namespace GrantTracker.Dal.Schema
 				.IsRequired()
 				.HasColumnType("uniqueidentifier");
 
-			entity.Property(e => e.SessionGuid)
+			entity.Property(e => e.AttendanceRecordGuid)
 				.IsRequired()
 				.HasColumnType("uniqueidentifier");
-
-			entity.Property(e => e.MinutesAttended)
-				.IsRequired()
-				.HasColumnType("smallint")
-				.HasComment("Total number of minutes attended by a student for the instance of a session.");
-
-			entity.Property(e => e.InstanceDate)
-				.IsRequired()
-				.HasColumnType("date")
-				.HasComment("Specific date that the session took place on.");
 		}
 	}
 }

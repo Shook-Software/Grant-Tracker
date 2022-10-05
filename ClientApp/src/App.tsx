@@ -5,18 +5,15 @@ import { Container } from 'react-bootstrap'
 import Breadcrumb from 'components/Breadcrumb'
 import MainNavigation from 'components/MainNavigation'
 
-import { OrganizationView, YearView } from 'models/OrganizationYear'
-
+import paths from 'utils/routing/paths'
 import appRoutes, { RenderRoutes } from 'utils/routing'
 import { IdentityClaim, User as User } from 'utils/authentication'
-import paths from 'utils/routing/paths'
-import api from 'utils/api'
+import { AxiosIdentityConfig } from 'utils/api'
 
 
 export const App = (): JSX.Element => {
   const [user, setUser] = useState<User>(new User(null))
-  const [organizations, setOrganizations] = useState<OrganizationView[]>([])
-  const [years, setYears] = useState<YearView[]>([]) 
+  const [isLoading, setIsLoading] = useState<boolean>(false)
   const location: Location = useLocation()
 
   const breadcrumbItems: string[] = location.pathname
@@ -28,23 +25,29 @@ export const App = (): JSX.Element => {
   const handleOrgYearChange = () => {
     //reassign user on change to redisplay page
     setUser(Object.assign(Object.create(Object.getPrototypeOf(user)), user))
+    AxiosIdentityConfig.setOrganizationYear(user.organization.guid, user.year.guid, user.organizationYearGuid, user.userGuid)
   }
 
   useEffect(() => {
+    setIsLoading(true)
     User
       .initUserAsync()
       .then(res => {
+        //AxiosIdentityConfig.setOrganizationYear(res.organization.guid, res.year.guid, res.organizationYearGuid, user.userGuid)
+        AxiosIdentityConfig.initialize(res.organization.guid, res.year.guid, res.organizationYearGuid, user.userGuid)
         setUser(res)
       })
+      .finally(() => { setIsLoading(false)})
   }, [])
 
-  if (!user || user.claim == IdentityClaim.Unauthenticated)
+  if (!isLoading && (!user || user.claim == IdentityClaim.Unauthenticated))
     return (
-      <div>
-        You are unauthenticated, refresh the page and contact
-        ethan.shook@tusd1.org if the issue persists.
+      <div> Please allow the page a moment to load. 
+        You may be unauthenticated, refresh the page or fill out an <a href='https://forms.office.com/r/0Hq5fsxHze'>issue report</a> with your badge number and organization if the issue persists.
       </div>
     )
+  else if (isLoading)
+      return <p>...Loading user information.</p>
 
   return (
     <div className=''>
@@ -52,8 +55,7 @@ export const App = (): JSX.Element => {
         key={user.badgeNumber}
         paths={paths}
         user={user}
-        orgYearOptions={{organizations, years}}
-        orgYearChange={(organizationGuid, yearGuid) => handleOrgYearChange(organizationGuid, yearGuid)}
+        orgYearChange={() => handleOrgYearChange()}
       />
       <Container
         className='d-flex flex-column align-items-start'

@@ -1,20 +1,19 @@
 import { Row } from 'react-bootstrap'
 
 import AttendanceTimeInput, { TimeInputType } from './TimeInput'
-import Table, { Column } from 'components/BTable'
-
+import Table, { Column, SortDirection } from 'components/BTable'
 import type { AttendanceForm } from '../state'
 import type { SubstituteRecord } from 'Models/StudentAttendance'
 
 const columnsBuilder = (dispatch): Column[] => [
   {
-    label: 'First Name',
-    attributeKey: 'substitute.firstName',
+    label: 'Last Name',
+    attributeKey: 'substitute.lastName',
     sortable: true
   },
   {
-    label: 'Last Name',
-    attributeKey: 'substitute.lastName',
+    label: 'First Name',
+    attributeKey: 'substitute.firstName',
     sortable: true
   },
   {
@@ -81,10 +80,11 @@ export default ({state, dispatch}: Props): JSX.Element => {
 
   return (
     <Row className='my-3  px-3'>
-      <h5 className='p-1'>Substitute Attendance</h5>
+      <h5 className='p-0'>Substitute Attendance</h5>
       <Table
         columns={columns}
         dataset={state.substituteRecords}
+        defaultSort={{index: 1, direction: SortDirection.Ascending}}
       />
     </Row>
   )

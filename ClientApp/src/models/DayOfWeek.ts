@@ -65,21 +65,25 @@ export abstract class DayOfWeek {
   }
 
   public static toInt (day: DayOfWeekString): DayOfWeekNumeric {
-    switch (day) {
-      case 'Sunday':
+    const lowerCaseDay = day.toLowerCase()
+    switch (lowerCaseDay) {
+      case 'sunday':
         return 0
-      case 'Monday':
+      case 'monday':
         return 1
-      case 'Tuesday':
+      case 'tuesday':
         return 2
-      case 'Wednesday':
+      case 'wednesday':
         return 3
-      case 'Thursday':
+      case 'thursday':
         return 4
-      case 'Friday':
+      case 'friday':
         return 5
-      case 'Saturday':
+      case 'saturday':
         return 6
+      default:
+        return 0
+
     }
   }
 

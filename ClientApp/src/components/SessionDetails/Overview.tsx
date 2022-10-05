@@ -1,4 +1,6 @@
 import { Card, ListGroup } from 'react-bootstrap'
+import { DateTimeFormatter } from '@js-joda/core'
+import { Locale } from '@js-joda/locale_en-us'
 
 import ListItem from 'components/Item'
 
@@ -30,6 +32,8 @@ export default ({ session }: Props): JSX.Element => {
               </p>
             }
           />
+          <ListItem label='First Session:' value={session.firstSession.format(DateTimeFormatter.ofPattern('MMMM d, yyyy').withLocale(Locale.ENGLISH))} />
+          <ListItem label='Last Session:' value={session.lastSession.format(DateTimeFormatter.ofPattern('MMMM d, yyyy').withLocale(Locale.ENGLISH))} />
         </ListGroup>
       </Card.Body>
     </Card>

@@ -14,7 +14,7 @@ namespace GrantTracker.Dal.Schema
 		public virtual Identity Identity { get; set; }
 
 		public virtual ICollection<InstructorRegistration> SessionRegistrations { get; set; }
-		public virtual ICollection<InstructorAttendance> AttendanceRecords { get; set; }
+		public virtual ICollection<InstructorAttendanceRecord> AttendanceRecords { get; set; }
 		public virtual ICollection<ExceptionLog> ExceptionLogs { get; set; } //this should get moved to identity, or something
 
 		public static void Setup(ModelBuilder builder)

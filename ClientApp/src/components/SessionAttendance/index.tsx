@@ -1,18 +1,31 @@
-import { useReducer } from 'react'
-import { Button, Modal } from 'react-bootstrap'
-import { LocalDate, TemporalAdjusters, DayOfWeek as JodaDoW } from '@js-joda/core'
+import { useState, useReducer, useEffect } from 'react'
+import { useParams } from 'react-router-dom'
+import { Button, Modal, Spinner } from 'react-bootstrap'
+import { DateTimeFormatter, LocalDate } from '@js-joda/core'
+import { Locale } from '@js-joda/locale_en-us'
 
 import AttendanceForm from './AttendanceForm'
 
-import { DayOfWeek } from 'Models/DayOfWeek'
 import { InstructorRecord, StudentRecord, SubstituteRecord } from 'Models/StudentAttendance'
-import { DayScheduleView } from 'Models/DaySchedule'
 
 import { reducer } from './state'
+import { TimeScheduleForm } from 'Models/TimeSchedule'
+import { DayOfWeekNumeric, DayOfWeek } from 'Models/DayOfWeek'
+import { DropdownOption } from 'Models/Session'
+
+import { getOpenDates } from './api'
 
 interface Props {
-  registrations: any
-  daySchedule: DayScheduleView
+  //registrations: any
+  //daySchedule: DayScheduleView
+  props: {
+    date: LocalDate | null,
+    dayOfWeek: DayOfWeekNumeric
+    studentRecords: StudentRecord[],
+    instructorRecords: InstructorRecord[],
+    substituteRecords: SubstituteRecord[],
+    defaultTimeSchedule: TimeScheduleForm[],
+  },
   handleClose: () => void
   handleSubmit: (
     date: LocalDate,
@@ -22,47 +35,53 @@ interface Props {
   ) => Promise<void>
 }
 
-function createDefaultStudentRecords (studentRegistrations, daySchedule): StudentRecord[] {
-  studentRegistrations = studentRegistrations.filter(reg => reg.daySchedule.dayOfWeek == daySchedule.dayOfWeek)
 
-  return studentRegistrations.map(registration => ({
-      isPresent: true,
-      attendance: registration.daySchedule.timeSchedules,
-      studentSchoolYear: registration.studentSchoolYear
-    })
-  )
-}
-
-function createDefaultInstructorRecords (instructorRegistrations, daySchedule)/*: InstructorRecord[]*/ {
-  return instructorRegistrations.map(registration => ({
-      isPresent: true,
-      attendance: daySchedule.timeSchedules,
-      instructorSchoolYear: registration
-    })
-  )
-}
-
+  /*const today: LocalDate = LocalDate.now()
+                const latestDateOnWeekday: LocalDate = return
+                   today.dayOfWeek() === JodaDoW.of(DayOfWeek.toInt(attendanceModalParams?.schedule?.dayOfWeek))
+                    ? today
+                    : today.with(TemporalAdjusters.previous(JodaDoW.of(DayOfWeek.toInt(attendanceModalParams?.schedule?.dayOfWeek))))\
+                    */
 
 
 export default ({
-  registrations,
-  daySchedule,
+  props,
   handleClose,
-  handleSubmit
+  handleSubmit,
 }: Props): JSX.Element => {
-  const today: LocalDate = LocalDate.now()
-  const latestDateOnWeekday: LocalDate = today.dayOfWeek() === JodaDoW.of(DayOfWeek.toInt(daySchedule.dayOfWeek))
-      ? today
-      : today.with(TemporalAdjusters.previous(JodaDoW.of(DayOfWeek.toInt(daySchedule.dayOfWeek))))
 
-  const [state, dispatch] = useReducer(reducer, {
-    defaultSchedule: daySchedule.timeSchedules,
-    date: latestDateOnWeekday,
-    studentRecords: createDefaultStudentRecords(registrations.students, daySchedule),
-    instructorRecords: createDefaultInstructorRecords(registrations.instructors, daySchedule),
-    substituteRecords: []
-  })
+  const { sessionGuid } = useParams()
+  const [state, dispatch] = useReducer(reducer, props)
+  const [dateOptions, setDateOptions] = useState<DropdownOption[]>([])
+  /*
+{
+      defaultSchedule: daySchedule.timeSchedules,
+      date: latestDateOnWeekday,
+      dayOfWeek: DayOfWeek.toInt(daySchedule.dayOfWeek),
+      studentRecords: createDefaultStudentRecords(registrations.students, daySchedule),
+      instructorRecords: createDefaultInstructorRecords(registrations.instructors, daySchedule),
+      substituteRecords: []
+    }
+  */
 
+  
+  useEffect(() => {
+    getOpenDates(sessionGuid, props.dayOfWeek, (options) => {
+      if (Array.isArray(options) && options.length !== 0) {
+        if (!props.date) 
+          dispatch({type: 'instanceDate', payload: options[0].guid})
+        setDateOptions(
+          props.date 
+          ? [...options, { guid: props.date.toString(), label: props.date.format(DateTimeFormatter.ofPattern('MMMM dd').withLocale(Locale.ENGLISH))}]
+          : options
+          )
+      }
+    })
+  }, [])
+
+  if (!state.date)
+    return <Spinner animation='border' role='status' />
+  
   return (
     <Modal
       show={true}
@@ -73,12 +92,13 @@ export default ({
       scrollable
     >
       <Modal.Header>
-        <Modal.Title>Attendance - {daySchedule.dayOfWeek}</Modal.Title>
+        <Modal.Title>Attendance - {DayOfWeek.toString(props.dayOfWeek)}</Modal.Title>
       </Modal.Header>
       <Modal.Body>
         <AttendanceForm
           state={state}
           dispatch={dispatch}
+          dateOptions={dateOptions}
         />
       </Modal.Body>
       <Modal.Footer>

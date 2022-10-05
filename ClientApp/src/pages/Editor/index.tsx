@@ -15,15 +15,9 @@ import { initialState, reducer, ReducerAction } from './Session/state'
 
 import paths from 'utils/routing/paths'
 import validationSchema from './validation'
-import {
-  fetchAllDropdownOptions,
-  fetchSession,
-  submitSession,
-  DropdownOptions
-} from './api'
-import { SessionForm } from 'Models/Session'
+import { fetchAllDropdownOptions, fetchSession, submitSession, DropdownOptions } from './api'
+import { Session, SessionForm } from 'Models/Session'
 import { User } from 'utils/authentication'
-import { useAdminPage } from 'pages/Admin'
 
 interface TabProps {
   guid: string | undefined
@@ -95,6 +89,8 @@ export default ({user}: {user: User}) => {
         }
       })
       .catch(exception => console.warn(exception))
+
+      dispatch({type: 'all', payload: Session.createDefaultForm()})
   }, [])
 
   useEffect(() => {
@@ -106,7 +102,7 @@ export default ({user}: {user: User}) => {
     dispatch({ type: 'objective', payload: data.objectives[0].guid })
     dispatch({ type: 'partnership', payload: data.partnershipTypes[0].guid })
     dispatch({ type: 'type', payload: data.sessionTypes.find(s => s.label === 'Student').guid })
-    dispatch({ type: 'organization', payload: data.organizationTypes[0].guid })
+    dispatch({ type: 'organization', payload: data.organizationTypes.find(o => o.abbreviation?.includes('N/A')).guid })
   }, [dropdownData])
 
   useEffect(() => {

@@ -4,12 +4,8 @@ namespace GrantTracker.Dal.Schema
 {
 	public class GrantTrackerContext : DbContext
 	{
-		//private readonly IAuthRepository _authRepository;
-
-		public GrantTrackerContext(DbContextOptions<GrantTrackerContext> options/*, IAuthRepository authRepository*/) : base(options)
-		{
-			//_authRepository = authRepository;
-		}
+		public GrantTrackerContext(DbContextOptions<GrantTrackerContext> options) : base(options)
+		{ }
 
 		protected override void ConfigureConventions(ModelConfigurationBuilder builder)
 		{
@@ -25,6 +21,10 @@ namespace GrantTracker.Dal.Schema
 
 			builder.Properties<DayOfWeek>()
 				.HaveConversion<DayOfWeekEnumConverter>()
+				.HaveColumnType("tinyint");
+
+			builder.Properties<FamilyMember>()
+				.HaveConversion<FamilyMemberConverter>()
 				.HaveColumnType("tinyint");
 		}
 
@@ -42,10 +42,8 @@ namespace GrantTracker.Dal.Schema
 		public DbSet<OrganizationType> OrganizationTypes { get; set; }
 		public DbSet<PartnershipType> Partnerships { get; set; }
 		public DbSet<Student> Students { get; set; }
-		public DbSet<FamilyMember> FamilyMembers { get; set; }
-		public DbSet<Relationship> Relationships { get; set; }
 		public DbSet<FamilyAttendance> FamilyAttendances { get; set; }
-		public DbSet<StudentAttendance> StudentAttendanceRecords { get; set; }
+		public DbSet<StudentAttendanceRecord> StudentAttendanceRecords { get; set; }
 		public DbSet<LookupDefinition> LookupDefinitions { get; set; }
 		public DbSet<LookupValue> LookupValues { get; set; }
 		public DbSet<SessionGrade> SessionGrades { get; set; }
@@ -53,12 +51,15 @@ namespace GrantTracker.Dal.Schema
 		public DbSet<SessionTimeSchedule> SessionTimeSchedules { get; set; }
 		public DbSet<StudentRegistration> StudentRegistrations { get; set; }
 		public DbSet<InstructorRegistration> InstructorRegistrations { get; set; }
-		public DbSet<InstructorAttendance> InstructorAttendanceRecords { get; set; }
+		public DbSet<InstructorAttendanceRecord> InstructorAttendanceRecords { get; set; }
 		public DbSet<Organization> Organizations { get; set; }
 		public DbSet<OrganizationYear> OrganizationYears { get; set; }
 		public DbSet<ExceptionLog> ExceptionLogs { get; set; }
 		public DbSet<Year> Years { get; set; }
 		public DbSet<StudentSchoolYear> StudentSchoolYears { get; set; }
+		public DbSet<AttendanceRecord> AttendanceRecords { get; set; }
+		public DbSet<StudentAttendanceTimeRecord> StudentAttendanceTimeRecords { get; set; }
+		public DbSet<InstructorAttendanceTimeRecord> InstructorAttendanceTimeRecords { get; set; }
 
 		protected override void OnModelCreating(ModelBuilder builder)
 		{
@@ -77,11 +78,9 @@ namespace GrantTracker.Dal.Schema
 			Session.Setup(builder);
 			SessionType.Setup(builder);
 			Student.Setup(builder);
-			FamilyMember.Setup(builder);
-			Relationship.Setup(builder);
 			StudentRegistration.Setup(builder);
 			FamilyAttendance.Setup(builder);
-			StudentAttendance.Setup(builder);
+			StudentAttendanceRecord.Setup(builder);
 			LookupDefinition.Setup(builder);
 			LookupValue.Setup(builder);
 			SessionGrade.Setup(builder);
@@ -89,13 +88,16 @@ namespace GrantTracker.Dal.Schema
 			SessionTimeSchedule.Setup(builder);
 			StudentRegistration.Setup(builder);
 			InstructorRegistration.Setup(builder);
-			InstructorAttendance.Setup(builder);
+			InstructorAttendanceRecord.Setup(builder);
 			InstructorSchoolYear.Setup(builder);
 			ExceptionLog.Setup(builder);
 			Organization.Setup(builder);
 			OrganizationYear.Setup(builder);
 			StudentSchoolYear.Setup(builder);
 			Year.Setup(builder);
+			AttendanceRecord.Setup(builder);
+			StudentAttendanceTimeRecord.Setup(builder);
+			InstructorAttendanceTimeRecord.Setup(builder);
 		}
 
 		/*private async Task UpdateAuditLogAsync()

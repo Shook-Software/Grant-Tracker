@@ -99,8 +99,7 @@ const SchedulingDisplay = ({
   const schedule = values.recurring
     ? values.scheduling
     : values.scheduling.find(s => s.timeSchedules.length !== 0)
-
-  console.log(schedule)
+  console.log(values.recurring)
   return (
     <Col>
       <ListGroup>
@@ -118,6 +117,22 @@ const SchedulingDisplay = ({
               day: 'numeric'
             })}
         />
+        {
+          values.recurring 
+          ?
+          <ListItem
+            label={'Series End Date:'}
+            value={convert(values.lastSessionDate)
+              .toDate()
+              .toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+              })}
+          />
+          : <></>
+        }
         <ListItem
           label={values.recurring ? 'Weekly Schedule:' : 'Time Schedule:'}
           value={

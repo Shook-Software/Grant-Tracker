@@ -31,7 +31,7 @@ export default ({ value, addGradeLevel, removeGradeLevel }): JSX.Element => {
       <Form.Group style={{width: 'fit-content'}}>
         <Form.Label>Grade Level</Form.Label>
         <Dropdown
-          options={gradeOptions}
+          options={gradeOptions.filter(option => !value.includes(option.guid))}
           value={'Add Grades...'}
           onChange={(guid: string) => addGradeLevel(guid)}
         />

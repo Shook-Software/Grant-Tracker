@@ -4,7 +4,9 @@ using GrantTracker.Dal.Models.Views;
 using GrantTracker.Dal.Repositories.AttendanceRepository;
 using GrantTracker.Dal.Repositories.SessionRepository;
 using GrantTracker.Dal.Repositories.StudentRepository;
+using GrantTracker.Dal.Repositories.StudentSchoolYearRepository;
 using GrantTracker.Dal.Repositories.InstructorRepository;
+using GrantTracker.Dal.Repositories.OrganizationYearRepository;
 using GrantTracker.Dal.Schema;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -18,22 +20,27 @@ namespace GrantTracker.Dal.Controllers
 	{
 		private readonly ISessionRepository _sessionRepository;
 		private readonly IStudentRepository _studentRepository;
+		private readonly IStudentSchoolYearRepository _studentSchoolYearRepository;
 		private readonly IAttendanceRepository _attendanceRepository;
 		private readonly IInstructorRepository _instructorRepository;
+		private readonly IOrganizationYearRepository _organizationYearRepository;
 
-		public SessionController(ISessionRepository sessionRepository, IStudentRepository studentRepository, IAttendanceRepository attendanceRepository, IInstructorRepository instructorRepository)
+		public SessionController(ISessionRepository sessionRepository, IStudentRepository studentRepository, IStudentSchoolYearRepository studentSchoolYearRepository, IAttendanceRepository attendanceRepository, IInstructorRepository instructorRepository, IOrganizationYearRepository organizationYearRepository)
 		{
 			_sessionRepository = sessionRepository;
 			_studentRepository = studentRepository;
+			_studentSchoolYearRepository = studentSchoolYearRepository;
 			_attendanceRepository = attendanceRepository;
 			_instructorRepository = instructorRepository;
+			_organizationYearRepository = organizationYearRepository;
 		}
 		#region Get
 
 		[HttpGet("")]
-		public async Task<ActionResult<List<SimpleSessionView>>> Search(string sessionName, [FromQuery(Name = "grades[]")] Guid[] grades, Guid organizationGuid, Guid yearGuid)
+		public async Task<ActionResult<List<SimpleSessionView>>> GetAsync(string sessionName, [FromQuery(Name = "grades[]")] Guid[] grades, Guid organizationGuid, Guid yearGuid)
 		{
-			var sessions = await _sessionRepository.GetAsync(sessionName, grades.ToList(), organizationGuid, yearGuid);
+			var organizationYearGuid = await _organizationYearRepository.GetGuidAsync(organizationGuid, yearGuid);
+			var sessions = await _sessionRepository.GetAsync(sessionName, organizationYearGuid);
 			return Ok(sessions);
 		}
 
@@ -56,6 +63,14 @@ namespace GrantTracker.Dal.Controllers
 		{
 			var students = await _sessionRepository.GetStudentRegistrationsAsync(sessionGuid, dayOfWeek);
 			return Ok(students);
+		}
+
+		[HttpGet("{sessionGuid:guid}/attendance")]
+		public async Task<ActionResult<List<AttendanceRecordView>>> GetAttendanceRecords(Guid sessionGuid)
+		{
+			var attendanceRecords = await _attendanceRepository.GetAttendanceRecordsAsync(sessionGuid);
+
+			return Ok(attendanceRecords);
 		}
 
 		[HttpGet("{sessionGuid:guid}/attendance/openDates")]
@@ -113,63 +128,34 @@ namespace GrantTracker.Dal.Controllers
 			return Created("session", session);
 		}
 
+
 		[HttpPost("{sessionGuid:guid}/registration")]
 		public async Task<ActionResult<List<SessionErrorMessage>>> RegisterStudent(Guid sessionGuid, [FromBody] StudentRegistrationDto newRegistration)
 		{
-			//check if student is already in our database
-			var studentSchoolYear = await _studentRepository.GetSingleAsync(newRegistration.Student.MatricNumber);
+			//Fetch basic session details
+			var targetSession = await _sessionRepository.GetAsync(sessionGuid);
 
-			//if they don't exist, add them
-			if (studentSchoolYear is null)
+			if (targetSession == null) 
+				return BadRequest("SessionGuid is invalid: " + sessionGuid);
+
+			//ensure student exists in database
+			var targetStudent = await _studentRepository.CreateIfNotExistsAsync(newRegistration.Student);
+
+			//ensure student school year exists for the session's organizationYear
+			var targetStudentSchoolYear = await _studentSchoolYearRepository.CreateIfNotExistsAsync(targetStudent.Guid, targetSession.OrganizationYear.Guid, newRegistration.Student.Grade);
+
+			//validate the registration and ensure that the student does not have time conflicts
+			var dayScheduleGuids = targetSession.DaySchedules.Select(ds => ds.DayScheduleGuid).ToList();
+			List<string> conflicts = await _sessionRepository.ValidateStudentRegistrationAsync(dayScheduleGuids, targetStudentSchoolYear.Guid);
+
+			if (!conflicts.IsNullOrEmpty())
 			{
-				StudentDto newStudent = new()
-				{
-					FirstName = newRegistration.Student.FirstName,
-					LastName = newRegistration.Student.LastName,
-					MatricNumber = newRegistration.Student.MatricNumber,
-					Grade = newRegistration.Student.Grade
-				};
-
-				await _studentRepository.AddAsync(newStudent);
-
-				studentSchoolYear = await _studentRepository.GetSingleAsync(newStudent.MatricNumber);
+				return Conflict(conflicts);
 			}
 
-			//if they don't exist, add them
-			if (studentSchoolYear is null)
-			{
-				StudentDto newStudent = new()
-				{
-					FirstName = newRegistration.Student.FirstName,
-					LastName = newRegistration.Student.LastName,
-					MatricNumber = newRegistration.Student.MatricNumber,
-					Grade = newRegistration.Student.Grade
-				};
+			await _sessionRepository.RegisterStudentAsync(sessionGuid, newRegistration.DayScheduleGuids, targetStudentSchoolYear.Guid);
 
-				await _studentRepository.AddAsync(newStudent);
-				studentSchoolYear = await _studentRepository.GetSingleAsync(newStudent.MatricNumber);
-			}
-
-			var scheduleAdditions = await _sessionRepository.RegisterStudentAsync(sessionGuid, newRegistration.DayScheduleGuids, studentSchoolYear.Guid);
-
-			//if there are conflicts, create error messages for display and return it
-			if (!scheduleAdditions.Conflicts.IsNullOrEmpty())
-			{
-				List<SessionErrorMessage> errorMessages = new();
-				scheduleAdditions.Conflicts.ForEach(conflict =>
-				{
-					string timeConflicts = conflict.TimeSchedules.Aggregate("", (result, current) => result += $"{current.StartTime} to {current.EndTime}\n");
-					errorMessages.Add(new SessionErrorMessage()
-					{
-						Message = $"Conflict with existing session on {conflict.DayOfWeek}:\n {timeConflicts}",
-						SessionGuid = conflict.SessionGuid
-					});
-				});
-
-				return Conflict(errorMessages);
-			}
-
-			return Ok();
+			return Created($"{sessionGuid}/registration", targetStudentSchoolYear.Guid);
 		}
 
 
@@ -177,30 +163,29 @@ namespace GrantTracker.Dal.Controllers
 		[HttpPost("{destinationSessionGuid:guid}/registration/copy")]
 		public async Task<ActionResult<List<string>>> CopyStudentRegistrations(Guid destinationSessionGuid, [FromBody] List<Guid> studentSchoolYearGuids)
 		{
+			//the student school years are assured to exist, otherwise they wouldn't have been registered already
 			List<Guid> scheduleGuids = (await _sessionRepository.GetAsync(destinationSessionGuid)).DaySchedules.Select(ds => ds.DayScheduleGuid).ToList();
 			List<string> conflicts = await _sessionRepository.ValidateStudentRegistrationsAsync(destinationSessionGuid, studentSchoolYearGuids);
 
 			if (conflicts.Count > 0)
 				return Conflict(conflicts);
 
-			List<Task> tasks = new();
+			//we cannot make a list of Tasks without making the requisite repositories transient. Otherwise, thread-unsafe operation occurs.
 			foreach (var studentSchoolYearGuid in studentSchoolYearGuids)
 			{
-				Task newTask = _sessionRepository.RegisterStudentAsync(destinationSessionGuid, scheduleGuids, studentSchoolYearGuid);
-				tasks.Add(newTask);
+				await _sessionRepository.RegisterStudentAsync(destinationSessionGuid, scheduleGuids, studentSchoolYearGuid);
 			}
 
-			Task.WaitAll(tasks.ToArray());
-
-			return Created($"{destinationSessionGuid}/registration", studentSchoolYearGuids);
+			return Created($"{destinationSessionGuid}/registration/copy", studentSchoolYearGuids);
 		}
 
-
-		//THIS NEEDS TO USE THE TARGETED ORGGUID AND YEARGUID otherwise we'll have reporting issues when Liz fills things in
+		
 		[HttpPost("{sessionGuid:guid}/attendance")]
 		public async Task<IActionResult> SubmitAttendance(Guid sessionGuid, [FromBody] SessionAttendanceDto sessionAttendance)
 		{
 			//A lot of this could be moved to the repository side
+
+			var organizationYearGuid = (await _sessionRepository.GetAsync(sessionGuid)).OrganizationYear.Guid;
 
 			if (sessionAttendance.SessionGuid == Guid.Empty)
 				throw new ArgumentException("SessionGuid cannot be empty.", nameof(sessionAttendance));
@@ -208,13 +193,21 @@ namespace GrantTracker.Dal.Controllers
 			List<InstructorAttendanceDto> substituteAttendance = new();
 			foreach (var substituteRecord in sessionAttendance.SubstituteRecords)
 			{
-				Guid instructorSchoolYearGuid;
-				bool substituteHasBadgeNumber = !substituteRecord.Substitute.BadgeNumber.IsNullOrEmpty();
+				Guid instructorSchoolYearGuid = substituteRecord.InstructorSchoolYearGuid;
 
-				if (substituteHasBadgeNumber)
-					instructorSchoolYearGuid = (await _instructorRepository.GetInstructorSchoolYearAsync(substituteRecord.Substitute.BadgeNumber)).Guid;
-				else
-					instructorSchoolYearGuid = await _instructorRepository.CreateAsync(substituteRecord.Substitute);
+				//this needs to check the organization year specified by the session, not just try and find one for her
+				bool instructorSchoolYearGuidExists = instructorSchoolYearGuid != Guid.Empty;
+
+				if (!instructorSchoolYearGuidExists)
+				{
+					bool substituteHasBadgeNumber = !substituteRecord.Substitute.BadgeNumber.IsNullOrEmpty();
+					if (substituteHasBadgeNumber)
+					{
+						instructorSchoolYearGuid = await _instructorRepository.CreateAsync(substituteRecord.Substitute, organizationYearGuid);
+					}
+					if (instructorSchoolYearGuid == Guid.Empty)
+						instructorSchoolYearGuid = await _instructorRepository.CreateAsync(substituteRecord.Substitute, organizationYearGuid);
+				}
 
 				InstructorAttendanceDto instructorAttendanceRecord = new()
 				{
@@ -228,20 +221,115 @@ namespace GrantTracker.Dal.Controllers
 			sessionAttendance.InstructorRecords.AddRange(substituteAttendance);
 			sessionAttendance.InstructorRecords = sessionAttendance.InstructorRecords.Distinct().ToList(); //ensure the substitutes haven't introduced a duplication error
 
+			List<StudentAttendanceDto> studentAttendance = new();
+			foreach (var studentRecord in sessionAttendance.StudentRecords)
+			{
+				//stopgap solution. We need to handle adding a student that is not with the current OrgYear a little more eloquently.. maybe, idk
+				Guid studentGuid = studentRecord.StudentGuid;
+
+				bool studentExistsInGrantTracker = studentGuid != Guid.Empty;
+				if (!studentExistsInGrantTracker)
+				{
+					var student = await _studentRepository.CreateIfNotExistsAsync(studentRecord.Student);
+					studentGuid = student.Guid;
+				}
+				//ensure studentSchoolYear exists for the session orgYear
+				var studentSchoolYear = await _studentSchoolYearRepository.CreateIfNotExistsAsync(studentGuid, organizationYearGuid, studentRecord.Student.Grade);
+
+				StudentAttendanceDto studentAttendanceDto = new()
+				{
+					StudentGuid = studentGuid,
+					StudentSchoolYearGuid = studentSchoolYear.Guid,
+					Student = studentRecord.Student,
+					Attendance = studentRecord.Attendance
+				};
+
+				studentAttendance.Add(studentAttendanceDto);
+			}
+			//reassign with verified student records
+			sessionAttendance.StudentRecords = studentAttendance;
+
 			await _attendanceRepository.AddAttendanceAsync(sessionGuid, sessionAttendance);
 			return NoContent();
 		}
 
 		#endregion Post
 
-		#region Put
+		#region Patch
 		[HttpPut("")]
 		public async Task<ActionResult<Guid>> EditSession([FromBody] FormSessionDto session)
 		{
 			await _sessionRepository.UpdateAsync(session);
 			return Ok(session.Guid);
 		}
-		#endregion Put
+
+		[HttpPatch("attendance")]
+		public async Task<IActionResult> EditAttendance(Guid attendanceGuid, [FromBody] SessionAttendanceDto sessionAttendance)
+		{
+			var organizationYearGuid = (await _sessionRepository.GetAsync(sessionAttendance.SessionGuid)).OrganizationYear.Guid;
+
+			//instructors don't need validation as they are ensured to exist in the given orgYear
+			//Ensure substitutes have all information required and are added to the session's organizationYear
+			List<InstructorAttendanceDto> substituteAttendance = new();
+			foreach (var substituteRecord in sessionAttendance.SubstituteRecords)
+			{
+				Guid instructorSchoolYearGuid = Guid.Empty;
+				
+				bool substituteHasBadgeNumber = !substituteRecord.Substitute.BadgeNumber.IsNullOrEmpty();
+				if (substituteHasBadgeNumber)
+					instructorSchoolYearGuid = (await _instructorRepository.GetInstructorSchoolYearAsync(substituteRecord.Substitute.BadgeNumber, organizationYearGuid)).Guid;
+
+				if (instructorSchoolYearGuid == Guid.Empty)
+					instructorSchoolYearGuid = await _instructorRepository.CreateAsync(substituteRecord.Substitute, organizationYearGuid);
+
+				InstructorAttendanceDto instructorAttendanceRecord = new()
+				{
+					InstructorSchoolYearGuid = instructorSchoolYearGuid,
+					Attendance = substituteRecord.Attendance
+				};
+
+				substituteAttendance.Add(instructorAttendanceRecord);
+			}
+
+			//reassign with verified instructor records
+			sessionAttendance.InstructorRecords.AddRange(substituteAttendance);
+			sessionAttendance.InstructorRecords = sessionAttendance.InstructorRecords.Distinct().ToList(); //ensure the substitutes haven't introduced a duplication error
+
+			//Ensure students have all information required and are added to the session's organizationYear
+			List<StudentAttendanceDto> studentAttendance = new();
+			foreach (var studentRecord in sessionAttendance.StudentRecords)
+			{
+				//stopgap solution. We need to handle adding a student that is not with the current OrgYear a little more eloquently.. maybe, idk
+				Guid studentGuid = studentRecord.StudentGuid;
+
+				bool studentExistsInGrantTracker = studentGuid != Guid.Empty;
+				if (!studentExistsInGrantTracker)
+				{
+					var student = await _studentRepository.CreateIfNotExistsAsync(studentRecord.Student);
+					studentGuid = student.Guid;
+				}
+				//ensure studentSchoolYear exists for the session orgYear
+				var studentSchoolYear = await _studentSchoolYearRepository.CreateIfNotExistsAsync(studentGuid, organizationYearGuid, studentRecord.Student.Grade);
+
+				StudentAttendanceDto studentAttendanceDto = new()
+				{
+					StudentGuid = studentGuid,
+					StudentSchoolYearGuid = studentSchoolYear.Guid,
+					Student = studentRecord.Student,
+					Attendance = studentRecord.Attendance
+				};
+
+				studentAttendance.Add(studentAttendanceDto);
+			}
+			//reassign with verified student records
+			sessionAttendance.StudentRecords = studentAttendance;
+
+			await _attendanceRepository.EditAttendanceAsync(attendanceGuid, sessionAttendance);
+
+			return Ok();
+		}
+
+		#endregion Patch
 
 		#region Delete
 
@@ -259,6 +347,13 @@ namespace GrantTracker.Dal.Controllers
 		public async Task<IActionResult> UnregisterStudent(Guid studentSchoolYearGuid, [FromQuery(Name = "dayScheduleGuid[]")] Guid[] dayScheduleGuids)
 		{
 			await _sessionRepository.RemoveStudentAsync(studentSchoolYearGuid, dayScheduleGuids.ToList());
+			return Ok();
+		}
+
+		[HttpDelete("attendance")]
+		public async Task<IActionResult> DeleteAttendanceRecord(Guid attendanceGuid)
+		{
+			await _sessionRepository.RemoveAttendanceRecordAsync(attendanceGuid);
 			return Ok();
 		}
 		#endregion Delete

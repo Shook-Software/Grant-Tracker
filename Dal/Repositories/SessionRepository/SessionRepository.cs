@@ -17,6 +17,7 @@ namespace GrantTracker.Dal.Repositories.SessionRepository
 
 		}
 
+		//come back to this and fix the identity thing
 		public async Task<SessionView> GetAsync(Guid sessionGuid)
 		{
 			return await UseDeveloperLog(async () =>
@@ -25,7 +26,9 @@ namespace GrantTracker.Dal.Repositories.SessionRepository
 					.Sessions
 					.AsNoTracking()
 					.Where(s => s.SessionGuid == sessionGuid
-					&& (_identity.Claim == IdentityClaim.Administrator || s.OrganizationYearGuid == _identity.OrganizationYearGuid))
+					&& (_identity.Claim == IdentityClaim.Administrator || s.OrganizationYear.OrganizationGuid == _identity.Organization.Guid))
+					.Include(s => s.OrganizationYear).ThenInclude(oy => oy.Organization)
+					.Include(s => s.OrganizationYear).ThenInclude(oy => oy.Year)
 					.Include(s => s.SessionGrades).ThenInclude(g => g.Grade)
 					.Include(s => s.SessionType)
 					.Include(s => s.Activity)
@@ -36,17 +39,11 @@ namespace GrantTracker.Dal.Repositories.SessionRepository
 					.Include(s => s.InstructorRegistrations).ThenInclude(i => i.InstructorSchoolYear).ThenInclude(i => i.Status)
 					.Include(s => s.InstructorRegistrations).ThenInclude(i => i.InstructorSchoolYear).ThenInclude(i => i.Instructor)
 					.Include(s => s.DaySchedules).ThenInclude(w => w.TimeSchedules)
+					.Include(s => s.AttendanceRecords).ThenInclude(ar => ar.StudentAttendance).ThenInclude(sa => sa.TimeRecords)
+					.Include(s => s.AttendanceRecords).ThenInclude(ar => ar.StudentAttendance).ThenInclude(sa => sa.FamilyAttendance)
+					.Include(s => s.AttendanceRecords).ThenInclude(ar => ar.InstructorAttendance).ThenInclude(ia => ia.TimeRecords)
 					.Select(s => SessionView.FromDatabase(s))
 					.SingleAsync();
-
-				/*session.SessionGrades = session.SessionGrades
-					.Select(g => new SessionGrade()
-					{
-						Guid = g.Guid,
-						GradeGuid = g.GradeGuid,
-						Grade = g.Grade,
-						Session = null
-					}).ToList();*/
 
 				if (!session.DaySchedules.IsNullOrEmpty())
 					session.DaySchedules = session.DaySchedules.OrderBy(schedule => schedule.DayOfWeek).ToList();
@@ -55,26 +52,19 @@ namespace GrantTracker.Dal.Repositories.SessionRepository
 			});
 		}
 
-		public async Task<List<SimpleSessionView>> GetAsync(string sessionName, List<Guid> grades, Guid organizationGuid, Guid yearGuid)
+		public async Task<List<SimpleSessionView>> GetAsync(string sessionName, Guid organizationYearGuid)
 		{
 			return await UseDeveloperLog(async () =>
 			{
 				//verify that the session's organization year is compatible with claimtype authorizations
 				//Admin are allowed to see anything, coordinators can only see sessions from past years at their current organization
-				if (!_identity.Claim.Equals(IdentityClaim.Administrator))
-				{
-					//OrganizationYear orgYear = await _grantContext.OrganizationYears.FindAsync(organizationYearGuid);
-					if (!organizationGuid.Equals(_identity.Organization.Guid))
-					{
-						throw new Exception("The user is not authorized to view the specified resources.");
-					}
-				}
 
 				//fetch sessions that match the given Organization and Year
-				var sessions = await _grantContext.Sessions
+				return await _grantContext.Sessions
 					.AsNoTracking()
-					.Where(s => (sessionName == null || s.Name.Contains(sessionName))
-							&& (s.OrganizationYear.OrganizationGuid == organizationGuid && s.OrganizationYear.YearGuid == yearGuid)) 
+					.Where(s => (sessionName == null || s.Name.Contains(sessionName)) && s.OrganizationYearGuid == organizationYearGuid) 
+					.Include(s => s.OrganizationYear).ThenInclude(s => s.Organization)
+					.Include(s => s.OrganizationYear).ThenInclude(s => s.Year)
 					.Include(s => s.SessionGrades).ThenInclude(g => g.Grade)
 					.Include(s => s.SessionType)
 					.Include(s => s.Activity)
@@ -85,23 +75,20 @@ namespace GrantTracker.Dal.Repositories.SessionRepository
 					.Include(s => s.DaySchedules)
 					.Select(s => SimpleSessionView.FromDatabase(s))
 					.ToListAsync();
-
-				//Transform raw sessions into SimpleSessionView
-				return sessions
-					.Where(s => grades.Count == 0 || grades.All(grade => s.SessionGrades.Any(s => s.GradeGuid.Equals(grade))))
-					.ToList();
 			});
 		}
 
+		//This returns if a session has any attendance records, and if it does, 
+		//Before I finished writing the above, I realize we can absolutely delete this
 		public async Task<bool> GetStatusAsync(Guid sessionGuid)
 		{
 			var session = await _grantContext.Sessions
 				.AsNoTracking()
-				.Include(s => s.StudentAttendance)
+				.Include(s => s.AttendanceRecords)
 				.Where(s => s.SessionGuid == sessionGuid)
 				.SingleOrDefaultAsync();
 
-			var allowed = session.StudentAttendance.Count == 0;
+			var allowed = session.AttendanceRecords.Count == 0;
 
 			return allowed;
 		}
@@ -110,7 +97,6 @@ namespace GrantTracker.Dal.Repositories.SessionRepository
 		{
 			await UseDeveloperLog(async () =>
 			{
-				sessionDetails.OrganizationYearGuid = _identity.OrganizationYearGuid;
 				var session = sessionDetails.ToDbSession();
 				var daySchedule = sessionDetails.GetDaySchedule();
 				var timeSchedule = sessionDetails.GetTimeSchedule();
@@ -126,51 +112,19 @@ namespace GrantTracker.Dal.Repositories.SessionRepository
 			});
 		}
 
-		public async Task<Registration> RegisterStudentAsync(Guid sessionGuid, List<Guid> scheduleGuids, Guid studentSchoolYearGuid)
+		public async Task RegisterStudentAsync(Guid sessionGuid, List<Guid> scheduleGuids, Guid studentSchoolYearGuid)
 		{
-			return await UseDeveloperLog(async () =>
+			await UseDeveloperLog(async () =>
 			{
-				//create new registration
-				Registration registration = new()
+				var newRegistrations = scheduleGuids.Select(guid => new StudentRegistration
 				{
-					SchoolYearGuid = studentSchoolYearGuid,
-					ScheduleAdditions = await _grantContext
-						.SessionDaySchedules
-						.Where(sds => scheduleGuids.Any(guid => guid == sds.SessionDayGuid))
-						.Include(sds => sds.TimeSchedules)
-						.OrderBy(sds => sds.DayOfWeek)
-						.Select(sds => DayScheduleView.FromDatabase(sds))
-						.ToListAsync()
-				};
+					StudentSchoolYearGuid = studentSchoolYearGuid,
+					DayScheduleGuid = guid
+				})
+				.ToList();
 
-				//then get existings session registrations for the current school year
-				var existingRegistrations = await _grantContext
-					.StudentRegistrations
-					.Where(s => s.StudentSchoolYearGuid == studentSchoolYearGuid)
-					.Include(s => s.DaySchedule).ThenInclude(d => d.TimeSchedules)
-					.Select(s => s.DaySchedule)
-					.OrderBy(s => s.DayOfWeek)
-					.Select(sds => DayScheduleView.FromDatabase(sds))
-					.ToListAsync();
-
-				//check if conflicts exist, and set them in registration if they do.
-				registration.SetConflicts(existingRegistrations);
-
-				//only add registration to database if no conflicts exist
-				if (registration.Conflicts.IsNullOrEmpty())
-				{
-					var newRegistrations = scheduleGuids.Select(guid => new StudentRegistration
-					{
-						StudentSchoolYearGuid = studentSchoolYearGuid,
-						DayScheduleGuid = guid
-					})
-						.ToList();
-
-					await _grantContext.StudentRegistrations.AddRangeAsync(newRegistrations);
-					await _grantContext.SaveChangesAsync();
-				}
-
-				return registration;
+				await _grantContext.StudentRegistrations.AddRangeAsync(newRegistrations);
+				await _grantContext.SaveChangesAsync();
 			});
 		}
 
@@ -183,6 +137,42 @@ namespace GrantTracker.Dal.Repositories.SessionRepository
 			else if (existingTimeSchedule.StartTime == newTimeSchedule.StartTime && existingTimeSchedule.EndTime == newTimeSchedule.EndTime)
 				return true;
 			return false;
+		}
+
+		public async Task<List<string>> ValidateStudentRegistrationAsync(List<Guid> dayScheduleGuids, Guid studentSchoolYearGuid)
+		{
+			List<string> validationErrors = new();
+
+			var existingStudentRegistrations = await _grantContext
+				.StudentRegistrations
+				.Where(sr => sr.StudentSchoolYearGuid == studentSchoolYearGuid)
+				.Include(sr => sr.StudentSchoolYear).ThenInclude(ssy => ssy.Student)
+				.Include(sr => sr.DaySchedule).ThenInclude(ds => ds.TimeSchedules)
+				.ToListAsync();
+
+			var daySchedules = await _grantContext
+				.SessionDaySchedules
+				.Include(sds => sds.TimeSchedules)
+				.Where(sds => dayScheduleGuids.Contains(sds.SessionDayGuid))
+				.ToListAsync();
+
+			foreach (SessionDaySchedule daySchedule in daySchedules)
+			{
+				var existingRegistrationsOnDay = existingStudentRegistrations.Where(sr => sr.DaySchedule.DayOfWeek == daySchedule.DayOfWeek).ToList(); 
+				foreach (var registration in existingRegistrationsOnDay)
+					foreach (SessionTimeSchedule newTimeSchedule in daySchedule.TimeSchedules)
+						//...compare their start and end times to the new session's
+						foreach (var existingTimeSchedule in registration.DaySchedule.TimeSchedules)
+					{
+						if (HasTimeConflict(existingTimeSchedule, newTimeSchedule))
+						{
+							//check how the ui looks if someone conflicts every student registration on an attempted copy
+							validationErrors.Add($"{registration.StudentSchoolYear.Student.FirstName} {registration.StudentSchoolYear.Student.LastName} has a conflict with an existing registration on {daySchedule.DayOfWeek} from {existingTimeSchedule.StartTime.ToShortTimeString()} to {existingTimeSchedule.EndTime.ToShortTimeString()}");
+						}
+					}
+			}
+
+			return validationErrors;
 		}
 
 		//Initially, we're going to copy over entire schedules, with no selective day of week, but we MAY add that in future releases
@@ -204,9 +194,11 @@ namespace GrantTracker.Dal.Repositories.SessionRepository
 				.Include(sr => sr.DaySchedule).ThenInclude(ds => ds.TimeSchedules)
 				.ToListAsync();
 
+			foreach (Guid studentSchoolYearGuid in studentSchoolYearGuids)
+				validationErrors.AddRange(await this.ValidateStudentRegistrationAsync(sessionSchedule.Select(ss => ss.SessionDayGuid).ToList(), studentSchoolYearGuid));
 			//it isn't as bad as it looks
 			//for each day of the week (most will be skipped)
-			foreach (DayOfWeek weekday in Enum.GetValues(typeof(DayOfWeek)))
+			/*foreach (DayOfWeek weekday in Enum.GetValues(typeof(DayOfWeek)))
 			{
 				var newDaySchedule = sessionSchedule.Find(ss => ss.DayOfWeek == weekday);
 				if (newDaySchedule == null)
@@ -227,14 +219,9 @@ namespace GrantTracker.Dal.Repositories.SessionRepository
 								validationErrors.Add($"{registration.StudentSchoolYear.Student.FirstName} {registration.StudentSchoolYear.Student.LastName} has a conflict with an existing registration on {weekday} from {existingTimeSchedule.StartTime.ToShortTimeString()} to {existingTimeSchedule.EndTime.ToShortTimeString()}");
 							}
 						}
-			}
+			}*/
 
 			return validationErrors;
-		}
-
-		public async Task CopyStudentRegistrationsAsync(Guid sourceSessionGuid, Guid destinationSessionGuid)
-		{
-
 		}
 
 		//this should honestly just be remove student async, not multiple.
@@ -409,29 +396,11 @@ namespace GrantTracker.Dal.Repositories.SessionRepository
 			});
 		}
 
-		/*public async Task<List<Session>> GetAllByInstructorAsync(Guid instructorGuid)
-		{
-			try
-			{
-				return await _db.Sessions
-					.Where(s => s.InstructorGuid == instructorGuid)
-					.ToListAsync();
-			}
-			catch (Exception ex)
-			{
-				Console.WriteLine(ex.ToString());
-				throw;
-			}
-		}*/
-
-		//set up an ability for admin to view this anyways, despite orgGuid
-		//Org is required as without it, anyone that has the Guid would then be able to view the session, however unlikely this is.
-		//Return nothing to unauthorized users
 		public async Task<List<StudentRegistrationView>> GetStudentRegistrationsAsync(Guid sessionGuid, int dayOfWeek = -1)
 		{
 			var registrations = await _grantContext.Sessions
 				.AsNoTracking()
-				.Where(s => s.SessionGuid.Equals(sessionGuid) && (_identity.Claim == IdentityClaim.Administrator || s.OrganizationYearGuid.Equals(_identity.OrganizationYearGuid)))
+				.Where(s => s.SessionGuid.Equals(sessionGuid) && (_identity.Claim == IdentityClaim.Administrator || s.OrganizationYear.OrganizationGuid.Equals(_identity.Organization.Guid)))
 				.Include(s => s.DaySchedules).ThenInclude(w => w.StudentRegistrations).ThenInclude(reg => reg.StudentSchoolYear).ThenInclude(s => s.Student)
 				.SelectMany(s => s.DaySchedules)
 				.Where(w => dayOfWeek.Equals(-1) || w.DayOfWeek.Equals((DayOfWeek)dayOfWeek))
@@ -442,6 +411,22 @@ namespace GrantTracker.Dal.Repositories.SessionRepository
 				.ToListAsync();
 
 			return registrations.Select(StudentRegistrationView.FromDatabase).ToList();
+		}
+
+		public async Task RemoveAttendanceRecordAsync(Guid attendanceGuid)
+		{
+			var attendanceRecord = await _grantContext
+				.AttendanceRecords
+				.Include(ar => ar.InstructorAttendance)
+				.Include(ar => ar.StudentAttendance).ThenInclude(sa => sa.FamilyAttendance)
+				.Where(ar => ar.Guid == attendanceGuid)
+				.SingleAsync();
+
+			_grantContext.RemoveRange(attendanceRecord.InstructorAttendance);
+			_grantContext.RemoveRange(attendanceRecord.StudentAttendance.SelectMany(sa => sa.FamilyAttendance).ToList());
+			_grantContext.RemoveRange(attendanceRecord.StudentAttendance);
+			_grantContext.Remove(attendanceRecord);
+			await _grantContext.SaveChangesAsync();
 		}
 	}
 }

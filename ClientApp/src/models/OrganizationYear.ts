@@ -8,6 +8,7 @@ export interface OrganizationView {
 
 export interface OrganizationYearView {
   guid: string
+  organization
   year: YearView
 }
 

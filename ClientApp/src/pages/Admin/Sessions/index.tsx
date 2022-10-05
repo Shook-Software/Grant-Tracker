@@ -1,19 +1,18 @@
 import { useState, useEffect } from 'react'
-import { Container, Row, Col, Spinner, Form, Button, Card } from 'react-bootstrap'
+import { Container, Spinner, Form, Button, Card } from 'react-bootstrap'
 import { Link } from 'react-router-dom'
 
 import CopyRegistrations from './CopyRegistrations'
 import { useAdminPage, Context } from 'pages/Admin'
 import AddButton from 'components/Input/Button'
-import Table, { Column } from 'components/BTable'
+import Table, { Column, SortDirection } from 'components/BTable'
 
 import { DayOfWeek } from 'Models/DayOfWeek'
 import { SimpleSessionView } from 'Models/Session'
 import { DropdownOption } from 'types/Session'
-import { StudentRegistrationDomain } from 'Models/StudentRegistration'
 
 import paths from 'utils/routing/paths'
-import api from 'utils/api'
+import api, { AxiosIdentityConfig } from 'utils/api'
 
 function dropdownOptionTransform (value: DropdownOption): string {
   return value.label
@@ -83,12 +82,12 @@ export default (): JSX.Element => {
       setIsLoading(true)
 
       api
-        .get('session', {
+        .get('/session', {
           params: { 
             sessionName: params?.sessionName, 
             grades: params?.grades,
-            organizationGuid: user.organization.guid,
-            yearGuid: user.year.guid
+            organizationGuid: AxiosIdentityConfig.identity.organizationGuid,
+            yearGuid: AxiosIdentityConfig.identity.yearGuid
           }
         })
         .then(res => {
@@ -141,6 +140,7 @@ export default (): JSX.Element => {
             <Table 
               columns={columns} 
               dataset={state.filter(e => e.name.toLocaleLowerCase().includes(searchTerm))} 
+              defaultSort={{index: 0, direction: SortDirection.Ascending}}
               rowProps={{key: 'sessionGuid'}} 
             />
           </div>

@@ -12,7 +12,7 @@ namespace GrantTracker.Dal.Schema
 		public string Grade { get; set; }
 
 		public virtual ICollection<StudentRegistration> SessionRegistrations { get; set; }
-		public virtual ICollection<StudentAttendance> AttendanceRecords { get; set; }
+		public virtual ICollection<StudentAttendanceRecord> AttendanceRecords { get; set; }
 
 		public static void Setup(ModelBuilder builder)
 		{

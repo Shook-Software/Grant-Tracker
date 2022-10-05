@@ -22,7 +22,8 @@ export default ({ studentSchoolYear, minutes }: Props): JSX.Element => {
     <ListGroup variant='flush'>
       <ListItem label='Grade:' value={Grade.toOrdinalString(studentSchoolYear.grade)} />
       <ListItem label='Matric Number:' value={student.matricNumber} />
-      <ListItem label='Attended For:' value={minutesToTimeSpan(minutes)} />
     </ListGroup>
   )
 }
+
+//<ListItem label='Attended For:' value={minutesToTimeSpan(minutes)} />

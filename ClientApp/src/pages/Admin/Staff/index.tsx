@@ -1,15 +1,15 @@
 import { useEffect, useState } from 'react'
-import { Modal, Alert, Container, Row, Col, Spinner, Button } from 'react-bootstrap'
+import { Container, Row, Col, Spinner, Button as BButton } from 'react-bootstrap'
 import { Link } from 'react-router-dom'
 
 import Table, { Column } from 'components/BTable'
-import SearchInstructorsModal from './SearchInstructorsModal'
+import AddInstructorsModal from 'components/Modals/AddInstructorModal'
 import Button from 'components/Input/Button'
 
 import { useAdminPage, Context } from '../index'
 import { DropdownOption } from 'types/Session'
-import { StaffDto } from 'types/Dto'
-import api from 'utils/api'
+import { addInstructor, fetchGrantTrackerInstructors } from './api'
+import { ApiResult } from 'components/ApiResultAlert'
 
 
 const columns: Column[] = [
@@ -40,11 +40,11 @@ const columns: Column[] = [
     sortable: false,
     transform: (value: string) => (
       <div className='d-flex justify-content-center'>
-        <Button className='p-0' size='sm'>
+        <BButton className='p-0' size='sm'>
           <Link className='p-3' to={value} style={{ color: 'inherit' }}>
             View
           </Link>
-        </Button>
+        </BButton>
       </div>
     )
   }
@@ -57,20 +57,40 @@ export default (): JSX.Element => {
   const [showModal, setShowModal] = useState<boolean>(false)
   const [isLoading, setIsLoading] = useState<boolean>(false)
 
-  function fetchInstructors (name: string = ''): void {
+  function fetchInstructors (): void {
     setIsLoading(true)
 
-    api
-      .get('instructor', { 
-          params: {
-          name: '',
-          organizationGuid: user.organization.guid,
-          yearGuid: user.year.guid
-        }
-      })
-      .then(res => setState(res.data))
+    fetchGrantTrackerInstructors()
+      .then(res => setState(res))
       .catch(err => console.warn(err))
       .finally(() => setIsLoading(false))
+  }
+
+  function addInternalInstructor (instructor): Promise<ApiResult> {
+    return new Promise((resolve, reject) => {
+      addInstructor(instructor)
+        .then(res => {
+          resolve({
+            label: `${instructor.firstName} ${instructor.lastName}`,
+            success: true
+          })
+        })
+        .catch(err => {
+          resolve({
+            label: `${instructor.firstName} ${instructor.lastName}`,
+            success: false
+          })
+        })
+    })
+  }
+
+  function addExternalInstructor (instructor): Promise<ApiResult> {
+    return new Promise((resolve, reject) => {
+      resolve({
+        label: `${instructor.firstName} ${instructor.lastName}`,
+        success: true
+      })
+    })
   }
 
   const handleOpenModal = () => setShowModal(true)
@@ -79,13 +99,20 @@ export default (): JSX.Element => {
     setShowModal(false)
   }
 
+
+
   useEffect(() => {
     fetchInstructors()
   }, [user])
 
   return (
     <Container>
-      <InstructorsModal show={showModal} handleClose={handleCloseModal} />
+      <AddInstructorsModal
+        show={showModal}
+        handleClose={handleCloseModal}
+        onInternalChange={addInternalInstructor}
+        onExternalChange={addExternalInstructor}
+      />
       <Row>
         <Col>
           <Button
@@ -115,70 +142,5 @@ export default (): JSX.Element => {
         </Col>
       </Row>
     </Container>
-  )
-}
-
-interface ApiResult {
-  instructorName: string
-  success: boolean
-  reason?: string
-}
-
-const ResultAlert = ({
-  apiResult
-}: {
-  apiResult: ApiResult | undefined
-}): JSX.Element => {
-  const [show, setShow] = useState<boolean>(true)
-
-  if (!apiResult || !show) return <></>
-
-  const variant: string = apiResult.success ? 'success' : 'danger'
-  const result: string = `${apiResult.instructorName} ${
-    apiResult.success ? ' was added!' : 'could not be added.'
-  }`
-
-  return (
-    <Alert variant={variant} onClose={() => setShow(false)} dismissible>
-      <Alert.Heading>{result}</Alert.Heading>
-      <p>{apiResult.reason}</p>
-    </Alert>
-  )
-}
-
-const InstructorsModal = ({ show, handleClose }): JSX.Element => {
-  const [apiResult, setApiResult] = useState<ApiResult>()
-
-  function addInstructor (instructor: StaffDto): void {
-    const fullName: string = `${instructor.firstName} ${instructor.lastName}`
-    api
-      .post('staff/add', instructor)
-      .then(res => {
-        setApiResult({
-          instructorName: fullName,
-          success: true
-        })
-      })
-      .catch(err => {
-        setApiResult({
-          instructorName: fullName,
-          success: false
-        })
-      })
-  }
-
-  return (
-    <Modal show={show} onHide={handleClose} centered size='xl' scrollable>
-      <Modal.Header closeButton>
-        <Modal.Title>
-          Adding New Instructor(s)...
-          <ResultAlert apiResult={apiResult} />
-        </Modal.Title>
-      </Modal.Header>
-      <SearchInstructorsModal
-        addInstructor={addInstructor}
-        handleClose={handleClose}
-      />
-    </Modal>
   )
 }

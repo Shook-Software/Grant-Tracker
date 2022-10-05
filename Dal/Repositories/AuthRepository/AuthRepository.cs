@@ -20,14 +20,14 @@ namespace GrantTracker.Dal.Repositories.AuthRepository
 			return _identity;
 		}
 
-		public async Task<List<UserIdentity>> GetUsersAsync()
+		public async Task<List<UserIdentity>> GetUsersAsync(Guid yearGuid)
 		{
 			return await _grantContext.UserIdentities
 				.AsNoTracking()
 				.Include(user => user.SchoolYear).ThenInclude(i => i.OrganizationYear).ThenInclude(o => o.Organization)
 				.Include(user => user.SchoolYear).ThenInclude(i => i.OrganizationYear).ThenInclude(o => o.Year)
 				.Include(user => user.SchoolYear).ThenInclude(i => i.Instructor)
-				.Where(user => user.SchoolYear.OrganizationYear.Year.YearGuid == _currentYearGuid) //to be replaced with a filter eventually
+				.Where(user => user.SchoolYear.OrganizationYear.YearGuid == yearGuid) //to be replaced with a filter eventually
 				.Select(u => new UserIdentity
 				{
 					UserGuid = u.SchoolYear.InstructorGuid,
@@ -53,33 +53,37 @@ namespace GrantTracker.Dal.Repositories.AuthRepository
 		//Add site users such as coordinators or administrators
 		public async Task AddUserAsync(UserIdentityView newUser)
 		{
-			bool userIsAuthenticated = _grantContext.UserIdentities
+			await UseDeveloperLog(async () =>
+			{
+				/*bool userIsAuthenticated = _grantContext.UserIdentities
 				.AsNoTracking()
 				.Include(user => user.SchoolYear).ThenInclude(sy => sy.Instructor)
+				.Where(i => i.SchoolYear.OrganizationYearGuid == newUser.OrganizationYearGuid)
 				.Any(user => user.SchoolYear.Instructor.BadgeNumber == newUser.BadgeNumber);
 
-			if (userIsAuthenticated)
-				throw new ArgumentException(String.Format("User with the specified badge number is already authenticated in the Grant Tracker."), nameof(newUser));
+				if (userIsAuthenticated)
+					throw new ArgumentException(String.Format("User with the specified badge number is already authenticated in the Grant Tracker for the given organization year."), nameof(newUser));
+				*/
 
-			//if user is not authenticated and not in the grant tracker database already
-			var existingInstructor = await _grantContext.Instructors
-				.AsNoTracking()
-				.Include(i => i.InstructorSchoolYears)
-				.ThenInclude(isy => isy.OrganizationYear)
-				.Where(i => i.BadgeNumber == newUser.BadgeNumber)
-				.FirstOrDefaultAsync();
+				//if user is not authenticated and not in the grant tracker database already
+				var existingInstructor = await _grantContext.Instructors
+					.AsNoTracking()
+					.Include(i => i.InstructorSchoolYears)
+					.ThenInclude(isy => isy.OrganizationYear)
+					.Where(i => i.BadgeNumber == newUser.BadgeNumber)
+					.FirstOrDefaultAsync();
 
-			if (existingInstructor is null)
-			{
-				var newInstructorGuid = Guid.NewGuid();
-				var adminStatus = await _grantContext.InstructorStatuses.Where(i => i.Label == "Administrator").SingleOrDefaultAsync();
-				var newInstructor = new Instructor()
+				if (existingInstructor is null)
 				{
-					PersonGuid = newInstructorGuid,
-					FirstName = newUser.FirstName,
-					LastName = newUser.LastName,
-					BadgeNumber = newUser.BadgeNumber,
-					InstructorSchoolYears = new List<InstructorSchoolYear>() {
+					var newInstructorGuid = Guid.NewGuid();
+					var adminStatus = await _grantContext.InstructorStatuses.Where(i => i.Label == "Administrator").SingleOrDefaultAsync();
+					var newInstructor = new Instructor()
+					{
+						PersonGuid = newInstructorGuid,
+						FirstName = newUser.FirstName,
+						LastName = newUser.LastName,
+						BadgeNumber = newUser.BadgeNumber,
+						InstructorSchoolYears = new List<InstructorSchoolYear>() {
 						new InstructorSchoolYear()
 						{
 							InstructorGuid = newInstructorGuid,
@@ -92,45 +96,48 @@ namespace GrantTracker.Dal.Repositories.AuthRepository
 							}
 						}
 					}
-				};
+					};
 
-				await _grantContext.Instructors.AddAsync(newInstructor);
-				await _grantContext.SaveChangesAsync();
-				existingInstructor = await _grantContext.Instructors.Include(i => i.InstructorSchoolYears).Where(i => i.BadgeNumber == newUser.BadgeNumber).FirstOrDefaultAsync();
-			}
-			else if (!existingInstructor.InstructorSchoolYears.Any(isy => isy.OrganizationYear.YearGuid == _currentYearGuid))
-			{
-				var instructorSchoolYearGuid = Guid.NewGuid();
-				var newSchoolYear = new InstructorSchoolYear()
+					await _grantContext.Instructors.AddAsync(newInstructor);
+					await _grantContext.SaveChangesAsync();
+					existingInstructor = await _grantContext.Instructors.Include(i => i.InstructorSchoolYears).Where(i => i.BadgeNumber == newUser.BadgeNumber).FirstOrDefaultAsync();
+				}
+				else if (!existingInstructor.InstructorSchoolYears.Any(isy => isy.OrganizationYear.OrganizationYearGuid == newUser.OrganizationYearGuid))
 				{
-					InstructorSchoolYearGuid = instructorSchoolYearGuid,
-					InstructorGuid = existingInstructor.PersonGuid,
-					OrganizationYearGuid = newUser.OrganizationYearGuid,
-					Identity = new Identity()
+					var instructorSchoolYearGuid = Guid.NewGuid();
+					var newSchoolYear = new InstructorSchoolYear()
 					{
-						Guid = instructorSchoolYearGuid,
-						Claim = newUser.Claim
-					}
+						InstructorSchoolYearGuid = instructorSchoolYearGuid,
+						InstructorGuid = existingInstructor.PersonGuid,
+						OrganizationYearGuid = newUser.OrganizationYearGuid,
+						Identity = new Identity()
+						{
+							Guid = instructorSchoolYearGuid,
+							Claim = newUser.Claim
+						},
+						StatusGuid = _grantContext.InstructorStatuses.Where(stat => stat.Label == "Administrator").First().Guid
+					};
+
+					await _grantContext.InstructorSchoolYears.AddAsync(newSchoolYear);
+					await _grantContext.SaveChangesAsync();
+					return;
+				}
+
+				var instructorSchoolYear = await _grantContext.InstructorSchoolYears
+						.Include(isy => isy.Instructor)
+						.Include(isy => isy.OrganizationYear)
+						.Where(isy => isy.Instructor.BadgeNumber == newUser.BadgeNumber && isy.OrganizationYear.OrganizationYearGuid == newUser.OrganizationYearGuid)
+						.FirstOrDefaultAsync();
+
+				var newIdentity = new Identity()
+				{
+					Guid = instructorSchoolYear.InstructorSchoolYearGuid,
+					Claim = newUser.Claim
 				};
+				await _grantContext.UserIdentities.AddAsync(newIdentity);
 
-				await _grantContext.InstructorSchoolYears.AddAsync(newSchoolYear);
 				await _grantContext.SaveChangesAsync();
-			}
-
-			var instructorSchoolYear = await _grantContext.InstructorSchoolYears
-					.Include(isy => isy.Instructor)
-					.Include(isy => isy.OrganizationYear)
-					.Where(isy => isy.Instructor.BadgeNumber == newUser.BadgeNumber && isy.OrganizationYear.YearGuid == _currentYearGuid)
-					.FirstOrDefaultAsync();
-
-		var newIdentity = new Identity()
-		{
-			Guid = instructorSchoolYear.InstructorSchoolYearGuid,
-			Claim = newUser.Claim
-		};
-		await _grantContext.UserIdentities.AddAsync(newIdentity);
-
-		await _grantContext.SaveChangesAsync();
+			});
 	}
 
 		public async Task DeleteUserAsync(Guid userOrganizationYearGuid)
@@ -143,22 +150,17 @@ namespace GrantTracker.Dal.Repositories.AuthRepository
 			_grantContext.UserIdentities.Remove(userIdentity);
 			await _grantContext.SaveChangesAsync();
 		}
-
-		public async Task<Guid> GetOrganizationYearGuid(Guid organizationGuid, Guid yearGuid)
+		public async Task<List<OrganizationYearView>> GetOrganizationYearsForYear(Guid yearGuid)
 		{
-			return await UseDeveloperLog(async () =>
-			{
-				//ensure they are authorized to access the specified organization
-				if (_identity.Claim.Equals(IdentityClaim.Coordinator) && !_identity.Organization.Guid.Equals(organizationGuid))
-				{
-					throw new Exception("The requestor is not authorized to access this resource.");
-				}
-
-				return await _grantContext.OrganizationYears
-				.Where(oy => oy.YearGuid == yearGuid && oy.OrganizationGuid == organizationGuid)
-				.Select(oy => oy.OrganizationYearGuid)
-				.SingleAsync();
-			});
+			return await _grantContext
+				.OrganizationYears
+				.AsNoTracking()
+				.Where(oy => oy.YearGuid == yearGuid)
+				.Include(oy => oy.Organization)
+				.Include(oy => oy.Year)
+				.OrderBy(oy => oy.Organization.Name)
+				.Select(oy => OrganizationYearView.FromDatabase(oy))
+				.ToListAsync();
 		}
 	}
 }

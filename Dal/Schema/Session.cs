@@ -29,13 +29,8 @@ namespace GrantTracker.Dal.Schema
 		public bool Recurring { get; set; } = false;
 
 		public virtual ICollection<SessionDaySchedule> DaySchedules { get; set; }
-
-		public virtual ICollection<StudentAttendance> StudentAttendance { get; set; }
-		public virtual ICollection<FamilyAttendance> FamilyAttendance { get; set; }
-
+		public virtual ICollection<AttendanceRecord> AttendanceRecords { get; set; }
 		public virtual ICollection<InstructorRegistration> InstructorRegistrations { get; set; }
-		public virtual ICollection<InstructorAttendance> InstructorAttendance { get; set; }
-
 		public virtual ICollection<SessionGrade> SessionGrades { get; set; }
 
 		public static void Setup(ModelBuilder builder)
@@ -82,11 +77,6 @@ namespace GrantTracker.Dal.Schema
 				.HasForeignKey(e => e.PartnershipTypeGuid)
 				.IsRequired();
 
-			entity.HasMany(e => e.FamilyAttendance)
-				.WithOne(e => e.Session)
-				.HasForeignKey(e => e.SessionGuid)
-				.IsRequired(false);
-
 			entity.HasMany(e => e.SessionGrades)
 				.WithOne(e => e.Session)
 				.HasForeignKey(e => e.SessionGuid);
@@ -131,16 +121,6 @@ namespace GrantTracker.Dal.Schema
 			entity.Property(e => e.LastSession)
 				.HasColumnType("date")
 				.HasComment("Date of the first session.");
-
-			/*entity.Property(e => e.StartTime)
-				.IsRequired()
-				.HasColumnType("time")
-				.HasComment("Time of day when the session starts.");
-
-			entity.Property(e => e.EndTime)
-				.IsRequired()
-				.HasColumnType("time")
-				.HasComment("Time of day when the session ends.");*/
 
 			entity.Property(e => e.Recurring)
 				.IsRequired()

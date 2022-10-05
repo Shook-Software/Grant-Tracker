@@ -19,6 +19,7 @@ namespace GrantTracker.Dal.Repositories.OrganizationRepository
 		{
 			var orgYears = await _grantContext
 				.OrganizationYears
+				.AsNoTracking()
 				.Include(oy => oy.Organization)
 				.Include(oy => oy.Year)
 				.Where(oy => oy.YearGuid == _currentYearGuid)
@@ -32,6 +33,7 @@ namespace GrantTracker.Dal.Repositories.OrganizationRepository
 		{
 			var organization = await _grantContext
 				.Organizations
+				.AsNoTracking()
 				.Where(org => org.OrganizationGuid == organizationGuid)
 				.Include(org => org.Years)
 				.ThenInclude(oy => oy.Year)

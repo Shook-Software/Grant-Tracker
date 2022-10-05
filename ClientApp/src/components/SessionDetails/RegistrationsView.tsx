@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Button, Button, Modal, Form } from 'react-bootstrap'
+import { Button, Modal, Form } from 'react-bootstrap'
 import { useNavigate } from 'react-router-dom'
 
 import Table, { Column } from 'components/BTable'
@@ -40,6 +40,7 @@ const byStudentColumns = (handleRemoveStudent): Column[] => [
     transform: (value: string): JSX.Element => (
       <div className='d-flex justify-content-center'>
         <Button
+          size='sm'
           variant='danger'
           onClick={event => {
             event.stopPropagation()

@@ -8,13 +8,13 @@ namespace GrantTracker.Dal.Repositories.AuthRepository
 	{
 		public UserIdentity GetIdentity();
 
-		public Task<List<UserIdentity>> GetUsersAsync();
+		public Task<List<UserIdentity>> GetUsersAsync(Guid yearGuid);
 
 		public Task AddUserAsync(UserIdentityView identity);
 
 		public Task DeleteUserAsync(Guid userGuid);
 
-		public Task<Guid> GetOrganizationYearGuid(Guid organizationGuid, Guid yearGuid);
+		public Task<List<OrganizationYearView>> GetOrganizationYearsForYear(Guid yearGuid);
 
 		//public Task EditUserAsync();
 	}

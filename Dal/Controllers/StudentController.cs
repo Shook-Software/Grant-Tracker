@@ -23,14 +23,14 @@ namespace GrantTracker.Dal.Controllers
 		}
 
 		[HttpGet("")]
-		public async Task<ActionResult<List<StudentSchoolYearView>>> GetAll(string name, Guid organizationGuid, Guid yearGuid)
+		public async Task<ActionResult<List<StudentSchoolYearViewModel>>> GetAll(string name, Guid organizationGuid, Guid yearGuid)
 		{
 			var students = await _studentRepository.GetAsync(name, organizationGuid, yearGuid);
 			return Ok(students);
 		}
 
 		[HttpGet("synergy")]
-		public async Task<ActionResult<List<StudentSchoolYearView>>> SearchSynergy(string firstName, string lastName, string matricNumber, [FromQuery(Name = "grades[]")] Guid[] grades)
+		public async Task<ActionResult<List<StudentSchoolYearViewModel>>> SearchSynergy(string firstName, string lastName, string matricNumber, [FromQuery(Name = "grades[]")] Guid[] grades)
 		{
 			List<string> synergyGrades = new();
 
@@ -59,7 +59,7 @@ namespace GrantTracker.Dal.Controllers
 		}
 
 		[HttpGet("{studentGuid:guid}")]
-		public async Task<ActionResult<StudentSchoolYearWithRecordsView>> Get(Guid studentGuid)
+		public async Task<ActionResult<StudentSchoolYearWithRecordsViewModel>> Get(Guid studentGuid)
 		{
 			var student = await _studentRepository.GetAsync(studentGuid);
 			return Ok(student);
@@ -67,10 +67,10 @@ namespace GrantTracker.Dal.Controllers
 
 		//not sure 
 		[HttpGet("{studentYearGuid:guid}/attendance")]
-		public async Task<ActionResult<List<AttendanceView>>> GetSingle(Guid studentYearGuid)
+		public async Task<ActionResult<List<StudentAttendanceViewModel>>> GetSingle(Guid studentYearGuid)
 		{
 			var studentSchoolYear = await _studentRepository.GetAsync(studentYearGuid);
-			return Ok(studentSchoolYear.Attendance);
+			return Ok(studentSchoolYear.AttendanceRecords);
 		}
 	}
 }

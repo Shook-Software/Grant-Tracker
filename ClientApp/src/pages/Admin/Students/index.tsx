@@ -28,7 +28,7 @@ const columns: Column[] = [
     label: 'Grade',
     attributeKey: 'grade',
     sortable: true
-  },
+  },/*
   {
     key: 'hours',
     label: 'Time',
@@ -44,7 +44,7 @@ const columns: Column[] = [
     attributeKey: 'minutesAttended',
     sortable: true
   },
-  /*{
+  {
     label: 'Latest Session',
     attributeKey: 'lastSessionDate',
     sortable: true,

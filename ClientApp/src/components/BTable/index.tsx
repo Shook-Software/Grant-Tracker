@@ -13,7 +13,9 @@ export interface Column {
   attributeKey: string
   sortable: boolean
   sortTransform?: (value: any) => string
-  transform?: (value: any) => any
+  transform?: (value: any, index: number | null) => any
+  headerTransform?: () => JSX.Element
+  headerProps?: object
   cellProps?: object
 }
 
@@ -29,10 +31,11 @@ interface Props {
   rowProps?: object
   defaultSort?: { index: number, direction: SortDirection }
   indexed?: boolean
-  ref?: React.Ref<HTMLTableElement | null>
+  className?: string
+  tableProps?: object
 }
 
-export default ({ columns, dataset, rowProps, defaultSort, indexed = false, ref }: Props): JSX.Element => {
+export default ({ columns, dataset, rowProps, defaultSort, indexed = false, className, tableProps }: Props): JSX.Element => {
   const [sortIndex, setSortIndex] = useState<number>(defaultSort?.index || 0)
   const [sortDirection, setSortDirection] = useState<SortDirection>(defaultSort?.direction || SortDirection.None)
 
@@ -54,10 +57,12 @@ export default ({ columns, dataset, rowProps, defaultSort, indexed = false, ref 
 
   return (
     <Table
+      className={className}
       striped
       bordered
       hover
-      ref={ref}
+      {...tableProps}
+      style={{border: '2px solid black', ...tableProps?.style}}
     >
       <Header
         columns={columns}

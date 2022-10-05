@@ -9,7 +9,7 @@ namespace GrantTracker.Dal.Repositories.SessionRepository
 	{
 		public Task<SessionView> GetAsync(Guid sessionGuid);
 
-		public Task<List<SimpleSessionView>> GetAsync(string sessionName, List<Guid> grades, Guid organizationGuid, Guid yearGuid);
+		public Task<List<SimpleSessionView>> GetAsync(string sessionName, Guid organizationYearGuid);
 
 		public Task AddAsync(FormSessionDto sessionDetails);
 
@@ -21,13 +21,14 @@ namespace GrantTracker.Dal.Repositories.SessionRepository
 
 		public Task<List<StudentRegistrationView>> GetStudentRegistrationsAsync(Guid sessionGuid, int dayOfWeek = -1);
 
-		public Task<Registration> RegisterStudentAsync(Guid sessionGuid, List<Guid> scheduleGuids, Guid studentGuid);
-
+		public Task RegisterStudentAsync(Guid sessionGuid, List<Guid> scheduleGuids, Guid studentGuid);
+		public Task<List<string>> ValidateStudentRegistrationAsync(List<Guid> dayScheduleGuids, Guid studentSchoolYearGuid);
 		public Task<List<string>> ValidateStudentRegistrationsAsync(Guid sessionGuid, List<Guid> studentSchoolYearGuids);
 
-		public Task CopyStudentRegistrationsAsync(Guid sourceSessionGuid, Guid destinationSessionGuid); 
+		//public Task CopyStudentRegistrationsAsync(Guid sourceSessionGuid, Guid destinationSessionGuid); 
 		//public Task CopyStudentRegistrationsAsync(Guid sessionGuid, List<Guid> studentSchoolYearGuids);
 
 		public Task RemoveStudentAsync(Guid studentSchoolYearGuid, List<Guid> dayScheduleGuids);
+		public Task RemoveAttendanceRecordAsync(Guid attendanceGuid);
 	}
 }

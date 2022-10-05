@@ -21,7 +21,6 @@ namespace GrantTracker.Dal.Schema
 
 			entity.HasDiscriminator<string>("PersonType")
 				.HasValue<Student>("Student")
-				.HasValue<FamilyMember>("Family")
 				.HasValue<Instructor>("Instructor");
 
 			/// /Relationships

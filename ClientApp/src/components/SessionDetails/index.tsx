@@ -1,20 +1,22 @@
 ﻿import { useParams, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { Spinner, Card, Row, Col, Button, Modal } from 'react-bootstrap'
-import { LocalDate } from '@js-joda/core'
+import { LocalDate, TemporalAdjusters, DayOfWeek as JodaDoW, DateTimeFormatter } from '@js-joda/core'
 
 import { PageContainer } from 'styles'
 import { ApiResult } from 'components/ApiResultAlert'
 import SearchStudentsModal from './SearchStudentsModal' //pull this out into a component rather than subcomponent of sessionDetails
 import SessionAttendance from 'components/SessionAttendance'
 import RegistrationsView from './RegistrationsView'
+import AttendanceHistory from './AttendanceHistory'
 
-import { DayScheduleView } from 'Models/DaySchedule'
+import { DayOfWeek } from 'Models/DayOfWeek'
 import { Session, SessionDomain, SessionView } from 'Models/Session'
 import { StudentRegistration, StudentRegistrationDomain, StudentRegistrationView } from 'Models/StudentRegistration'
-import { InstructorRecord, StudentAttendanceDto, StudentRecord, SubstituteRecord } from 'Models/StudentAttendance'
+import { AttendanceView, InstructorRecord, StudentAttendanceDto, StudentRecord, SubstituteRecord } from 'Models/StudentAttendance'
 
 import api from 'utils/api'
+import { addStudentToSession, getAttendanceRecords } from './api'
 
 ////
 //Refactoring imports, temporary location
@@ -22,9 +24,29 @@ import Header from './Header'
 import Overview from './Overview'
 import Instructors from './Instructors'
 import Scheduling from './Scheduling'
-import { rejects } from 'assert'
+import { postSessionAttendance } from 'components/SessionAttendance/api'
+import { Locale } from '@js-joda/locale_en-us'
 
-//
+
+function createDefaultStudentRecords (studentRegistrations, daySchedule): StudentRecord[] {
+  studentRegistrations = studentRegistrations.filter(reg => reg.daySchedule.dayOfWeek == daySchedule.dayOfWeek)
+
+  return studentRegistrations.map(registration => ({
+      isPresent: true,
+      attendance: registration.daySchedule.timeSchedules,
+      studentSchoolYear: registration.studentSchoolYear
+    })
+  )
+}
+
+function createDefaultInstructorRecords (instructorRegistrations, daySchedule)/*: InstructorRecord[]*/ {
+  return instructorRegistrations.map(registration => ({
+      isPresent: true,
+      attendance: daySchedule.timeSchedules,
+      instructorSchoolYear: registration
+    })
+  )
+}
 
 //Nice to have - Calender visual view, but only something to *come back to*
 export default ({}) => {
@@ -32,6 +54,7 @@ export default ({}) => {
   const { sessionGuid } = useParams()
   const [session, setSession] = useState<SessionView | null>(null)
   const [studentRegistrations, setStudentRegistrations] = useState<StudentRegistrationView[]>([])
+  const [attendanceRecords, setAttendanceRecords] = useState<AttendanceView[]>([])
   const [showStudentModal, setShowStudentModal] = useState<boolean>(false)
   const [attendanceApiResult, setAttendanceApiResult] = useState<ApiResult | undefined>(undefined)
   const [attendanceModalParams, setAttendanceModalParams] = useState({
@@ -42,6 +65,18 @@ export default ({}) => {
 
   /// /Temp stuff
   const [showSessionDeleteModal, setShowDeleteModal] = useState<boolean>(false)
+
+  function addStudent(student, schedule): Promise<void> {
+    return new Promise((resolve, reject) => {
+      addStudentToSession(sessionGuid, student, schedule)
+        .then(res => {
+          resolve()
+        })
+        .catch(err => {
+          reject(err)
+        })
+    })
+  }
 
   function handleSessionDeletion (deleteSession: boolean): void {
     if (deleteSession) {
@@ -91,6 +126,13 @@ export default ({}) => {
       })
   }
 
+  function getAttendance() {
+    getAttendanceRecords(sessionGuid)
+      .then(records => {
+        setAttendanceRecords(records)
+      })
+  }
+
   function submitAttendance (
     date: LocalDate, 
     studentRecords: StudentRecord[],
@@ -98,49 +140,26 @@ export default ({}) => {
     substituteRecords: SubstituteRecord[]
   ): Promise<void> {
     return new Promise((resolve, reject) => {
-    
-      const studentRecordsParam = studentRecords
-        .filter(record => record.isPresent !== false)
-        .map(record => ({
-          studentSchoolYearGuid: record.studentSchoolYear.guid,
-          attendance: record.attendance
-        }))
-        
-      const instructorRecordsParam = instructorRecords
-        .filter(record => record.isPresent !== false)
-        .map(record => ({
-          instructorSchoolYearGuid: record.instructorSchoolYear.guid,
-          attendance: record.attendance
-        }))
-
-      const params = {
-        sessionGuid,
-        date,
-        studentRecords: studentRecordsParam.filter(stu => stu),
-        instructorRecords: instructorRecordsParam,
-        substituteRecords: substituteRecords
-      }
-
-      api
-        .post<StudentAttendanceDto>(`session/${sessionGuid}/attendance`, params)
-        .then(res => {
+     postSessionAttendance(sessionGuid!, date, studentRecords, instructorRecords, substituteRecords)
+      .then(res => {
           handleAttendanceModalClose()
           setAttendanceApiResult({
-            label: `Attendance for ${date}`,
+            label: `Attendance for ${date.format(DateTimeFormatter.ofPattern('eeee, MMMM d').withLocale(Locale.ENGLISH))}`,
             success: true,
             reason: []
           })
-          resolve()
+      })
+      .catch(err => {
+        handleAttendanceModalClose()
+        setAttendanceApiResult({
+          label: 'Attendance',
+          success: false,
+          reason: ['Error in recording attendance, contact ethan.shook2@tusd1.org if issues persist.']
         })
-        .catch(err => {
-          handleAttendanceModalClose()
-          setAttendanceApiResult({
-            label: 'Attendance',
-            success: false,
-            reason: ['Error in recording attendance, contact ethan.shook2@tusd1.org if issues persist.']
-          })
-          reject()
-        })
+      })
+      .finally(() => {
+        getAttendance()
+      })
     })
   }
 
@@ -162,6 +181,7 @@ export default ({}) => {
   useEffect(() => {
     getSessionDetails()
     getStudentRegistrationsAsync()
+    getAttendance()
   }, [sessionGuid])
 
   useEffect(() => {
@@ -223,7 +243,7 @@ export default ({}) => {
               <Card>
                 <Card.Body>
                   <Card.Title>
-                    Attendance History (under construction)
+                    <AttendanceHistory sessionGuid={sessionGuid} attendanceRecords={attendanceRecords} onChange={getAttendance} />
                   </Card.Title>
                 </Card.Body>
               </Card>
@@ -238,19 +258,28 @@ export default ({}) => {
       </Card>
       <RemoveSessionModal sessionGuid={sessionGuid} session={session} show={showSessionDeleteModal} handleClose={handleSessionDeletion} />
       <SearchStudentsModal
-        sessionGuid={session.guid}
         show={showStudentModal}
         handleClose={() => setShowStudentModal(false)}
-        handleChange={() => null}
+        handleChange={({student, schedule}) => addStudent(student, schedule)}
         scheduling={session!.daySchedules}
       />
       {attendanceModalParams.show ? (
         <SessionAttendance
-          registrations={{
+          props={
+            {
+              date: null,
+              dayOfWeek: DayOfWeek.toInt(attendanceModalParams.schedule.dayOfWeek),
+              studentRecords: createDefaultStudentRecords(studentRegistrations, attendanceModalParams?.schedule),
+              instructorRecords: createDefaultInstructorRecords(session?.instructors, attendanceModalParams?.schedule),
+              substituteRecords: [],
+              defaultSchedule: attendanceModalParams.schedule?.timeSchedules || []
+            }
+          }
+          /*registrations={{
             instructors: session?.instructors,
             students: studentRegistrations
           }}
-          daySchedule={attendanceModalParams.schedule}
+          daySchedule={attendanceModalParams.schedule}*/
           handleClose={handleAttendanceModalClose}
           handleSubmit={submitAttendance}
         />
