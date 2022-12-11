@@ -13,8 +13,10 @@ namespace GrantTracker.Dal.Repositories.StudentRepository
 	{
 		public string FirstName { get; set; }
 		public string LastName { get; set; }
-		public List<string> Grades { get; set; }
+		public List<string> SynergyGrades { get; set; }
+		public List<string> GrantTrackerGrades { get; set; }
 		public string MatricNumber { get; set; }
+		public Guid OrganizationYearGuid { get; set; }
 	}
 
 	public class StudentRepository : RepositoryBase, IStudentRepository
@@ -153,20 +155,20 @@ namespace GrantTracker.Dal.Repositories.StudentRepository
 		public async Task<List<StudentSchoolYearViewModel>> SearchSynergyAsync(StudentFilter filter)
 		{
 			//fetch active year
-			var activeYear = await _grantContext.Years.Where(y => y.IsCurrentSchoolYear).SingleAsync();
+			//var activeYear = await _grantContext.Years.Where(y => y.IsCurrentSchoolYear).SingleAsync();
+			var schoolYear = (await _grantContext
+				.OrganizationYears
+				.Include(oy => oy.Year)
+				.FirstOrDefaultAsync(oy => oy.OrganizationYearGuid == filter.OrganizationYearGuid))
+				.Year.SchoolYear;
 
 			Expression<Func<EpcStuSchYr, bool>> filterExpression = ssy =>
-				ssy.Year.SchoolYear == activeYear.SchoolYear
-
+				ssy.Year.SchoolYear == schoolYear
 				&& (filter.FirstName == null || ssy.Student.Person.FirstName.Contains(filter.FirstName))
-				
 				&& (filter.LastName == null || ssy.Student.Person.LastName.Contains(filter.LastName))
-
 				&& (filter.MatricNumber == null || ssy.Student.SisNumber.Contains(filter.MatricNumber))
-
-				&& (_identity.Claim == IdentityClaim.Administrator || ssy.OrganizationYear.OrganizationGu == _identity.Organization.Guid)
-
-				&& (filter.Grades.Count == 0 || filter.Grades.Contains(ssy.Grade));
+				&& (_identity.Claim == IdentityClaim.Administrator || ssy.OrganizationYear.OrganizationGu == filter.OrganizationYearGuid)
+				&& (filter.SynergyGrades.Count == 0 || filter.SynergyGrades.Contains(ssy.Grade));
 
 			var synergyResults = await _synergy.RevSSY
 				.Include(ssy => ssy.OrganizationYear).ThenInclude(org => org.Organization)
@@ -191,16 +193,11 @@ namespace GrantTracker.Dal.Repositories.StudentRepository
 				.Include(ssy => ssy.Student)
 				.Include(ssy => ssy.OrganizationYear)
 				.Where(ssy => (
-				
 				(filter.FirstName == null || ssy.Student.FirstName.Contains(filter.FirstName))
-				
 				&& (filter.LastName == null || ssy.Student.LastName.Contains(filter.LastName))
-
 				&& (filter.MatricNumber == null || ssy.Student.MatricNumber.Contains(filter.MatricNumber))
-
-				&& (_identity.Claim == IdentityClaim.Administrator || ssy.OrganizationYearGuid == _identity.OrganizationYearGuid)
-
-				&& (filter.Grades.Count == 0 || filter.Grades.Contains(ssy.Grade))))
+				&& (_identity.Claim == IdentityClaim.Administrator || ssy.OrganizationYearGuid == filter.OrganizationYearGuid)
+				&& (filter.GrantTrackerGrades.Count == 0 || filter.GrantTrackerGrades.Contains(ssy.Grade))))
 				.Take(100)
 				.ToListAsync();
 			

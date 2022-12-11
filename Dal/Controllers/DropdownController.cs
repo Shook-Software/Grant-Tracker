@@ -64,5 +64,8 @@ namespace GrantTracker.Dal.Controllers
 
 			return NoContent();
 		}
+
+		//[HttpPatch("{")] //how do we uniquely identify between dropdown options in an extensible way? Should we allow for new options to be added? This would've been easier if we didn't use separate tables for the options
+		//fuck, do I need to do an entire overhaul??
 	}
 }

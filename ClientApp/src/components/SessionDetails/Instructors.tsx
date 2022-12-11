@@ -1,8 +1,6 @@
 import { Card, ListGroup } from 'react-bootstrap'
 
 export default ({ session }): JSX.Element => {
-
-  console.log(session.instructors)
   return (
     <Card className='mt-3'>
       <Card.Body>

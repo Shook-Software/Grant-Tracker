@@ -1,13 +1,14 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { useSession, Context } from '../index'
-import { LocalDate, LocalTime } from '@js-joda/core'
+import { LocalTime } from '@js-joda/core'
 
 import { TimeInput } from 'components/TimeRangeSelector'
 import { Form, Container, Row, Col, InputGroup, Button } from 'react-bootstrap'
 
 import { DayOfWeek, DayOfWeekString } from 'Models/DayOfWeek'
 import { WeeklySchedule, DayScheduleForm } from 'Models/DaySchedule'
-import { TimeScheduleForm } from 'Models/TimeSchedule'
+
+import Dropdown from 'components/Input/Dropdown'
 
 //Second Section - Date/Time
 
@@ -182,8 +183,8 @@ const DayScheduling = ({
 
 export default (): JSX.Element => {
   const { reducerDispatch, values }: Context = useSession()
-  const schedule: WeeklySchedule = values.scheduling
   document.title = `${values.guid ? 'Edit' : 'New'} Session - Scheduling`
+  const schedule: WeeklySchedule = values.scheduling
   let daySchedule: DayScheduleForm | undefined
 
   if (!values)
@@ -215,11 +216,6 @@ export default (): JSX.Element => {
       })
     }
   }
-
-  console.log(daySchedule)
-
-  //We MUST add a 'Add Another' section for single day sessions
-  //refactor the 'Add ANother/Remove Time button combos into a new component
 
   return (
     <Container>

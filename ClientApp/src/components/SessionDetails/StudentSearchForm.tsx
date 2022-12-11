@@ -3,7 +3,7 @@ import { Form, Container, Row, Col, Button, Spinner } from 'react-bootstrap'
 
 import GradeSelect from 'components/Input/GradeSelect'
 
-import api from 'utils/api'
+import api, { AxiosIdentityConfig } from 'utils/api'
 
 interface Filter {
   firstName: string
@@ -34,7 +34,7 @@ export default ({ handleChange }: Props): JSX.Element => {
   function filterStudents(): void {
     setIsLoading(true)
     api
-      .get('student/synergy', { params: { ...filter } })
+      .get('student/synergy', { params: { ...filter, organizationYearGuid: AxiosIdentityConfig.identity.organizationYearGuid } })
       .then(res => handleChange(res.data))
       .catch(err => console.warn(err))
       .finally(() => setIsLoading(false))

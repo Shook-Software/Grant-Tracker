@@ -165,12 +165,15 @@ export default ({ options, value, onChange, width, show = false, disableOverlay 
   })
 
   useEffect(() => {
-    if (listRef?.current && listRef.current.scrollHeight > listRef?.current.clientHeight) {
+    if (!listRef?.current)
+      return
+
+    if (listRef.current.scrollHeight > listRef?.current.clientHeight) {
       setListOverflow(true)
     } else {
       setListOverflow(false)
     }
-  }, [filterString, options])
+  }, [filterString, options, listRef.current])
 
   useEffect(() => {
     if (isCollapsed)

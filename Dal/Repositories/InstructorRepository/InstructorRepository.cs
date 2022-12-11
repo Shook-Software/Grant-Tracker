@@ -3,11 +3,9 @@ using GrantTracker.Dal.EmployeeDb;
 using GrantTracker.Dal.Models.Dto;
 using GrantTracker.Dal.Models.Views;
 using GrantTracker.Dal.Repositories.DevRepository;
-using GrantTracker.Dal.Repositories.InstructorRepository;
 using GrantTracker.Dal.Schema;
 using GrantTracker.Utilities;
 using Microsoft.EntityFrameworkCore;
-using System.Linq.Expressions;
 
 namespace GrantTracker.Dal.Repositories.InstructorRepository
 {
@@ -32,14 +30,14 @@ namespace GrantTracker.Dal.Repositories.InstructorRepository
 				.ToListAsync();
 		}
 
-		public async Task<List<InstructorSchoolYearViewModel>> GetInstructorsAsync(Guid organizationYearGuid)
+		public async Task<List<InstructorSchoolYearViewModel>> GetInstructorsAsync(Guid organizationGuid, Guid yearGuid)
 		{
 			return await _grantContext
 				.InstructorSchoolYears
 				.AsNoTracking()
 				.Include(isy => isy.Instructor)
 				.Include(isy => isy.Status)
-				.Where(isy => isy.OrganizationYearGuid == organizationYearGuid)
+				.Where(isy => isy.OrganizationYear.OrganizationGuid == organizationGuid && isy.OrganizationYear.YearGuid == yearGuid)
 				.Select(isy => InstructorSchoolYearViewModel.FromDatabase(isy, null))
 				.ToListAsync();
 		}
@@ -47,62 +45,7 @@ namespace GrantTracker.Dal.Repositories.InstructorRepository
 		//differences between coordinator request and admin request?
 		//think on it
 		//have a way to see duplicated instructors for deletion around this process
-
-		public async Task<InstructorSchoolYearViewModel> GetInstructorSchoolYearAsync(Guid instructorSchoolYearGuid)
-		{
-			//we could probably put these in two different functions and connect them from there
-			//all info for the given schoolYear
-			var instructorSchoolYear = await _grantContext
-				.InstructorSchoolYears
-				.AsNoTracking()
-				.Include(isy => isy.OrganizationYear).ThenInclude(oy => oy.Organization)
-				.Include(isy => isy.OrganizationYear).ThenInclude(oy => oy.Year)
-				.Include(isy => isy.Instructor)
-				.Include(isy => isy.Status)
-				.Include(isy => isy.Identity)
-				.Include(isy => isy.SessionRegistrations).ThenInclude(sr => sr.Session).ThenInclude(s => s.DaySchedules).ThenInclude(day => day.TimeSchedules)
-				.Include(isy => isy.AttendanceRecords)
-				.Where(isy => isy.InstructorSchoolYearGuid == instructorSchoolYearGuid)
-				.SingleAsync();
-
-			//A list of other school years
-			var organizationYears = await _grantContext
-				.Instructors
-				.Include(i => i.InstructorSchoolYears).ThenInclude(isy => isy.OrganizationYear).ThenInclude(oy => oy.Organization)
-				.Include(i => i.InstructorSchoolYears).ThenInclude(isy => isy.OrganizationYear).ThenInclude(oy => oy.Year)
-				.Where(i => i.PersonGuid == instructorSchoolYear.InstructorGuid)
-				.Select(i => i.InstructorSchoolYears.Select(isy => isy.OrganizationYear).ToList())
-				.SingleAsync();
-
-			return InstructorSchoolYearViewModel.FromDatabase(instructorSchoolYear, organizationYears);
-		}
-
-		public async Task<InstructorSchoolYearViewModel> GetInstructorSchoolYearAsync(string badgeNumber, Guid organizationYearGuid)
-		{
-			var instructorSchoolYear = await _grantContext
-				.InstructorSchoolYears
-				.AsNoTracking()
-				.Include(isy => isy.OrganizationYear).ThenInclude(oy => oy.Organization)
-				.Include(isy => isy.OrganizationYear).ThenInclude(oy => oy.Year)
-				.Include(isy => isy.Instructor)
-				.Include(isy => isy.Status)
-				.Include(isy => isy.Identity)
-				.Include(isy => isy.SessionRegistrations).ThenInclude(sr => sr.Session).ThenInclude(s => s.DaySchedules).ThenInclude(day => day.TimeSchedules)
-				.Include(isy => isy.AttendanceRecords)
-				.Where(isy => isy.Instructor.BadgeNumber == badgeNumber && isy.OrganizationYearGuid == organizationYearGuid)
-				.SingleAsync();
-
-			//A list of other school years
-			var organizationYears = await _grantContext
-				.Instructors
-				.Include(i => i.InstructorSchoolYears).ThenInclude(isy => isy.OrganizationYear).ThenInclude(oy => oy.Organization)
-				.Include(i => i.InstructorSchoolYears).ThenInclude(isy => isy.OrganizationYear).ThenInclude(oy => oy.Year)
-				.Where(i => i.PersonGuid == instructorSchoolYear.InstructorGuid)
-				.Select(i => i.InstructorSchoolYears.Select(isy => isy.OrganizationYear).ToList())
-				.SingleAsync();
-
-			return InstructorSchoolYearViewModel.FromDatabase(instructorSchoolYear, organizationYears);
-		}
+		
 
 		public async Task<Guid> CreateAsync(InstructorDto instructor, Guid organizationYearGuid)
 		{

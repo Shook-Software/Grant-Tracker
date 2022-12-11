@@ -9,7 +9,7 @@ namespace GrantTracker.Dal.Schema
 		Guardian = 2,
 		Grandma = 3,
 		Grandfather = 4,
-		Other = 5
+		OtherAdult = 5
 	}
 
 	public class FamilyAttendance

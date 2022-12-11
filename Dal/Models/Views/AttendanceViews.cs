@@ -2,6 +2,15 @@
 
 namespace GrantTracker.Dal.Models.Views
 {
+	public class SimpleAttendanceViewModel
+	{
+		public Guid AttendanceGuid { get; set; }
+		public DateOnly InstanceDate { get; set; }
+		public int InstructorCount { get; set; }
+		public int StudentCount { get; set; }
+	}
+
+
 	public class AttendanceViewModel
 	{
 		public class AttendanceSessionViewModel
@@ -29,10 +38,18 @@ namespace GrantTracker.Dal.Models.Views
 				} : null,
 				StudentAttendanceRecords = record.StudentAttendance
 					.Select(attend => new StudentAttendanceViewModel()
-					{
-						Guid = attend.Guid,
-						StudentSchoolYear = StudentSchoolYearViewModel.FromDatabase(attend.StudentSchoolYear),
-						TimeRecords = attend.TimeRecords.Select(time => AttendanceTimeRecordViewModel.FromDatabase(time)).ToList()
+						{
+							Guid = attend.Guid,
+							StudentSchoolYear = StudentSchoolYearViewModel.FromDatabase(attend.StudentSchoolYear),
+							TimeRecords = attend.TimeRecords.Select(time => AttendanceTimeRecordViewModel.FromDatabase(time)).ToList(),
+							FamilyAttendance = attend.FamilyAttendance
+								.GroupBy(fa => fa.FamilyMember,
+								(familyMember, group) => new FamilyAttendanceViewModel
+								{
+									FamilyMember = familyMember,
+									Count = group.Count()
+								})
+								.ToList()
 					})
 					.ToList(),
 				InstructorAttendanceRecords = record.InstructorAttendance
@@ -68,12 +85,19 @@ namespace GrantTracker.Dal.Models.Views
 		};
 	}
 
+	public class FamilyAttendanceViewModel
+	{
+		public FamilyMember FamilyMember { get; set; }
+		public int Count { get; set; }
+	}
+
 	public class StudentAttendanceViewModel
 	{
 		public Guid Guid { get; set; }
 		public AttendanceViewModel AttendanceRecord { get; set; }
 		public StudentSchoolYearViewModel StudentSchoolYear { get; set; }
 		public List<AttendanceTimeRecordViewModel> TimeRecords { get; set; }
+		public List<FamilyAttendanceViewModel> FamilyAttendance { get; set; }
 	}
 
 	public class InstructorAttendanceViewModel

@@ -1,7 +1,7 @@
 import { Column } from './index'
 import styled from 'styled-components'
 
-const HeaderCell = styled.th<{ sortable: boolean }>`
+export const HeaderCell = styled.th<{ sortable: boolean }>`
   ${props => props.sortable ? 'cursor: pointer;' : ''}
 `
 
@@ -30,7 +30,7 @@ export const Header = ({ columns, indexed, setSortIndex }: Props): JSX.Element =
           }}
           {...col.headerProps}
         >
-          {col.label}
+          {col.label.split('\n').map(item => <div>{item}</div>)}
         </HeaderCell>
     )
   }

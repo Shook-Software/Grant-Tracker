@@ -11,18 +11,18 @@ import { DropdownOption } from 'Models/Session'
 interface Props {
   state: AttendanceForm
   dispatch: (action: ReducerAction) => void
-  dateOptions: DropdownOption[]
+  dateOptions: DropdownOption[],
+  isFamilySession: boolean
 }
 
-export default ({ state, dispatch, dateOptions }: Props): JSX.Element => {
-  console.log(state)
+export default ({ state, dispatch, dateOptions, isFamilySession }: Props): JSX.Element => {
   
   return (
     <>
       <OverviewForm state={state} dispatch={dispatch} dateOptions={dateOptions} />
       <InstructorAttendance state={state} dispatch={dispatch} />
       <SubstituteAttendance state={state} dispatch={dispatch} />
-      <StudentAttendance state={state} dispatch={dispatch} />
+      <StudentAttendance state={state} dispatch={dispatch} isFamilySession={isFamilySession} />
     </>
   )
 }

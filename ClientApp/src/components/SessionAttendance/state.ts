@@ -1,5 +1,6 @@
 import { LocalDate, LocalTime } from '@js-joda/core'
-import { DayOfWeek, DayOfWeekNumeric } from 'Models/DayOfWeek'
+import { FamilyMember } from 'Models/FamilyMember'
+import { DayOfWeekNumeric } from 'Models/DayOfWeek'
 import { StudentSchoolYearView, StudentSchoolYearWithRecordsView } from 'Models/Student'
 import { InstructorRecord, StudentRecord, SubstituteRecord } from 'Models/StudentAttendance'
 import { TimeScheduleView } from 'Models/TimeSchedule'
@@ -35,10 +36,15 @@ export type ReducerAction =
   | { type: 'studentStartTime'; payload: { guid: string; index: number; startTime: LocalTime } }
   | { type: 'studentEndTime'; payload: { guid: string; index: number; endTime: LocalTime } }
 
+  | { type: 'addFamilyMember', payload: { studentSchoolYearGuid: string, familyMember: FamilyMember } }
+  | { type: 'removeFamilyMember', payload: { studentSchoolYearGuid: string, familyMember: FamilyMember } }
+
 //add in validation
 export function reducer (state: AttendanceForm, action: ReducerAction): AttendanceForm {
   let substituteRecord
   let record
+  let studentRecord: StudentRecord
+
   switch (action.type) {
     
     case 'addSubstitute':
@@ -156,7 +162,6 @@ export function reducer (state: AttendanceForm, action: ReducerAction): Attendan
       return { ...state, instructorRecords: [...state.instructorRecords] }
 
     case 'instructorEndTime':
-      console.log(action, state.instructorRecords)
       record = state.instructorRecords.find(record => record.instructorSchoolYear.guid === action.payload.guid)  as InstructorRecord
       record.endTime = action.payload.endTime
       return { ...state, instructorRecords: [...state.instructorRecords] }
@@ -208,6 +213,45 @@ export function reducer (state: AttendanceForm, action: ReducerAction): Attendan
         record.attendance[action.payload.index].startTime = action.payload.endTime
 
       return { ...state, studentRecords: [...state.studentRecords] }
+
+
+    case 'addFamilyMember':
+
+      studentRecord = state.studentRecords.find(record => record.studentSchoolYear.guid == action.payload?.studentSchoolYearGuid) as StudentRecord
+
+      if (studentRecord.familyAttendance) {
+        let familyMemberIndex = studentRecord.familyAttendance.findIndex(x => x.familyMember == action.payload.familyMember)
+
+        if (familyMemberIndex === -1)
+        studentRecord.familyAttendance = [...studentRecord.familyAttendance, { familyMember: action.payload.familyMember, count: 1 } ]
+        else {
+          studentRecord.familyAttendance[familyMemberIndex].count++
+        }
+      }
+      else {
+        studentRecord.familyAttendance = [{ familyMember: action.payload.familyMember, count: 1 }]
+      }
+
+      return { ...state, studentRecords: [...state.studentRecords]}
+      
+    case 'removeFamilyMember':
+
+      studentRecord = state.studentRecords.find(record => record.studentSchoolYear.guid === action.payload.studentSchoolYearGuid) as StudentRecord
+
+      if (studentRecord.familyAttendance) {
+        let familyMemberIndex = studentRecord.familyAttendance.findIndex(x => x.familyMember == action.payload.familyMember)
+
+        if (familyMemberIndex === -1)
+          return { ...state }
+        else { //could we do else if count-- === 0 and remove? Should decrease the count, then remove it only if it's 0
+          studentRecord.familyAttendance[familyMemberIndex].count--
+
+          if (studentRecord.familyAttendance[familyMemberIndex].count == 0)
+            studentRecord.familyAttendance = studentRecord.familyAttendance.filter(x => x.familyMember != action.payload.familyMember)
+        }
+      }
+
+      return { ...state, studentRecords: [...state.studentRecords]}
 
     default:
       return state

@@ -7,7 +7,9 @@ using GrantTracker.Dal.Repositories.OrganizationYearRepository;
 using GrantTracker.Dal.Repositories.OrganizationRepository;
 using GrantTracker.Dal.Repositories.SessionRepository;
 using GrantTracker.Dal.Repositories.InstructorRepository;
+using GrantTracker.Dal.Repositories.InstructorSchoolYearRepository;
 using GrantTracker.Dal.Repositories.AttendanceRepository;
+using GrantTracker.Dal.Repositories.ReportRepository;
 using GrantTracker.Dal.Repositories.StudentRepository;
 using GrantTracker.Dal.Repositories.StudentSchoolYearRepository;
 using GrantTracker.Dal.Repositories.UserRepository;
@@ -37,10 +39,12 @@ namespace GrantTracker.Utilities.OnStartup
 				options.UseSqlServer(config.GetConnectionString("SynergyEOD"));
 			});
 
+			//repositories
 			builder.Services.AddScoped<IDropdownRepository, DropdownRepository>();
 			builder.Services.AddScoped<ISessionRepository, SessionRepository>();
 			builder.Services.AddScoped<IRoleProvider, RoleProvider>();
 			builder.Services.AddScoped<IInstructorRepository, InstructorRepository>();
+			builder.Services.AddScoped<IInstructorSchoolYearRepository, InstructorSchoolYearRepository>();
 			builder.Services.AddScoped<IAttendanceRepository, AttendanceRepository>();
 			builder.Services.AddScoped<IStudentRepository, StudentRepository>();
 			builder.Services.AddScoped<IStudentSchoolYearRepository, StudentSchoolYearRepository>();
@@ -50,6 +54,7 @@ namespace GrantTracker.Utilities.OnStartup
 			builder.Services.AddScoped<IYearRepository, YearRepository>();
 			builder.Services.AddScoped<IOrganizationRepository, OrganizationRepository>();
 			builder.Services.AddScoped<IOrganizationYearRepository, OrganizationYearRepository>();
+			builder.Services.AddScoped<IReportRepository, ReportRepository>();
 		}
 	}
 }

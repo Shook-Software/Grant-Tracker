@@ -14,9 +14,7 @@ export function fetchSynergyInstructors (name: string, badgeNumber: string): Pro
   return new Promise((resolve, reject) => {
     api
       .get('instructor/search', {params: {name, badgeNumber}})
-      .then(res => {
-        resolve(res.data)
-      })
+      .then(res => resolve(res.data))
       .catch(err => reject(err))
   })
 }
@@ -26,7 +24,8 @@ export function fetchGrantTrackerInstructors (): Promise<any[]> {
     api
       .get('instructor', { 
           params: {
-          organizationYearGuid: AxiosIdentityConfig.identity.organizationYearGuid
+          organizationGuid: AxiosIdentityConfig.identity.organizationGuid,
+          yearGuid: AxiosIdentityConfig.identity.yearGuid
         }
       })
       .then(res => resolve(res.data))

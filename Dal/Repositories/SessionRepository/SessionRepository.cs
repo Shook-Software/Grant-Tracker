@@ -39,9 +39,6 @@ namespace GrantTracker.Dal.Repositories.SessionRepository
 					.Include(s => s.InstructorRegistrations).ThenInclude(i => i.InstructorSchoolYear).ThenInclude(i => i.Status)
 					.Include(s => s.InstructorRegistrations).ThenInclude(i => i.InstructorSchoolYear).ThenInclude(i => i.Instructor)
 					.Include(s => s.DaySchedules).ThenInclude(w => w.TimeSchedules)
-					.Include(s => s.AttendanceRecords).ThenInclude(ar => ar.StudentAttendance).ThenInclude(sa => sa.TimeRecords)
-					.Include(s => s.AttendanceRecords).ThenInclude(ar => ar.StudentAttendance).ThenInclude(sa => sa.FamilyAttendance)
-					.Include(s => s.AttendanceRecords).ThenInclude(ar => ar.InstructorAttendance).ThenInclude(ia => ia.TimeRecords)
 					.Select(s => SessionView.FromDatabase(s))
 					.SingleAsync();
 
@@ -128,98 +125,80 @@ namespace GrantTracker.Dal.Repositories.SessionRepository
 			});
 		}
 
-		private bool HasTimeConflict(SessionTimeSchedule existingTimeSchedule, SessionTimeSchedule newTimeSchedule)
+		private bool HasTimeConflict(StudentAttendanceTimeRecord existingTimeSchedule, SessionTimeSchedule newTimeSchedule)
 		{
 				//if new end time is after the existing start time, and the new start time is before the existing end time
-			if (existingTimeSchedule.StartTime < newTimeSchedule.EndTime && existingTimeSchedule.EndTime > newTimeSchedule.StartTime)
+			if (existingTimeSchedule.EntryTime < newTimeSchedule.EndTime && existingTimeSchedule.ExitTime > newTimeSchedule.StartTime)
 				return true;
 			//ensure that the two sessions don't have the same start and end time
-			else if (existingTimeSchedule.StartTime == newTimeSchedule.StartTime && existingTimeSchedule.EndTime == newTimeSchedule.EndTime)
+			else if (existingTimeSchedule.EntryTime == newTimeSchedule.StartTime && existingTimeSchedule.ExitTime == newTimeSchedule.EndTime)
 				return true;
 			return false;
 		}
 
-		public async Task<List<string>> ValidateStudentRegistrationAsync(List<Guid> dayScheduleGuids, Guid studentSchoolYearGuid)
+		/*public async Task<List<string>> ValidateStudentAttendanceAsync(DateOnly instanceDate, List<Guid> studentSchoolYearGuids)
 		{
 			List<string> validationErrors = new();
 
-			var existingStudentRegistrations = await _grantContext
-				.StudentRegistrations
-				.Where(sr => sr.StudentSchoolYearGuid == studentSchoolYearGuid)
-				.Include(sr => sr.StudentSchoolYear).ThenInclude(ssy => ssy.Student)
-				.Include(sr => sr.DaySchedule).ThenInclude(ds => ds.TimeSchedules)
-				.ToListAsync();
+			
+			
+			/*foreach ()
 
-			var daySchedules = await _grantContext
-				.SessionDaySchedules
-				.Include(sds => sds.TimeSchedules)
-				.Where(sds => dayScheduleGuids.Contains(sds.SessionDayGuid))
-				.ToListAsync();
+				foreach (SessionDaySchedule daySchedule in daySchedules)
+				{
+					var existingRegistrationsOnDay = existingStudentAttendance.Where(sr => sr.DaySchedule.DayOfWeek == daySchedule.DayOfWeek).ToList();
+					foreach (var registration in existingRegistrationsOnDay)
+						foreach (SessionTimeSchedule newTimeSchedule in daySchedule.TimeSchedules)
+							//...compare their start and end times to the new session's
+							foreach (var existingTimeSchedule in registration.DaySchedule.TimeSchedules)
+							{
+								if (HasTimeConflict(existingTimeSchedule, newTimeSchedule))
+								{
+									//check how the ui looks if someone conflicts every student registration on an attempted copy
+									validationErrors.Add($"{registration.StudentSchoolYear.Student.FirstName} {registration.StudentSchoolYear.Student.LastName} has a conflict with an existing registration on {daySchedule.DayOfWeek} from {existingTimeSchedule.StartTime.ToShortTimeString()} to {existingTimeSchedule.EndTime.ToShortTimeString()}");
+								}
+							}
+				}
 
-			foreach (SessionDaySchedule daySchedule in daySchedules)
-			{
-				var existingRegistrationsOnDay = existingStudentRegistrations.Where(sr => sr.DaySchedule.DayOfWeek == daySchedule.DayOfWeek).ToList(); 
-				foreach (var registration in existingRegistrationsOnDay)
-					foreach (SessionTimeSchedule newTimeSchedule in daySchedule.TimeSchedules)
-						//...compare their start and end times to the new session's
-						foreach (var existingTimeSchedule in registration.DaySchedule.TimeSchedules)
-					{
-						if (HasTimeConflict(existingTimeSchedule, newTimeSchedule))
-						{
-							//check how the ui looks if someone conflicts every student registration on an attempted copy
-							validationErrors.Add($"{registration.StudentSchoolYear.Student.FirstName} {registration.StudentSchoolYear.Student.LastName} has a conflict with an existing registration on {daySchedule.DayOfWeek} from {existingTimeSchedule.StartTime.ToShortTimeString()} to {existingTimeSchedule.EndTime.ToShortTimeString()}");
-						}
-					}
-			}
 
 			return validationErrors;
-		}
+		}*/
 
 		//Initially, we're going to copy over entire schedules, with no selective day of week, but we MAY add that in future releases
-		public async Task<List<string>> ValidateStudentRegistrationsAsync(Guid destinationSessionGuid, List<Guid> studentSchoolYearGuids)
+		public async Task<List<string>> ValidateStudentAttendanceAsync(DateOnly instanceDate, List<StudentAttendanceDto> studentAttendance)
 		{
 			List<string> validationErrors = new();
 
-			var sessionSchedule = await _grantContext
-				.Sessions
-				.Where(s => s.SessionGuid == destinationSessionGuid)
-				.Include(s => s.DaySchedules).ThenInclude(ds => ds.TimeSchedules)
-				.SelectMany(s => s.DaySchedules)
-				.ToListAsync();
+				var existingAttendanceOnDay = await _grantContext
+					.AttendanceRecords
+					.Where(ar => ar.InstanceDate == instanceDate)
+					.Include(ar => ar.StudentAttendance).ThenInclude(sa => sa.TimeRecords)
+					.Include(ar => ar.StudentAttendance).ThenInclude(sa => sa.StudentSchoolYear)
+					.ToListAsync();
 
-			List<StudentRegistration> existingStudentRegistrations = await _grantContext
-				.StudentRegistrations
-				.Where(sr => studentSchoolYearGuids.Contains(sr.StudentSchoolYearGuid))
-				.Include(sr => sr.StudentSchoolYear).ThenInclude(ssy => ssy.Student)
-				.Include(sr => sr.DaySchedule).ThenInclude(ds => ds.TimeSchedules)
-				.ToListAsync();
+			var existingStudentAttendance = existingAttendanceOnDay
+				.Where(ar => ar.StudentAttendance.Any(sa => studentAttendance.Any(record => sa.StudentSchoolYearGuid == record.StudentSchoolYearGuid)))
+				.SelectMany(ar => ar.StudentAttendance)
+				.Where(sa => studentAttendance.Any(record => sa.StudentSchoolYearGuid == record.StudentSchoolYearGuid))
+				.ToList();
 
-			foreach (Guid studentSchoolYearGuid in studentSchoolYearGuids)
-				validationErrors.AddRange(await this.ValidateStudentRegistrationAsync(sessionSchedule.Select(ss => ss.SessionDayGuid).ToList(), studentSchoolYearGuid));
-			//it isn't as bad as it looks
-			//for each day of the week (most will be skipped)
-			/*foreach (DayOfWeek weekday in Enum.GetValues(typeof(DayOfWeek)))
+			foreach (StudentAttendanceDto newAttendance in studentAttendance)
 			{
-				var newDaySchedule = sessionSchedule.Find(ss => ss.DayOfWeek == weekday);
-				if (newDaySchedule == null)
-					continue;
+				List<StudentAttendanceTimeRecord> existingAttendance = existingStudentAttendance
+					.Where(sa => sa.StudentSchoolYearGuid == newAttendance.StudentSchoolYearGuid)
+					.SelectMany(sa => sa.TimeRecords)
+					.ToList();
 
-				var registrationsOnDay = existingStudentRegistrations.Where(sr => sr.DaySchedule.DayOfWeek == weekday).ToList();
-
-				//... then for each start and end time on this day for the session...
-				foreach (SessionTimeSchedule newTimeSchedule in newDaySchedule.TimeSchedules)
-					//...get each existing registration
-					foreach (var registration in registrationsOnDay)
-					//...compare their start and end times to the new session's
-						foreach (var existingTimeSchedule in registration.DaySchedule.TimeSchedules)
-						{
-							if (HasTimeConflict(existingTimeSchedule, newTimeSchedule))
-							{
-								//check how the ui looks if someone conflicts every student registration on an attempted copy
-								validationErrors.Add($"{registration.StudentSchoolYear.Student.FirstName} {registration.StudentSchoolYear.Student.LastName} has a conflict with an existing registration on {weekday} from {existingTimeSchedule.StartTime.ToShortTimeString()} to {existingTimeSchedule.EndTime.ToShortTimeString()}");
-							}
-						}
-			}*/
+				foreach (StudentAttendanceTimeRecord existingTime in existingAttendance)
+				{
+					foreach (SessionTimeSchedule newTime in newAttendance.Attendance)
+					if (HasTimeConflict(existingTime, newTime))
+					{
+						//check how the ui looks if someone conflicts every student registration on an attempted copy
+						validationErrors.Add($"{newAttendance.Student.FirstName} {newAttendance.Student.LastName} has a conflict with an existing attendance record from {existingTime.EntryTime.ToShortTimeString()} to {existingTime.ExitTime.ToShortTimeString()}");
+					}
+				}
+			}
 
 			return validationErrors;
 		}
@@ -240,44 +219,87 @@ namespace GrantTracker.Dal.Repositories.SessionRepository
 				 )
 				return;
 
-			foreach (string day in Enum.GetNames(typeof(DayOfWeek)))
-			{
-				var newDay = newSchedule.Find(schedule => schedule.DayOfWeek.ToString() == day);
-				var oldDay = oldSchedule.Find(schedule => schedule.DayOfWeek.ToString() == day);
 
-				if (newDay is not null && oldDay is not null)
-				{
-					newDay.StudentRegistrations = oldDay.StudentRegistrations;
-					newDay.SessionDayGuid = oldDay.SessionDayGuid;
-					newDay.TimeSchedulesTemp.ForEach(t => t.SessionDayGuid = oldDay.SessionDayGuid);
-					_grantContext.Entry(oldDay).CurrentValues.SetValues(newDay);
-					_grantContext.RemoveRange(oldDay.TimeSchedules);
-					_grantContext.AddRange(newDay.TimeSchedulesTemp);
-				}
-				else if (newDay is null && oldDay is null)
-				{
+
+			foreach (var oldDay in oldSchedule)
+			{
+				if (newSchedule.Any(x => x.DayOfWeek == oldDay.DayOfWeek))
 					continue;
-				}
-				else if (newDay is not null)
-				{
-					await _grantContext.SessionDaySchedules.AddAsync(newDay);
-					_grantContext.SessionTimeSchedules.AddRange(newDay.TimeSchedulesTemp);
-				}
-				else if (oldDay is not null)
-				{
-					_grantContext.SessionDaySchedules.Remove(oldDay);
-					_grantContext.SessionTimeSchedules.RemoveRange(oldDay.TimeSchedules);
-				}
+
+				_grantContext.RemoveRange(oldDay.TimeSchedules);
+				_grantContext.RemoveRange(oldDay.StudentRegistrations);
+				_grantContext.Remove(oldDay);
 			}
 
-			await _grantContext.SaveChangesAsync();
-		}
+			foreach (var newDay in newSchedule)
+			{
+				var oldDay = oldSchedule.FirstOrDefault(old => old.DayOfWeek == newDay.DayOfWeek);
 
-		private async Task UpdateSingleDaySchedule(List<SessionTimeSchedule> newSchedule, List<SessionTimeSchedule> oldSchedule)
-		{
-			_grantContext.SessionTimeSchedules.RemoveRange(oldSchedule);
-			await _grantContext.AddRangeAsync(newSchedule);
-			await _grantContext.SaveChangesAsync();
+				if (oldDay != null)
+				{
+					_grantContext.RemoveRange(oldDay.TimeSchedules);
+					newDay.TimeSchedulesTemp.ForEach(t => t.SessionDayGuid = oldDay.SessionDayGuid);
+					_grantContext.AddRange(newDay.TimeSchedulesTemp);
+					continue;
+				}
+
+
+				newDay.TimeSchedulesTemp.ForEach(x => x.SessionTimeGuid = Guid.NewGuid());
+				_grantContext.SessionDaySchedules.Add(newDay);
+				_grantContext.SessionTimeSchedules.AddRange(newDay.TimeSchedulesTemp);
+
+				if (newDay.Registrations != null && newDay.Registrations.Count > 0)
+					_grantContext.StudentRegistrations.AddRange(newDay.Registrations);
+			}
+
+				/*foreach (string day in Enum.GetNames(typeof(DayOfWeek)))
+				{
+					var newDay = newSchedule.FirstOrDefault(schedule => schedule.DayOfWeek.ToString() == day);
+					var oldDay = oldSchedule.FirstOrDefault(schedule => schedule.DayOfWeek.ToString() == day);
+
+					if (newDay is not null && oldDay is not null)
+					{
+						newDay.StudentRegistrations = oldDay.StudentRegistrations;
+						newDay.SessionDayGuid = oldDay.SessionDayGuid;
+						newDay.TimeSchedulesTemp.ForEach(t => t.SessionDayGuid = oldDay.SessionDayGuid);
+						_grantContext.Entry(oldDay).CurrentValues.SetValues(newDay);
+						_grantContext.RemoveRange(oldDay.TimeSchedules);
+						_grantContext.AddRange(newDay.TimeSchedulesTemp);
+					}
+					else if (newDay is null && oldDay is null)
+					{
+						continue;
+					}
+					else if (newDay is not null)
+					{
+						SessionDaySchedule newDaySchedule = new() 
+						{
+							SessionGuid = newDay.SessionGuid,
+							SessionDayGuid = Guid.NewGuid(),
+							DayOfWeek = newDay.DayOfWeek,
+							TimeSchedules = newDay.TimeSchedulesTemp.ToList()
+						};
+
+						newDay.TimeSchedulesTemp.ForEach(x => x.SessionDayGuid = newDaySchedule.SessionDayGuid);
+
+						_grantContext.SessionDaySchedules.Add(newDaySchedule);
+						_grantContext.SessionTimeSchedules.AddRange(newDay.TimeSchedulesTemp.ToList());
+
+						newDay.Registrations.ForEach(x => { x.DayScheduleGuid = newDaySchedule.SessionDayGuid; });
+
+						_grantContext.StudentRegistrations.AddRange(newDay.Registrations);
+					}
+					else if (oldDay is not null)
+					{
+						_grantContext.RemoveRange(oldDay.StudentRegistrations);
+						_grantContext.SessionTimeSchedules.RemoveRange(oldDay.TimeSchedules);
+						_grantContext.SessionDaySchedules.Remove(oldDay);
+					}
+
+					await _grantContext.SaveChangesAsync();
+				}*/
+
+				await _grantContext.SaveChangesAsync();
 		}
 
 		private async Task UpdateGradeLevels(List<SessionGrade> newGrades, List<SessionGrade> oldGrades)
@@ -305,59 +327,122 @@ namespace GrantTracker.Dal.Repositories.SessionRepository
 			await UseDeveloperLog(async () =>
 			{
 				var newSession = formSession.ToDbSession();
-				var newDaySchedule = formSession.GetDaySchedule();
-				var newTimeSchedule = formSession.GetTimeSchedule();
 				var newGrades = formSession.GetGrades();
 				var newInstructors = formSession.GetInstructors();
 
-				var sessionQuery = _grantContext.Sessions.Where(s => s.SessionGuid == newSession.SessionGuid)
+				var currentSession = await _grantContext
+					.Sessions
+					.Where(s => s.SessionGuid == newSession.SessionGuid)
 					.Include(s => s.SessionGrades)
 					.Include(s => s.InstructorRegistrations)
-					.Include(s => s.DaySchedules).ThenInclude(w => w.StudentRegistrations)
-					.Include(s => s.DaySchedules).ThenInclude(w => w.TimeSchedules);
+					.FirstOrDefaultAsync();
 
-				var currentSession = await sessionQuery.FirstOrDefaultAsync();
 				var organizationYearGuid = currentSession.OrganizationYearGuid;
 
-				if (newSession.Recurring)
-				{
-					await UpdateWeekdaySchedules(newDaySchedule, currentSession.DaySchedules.ToList());
-				}
-				else
-				{
-					List<StudentRegistration> registrations = null;
-					var newSchedule = formSession.Scheduling.Where(s => s.TimeSchedules.Count != 0).Single();
-					var existingDaySchedules = _grantContext.SessionDaySchedules
-						.Where(sds => sds.SessionGuid == newSession.SessionGuid)
-						.Include(sds => sds.StudentRegistrations)
-						.ToList();
 
-					if (currentSession.Recurring)
+				//handle date change BULLSHIT HERE
+
+				var newDaySchedule = formSession.GetDaySchedule();
+				var currentSchedule = await _grantContext
+					.SessionDaySchedules
+					.Include(sds => sds.TimeSchedules)
+					.Include(sds => sds.StudentRegistrations)
+					.Where(sds => sds.SessionGuid == newSession.SessionGuid)
+					.ToListAsync();
+
+				//go ahead and handle these seperately from all else
+				if (formSession.RegistrationShift.Count > 0)
+				{
+					foreach (var regShift in formSession.RegistrationShift)
 					{
-						registrations = existingDaySchedules.First().StudentRegistrations.ToList();
-						registrations.ForEach(reg => reg.DayScheduleGuid = newSchedule.Guid);
+						var registrations = currentSession.DaySchedules.First(ds => ds.DayOfWeek == regShift.FromDay).StudentRegistrations.ToList();
+						var targetDayScheduleIndex = newDaySchedule.FindIndex(ds => ds.DayOfWeek == regShift.ToDay);
+						var newDay = newDaySchedule[targetDayScheduleIndex];
+
+						if (!newDaySchedule.Any(nds => nds.DayOfWeek == regShift.FromDay))
+						{
+							var removedDay = currentSchedule.Find(cs => cs.DayOfWeek == regShift.FromDay);
+							_grantContext.SessionTimeSchedules.RemoveRange(removedDay.TimeSchedules);
+							_grantContext.StudentRegistrations.RemoveRange(removedDay.StudentRegistrations);
+							_grantContext.SessionDaySchedules.Remove(removedDay);
+							await _grantContext.SaveChangesAsync();
+
+							int removedDayIndex = currentSchedule.FindIndex(cs => cs.DayOfWeek == regShift.FromDay);
+							currentSchedule.RemoveAt(removedDayIndex);
+						}
+
+						registrations.ForEach(r => r.DayScheduleGuid = newDay.SessionDayGuid);
+
+						_grantContext.Add(newDay);
+						_grantContext.AddRange(newDay.TimeSchedulesTemp);
+						_grantContext.AddRange(registrations);
+
+						await _grantContext.SaveChangesAsync();
+
+						newDaySchedule.RemoveAt(targetDayScheduleIndex);
+
+						//special handling for an old day being deleted as it's registrations are moved to a new day. EF Core hates me. This is necessary in an imperfect world..
+						//if day with regs is not in new schedule
+						
 					}
 
-					_grantContext.SessionDaySchedules.RemoveRange(existingDaySchedules);
-					_grantContext.SessionDaySchedules.Add(new SessionDaySchedule()
-					{
-						SessionDayGuid = newSchedule.Guid,
-						SessionGuid = newSession.SessionGuid,
-						DayOfWeek = Enum.Parse<DayOfWeek>(newSchedule.DayOfWeek),
-						StudentRegistrations = registrations
-					});
-					var newTimeSchedule2 = newSchedule.TimeSchedules.Select(ts => new SessionTimeSchedule()
-					{
-						SessionTimeGuid = Guid.NewGuid(),
-						SessionDayGuid = newSchedule.Guid,
-						StartTime = ts.StartTime,
-						EndTime = ts.EndTime
-					})
-					.ToList();
-					_grantContext.SessionTimeSchedules.AddRange(newTimeSchedule2);
 					await _grantContext.SaveChangesAsync();
-
 				}
+
+				foreach (DayOfWeek dayOfWeek in (DayOfWeek[]) Enum.GetValues(typeof(DayOfWeek)))
+				{
+					var oldDay = currentSchedule.FirstOrDefault(s => s.DayOfWeek == dayOfWeek);
+					var newDay = newDaySchedule.FirstOrDefault(s => s.DayOfWeek == dayOfWeek);
+
+					if (oldDay != null && newDay != null)
+					{
+						bool changeIsRequired = false;
+						//only change things if the time schedules are different
+						var oldTimeSchedule = oldDay.TimeSchedules.OrderBy(ts => ts.StartTime).ThenBy(ts => ts.EndTime).ToList();
+						var newTimeSchedule = newDay.TimeSchedulesTemp.OrderBy(ts => ts.StartTime).ThenBy(ts => ts.EndTime).ToList();
+
+						if (oldTimeSchedule.Count != newTimeSchedule.Count)
+							changeIsRequired = true;
+						else
+						{
+							//check each schedule to ensure an equal partner exists
+							foreach (var timeSchedule in oldTimeSchedule)
+							{
+								if (!newTimeSchedule.Any(nts => nts.StartTime == timeSchedule.StartTime && nts.EndTime == timeSchedule.EndTime))
+								{
+									changeIsRequired = true;
+									break;
+								}
+							}
+						}
+
+						if (changeIsRequired)
+						{
+							newDay.TimeSchedulesTemp.ForEach(x => x.SessionDayGuid = oldDay.SessionDayGuid);
+
+							_grantContext.SessionTimeSchedules.RemoveRange(oldDay.TimeSchedules);
+							_grantContext.SessionTimeSchedules.AddRange(newDay.TimeSchedulesTemp);
+							await _grantContext.SaveChangesAsync();
+						}
+					}
+					else if (newDay != null)
+					{
+						_grantContext.SessionTimeSchedules.AddRange(newDay.TimeSchedulesTemp);
+						_grantContext.SessionDaySchedules.Add(newDay);
+					}
+					else if (oldDay != null)
+					{
+						_grantContext.SessionTimeSchedules.RemoveRange(oldDay.TimeSchedules);
+						_grantContext.StudentRegistrations.RemoveRange(oldDay.StudentRegistrations);
+						_grantContext.SessionDaySchedules.Remove(oldDay);
+					}
+
+					await _grantContext.SaveChangesAsync();
+				}
+
+
+				//fuck this fuck this fuck this function
+
 				await UpdateGradeLevels(newGrades, currentSession.SessionGrades.ToList());
 				await UpdateInstructors(newInstructors, currentSession.InstructorRegistrations.ToList());
 

@@ -58,7 +58,8 @@ export function postSessionAttendance(
           matricNumber: record.studentSchoolYear.student.matricNumber,
           grade: record.studentSchoolYear.grade
         },
-        attendance: record.attendance
+        attendance: record.attendance,
+        familyAttendance: record.familyAttendance
       }))
     
     const instructorRecordsParam = instructorRecords
@@ -82,7 +83,7 @@ export function postSessionAttendance(
         resolve()
       })
       .catch(err => {
-        reject()
+        reject(err.response.data)
       })
   })
 }

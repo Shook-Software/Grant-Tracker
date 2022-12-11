@@ -12,7 +12,8 @@ import { InstructorSchoolYearView, InstructorView } from 'Models/Instructor'
 import { Quarter } from 'models/OrganizationYear'
 import { DropdownOption } from 'Models/Session'
 
-import api from 'utils/api'
+import { getInstructorStatusOptions, getInstructor, patchInstructorStatus } from './api'
+
 
 //name
 //badge number
@@ -82,9 +83,8 @@ const BasicDetails = ({instructor: instructorSchoolYear, onChange}: BasicDetails
   const [dropdownOptions, setOptions] = useState<DropdownOption[]>([])
 
   useEffect(() => {
-    api
-      .get('dropdown/view/instructorStatus')
-      .then(res => setOptions(res.data))
+    getInstructorStatusOptions()
+      .then(res => setOptions(res))
       .catch(err => console.warn(err))
   }, [])
 
@@ -146,11 +146,9 @@ export default (): JSX.Element => {
   const [isPatching, setIsPatching] = useState<boolean>(false)
 
   function fetchInstructor(instructorSchoolYearGuid): void {
-    api
-      .get(`instructor/${instructorSchoolYearGuid}`)
-      .then(res => {
-        setInstructorSchoolYear(res.data)
-      })
+    getInstructor(instructorSchoolYearGuid)
+      .then(res => setInstructorSchoolYear(res))
+      .catch(err => console.warn(err))
   }
 
   function handleStatusChange(instructor: InstructorSchoolYearView): void {
@@ -164,11 +162,7 @@ export default (): JSX.Element => {
     if (!instructorSchoolYear)
       return
 
-    api
-      .patch(`instructor/${instructorSchoolYear.guid}/status`, {
-        instructor: instructorSchoolYear.instructor,
-        status: instructorSchoolYear.status
-      })
+    patchInstructorStatus(instructorSchoolYear)
       .then(res => {
         fetchInstructor(instructorSchoolYearGuid)
       })

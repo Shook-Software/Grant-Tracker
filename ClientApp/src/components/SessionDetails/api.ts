@@ -1,5 +1,6 @@
+import { LocalDate } from '@js-joda/core'
 import { DateOnly } from 'Models/DateOnly'
-import { AttendanceTimeRecordView, AttendanceView, StudentAttendance } from 'Models/StudentAttendance'
+import { AttendanceTimeRecordView, SimpleAttendanceView, AttendanceView, StudentAttendance } from 'Models/StudentAttendance'
 import api, { AxiosIdentityConfig } from 'utils/api'
 
 
@@ -28,16 +29,19 @@ export function addStudentToSession (sessionGuid, student, schedule): Promise<vo
   })
 }
 
-export function getAttendanceRecords (sessionGuid): Promise<AttendanceView[]> {
+export function getSimpleAttendanceRecords (sessionGuid): Promise<SimpleAttendanceView[]> {
   return new Promise((resolve, reject) => {
     api
       .get(`session/${sessionGuid}/attendance`)
       .then(res => {
-        let records = res.data
-        records = records.map(record => ({...record, studentAttendanceRecords: record.studentAttendanceRecords.map(record => StudentAttendance.toViewModel(record))}))
-        records = records.map(record => ({...record, instructorAttendanceRecords: record.instructorAttendanceRecords.map(record => StudentAttendance.toViewModel(record))}))
-        records = records.map(i => ({...i, instanceDate: DateOnly.toLocalDate(i.instanceDate)})) as AttendanceView[]
-        records = records.sort((first: AttendanceView, second: AttendanceView) => {
+        let viewModels = res.data.map(viewModel => ({
+          guid: viewModel.attendanceGuid,
+          instanceDate: DateOnly.toLocalDate(viewModel.instanceDate),
+          instructorCount: viewModel.instructorCount,
+          studentCount: viewModel.studentCount
+        } as SimpleAttendanceView))
+
+        viewModels = viewModels.sort((first: SimpleAttendanceView, second: SimpleAttendanceView) => {
           if (first.instanceDate.isBefore(second.instanceDate))
             return -1
           else if (first.instanceDate.isAfter(second.instanceDate))
@@ -45,7 +49,24 @@ export function getAttendanceRecords (sessionGuid): Promise<AttendanceView[]> {
           return 0
         })
 
-        resolve(records)
+        resolve(viewModels)
+      })
+      .catch(err => reject(err))
+  })
+}
+
+export function getAttendanceRecord (sessionGuid: string, attendanceGuid: string): Promise<AttendanceView> {
+  return new Promise((resolve, reject) => {
+    api
+      .get(`session/${sessionGuid}/attendance/${attendanceGuid}`)
+      .then(res => {
+        let record = res.data
+        resolve({
+          ...record, 
+          instanceDate: DateOnly.toLocalDate(record.instanceDate),
+          studentAttendanceRecords: record.studentAttendanceRecords.map(record => StudentAttendance.toViewModel(record)),
+          instructorAttendanceRecords: record.instructorAttendanceRecords.map(record => StudentAttendance.toViewModel(record))
+        })
       })
       .catch(err => { 
         console.warn(err)
@@ -55,7 +76,7 @@ export function getAttendanceRecords (sessionGuid): Promise<AttendanceView[]> {
   
 }
 
-export function editAttendanceRecord (sessionGuid, attendanceGuid, attendanceRecord): Promise<void> {
+export function patchAttendanceRecord (sessionGuid, attendanceGuid, attendanceRecord): Promise<void> {
   return new Promise((resolve, reject) => {
 
     attendanceRecord.studentRecords = attendanceRecord.studentRecords.filter(record => record.isPresent == true)

@@ -13,10 +13,10 @@ import AttendanceHistory from './AttendanceHistory'
 import { DayOfWeek } from 'Models/DayOfWeek'
 import { Session, SessionDomain, SessionView } from 'Models/Session'
 import { StudentRegistration, StudentRegistrationDomain, StudentRegistrationView } from 'Models/StudentRegistration'
-import { AttendanceView, InstructorRecord, StudentAttendanceDto, StudentRecord, SubstituteRecord } from 'Models/StudentAttendance'
+import { AttendanceView, InstructorRecord, SimpleAttendanceView, StudentAttendanceDto, StudentRecord, SubstituteRecord } from 'Models/StudentAttendance'
 
 import api from 'utils/api'
-import { addStudentToSession, getAttendanceRecords } from './api'
+import { addStudentToSession, getSimpleAttendanceRecords, getAttendanceRecord } from './api'
 
 ////
 //Refactoring imports, temporary location
@@ -34,7 +34,8 @@ function createDefaultStudentRecords (studentRegistrations, daySchedule): Studen
   return studentRegistrations.map(registration => ({
       isPresent: true,
       attendance: registration.daySchedule.timeSchedules,
-      studentSchoolYear: registration.studentSchoolYear
+      studentSchoolYear: registration.studentSchoolYear,
+      familyAttendance: []
     })
   )
 }
@@ -54,7 +55,7 @@ export default ({}) => {
   const { sessionGuid } = useParams()
   const [session, setSession] = useState<SessionView | null>(null)
   const [studentRegistrations, setStudentRegistrations] = useState<StudentRegistrationView[]>([])
-  const [attendanceRecords, setAttendanceRecords] = useState<AttendanceView[]>([])
+  const [attendanceRecords, setAttendanceRecords] = useState<SimpleAttendanceView[]>([])
   const [showStudentModal, setShowStudentModal] = useState<boolean>(false)
   const [attendanceApiResult, setAttendanceApiResult] = useState<ApiResult | undefined>(undefined)
   const [attendanceModalParams, setAttendanceModalParams] = useState({
@@ -127,7 +128,7 @@ export default ({}) => {
   }
 
   function getAttendance() {
-    getAttendanceRecords(sessionGuid)
+    getSimpleAttendanceRecords(sessionGuid)
       .then(records => {
         setAttendanceRecords(records)
       })
@@ -146,7 +147,7 @@ export default ({}) => {
           setAttendanceApiResult({
             label: `Attendance for ${date.format(DateTimeFormatter.ofPattern('eeee, MMMM d').withLocale(Locale.ENGLISH))}`,
             success: true,
-            reason: []
+            message: []
           })
       })
       .catch(err => {
@@ -154,7 +155,7 @@ export default ({}) => {
         setAttendanceApiResult({
           label: 'Attendance',
           success: false,
-          reason: ['Error in recording attendance, contact ethan.shook2@tusd1.org if issues persist.']
+          message: err
         })
       })
       .finally(() => {
@@ -243,7 +244,11 @@ export default ({}) => {
               <Card>
                 <Card.Body>
                   <Card.Title>
-                    <AttendanceHistory sessionGuid={sessionGuid} attendanceRecords={attendanceRecords} onChange={getAttendance} />
+                    <AttendanceHistory 
+                      sessionGuid={sessionGuid}
+                      attendanceRecords={attendanceRecords} 
+                      onChange={getAttendance} 
+                    />
                   </Card.Title>
                 </Card.Body>
               </Card>
@@ -272,16 +277,12 @@ export default ({}) => {
               studentRecords: createDefaultStudentRecords(studentRegistrations, attendanceModalParams?.schedule),
               instructorRecords: createDefaultInstructorRecords(session?.instructors, attendanceModalParams?.schedule),
               substituteRecords: [],
-              defaultSchedule: attendanceModalParams.schedule?.timeSchedules || []
+              defaultSchedule: attendanceModalParams.schedule?.timeSchedules || [],
             }
           }
-          /*registrations={{
-            instructors: session?.instructors,
-            students: studentRegistrations
-          }}
-          daySchedule={attendanceModalParams.schedule}*/
           handleClose={handleAttendanceModalClose}
           handleSubmit={submitAttendance}
+          isFamilySession={session!.sessionType.label.toLowerCase() != 'student'}
         />
       ) : null}
     </PageContainer>
@@ -306,7 +307,7 @@ const RemoveSessionModal = ({ sessionGuid, session, show, handleClose }): JSX.El
 
   const message = deletionAllowed
     ? 'Are you sure you want to delete this session from your organization?'
-    : 'Sorry, this session is not able to be deleted as attendance records already exist for it. In the future, you will be able to hide unwanted and unremoveable sessions.'
+    : 'Sorry, this session is not able to be deleted as attendance records already exist for it. Please remove all records and reload if you wish to continue.'
 
   const button = deletionAllowed ? <Button onClick={() => handleClose(true)}>Delete Session</Button> : null
 

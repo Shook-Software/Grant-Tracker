@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom'
-import { Button, Nav } from 'react-bootstrap'
+import { Nav } from 'react-bootstrap'
 
 import { PageContainer } from 'styles'
 

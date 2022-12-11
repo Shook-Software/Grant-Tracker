@@ -259,11 +259,12 @@ const NonDistrictEmployeeTab = ({dropdownOptions, onChange, headerRef}): JSX.Ele
               <Form.Control 
                 as={'div'}
                 className='p-0'
+                style={{height: 'min-content'}}
                 isValid={touched.statusGuid && !errors.statusGuid}
                 isInvalid={touched.statusGuid && !!errors.statusGuid}
               >
               <Dropdown 
-                name='statusGuid'
+                id='statusGuid'
                 className='border-0'
                 value={values.statusGuid}
                 options={dropdownOptions}

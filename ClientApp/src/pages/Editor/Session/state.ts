@@ -1,6 +1,6 @@
 import { LocalDate, LocalTime, nativeJs } from '@js-joda/core'
 
-import { DayOfWeek } from 'Models/DayOfWeek'
+import { DayOfWeek, DayOfWeekNumeric } from 'Models/DayOfWeek'
 import {
   WeeklySchedule,
   DayScheduleForm,
@@ -167,7 +167,6 @@ export function reducer (
       return { ...state, recurring: action.payload, scheduling: newSchedule }
 
     case 'scheduleDayTime':
-      console.log(state.scheduling, action.payload)
       var newSchedule: WeeklySchedule = state.scheduling.map(
         (schedule, index) => {
           return index === action.payload.dayIndex

@@ -26,12 +26,18 @@ namespace GrantTracker.Dal.Models.Dto
 		public List<SessionTimeSchedule> Attendance { get; set; }
 	}
 
+	public class FamilyAttendanceDto
+	{
+		public FamilyMember FamilyMember { get; set; }
+		public int Count { get; set; } = 0;
+	}
+
 	public class StudentAttendanceDto
 	{
 		public Guid StudentGuid { get; set; }
 		public Guid StudentSchoolYearGuid { get; set; }
 		public StudentDto Student { get; set; }
 		public List<SessionTimeSchedule> Attendance { get; set; }
-
+		public List<FamilyAttendanceDto> FamilyAttendance { get; set; }
 	}
 }

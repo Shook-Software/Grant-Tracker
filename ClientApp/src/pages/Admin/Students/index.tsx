@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Container, Row, Col, Spinner, Button, Form } from 'react-bootstrap'
 import { Link } from 'react-router-dom'
 
-import Table, { Column } from 'components/BTable'
+import Table, { Column, SortDirection } from 'components/BTable'
 
 import { useAdminPage, Context } from '../index'
 
@@ -122,6 +122,7 @@ export default (): JSX.Element => {
             <Table 
               columns={columns} 
               dataset={state.filter(ssy => `${ssy.student.firstName} ${ssy.student.lastName}`.toLocaleLowerCase().includes(searchTerm))}  
+              defaultSort={{index: 1, direction: SortDirection.Ascending}}
               rowProps={{key: 'studentSchoolYearGuid'}} 
             />
           </div>

@@ -14,6 +14,10 @@ function recursiveObjectSearch (object: any) {
   }
 }
 
+const siteURL: string = 'http://localhost:44394'
+  //http://granttracker2022/
+  //http://localhost:44394
+
 export abstract class AxiosIdentityConfig {
   public static identity: {
     organizationYearGuid: undefined,
@@ -28,7 +32,18 @@ export abstract class AxiosIdentityConfig {
     if (!lastOrganizationGuid || !lastYearGuid)
       AxiosIdentityConfig.setOrganizationYear(organizationGuid, yearGuid, organizationYearGuid, userGuid)
     else {
-      AxiosIdentityConfig.identity = { organizationGuid, yearGuid, organizationYearGuid: undefined }
+      AxiosIdentityConfig.identity = { organizationGuid, yearGuid, organizationYearGuid }
+    }
+
+    if (!AxiosIdentityConfig.identity.organizationYearGuid)
+    {
+      console.log('cant do it', organizationYearGuid)
+      axios.create({
+        withCredentials: true,
+        baseURL: siteURL
+      })
+        .get('user/organizationYear', { params: { organizationGuid, yearGuid }})
+        .then(res => AxiosIdentityConfig.identity.organizationYearGuid = res.data)
     }
   }
 
@@ -43,13 +58,23 @@ export abstract class AxiosIdentityConfig {
       localStorage.setItem(`organizationGuid-${userGuid}`, organizationGuid)
       localStorage.setItem(`yearGuid-${userGuid}`, yearGuid)
     }
+    
+    if (!organizationYearGuid)
+    {
+      axios.create({
+        withCredentials: true,
+        baseURL: siteURL
+      })
+        .get('user/organizationYear')
+        .then(res => AxiosIdentityConfig.identity.organizationYearGuid = res.data)
+    }
   }
 }
 
 export default axios.create({
   withCredentials: true,
-  baseURL: 'http://localhost:44394'
-  //http://granttracker2022/
+  baseURL: siteURL
+
   //http://localhost:44394
   /*transformResponse: [
 		(data, headers) => {

@@ -6,6 +6,7 @@ using GrantTracker.Dal.Repositories.SessionRepository;
 using GrantTracker.Dal.Repositories.StudentRepository;
 using GrantTracker.Dal.Repositories.StudentSchoolYearRepository;
 using GrantTracker.Dal.Repositories.InstructorRepository;
+using GrantTracker.Dal.Repositories.InstructorSchoolYearRepository;
 using GrantTracker.Dal.Repositories.OrganizationYearRepository;
 using GrantTracker.Dal.Schema;
 using Microsoft.AspNetCore.Authorization;
@@ -23,17 +24,20 @@ namespace GrantTracker.Dal.Controllers
 		private readonly IStudentSchoolYearRepository _studentSchoolYearRepository;
 		private readonly IAttendanceRepository _attendanceRepository;
 		private readonly IInstructorRepository _instructorRepository;
+		private readonly IInstructorSchoolYearRepository _instructorSchoolYearRepository;
 		private readonly IOrganizationYearRepository _organizationYearRepository;
 
-		public SessionController(ISessionRepository sessionRepository, IStudentRepository studentRepository, IStudentSchoolYearRepository studentSchoolYearRepository, IAttendanceRepository attendanceRepository, IInstructorRepository instructorRepository, IOrganizationYearRepository organizationYearRepository)
+		public SessionController(ISessionRepository sessionRepository, IStudentRepository studentRepository, IStudentSchoolYearRepository studentSchoolYearRepository, IAttendanceRepository attendanceRepository, IInstructorRepository instructorRepository, IOrganizationYearRepository organizationYearRepository, IInstructorSchoolYearRepository instructorSchoolYearRepository)
 		{
 			_sessionRepository = sessionRepository;
 			_studentRepository = studentRepository;
 			_studentSchoolYearRepository = studentSchoolYearRepository;
 			_attendanceRepository = attendanceRepository;
 			_instructorRepository = instructorRepository;
+			_instructorSchoolYearRepository = instructorSchoolYearRepository;
 			_organizationYearRepository = organizationYearRepository;
 		}
+
 		#region Get
 
 		[HttpGet("")]
@@ -49,6 +53,13 @@ namespace GrantTracker.Dal.Controllers
 		public async Task<ActionResult<SessionView>> Get(Guid sessionGuid)
 		{
 			var session = await _sessionRepository.GetAsync(sessionGuid);
+			session.Instructors = session.Instructors.Select(i =>
+			{
+				i.EnrollmentRecords = null;
+				i.AttendanceRecords = null;
+				return i;
+			})
+			.ToList();
 			return Ok(session);
 		}
 
@@ -65,12 +76,27 @@ namespace GrantTracker.Dal.Controllers
 			return Ok(students);
 		}
 
-		[HttpGet("{sessionGuid:guid}/attendance")]
-		public async Task<ActionResult<List<AttendanceRecordView>>> GetAttendanceRecords(Guid sessionGuid)
-		{
-			var attendanceRecords = await _attendanceRepository.GetAttendanceRecordsAsync(sessionGuid);
+		////
+		//Get - Attendance Overview
+		//
 
-			return Ok(attendanceRecords);
+		[HttpGet("{sessionGuid}/attendance")]
+		public async Task<ActionResult<SimpleAttendanceViewModel>> GetAttendanceOverview(Guid sessionGuid)
+		{
+			var simpleAttendanceViews = await _attendanceRepository.GetAttendanceOverviewAsync(sessionGuid);
+			return Ok(simpleAttendanceViews);
+		}
+
+		////
+		//Get - Full Attendance Details
+		//
+
+		[HttpGet("{sessionGuid:guid}/attendance/{attendanceGuid:guid}")]
+		public async Task<ActionResult<AttendanceViewModel>> GetAttendanceRecords(Guid sessionGuid, Guid attendanceGuid)
+		{
+			var attendanceRecord = await _attendanceRepository.GetAttendanceRecordAsync(attendanceGuid);
+
+			return Ok(attendanceRecord);
 		}
 
 		[HttpGet("{sessionGuid:guid}/attendance/openDates")]
@@ -145,13 +171,13 @@ namespace GrantTracker.Dal.Controllers
 			var targetStudentSchoolYear = await _studentSchoolYearRepository.CreateIfNotExistsAsync(targetStudent.Guid, targetSession.OrganizationYear.Guid, newRegistration.Student.Grade);
 
 			//validate the registration and ensure that the student does not have time conflicts
-			var dayScheduleGuids = targetSession.DaySchedules.Select(ds => ds.DayScheduleGuid).ToList();
+			/*var dayScheduleGuids = targetSession.DaySchedules.Select(ds => ds.DayScheduleGuid).ToList();
 			List<string> conflicts = await _sessionRepository.ValidateStudentRegistrationAsync(dayScheduleGuids, targetStudentSchoolYear.Guid);
 
 			if (!conflicts.IsNullOrEmpty())
 			{
 				return Conflict(conflicts);
-			}
+			}*/
 
 			await _sessionRepository.RegisterStudentAsync(sessionGuid, newRegistration.DayScheduleGuids, targetStudentSchoolYear.Guid);
 
@@ -165,10 +191,6 @@ namespace GrantTracker.Dal.Controllers
 		{
 			//the student school years are assured to exist, otherwise they wouldn't have been registered already
 			List<Guid> scheduleGuids = (await _sessionRepository.GetAsync(destinationSessionGuid)).DaySchedules.Select(ds => ds.DayScheduleGuid).ToList();
-			List<string> conflicts = await _sessionRepository.ValidateStudentRegistrationsAsync(destinationSessionGuid, studentSchoolYearGuids);
-
-			if (conflicts.Count > 0)
-				return Conflict(conflicts);
 
 			//we cannot make a list of Tasks without making the requisite repositories transient. Otherwise, thread-unsafe operation occurs.
 			foreach (var studentSchoolYearGuid in studentSchoolYearGuids)
@@ -189,6 +211,11 @@ namespace GrantTracker.Dal.Controllers
 
 			if (sessionAttendance.SessionGuid == Guid.Empty)
 				throw new ArgumentException("SessionGuid cannot be empty.", nameof(sessionAttendance));
+
+			var errorList = await _sessionRepository.ValidateStudentAttendanceAsync(sessionAttendance.Date, sessionAttendance.StudentRecords);
+
+			if (errorList.Count > 0)
+				return Conflict(errorList);
 
 			List<InstructorAttendanceDto> substituteAttendance = new();
 			foreach (var substituteRecord in sessionAttendance.SubstituteRecords)
@@ -241,7 +268,8 @@ namespace GrantTracker.Dal.Controllers
 					StudentGuid = studentGuid,
 					StudentSchoolYearGuid = studentSchoolYear.Guid,
 					Student = studentRecord.Student,
-					Attendance = studentRecord.Attendance
+					Attendance = studentRecord.Attendance,
+					FamilyAttendance = studentRecord.FamilyAttendance
 				};
 
 				studentAttendance.Add(studentAttendanceDto);
@@ -256,7 +284,7 @@ namespace GrantTracker.Dal.Controllers
 		#endregion Post
 
 		#region Patch
-		[HttpPut("")]
+		[HttpPatch("")]
 		public async Task<ActionResult<Guid>> EditSession([FromBody] FormSessionDto session)
 		{
 			await _sessionRepository.UpdateAsync(session);
@@ -273,11 +301,11 @@ namespace GrantTracker.Dal.Controllers
 			List<InstructorAttendanceDto> substituteAttendance = new();
 			foreach (var substituteRecord in sessionAttendance.SubstituteRecords)
 			{
-				Guid instructorSchoolYearGuid = Guid.Empty;
+				Guid instructorSchoolYearGuid = substituteRecord.InstructorSchoolYearGuid;
 				
 				bool substituteHasBadgeNumber = !substituteRecord.Substitute.BadgeNumber.IsNullOrEmpty();
 				if (substituteHasBadgeNumber)
-					instructorSchoolYearGuid = (await _instructorRepository.GetInstructorSchoolYearAsync(substituteRecord.Substitute.BadgeNumber, organizationYearGuid)).Guid;
+					instructorSchoolYearGuid = (await _instructorSchoolYearRepository.GetInstructorSchoolYearAsync(substituteRecord.Substitute.BadgeNumber, organizationYearGuid)).Guid;
 
 				if (instructorSchoolYearGuid == Guid.Empty)
 					instructorSchoolYearGuid = await _instructorRepository.CreateAsync(substituteRecord.Substitute, organizationYearGuid);

@@ -36,7 +36,7 @@ export default (): JSX.Element => {
 
   useEffect(() => {
     api
-      .get('instructor', {params: {organizationYearGuid: AxiosIdentityConfig.identity.organizationYearGuid}})
+      .get('instructor', {params: {organizationGuid: AxiosIdentityConfig.identity.organizationGuid, yearGuid: AxiosIdentityConfig.identity.yearGuid}})
       .then(res => {
         res.data = res.data.filter(item => !values.instructors.find(value => value.guid === item.guid))
         setInstructors(res.data.map(isy => ({

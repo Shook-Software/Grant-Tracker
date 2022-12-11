@@ -27,7 +27,7 @@ export default ({ paths, user, orgYearChange }): JSX.Element => (
     </ProtectedLink>
 
     <ProtectedLink
-      to={paths.Configuration.path}
+      to={paths.Configuration.path + '/auth'}
       requiredType={IdentityClaim.Administrator}
     >
       Configuration

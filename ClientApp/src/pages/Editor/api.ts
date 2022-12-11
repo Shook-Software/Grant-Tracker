@@ -16,7 +16,8 @@ export interface DropdownOptions {
 
 export function fetchAllDropdownOptions(): Promise<DropdownOptions> {
 	return new Promise((resolve, reject) => {
-		api.get('dropdown/view/all')
+		api
+			.get('dropdown/view/all')
 			.then(res => resolve({ ...res.data, instructors: [] }))
 			.catch(exception => {
 				reject(exception)
@@ -26,7 +27,8 @@ export function fetchAllDropdownOptions(): Promise<DropdownOptions> {
 
 export function fetchSession(sessionGuid: string): Promise<SessionForm> {
 	return new Promise((resolve, reject) => {
-		api.get<SessionDomain>(`session/${sessionGuid}`)
+		api
+			.get<SessionDomain>(`session/${sessionGuid}`)
 			.then(res => {
 				const session: SessionForm = Session.toFormModel(res.data)
 				resolve(session)
@@ -41,19 +43,21 @@ export function submitSession(sessionState: SessionForm): Promise<SessionDomain 
 		sessionState.instructors = sessionState.instructors?.map(instructor => instructor.guid)
 
 		if (sessionState.guid) {
-			api.put('session', sessionState)
+
+			
+			api
+				.patch('session', sessionState)
 				.then(res => {
 					resolve(res.data)
 				})
 				.catch(err => { reject() })
 		}
 		else {
-			console.log(AxiosIdentityConfig.identity.organizationYearGuid)
-			console.log({...sessionState, organizationYearGuid: AxiosIdentityConfig.identity.organizationYearGuid})
-			api.post('session', {
-				...sessionState,
-				organizationYearGuid: AxiosIdentityConfig.identity.organizationYearGuid
-			})
+			api
+				.post('session', {
+					...sessionState,
+					organizationYearGuid: AxiosIdentityConfig.identity.organizationYearGuid
+				})
 				.then(res => { resolve(res.data.guid) })
 				.catch(err => { reject() })
 		

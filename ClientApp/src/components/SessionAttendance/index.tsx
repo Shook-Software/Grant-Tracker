@@ -32,7 +32,8 @@ interface Props {
     studentRecords: StudentRecord[],
     instructorRecords: InstructorRecord[],
     substituteRecords: SubstituteRecord[]
-  ) => Promise<void>
+  ) => Promise<void>,
+  isFamilySession: boolean
 }
 
 
@@ -48,22 +49,12 @@ export default ({
   props,
   handleClose,
   handleSubmit,
+  isFamilySession
 }: Props): JSX.Element => {
 
   const { sessionGuid } = useParams()
   const [state, dispatch] = useReducer(reducer, props)
   const [dateOptions, setDateOptions] = useState<DropdownOption[]>([])
-  /*
-{
-      defaultSchedule: daySchedule.timeSchedules,
-      date: latestDateOnWeekday,
-      dayOfWeek: DayOfWeek.toInt(daySchedule.dayOfWeek),
-      studentRecords: createDefaultStudentRecords(registrations.students, daySchedule),
-      instructorRecords: createDefaultInstructorRecords(registrations.instructors, daySchedule),
-      substituteRecords: []
-    }
-  */
-
   
   useEffect(() => {
     getOpenDates(sessionGuid, props.dayOfWeek, (options) => {
@@ -99,6 +90,7 @@ export default ({
           state={state}
           dispatch={dispatch}
           dateOptions={dateOptions}
+          isFamilySession={isFamilySession}
         />
       </Modal.Body>
       <Modal.Footer>

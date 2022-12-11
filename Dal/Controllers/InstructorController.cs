@@ -1,8 +1,10 @@
 ﻿using GrantTracker.Dal.Models.Dto;
 using GrantTracker.Dal.Repositories.InstructorRepository;
+using GrantTracker.Dal.Repositories.InstructorSchoolYearRepository;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using GrantTracker.Dal.Models.Views;
+using GrantTracker.Dal.Schema;
 
 //This is where Instructors are grabbed from Synergy and added to Grant Tracker
 namespace GrantTracker.Dal.Controllers
@@ -13,24 +15,26 @@ namespace GrantTracker.Dal.Controllers
 	public class InstructorController : ControllerBase
 	{
 		private readonly IInstructorRepository _instructorRepository;
+		private readonly IInstructorSchoolYearRepository _instructorSchoolYearRepository;
 
-		public InstructorController(IInstructorRepository instructorRepository)
+		public InstructorController(IInstructorRepository instructorRepository, IInstructorSchoolYearRepository instructorSchoolYearRepository)
 		{
 			_instructorRepository = instructorRepository;
+			_instructorSchoolYearRepository = instructorSchoolYearRepository;
 		}
 
 		[HttpGet("")]
-		public async Task<ActionResult<List<InstructorSchoolYearViewModel>>> GetInstructors(string name, Guid organizationYearGuid)
+		public async Task<ActionResult<List<InstructorSchoolYearViewModel>>> GetInstructors(string name, Guid organizationGuid, Guid yearGuid)
 		{
-			var instructors = await _instructorRepository.GetInstructorsAsync(organizationYearGuid);
+			var instructors = await _instructorRepository.GetInstructorsAsync(organizationGuid, yearGuid);
 			return Ok(instructors);
 		}
 
 		//should we in some way umbrella this under Organization/OrganizationYear control?
 		[HttpGet("{instructorSchoolYearGuid:guid}")]
-		public async Task<ActionResult<InstructorSchoolYearViewModel>> GetInstructor(Guid instructorSchoolYearGuid)
+		public async Task<ActionResult<InstructorSchoolYearViewModel>> GetInstructorSchoolYear(Guid instructorSchoolYearGuid)
 		{
-			var instructorSchoolYear = await _instructorRepository.GetInstructorSchoolYearAsync(instructorSchoolYearGuid);
+			var instructorSchoolYear = await _instructorSchoolYearRepository.GetInstructorSchoolYearAsync(instructorSchoolYearGuid);
 			return Ok(instructorSchoolYear);
 		}
 

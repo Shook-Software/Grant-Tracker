@@ -7,13 +7,19 @@ namespace GrantTracker.Dal.Models.Views
 		public Guid Guid { get; set; }
 		public short SchoolYear { get; set; }
 		public Quarter Quarter { get; set; }
+		public DateOnly StartDate { get; set; }
+		public DateOnly EndDate { get; set; }
+		public bool IsCurrentYear { get; set; }
 		//Add other attributes as needed
 
 		public static YearView FromDatabase(Year year) => new()
 		{
 			Guid = year.YearGuid,
 			SchoolYear = year.SchoolYear,
-			Quarter = year.Quarter
+			Quarter = year.Quarter,
+			StartDate = year.StartDate,
+			EndDate = year.EndDate,
+			IsCurrentYear = year.IsCurrentSchoolYear
 		};
 	}
 

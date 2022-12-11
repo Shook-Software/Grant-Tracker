@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Container, Row, Col, Spinner, Button as BButton } from 'react-bootstrap'
 import { Link } from 'react-router-dom'
 
-import Table, { Column } from 'components/BTable'
+import Table, { Column, SortDirection } from 'components/BTable'
 import AddInstructorsModal from 'components/Modals/AddInstructorModal'
 import Button from 'components/Input/Button'
 
@@ -86,9 +86,18 @@ export default (): JSX.Element => {
 
   function addExternalInstructor (instructor): Promise<ApiResult> {
     return new Promise((resolve, reject) => {
-      resolve({
-        label: `${instructor.firstName} ${instructor.lastName}`,
-        success: true
+      addInstructor(instructor)
+      .then(res => {
+        resolve({
+          label: `${instructor.firstName} ${instructor.lastName}`,
+          success: true
+        })
+      })
+      .catch(err => {
+        resolve({
+          label: `${instructor.firstName} ${instructor.lastName}`,
+          success: false
+        })
       })
     })
   }
@@ -136,6 +145,7 @@ export default (): JSX.Element => {
             <Table 
               columns={columns} 
               dataset={state} 
+              defaultSort={{index: 1, direction: SortDirection.Ascending}}
               rowProps={{key: 'guid'}} 
             />
           )}

@@ -17,7 +17,8 @@ export enum Quarter {
   'Summer One' = 0,
   'Summer Two' = 1,
   'Fall' = 2,
-  'Spring' = 3
+  'Spring' = 3,
+  'Year to Date' = 4
 }
 
 export interface YearView {

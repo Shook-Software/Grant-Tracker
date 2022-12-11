@@ -11,6 +11,7 @@ const string origins = "_allowDevOrigins";
 JSONConverters.Setup(builder);
 Swagger.Setup(builder);
 DatabaseContext.Setup(builder, configuration);
+MemoryCache.Setup(builder);
 Auth.Setup(builder);
 
 builder.Services.AddHttpContextAccessor();

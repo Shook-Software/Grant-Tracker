@@ -4,6 +4,12 @@ namespace GrantTracker.Dal.Models.Dto
 {
 	public class FormSessionDto
 	{
+		public class ScheduleRegistrationShift
+		{
+			public DayOfWeek FromDay { get; set; }
+			public DayOfWeek ToDay { get; set; }
+		}
+
 		public Session ToDbSession()
 		{
 			return new Session()
@@ -36,6 +42,7 @@ namespace GrantTracker.Dal.Models.Dto
 					DayOfWeek = Enum.Parse<DayOfWeek>(daySchedule.DayOfWeek),
 					TimeSchedulesTemp = daySchedule.TimeSchedules.Select(s => new SessionTimeSchedule()
 					{
+						SessionTimeGuid = Guid.NewGuid(),
 						SessionDayGuid = daySchedule.Guid,
 						StartTime = s.StartTime,
 						EndTime = s.EndTime
@@ -49,21 +56,6 @@ namespace GrantTracker.Dal.Models.Dto
 
 		public List<SessionTimeSchedule> GetTimeSchedule()
 		{
-			if (!Recurring)
-			{
-				return new List<SessionTimeSchedule>();
-				/*var daySchedule = Scheduling.Where(s => s.TimeSchedules.Count != 0).SingleOrDefault();
-				return daySchedule.TimeSchedules
-					.Select(timeSchedule => new SessionTimeSchedule()
-					{
-						SessionTimeGuid = timeSchedule.Guid,
-						StartTime = timeSchedule.StartTime,
-						EndTime = timeSchedule.EndTime
-					})
-					.ToList();
-				*/
-			}
-
 			var Schedule = Scheduling
 				.Where(daySchedule => daySchedule.Recurs)
 				.ToList();
@@ -76,7 +68,7 @@ namespace GrantTracker.Dal.Models.Dto
 				{
 					SessionTimeSchedule newTimeSchedule = new()
 					{
-						SessionTimeGuid = timeSchedule.Guid,
+						SessionTimeGuid = timeSchedule.Guid != default ? timeSchedule.Guid : Guid.NewGuid(),
 						SessionDayGuid = daySchedule.Guid,
 						StartTime = timeSchedule.StartTime,
 						EndTime = timeSchedule.EndTime
@@ -126,6 +118,7 @@ namespace GrantTracker.Dal.Models.Dto
 		public List<DaySchedule> Scheduling { get; set; }
 		public List<Guid> Grades { get; set; }
 		public List<Guid> Instructors { get; set; }
+		public List<ScheduleRegistrationShift> RegistrationShift { get; set; } = new();
 	}
 
 	public class TimeSchedule
@@ -143,16 +136,9 @@ namespace GrantTracker.Dal.Models.Dto
 		public List<TimeSchedule> TimeSchedules { get; set; }
 	}
 
-	public class Schedule
-	{
-		public string DayOfWeek { get; set; }
-		public bool Recurs { get; set; }
-		public TimeOnly StartTime { get; set; }
-		public TimeOnly EndTime { get; set; }
-	}
-
 	public class TempDaySchedule : SessionDaySchedule
 	{
 		public List<SessionTimeSchedule> TimeSchedulesTemp { get; set; }
+		public List<StudentRegistration> Registrations { get; set; }
 	}
 }

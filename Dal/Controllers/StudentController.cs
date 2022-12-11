@@ -30,27 +30,30 @@ namespace GrantTracker.Dal.Controllers
 		}
 
 		[HttpGet("synergy")]
-		public async Task<ActionResult<List<StudentSchoolYearViewModel>>> SearchSynergy(string firstName, string lastName, string matricNumber, [FromQuery(Name = "grades[]")] Guid[] grades)
+		public async Task<ActionResult<List<StudentSchoolYearViewModel>>> SearchSynergy(string firstName, string lastName, string matricNumber, [FromQuery(Name = "grades[]")] Guid[] grades, Guid organizationYearGuid)
 		{
 			List<string> synergyGrades = new();
+			List<string> grantTrackerGrades = new();
 
 			foreach (Guid guid in grades)
 			{
 				string grade = await _lookupRepository.GetValueAsync(guid);
 				string synergyGrade = GradeDto.ToSynergy(grade);
 
+				if (!String.IsNullOrEmpty(grade))
+					grantTrackerGrades.Add(grade);
 				if (!String.IsNullOrEmpty(synergyGrade))
-				{
 					synergyGrades.Add(synergyGrade);
-				}
 			}
 
 			var filter = new StudentFilter()
 			{
 				FirstName = firstName,
 				LastName = lastName,
-				Grades = synergyGrades,
+				SynergyGrades = synergyGrades,
+				GrantTrackerGrades = grantTrackerGrades,
 				MatricNumber = matricNumber,
+				OrganizationYearGuid = organizationYearGuid
 			};
 
 			var students = await _studentRepository.SearchSynergyAsync(filter);

@@ -4,6 +4,7 @@ import { StudentSchoolYearView, StudentSchoolYearWithRecordsView } from 'Models/
 import { TimeScheduleForm } from './TimeSchedule'
 import { InstructorSchoolYearView } from './Instructor'
 import { TimeOnly } from './TimeOnly'
+import { FamilyMember } from './FamilyMember'
 
 //change to form or something
 export interface StudentAttendanceDto {
@@ -12,10 +13,16 @@ export interface StudentAttendanceDto {
   studentRecords: any
 }
 
+export interface FamilyRecord {
+  familyMember: FamilyMember
+  count: number
+}
+
 export interface StudentRecord {
   isPresent: boolean
-  attendance: TimeScheduleForm[]
   studentSchoolYear: StudentSchoolYearWithRecordsView
+  attendance: TimeScheduleForm[]
+  familyAttendance: FamilyRecord[]
 }
 
 export interface InstructorRecord {
@@ -43,6 +50,13 @@ export interface AttendanceDomain {
   }
   instanceDate: DateOnly
   //arrays that can be null
+}
+
+export interface SimpleAttendanceView {
+  guid: string
+  instanceDate: LocalDate
+  instructorCount: number
+  studentCount: number
 }
 
 export interface AttendanceView {

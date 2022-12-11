@@ -4,6 +4,28 @@ using System.Text.Json.Serialization;
 
 namespace GrantTracker.Utilities.OnStartup
 {
+
+	public class DateTimeJsonConverter : JsonConverter<DateTime>
+	{
+		private const string DateFormat = "yyyy-MM-dd-";
+
+		public override DateTime Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+		{
+			throw new NotImplementedException();
+		}
+
+		public override void Write(Utf8JsonWriter writer, DateTime value, JsonSerializerOptions serializer)
+		{
+			writer.WriteStartObject();
+			writer.WriteNumber("year", value.Year);
+			writer.WriteNumber("month", value.Month);
+			writer.WriteNumber("day", value.Day);
+			writer.WriteNumber("hour", value.Hour);
+			writer.WriteNumber("minute", value.Minute);
+			writer.WriteEndObject();
+		}
+	}
+
 	public class DateOnlyJsonConverter : JsonConverter<DateOnly>
 	{
 		private const string DateFormat = "yyyy-MM-dd";
@@ -51,6 +73,7 @@ namespace GrantTracker.Utilities.OnStartup
 					json.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
 					json.JsonSerializerOptions.Converters.Add(new DateOnlyJsonConverter());
 					json.JsonSerializerOptions.Converters.Add(new TimeOnlyJsonConverter());
+					json.JsonSerializerOptions.Converters.Add(new DateTimeJsonConverter());
 				});
 		}
 	}

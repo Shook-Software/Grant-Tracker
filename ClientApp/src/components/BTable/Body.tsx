@@ -21,7 +21,7 @@ function createRow (
   return (
     <tr
       key={row[rowProps?.key]}
-      onClick={event => rowProps.onClick? rowProps?.onClick(event, row) : null}
+      onClick={event => rowProps?.onClick? rowProps?.onClick(event, row) : null}
       style={{ cursor: rowProps?.onClick ? 'pointer' : 'auto', height: '1px', backgroundColor: index % 2 == 0 ? '#CCE2FD' : '#D5E5F8'}}
     >
       {[
@@ -37,7 +37,10 @@ function createRow (
           }
 
           return (
-            <td key={col.key} {...col.cellProps}>
+            <td 
+              key={col.key} 
+              {...col.cellProps}
+            >
               {value}
             </td>
           )

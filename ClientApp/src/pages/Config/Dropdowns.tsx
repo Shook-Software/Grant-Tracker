@@ -1,32 +1,139 @@
 import { useState, useEffect } from 'react'
-import { Tab, Nav, Row, Col } from 'react-bootstrap'
+import { Tab, Nav, Row, Col, Form } from 'react-bootstrap'
 
 import Table, { Column } from 'components/BTable'
 
-import api from 'utils/api'
+import { DropdownOption } from 'Models/Session'
 
+import api from 'utils/api'
+import { patchDropdownOptions } from './api'
+import isDeepEqual from 'deep-equal'
+
+const displayColumns: Column[] = [
+  {
+    label: 'Label',
+    attributeKey: 'label',
+    sortable: true
+  },
+  {
+    label: 'Abbreviation',
+    attributeKey: 'abbreviation',
+    sortable: true
+  },
+  {
+    label: 'Description',
+    attributeKey: 'description',
+    sortable: false
+  }
+]
+
+//not all dropdowns have consistency. They need to have a label of 75nvarchar, likely. Some are 50, some are 75. Fix this in the database
+//same with abbv, Activity has 20nvarchar where others have 10
+const createEditColumns = (onChange: (DropdownOption) => void): Column[] => [
+  {
+    label: 'Label',
+    attributeKey: '',
+    key: 'edit-label',
+    sortable: true,
+    transform: (dropdownOption: DropdownOption) => {
+      return (
+        <Form.Control 
+          maxLength={75}
+          value={dropdownOption.label}
+          onChange={(e) => onChange({...dropdownOption, label: e.target.value})}
+        />
+      )
+    }
+  },
+  {
+    label: 'Abbreviation',
+    attributeKey: '',
+    key: 'edit-abbv',
+    sortable: true,
+    transform: (dropdownOption: DropdownOption) => {
+      return (
+        <Form.Control 
+          maxLength={10}
+          value={dropdownOption.abbreviation}
+          onChange={(e) => onChange({...dropdownOption, abbreviation: e.target.value})}
+        />
+      )
+    }
+  },
+  {
+    label: 'Description',
+    attributeKey: '',
+    key: 'edit-description',
+    sortable: false,
+    transform: (dropdownOption: DropdownOption) => {
+      return (
+        <Form.Control
+          as='textarea'
+          rows={2}
+          maxLength={400}
+          value={dropdownOption.description}
+          onChange={(e) => onChange({...dropdownOption, description: e.target.value})}
+        />
+      )
+    }
+  }
+]
+
+
+  //assumes both arrays stay in the same order
+  const filterUneditedOptions = (originalOptions: DropdownOption[], editedOptions: DropdownOption[]): DropdownOption[] => {
+    let filteredOptions: DropdownOption[] = []
+
+    //only return those with changes
+    for (let index = 0; index < originalOptions.length; index++) {
+      const originalOption: DropdownOption = originalOptions[index]
+      const editedOption: DropdownOption = editedOptions[index]
+      if (!isDeepEqual(originalOption, editedOption))
+        filteredOptions = [...filteredOptions, editedOption]
+    }
+
+    return filteredOptions
+  }
+
+//we need an isActive field so that dropdown options can be retired.
 const Dropdown = ({ state }): JSX.Element => {
+  const [dropdownOptions, setDropdownOptions] = useState<DropdownOption[]>(state || [])
+  const [editable, setEditable] = useState<boolean>(false)
+
+  const handleChange = (editedOption: DropdownOption): void => {
+    const editedOptions: DropdownOption[] = dropdownOptions.map(option => {
+      if (option.guid !== editedOption.guid)
+        return option
+      else return editedOption
+    })
+
+    setDropdownOptions(editedOptions)
+  }
+
+  const submitChanges = (): void => {
+    const edits = filterUneditedOptions(state, dropdownOptions)
+    console.log(state, edits)
+  }
+
+
+  const columns: Column[] = editable ? createEditColumns(handleChange) : displayColumns
+
+  useEffect(() => {
+    setDropdownOptions(state)
+  }, [state])
+
   if (!state) return <></>
 
-  const columns: Column[] = [
-    {
-      label: 'Label',
-      attributeKey: 'label',
-      sortable: true
-    },
-    {
-      label: 'Abbreviation',
-      attributeKey: 'abbreviation',
-      sortable: true
-    },
-    {
-      label: 'Description',
-      attributeKey: 'description',
-      sortable: false
-    }
-  ]
+  /*<button onClick={() => submitChanges()}>Submit Changes</button>*/
 
-  return <Table dataset={state} columns={columns} />
+  return (
+    <>
+      <button onClick={() => setEditable(true)}>Edit</button>
+      <button onClick={() => setEditable(false)}>Unedit</button>
+      
+      <Table dataset={dropdownOptions} columns={columns} />
+    </>
+  )
 }
 
 export default (): JSX.Element => {

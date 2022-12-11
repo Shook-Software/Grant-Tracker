@@ -22,8 +22,7 @@ namespace GrantTracker.Dal.Repositories.SessionRepository
 		public Task<List<StudentRegistrationView>> GetStudentRegistrationsAsync(Guid sessionGuid, int dayOfWeek = -1);
 
 		public Task RegisterStudentAsync(Guid sessionGuid, List<Guid> scheduleGuids, Guid studentGuid);
-		public Task<List<string>> ValidateStudentRegistrationAsync(List<Guid> dayScheduleGuids, Guid studentSchoolYearGuid);
-		public Task<List<string>> ValidateStudentRegistrationsAsync(Guid sessionGuid, List<Guid> studentSchoolYearGuids);
+		public Task<List<string>> ValidateStudentAttendanceAsync(DateOnly instanceDate, List<StudentAttendanceDto> studentAttendance);
 
 		//public Task CopyStudentRegistrationsAsync(Guid sourceSessionGuid, Guid destinationSessionGuid); 
 		//public Task CopyStudentRegistrationsAsync(Guid sessionGuid, List<Guid> studentSchoolYearGuids);

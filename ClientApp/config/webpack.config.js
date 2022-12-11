@@ -51,7 +51,7 @@ module.exports = {
 			inject: true,
 			filename: path.join(paths.dist, 'index.html'),
 			template: path.join(paths.public, 'index.html'),
-			title: 'Year of the Rat'
+			title: 'Grant Tracker'
 		}),
 		new Dotenv()
 	],

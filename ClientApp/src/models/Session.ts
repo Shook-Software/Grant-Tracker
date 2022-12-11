@@ -2,7 +2,7 @@ import { LocalDate, LocalTime } from '@js-joda/core'
 
 import { DateOnly } from './DateOnly'
 import { TimeOnly } from './TimeOnly'
-import { DayOfWeek } from './DayOfWeek'
+import { DayOfWeek, DayOfWeekNumeric } from './DayOfWeek'
 import { Grade, GradeDomain, GradeView } from './Grade'
 import { Instructor, InstructorSchoolYearView } from './Instructor'
 import * as DaySchedule from './DaySchedule'
