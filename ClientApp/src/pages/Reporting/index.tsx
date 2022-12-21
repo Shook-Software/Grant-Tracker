@@ -3,6 +3,7 @@ import { Container, Row, Col, Form, Tab, Nav, Button } from 'react-bootstrap'
 import SelectSearch from 'components/Input/SelectSearch'
 
 import StudentAttendance from './StudentAttendance'
+import FamilyAttendance from './FamilyAttendance'
 import Activities from './Activities'
 import SiteSessions from './SiteSessions'
 import SummaryOfClasses from './SummaryOfClasses'
@@ -264,6 +265,10 @@ export default (): JSX.Element => {
 							<Tab.Content>
 								<Tab.Pane eventKey='student-attendance'>
 									<StudentAttendance parameters={{...reportParameters}} />
+								</Tab.Pane>
+
+								<Tab.Pane eventKey='family-attendance'>
+									<FamilyAttendance parameters={{...reportParameters}} />
 								</Tab.Pane>
 
 								<Tab.Pane eventKey='activities'>

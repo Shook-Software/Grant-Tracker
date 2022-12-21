@@ -13,7 +13,13 @@ interface Props {
 
 
 export const Header = ({ columns, indexed, setSortIndex }: Props): JSX.Element => {
+
+  //console.log(columns)
+
   function createColumnHeaders(columns: Column[]): JSX.Element | JSX.Element[] {
+
+    //console.log(columns.map(x => x.headerTransform ? x.headerTransform() : 'no header'))
+
     return columns.map((col, index) => 
         col.headerTransform 
         ? col.headerTransform()

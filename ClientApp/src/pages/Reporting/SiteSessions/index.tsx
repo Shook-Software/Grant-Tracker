@@ -57,7 +57,8 @@ const columns: Column[] = [
   {
     label: 'Attendee\nCount',
     attributeKey: 'attendeeCount',
-    sortable: true
+    sortable: true,
+    cellProps: {className: 'text-center'}
   },
   {
     label: 'Grades',

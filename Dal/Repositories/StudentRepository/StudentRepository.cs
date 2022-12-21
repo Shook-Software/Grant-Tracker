@@ -167,8 +167,9 @@ namespace GrantTracker.Dal.Repositories.StudentRepository
 				&& (filter.FirstName == null || ssy.Student.Person.FirstName.Contains(filter.FirstName))
 				&& (filter.LastName == null || ssy.Student.Person.LastName.Contains(filter.LastName))
 				&& (filter.MatricNumber == null || ssy.Student.SisNumber.Contains(filter.MatricNumber))
-				&& (_identity.Claim == IdentityClaim.Administrator || ssy.OrganizationYear.OrganizationGu == filter.OrganizationYearGuid)
 				&& (filter.SynergyGrades.Count == 0 || filter.SynergyGrades.Contains(ssy.Grade));
+
+			//&& (_identity.Claim == IdentityClaim.Administrator || ssy.OrganizationYear.OrganizationGu == filter.OrganizationYearGuid)
 
 			var synergyResults = await _synergy.RevSSY
 				.Include(ssy => ssy.OrganizationYear).ThenInclude(org => org.Organization)
@@ -188,7 +189,8 @@ namespace GrantTracker.Dal.Repositories.StudentRepository
 				.Take(100)
 				.ToListAsync();
 
-			
+
+			//&& (_identity.Claim == IdentityClaim.Administrator || ssy.OrganizationYearGuid == filter.OrganizationYearGuid)
 			var grantTrackerResults = await _grantContext.StudentSchoolYears
 				.Include(ssy => ssy.Student)
 				.Include(ssy => ssy.OrganizationYear)
@@ -196,7 +198,6 @@ namespace GrantTracker.Dal.Repositories.StudentRepository
 				(filter.FirstName == null || ssy.Student.FirstName.Contains(filter.FirstName))
 				&& (filter.LastName == null || ssy.Student.LastName.Contains(filter.LastName))
 				&& (filter.MatricNumber == null || ssy.Student.MatricNumber.Contains(filter.MatricNumber))
-				&& (_identity.Claim == IdentityClaim.Administrator || ssy.OrganizationYearGuid == filter.OrganizationYearGuid)
 				&& (filter.GrantTrackerGrades.Count == 0 || filter.GrantTrackerGrades.Contains(ssy.Grade))))
 				.Take(100)
 				.ToListAsync();
@@ -209,7 +210,6 @@ namespace GrantTracker.Dal.Repositories.StudentRepository
 				.Concat(synergyResults)
 				.DistinctBy(ssy => new {ssy.Student.FirstName, ssy.Student.LastName, ssy.Student.MatricNumber})
 				.ToList();
-				
 		}
 
 		public async Task SyncStudentsWithSynergyAsync()

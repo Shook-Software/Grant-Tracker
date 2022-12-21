@@ -50,6 +50,115 @@ namespace GrantTracker.Dal.Repositories.ReportRepository
 				.ToList();
 		}
 
+		public async Task<List<TotalFamilyAttendanceViewModel>> GetFamilyMemberAttendanceAsync(DateOnly startDate, DateOnly endDate, Guid organizationGuid = default)
+		{
+			var recordsBetweenDates = await _grantContext
+				.AttendanceRecords
+				.Where(ar => startDate.CompareTo(ar.InstanceDate) <= 0)
+				.Where(ar => endDate.CompareTo(ar.InstanceDate) >= 0)
+				.Where(ar => ar.Session.OrganizationYear.OrganizationGuid == organizationGuid || (organizationGuid == Guid.Empty && _identity.Claim == IdentityClaim.Administrator))
+				.Include(ar => ar.StudentAttendance).ThenInclude(sa => sa.TimeRecords)
+				.Include(ar => ar.StudentAttendance).ThenInclude(sa => sa.FamilyAttendance)
+				.Include(ar => ar.StudentAttendance).ThenInclude(sa => sa.StudentSchoolYear).ThenInclude(ssy => ssy.Student)
+				.Include(ar => ar.StudentAttendance).ThenInclude(s => s.StudentSchoolYear).ThenInclude(oy => oy.OrganizationYear).ThenInclude(oy => oy.Organization)
+				.SelectMany(x => x.StudentAttendance,
+				(attendanceRecord, studentRecord) => new {
+					OrganizationName = studentRecord.StudentSchoolYear.OrganizationYear.Organization.Name,
+					InstanceDate = attendanceRecord.InstanceDate,
+					StudentSchoolYearGuid = studentRecord.StudentSchoolYearGuid,
+					Student = new TotalFamilyAttendanceViewModel.StudentViewModel()
+					{
+						MatricNumber = studentRecord.StudentSchoolYear.Student.MatricNumber,
+						FirstName = studentRecord.StudentSchoolYear.Student.FirstName,
+						LastName = studentRecord.StudentSchoolYear.Student.LastName,
+						Grade = studentRecord.StudentSchoolYear.Grade
+					},
+					FamilyAttendance = studentRecord.FamilyAttendance.ToList(),
+					TimeRecords = studentRecord.TimeRecords.ToList()
+				})
+				.ToListAsync();
+
+			//we need to ditch some records as mid steps and reconnect them afterwards
+
+
+			var flattenedFamilyAttendance = recordsBetweenDates
+				.SelectMany(x => x.FamilyAttendance,
+				(studentAttendDate, familyRecord) => new
+				{
+					InstanceDate = studentAttendDate.InstanceDate,
+					StudentSchoolYearGuid = studentAttendDate.StudentSchoolYearGuid,
+					FamilyMember = familyRecord.FamilyMember,
+					TotalHours = studentAttendDate.TimeRecords.Sum(tr => (tr.ExitTime - tr.EntryTime).TotalMinutes / 60d),
+				})
+				.ToList();
+
+			var familyTotalHours = flattenedFamilyAttendance
+				.GroupBy(x => new { x.StudentSchoolYearGuid, x.FamilyMember },
+					(studentParent, flatRecordGroup) => new
+					{
+						StudentSchoolYearGuid = studentParent.StudentSchoolYearGuid,
+						FamilyMember = studentParent.FamilyMember,
+						TotalHours = flatRecordGroup.Sum(x => x.TotalHours)
+					})
+				.ToList();
+
+			var familyTotalDays = flattenedFamilyAttendance
+				.DistinctBy(x => new { x.StudentSchoolYearGuid, x.FamilyMember, x.InstanceDate })
+				.GroupBy(x => new { x.StudentSchoolYearGuid, x.FamilyMember },
+				(studentParent, flatRecordGroup) => new
+				{
+					StudentSchoolYearGuid = studentParent.StudentSchoolYearGuid,
+					FamilyMember = studentParent.FamilyMember,
+					TotalDays = flatRecordGroup.Count()
+				})
+				.ToList();
+
+			var familyAttendance = familyTotalDays
+				.Join(familyTotalHours,
+				days => new { days.StudentSchoolYearGuid, days.FamilyMember },
+				hours => new { hours.StudentSchoolYearGuid, hours.FamilyMember },
+				(days, hours) => new
+				{
+					days.StudentSchoolYearGuid,
+					days.FamilyMember,
+					days.TotalDays,
+					hours.TotalHours
+				})
+				.GroupBy(x => x.StudentSchoolYearGuid,
+					x => new TotalFamilyAttendanceViewModel.FamilyMemberAttendanceViewModel
+					{
+						FamilyMember = x.FamilyMember,
+						TotalDays = x.TotalDays,
+						TotalHours = x.TotalHours
+					},
+					(ssyGuid, fam) => new
+					{
+						StudentSchoolYearGuid = ssyGuid,
+						FamilyAttendance = fam.ToList()
+					})
+				.ToList();
+
+			var returnValue = recordsBetweenDates.Select(x => new
+			{
+				x.OrganizationName,
+				x.StudentSchoolYearGuid,
+				x.Student
+			})
+			.DistinctBy(x => x.StudentSchoolYearGuid)
+			.Join(familyAttendance,
+				stu => stu.StudentSchoolYearGuid,
+				fam => fam.StudentSchoolYearGuid,
+				(stu, fam) => new TotalFamilyAttendanceViewModel
+				{
+					OrganizationName = stu.OrganizationName,
+					Student = stu.Student,
+					FamilyAttendance = fam.FamilyAttendance.ToList()
+				})
+			.ToList();
+
+			return returnValue;
+		}
+
 		//we can probably rework this one a bit, familyattendance not handled yet
 		public async Task<List<TotalActivityViewModel>> GetTotalActivityAsync(DateOnly startDate, DateOnly endDate, Guid organizationGuid = default)
 		{

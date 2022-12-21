@@ -19,6 +19,22 @@ export function getStaffSummary(schoolYear: string, quarter: number, organizatio
   })
 }
 
+export function getFamilyAttendance(startDate: LocalDate, endDate: LocalDate, organizationGuid: string): Promise<any[]> {
+  return new Promise((resolve, reject) => {
+    api
+      .get('report/totalFamilyAttendance', {
+        params: {
+          startDateStr: startDate.toString(),
+          endDateStr: endDate.toString(),
+          organizationGuid: organizationGuid || null
+        }
+      })
+      .then(res => {
+        resolve(res.data)
+      })
+  })
+}
+
 export function getStudentAttendance(startDate: LocalDate, endDate: LocalDate, organizationGuid: string): Promise<any[]> {
   return new Promise((resolve, reject) => {
     api

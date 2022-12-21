@@ -68,14 +68,16 @@ const instructorColumns: Column[] = [
     attributeKey: 'timeRecords',
     sortable: false,
     headerTransform: () => (
-      <th className='d-flex flex-wrap'>
-        <span className='w-100 text-center'>Time Records</span>
-        <span className='w-50 text-center'>Entered at:</span>
-        <span className='w-50 text-center'>Exited at:</span>
+      <th>
+        <div className='d-flex flex-wrap'>
+          <span className='w-100 text-center'>Time Records</span>
+          <span className='w-50 text-center'>Entered at:</span>
+          <span className='w-50 text-center'>Exited at:</span>
+        </div>
       </th>
     ),
     transform: (timeRecord: AttendanceTimeRecordView[]) => <TimeRecordDisplay timeRecords={timeRecord} />,//<Table columns={tempColumns} dataset={timeRecord} className='m-0' />,
-    cellProps: {className: 'h-100 p-0'},
+    cellProps: {className: 'p-2'},
   }
 ]
 
@@ -85,12 +87,15 @@ function addFamilyColumn (columns: Column[]): Column[] {
     {
       label: 'Family Attendance',
       attributeKey: 'familyAttendance',
+      key: 'familyAttendance',
       sortable: false,
       headerTransform: () => (
-        <th className='d-flex flex-wrap'>
-          <span className='w-100 text-center'>Family Attendance</span>
-          <span className='w-50 text-center'>Family Member</span>
-          <span className='w-50 text-center'>Count</span>
+        <th>
+          <div className='d-flex flex-wrap'> 
+            <span className='w-100 text-center'>Family Attendance</span>
+            <span className='w-50 text-center'>Family Member</span>
+            <span className='w-50 text-center'>Count</span>
+          </div>
         </th>
       ),
       transform: (familyAttendanceRecord) => 
@@ -176,6 +181,11 @@ export default ({sessionGuid, simpleRecord, onEditClick, onDeleteClick}: Props):
       .finally(() => setIsLoading(false))
   }
 
+  let studentTableColumns: Column[] = [...studentColumns]
+  if (record?.studentAttendanceRecords?.length > 0 && record?.studentAttendanceRecords.some(x => x.familyAttendance && x.familyAttendance.length > 0)) {
+    studentTableColumns = addFamilyColumn(studentTableColumns)
+  }
+
   useEffect(() => {
     fetchAttendanceRecord(simpleRecord.guid)
   }, [simpleRecord])
@@ -232,7 +242,7 @@ export default ({sessionGuid, simpleRecord, onEditClick, onDeleteClick}: Props):
         <Table tableProps={{style: {fontSize: '0.9rem'}}} columns={instructorColumns} dataset={record.instructorAttendanceRecords} />
 
         <h6 className='px-3'>Student(s)</h6>
-        <Table tableProps={{style: {fontSize: '0.9rem', marginBottom: '0'}}} columns={studentColumns} dataset={record.studentAttendanceRecords} />
+        <Table tableProps={{style: {fontSize: '0.9rem', marginBottom: '0'}}} columns={studentTableColumns} dataset={record.studentAttendanceRecords} />
 
       </Accordion.Body>
     </Accordion.Item>

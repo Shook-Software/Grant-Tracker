@@ -108,6 +108,15 @@ namespace GrantTracker.Dal.Controllers
 			return Ok(report);
 		}
 
+		[HttpGet("totalFamilyAttendance")]
+		public async Task<ActionResult<Report<TotalStudentAttendanceViewModel>>> GetTotalFamilyAttendanceAsync(string startDateStr, string endDateStr, Guid organizationGuid = default)
+		{
+			DateOnly startDate = DateOnly.Parse(startDateStr);
+			DateOnly endDate = DateOnly.Parse(endDateStr);
+			var report = await GetReportAsync<TotalFamilyAttendanceViewModel>(startDate, endDate, organizationGuid, _reportRepository.GetFamilyMemberAttendanceAsync);
+			return Ok(report);
+		}
+
 		[HttpGet("totalActivity")]
 		public async Task<ActionResult<Report<TotalActivityViewModel>>> GetTotalActivityAsync(string startDateStr, string endDateStr, Guid organizationGuid = default)
 		{

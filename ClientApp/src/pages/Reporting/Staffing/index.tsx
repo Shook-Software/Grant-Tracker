@@ -82,8 +82,6 @@ export default ({parameters}): JSX.Element => {
   const [status, setStatusType] = useState<string>('')
   const [isLoading, setIsLoading] = useState<boolean>(false)
 
-  console.log(summary)
-
   useEffect(() => {
     setIsLoading(true)
 
