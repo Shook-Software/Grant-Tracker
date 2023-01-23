@@ -1,4 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using GrantTracker.Dal.Models.Views;
+using GrantTracker.Dal.Models.Views.Reporting;
 
 namespace GrantTracker.Dal.Schema
 {
@@ -61,6 +63,17 @@ namespace GrantTracker.Dal.Schema
 		public DbSet<StudentAttendanceTimeRecord> StudentAttendanceTimeRecords { get; set; }
 		public DbSet<InstructorAttendanceTimeRecord> InstructorAttendanceTimeRecords { get; set; }
 
+
+		//AttendanceRecords
+		public DbSet<TotalStudentAttendanceViewModel> ReportTotalStudentAttendance { get; set; }
+		public DbSet<TotalFamilyAttendanceDbModel> ReportTotalFamilyAttendance { get; set; }
+		public DbSet<TotalActivityViewModel> ReportTotalActivity { get; set; }
+		public DbSet<SiteSessionDbModel> ReportSiteSessions { get; set; }
+		public DbSet<ClassSummaryDbModel> ReportClassSummary { get; set; }
+		public DbSet<ProgramViewModel> ReportProgramOverview { get; set; }
+		public DbSet<StaffSummaryDbModel> ReportStaffSurvey { get; set; }
+		public DbSet<StudentSurveyViewModel> ReportStudentSurvey { get; set; }
+
 		protected override void OnModelCreating(ModelBuilder builder)
 		{
 			builder.HasDefaultSchema("GTkr");
@@ -98,6 +111,16 @@ namespace GrantTracker.Dal.Schema
 			AttendanceRecord.Setup(builder);
 			StudentAttendanceTimeRecord.Setup(builder);
 			InstructorAttendanceTimeRecord.Setup(builder);
+
+			//Reporting POCOs
+			builder.Entity<TotalStudentAttendanceViewModel>().HasNoKey();
+			builder.Entity<TotalActivityViewModel>().HasNoKey();
+			builder.Entity<TotalFamilyAttendanceDbModel>().HasNoKey();
+			builder.Entity<SiteSessionDbModel>().HasNoKey();
+			builder.Entity<ClassSummaryDbModel>().HasNoKey();
+			builder.Entity<ProgramViewModel>().HasNoKey();
+			builder.Entity<StaffSummaryDbModel>().HasNoKey();
+			builder.Entity<StudentSurveyViewModel>().HasNoKey();
 		}
 
 		/*private async Task UpdateAuditLogAsync()

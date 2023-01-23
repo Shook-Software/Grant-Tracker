@@ -77,41 +77,53 @@ function exportToCSV(data, parameters) {
 }
 
 //thing is, an instructor may show up multiple times in a category or across categories if the date params bring in two quarters
-export default ({parameters}): JSX.Element => {
-  const [summary, setSummary] = useState<any[] | null>(null)
+export default ({parameters, reportIsLoading, staffSummaryReport}): JSX.Element => {
+  //const [summary, setSummary] = useState<any[] | null>(null)
   const [status, setStatusType] = useState<string>('')
-  const [isLoading, setIsLoading] = useState<boolean>(false)
+  const [dropdownOptions, setDropdownOptions] = useState<any[] | null>([])
+  //const [isLoading, setIsLoading] = useState<boolean>(false)
 
   useEffect(() => {
-    setIsLoading(true)
+    if (Array.isArray(staffSummaryReport) && staffSummaryReport.length > 0) {
+      setStatusType(staffSummaryReport[0].status)
 
-    getStaffSummary(parameters.schoolYear?.year, parameters.schoolYear?.quarter, parameters.orgGuid)
-      .then(res => {
-        setSummary(res)
-        setStatusType(res[0].status)
-      })
-      .catch(err => {
-        console.warn(err)
-      })
-      .finally(() => {
-        setIsLoading(false)
-      })
-  }, [parameters])
+      let options = [
+        {
+          guid: 'all',
+          label: `All (${staffSummaryReport.reduce((total, current) => total + current.instructors.length, 0)})`
+        },
+        ...staffSummaryReport.map(statusGroup => ({
+          guid: statusGroup.status,
+          label: `${statusGroup.status} (${statusGroup.instructors.length})`
+        }))
+    ]
 
-  if (isLoading)
-    return <p>...Loading</p>
+      setDropdownOptions(options)
+    }
 
-  if (!summary)
-    return <p>An error occured in fetching results, please reload the page or file a report if the issue persists.</p>
+  }, [staffSummaryReport])
+
+  if (Array.isArray(staffSummaryReport) && staffSummaryReport.length == 0) 
+    return (
+      <p>No records to display... Either no results were returned or no query has run.</p>
+    )
+  else if (!reportIsLoading && !staffSummaryReport || !Array.isArray(staffSummaryReport))
+    return (
+        <p>An error has been encountered in loading the report.</p>
+    )
+  else if (reportIsLoading)
+    return (
+        <p>...Loading</p>
+    )
 
   return (
-    <Container>
+    <div style={{width: 'fit-content'}}>
       <Row className='d-flex flex-row justify-content-center'>
         <h4 className='text-center' style={{width: 'fit-content'}}>
           Staffing for {`${parameters.schoolYear?.year} ${Quarter[parameters.schoolYear?.quarter]}`}
         </h4>
         <Button
-            onClick={() => exportToCSV(summary, parameters)}
+            onClick={() => exportToCSV(staffSummaryReport, parameters)}
             style={{width: 'fit-content', height: 'fit-content'}}
             size='sm'
           >
@@ -119,42 +131,34 @@ export default ({parameters}): JSX.Element => {
           </Button>
       </Row>
 
-      <Row>
-        <Col style={{maxWidth: '25%'}}>
-          <Form.Group>
+      <Row class='d-flex flex-row'>
+
+        <Form.Group className='mb-3'>
           <Form.Label>Staff Status Type</Form.Label>
-            <Dropdown 
-              value={status}
-              options={summary.map(statusGroup => ({
-                guid: statusGroup.status,
-                label: `${statusGroup.status} (${statusGroup.instructors.length})`
-              }))}
-              onChange={(status: string) => setStatusType(status)}
-            />
-          </Form.Group>
-        </Col>
-        <Col className='w-50'>
-          <Form.Group>
-            <Form.Label>Instructors ({status})</Form.Label>
-            <div
-              style={{
-                maxHeight: '25rem',
-                overflowY: 'scroll'
-              }}
-            >
-              <Table 
-                className='m-0'
-                columns={instructorColumns} 
-                dataset={summary.find(statusGroup => statusGroup.status === status)?.instructors}
-                defaultSort={{index: 0, direction: SortDirection.Ascending}}
-                tableProps={{
-                  size: 'sm'
-                }}
-              />
-            </div>
-          </Form.Group>
-        </Col>
+          <Dropdown  
+            value={status}
+            options={dropdownOptions}
+            onChange={(status: string) => setStatusType(status)}
+          />
+        </Form.Group>
+
+        <div
+          style={{
+            maxHeight: '30rem',
+            overflowY: 'auto'
+          }}
+        >
+          <Table 
+            className='m-0'
+            columns={instructorColumns} 
+            dataset={staffSummaryReport.find(statusGroup => statusGroup.status === status)?.instructors}
+            defaultSort={{index: 0, direction: SortDirection.Ascending}}
+            tableProps={{
+              size: 'sm'
+            }}
+          />
+        </div>
       </Row>
-    </Container>
+    </div>
   )
 }

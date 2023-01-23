@@ -7,7 +7,7 @@ namespace GrantTracker.Dal.Schema
 		Mother = 0,
 		Father = 1,
 		Guardian = 2,
-		Grandma = 3,
+		Grandmother = 3,
 		Grandfather = 4,
 		OtherAdult = 5
 	}
@@ -26,6 +26,10 @@ namespace GrantTracker.Dal.Schema
 			entity.ToTable("FamilyAttendance", "GTkr")
 				.HasComment("Log for family attendance, tied to studentAttendanceRecords,")
 				.HasKey(e => e.Guid);
+
+			entity.HasOne(x => x.StudentAttendanceRecord)
+				.WithMany(x => x.FamilyAttendance)
+				.OnDelete(DeleteBehavior.Cascade);
 
 			entity.HasOne(e => e.StudentAttendanceRecord)
 				.WithMany(e => e.FamilyAttendance)

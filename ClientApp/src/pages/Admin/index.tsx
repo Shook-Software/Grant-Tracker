@@ -26,9 +26,11 @@ const TabSelector = (): JSX.Element => (
 
 interface Props {
   user: User
+  breadcrumbs: JSX.Element
 }
 
-export default ({ user }: Props) => {const location = useLocation()
+export default ({ user, breadcrumbs}: Props) => {
+  const location = useLocation()
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -38,18 +40,17 @@ export default ({ user }: Props) => {const location = useLocation()
   }, [location.pathname])
 
   return (
-    <>
+    <PageContainer className='rounded-top-left-0'>
+      {breadcrumbs}
       <div className='w-100'>
         <TabSelector />
       </div>
-      <PageContainer className='rounded-top-left-0'>
         <Outlet
           context={{
             user
           }}
         />
-      </PageContainer>
-    </>
+    </PageContainer>
   )
 }
 

@@ -64,7 +64,10 @@ const columns: Column[] = [
     label: 'Grades',
     attributeKey: 'grades',
     sortable: false,
-    transform: (grades: string[]) => grades.join()
+    transform: (grades: string) => grades == '{}' || grades == '{ }' ? 'N/A' : grades.substring(1, grades.length - 1),
+    cellProps: {
+      class: 'text-center'
+    }
   },
   {
     label: 'Instructors',
@@ -74,7 +77,7 @@ const columns: Column[] = [
       <div style={{minWidth: 'fit-content'}}>
         {instructors.map((instructor, index) => (
           <>
-            <div style={{minWidth: 'fit-content'}}>{`${instructor.firstName} ${instructor.lastName}`}</div>
+            <p className='my-0 px-3'  style={{minWidth: 'fit-content'}}>{instructor.firstName && instructor.lastName ? `${instructor.firstName} ${instructor.lastName}` : 'N/A'}</p>
             {index === instructors.length - 1 ? null : <hr className='m-1'/>}
           </>
         ))}
@@ -198,39 +201,32 @@ function exportToCSV(data, parameters) {
 }
 
 //thing is, an instructor may show up multiple times in a category or across categories if the date params bring in two quarters
-export default ({parameters}): JSX.Element => {
-  const [siteSessions, setSiteSessions] = useState<any[] | null>(null)
+export default ({parameters, reportIsLoading, siteSessionsReport}): JSX.Element => {
+  //const [siteSessions, setSiteSessions] = useState<any[] | null>(null)
   const [isLoading, setIsLoading] = useState<boolean>(false)
 
-  useEffect(() => {
-    setIsLoading(true)
 
-    getSiteSessions(parameters.schoolYear?.startDate, parameters.schoolYear?.endDate, parameters.orgGuid)
-      .then(res => {
-        setSiteSessions(res)
-      })
-      .catch(err => {
-        console.warn(err)
-      })
-      .finally(() => {
-        setIsLoading(false)
-      })
-  }, [parameters])
-
-  if (isLoading)
-    return <p>...Loading</p>
-
-  if (!siteSessions)
-    return <p>An error occured in fetching results, please reload the page or file a report if the issue persists.</p>
+  if (Array.isArray(siteSessionsReport) && siteSessionsReport.length == 0) 
+    return (
+      <p>No records to display... Either no results were returned or no query has run.</p>
+    )
+  else if (!reportIsLoading && !siteSessionsReport || !Array.isArray(siteSessionsReport))
+    return (
+        <p>An error has been encountered in loading the report.</p>
+    )
+  else if (reportIsLoading)
+    return (
+        <p>...Loading</p>
+    )
 
   return (
-    <Container>
+    <div style={{width: 'fit-content'}}>
       <Row className='d-flex flex-row justify-content-center'>
         <h4 className='text-center' style={{width: 'fit-content'}}>
           Site Sessions for {`${parameters.schoolYear?.startDate?.toString()} to ${parameters.schoolYear?.endDate?.toString()}`}
         </h4>
         <Button
-            onClick={() => exportToCSV(siteSessions, parameters)}
+            onClick={() => exportToCSV(siteSessionsReport, parameters)}
             style={{width: 'fit-content', height: 'fit-content'}}
             size='sm'
           >
@@ -240,14 +236,14 @@ export default ({parameters}): JSX.Element => {
 
       <Row 
         style={{
-          maxHeight: '25rem',
-          overflowX: 'visible'
+          maxHeight: '30rem',
+          overflowY: 'auto'
         }}
       >
         <Table 
           className='m-0'
           columns={columns} 
-          dataset={siteSessions}
+          dataset={siteSessionsReport}
           defaultSort={{index: 1, direction: SortDirection.Ascending}}
           tableProps={{
             size: 'sm',
@@ -259,6 +255,6 @@ export default ({parameters}): JSX.Element => {
         />
       </Row>
      
-    </Container>
+    </div>
   )
 }

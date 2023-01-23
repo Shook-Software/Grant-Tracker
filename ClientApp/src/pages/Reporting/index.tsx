@@ -15,7 +15,8 @@ import { PageContainer } from 'styles'
 import { OrganizationView, OrganizationYearView, Quarter, YearView } from 'models/OrganizationYear'
 
 import { AxiosIdentityConfig } from 'utils/api'
-import { getAuthorizedOrganizations, getOrganizationYears } from './api'
+import { getAuthorizedOrganizations, getOrganizationYears, getReportsAsync } from './api'
+import { getSiteSessions } from './api'
 import Dropdown from 'components/Input/Dropdown'
 import { DropdownOption } from 'Models/Session'
 import { DateOnly } from 'Models/DateOnly'
@@ -107,20 +108,20 @@ const ParamSelection = ({onSubmit}): JSX.Element => {
 	}))
 
 	return (
-		<Container>
+		<Container className='ms-0'>
 			<Form>
 				<Row>
 					<Col lg='3'>
 						<Form.Group>
 							<Form.Label htmlFor='org'>Organization</Form.Label>
 							<SelectSearch 
-                id='org'
-                options={orgOptions} 
-                value={orgYear.organizationGuid} 
-                handleChange={(orgGuid: string) => {
+								id='org'
+								options={orgOptions}
+								value={orgYear.organizationGuid}
+								handleChange={(orgGuid: string) => {
 									setOrgYear({...orgYear, organizationGuid: orgGuid})
 								}}
-              />
+						  />
 						</Form.Group>
 					</Col>
 					<Col lg='3'>
@@ -188,13 +189,42 @@ const ParamSelection = ({onSubmit}): JSX.Element => {
 
 export default (): JSX.Element => {
 	const [reportParameters, setReportParameters] = useState<any>({})
+	const [reports, setReports] = useState<any>(null)
+	const [isLoading, setIsLoading] = useState<boolean>(false)
+
+	//temp
+	const [siteSessions, setSiteSessions] = useState<any[] | null>([])
+	const [siteSessionsIsLoading, setSiteSessionsIsLoading] = useState<boolean>(false)
 
 	function handleParameterChange(form): void {
 		setReportParameters(form)
+
+		setIsLoading(true)
+		getReportsAsync(form.schoolYear.startDate, form.schoolYear.endDate, form.orgGuid)
+			.then(res => {
+				setReports(res)
+			})
+			.catch(err => {
+				setReports(null)
+			})
+			.finally(() => {
+				setIsLoading(false)
+			})
+
+			getSiteSessions(form.schoolYear?.startDate, form.schoolYear?.endDate, form.orgGuid)
+      .then(res => {
+        setSiteSessions(res)
+      })
+      .catch(err => {
+        console.warn(err)
+      })
+      .finally(() => {
+        setSiteSessionsIsLoading(false)
+      })
 	}
 
 	return (
-		<Container style={{width: '80vw'}}>
+		<Container style={{minWidth: '90vw'}}>
 			<ParamSelection onSubmit={(form) => handleParameterChange(form)}/>
 
 			<hr />
@@ -261,13 +291,85 @@ export default (): JSX.Element => {
 
 						</Col>
 
-						<Col >
+						<Col className='ms-3'>
 							<Tab.Content>
+
 								<Tab.Pane eventKey='student-attendance'>
-									<StudentAttendance parameters={{...reportParameters}} />
+									<StudentAttendance
+										studentAttendanceReport={reports?.totalStudentAttendance}
+										reportIsLoading={isLoading}
+										parameters={...reportParameters}
+									/>
 								</Tab.Pane>
 
 								<Tab.Pane eventKey='family-attendance'>
+									<FamilyAttendance
+										familyAttendanceReport={reports?.totalFamilyAttendance}
+										reportIsLoading={isLoading}
+									 	parameters={{...reportParameters}} 
+									 />
+								</Tab.Pane>
+
+								<Tab.Pane eventKey='activities'>
+									<Activities 
+										activityReport={reports?.totalActivity}
+										reportIsLoading={isLoading}
+										parameters={{...reportParameters}} 
+									/>
+								</Tab.Pane>
+
+								<Tab.Pane eventKey='site-sessions'>
+									<SiteSessions 
+										siteSessionsReport={siteSessions}
+										reportIsLoading={siteSessionsIsLoading}
+										parameters={{...reportParameters}} 
+									/>
+								</Tab.Pane>
+
+								<Tab.Pane eventKey='summary-of-classes'>
+									<SummaryOfClasses 
+										summaryOfClassesReport={reports?.classSummaries}
+										reportIsLoading={isLoading}
+										parameters={{...reportParameters}} 
+									/>
+								</Tab.Pane>
+
+								<Tab.Pane eventKey='program-overview'>
+									<ProgramOverview 
+										programOverviewReport={reports?.programOverviews}
+										reportIsLoading={isLoading}
+										parameters={{...reportParameters}} 
+									/>
+								</Tab.Pane>
+
+								<Tab.Pane eventKey='staffing'>
+									<StaffingSummary 
+										staffSummaryReport={reports?.staffSummaries}
+										reportIsLoading={isLoading}
+										parameters={{...reportParameters}}
+									/>
+								</Tab.Pane>
+
+								<Tab.Pane eventKey='student-survey'>
+									<StudentSurvey
+										studentSurveyReport={reports?.studentSurvey}
+										reportIsLoading={isLoading}
+									 	parameters={{...reportParameters}}
+									 />
+								</Tab.Pane>
+
+							</Tab.Content>
+						</Col>
+					</Row>
+				</Tab.Container>
+			</Row>
+			
+		</Container>
+	)
+}
+
+/*
+<Tab.Pane eventKey='family-attendance'>
 									<FamilyAttendance parameters={{...reportParameters}} />
 								</Tab.Pane>
 
@@ -294,18 +396,7 @@ export default (): JSX.Element => {
 								<Tab.Pane eventKey='student-survey'>
 									<StudentSurvey parameters={{...reportParameters}}/>
 								</Tab.Pane>
-							</Tab.Content>
-						</Col>
-					</Row>
-				</Tab.Container>
-			</Row>
-			
-		</Container>
-	)
-}
-
-//
-//<StaffingSummary />
+*/
 
 /*
 We need:

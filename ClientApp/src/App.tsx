@@ -58,14 +58,19 @@ export const App = (): JSX.Element => {
         orgYearChange={() => handleOrgYearChange()}
       />
       <Container
-        className='d-flex flex-column align-items-start'
-        style={{ width: 'min-content', paddingTop: '6.5rem' }}
+        className='d-flex flex-column align-items-center w-100 mx-5'
+        style={{ paddingTop: '6.5rem', minWidth: '95vw' }}
       >
-        <Breadcrumb
-          items={breadcrumbItems}
-          activeItem={breadcrumbItems[breadcrumbItems.length - 1]}
+        <RenderRoutes 
+          routes={appRoutes} 
+          user={user} 
+          breadcrumbs={
+            <Breadcrumb
+              items={breadcrumbItems}
+              activeItem={breadcrumbItems[breadcrumbItems.length - 1]}
+            />
+          } 
         />
-        <RenderRoutes routes={appRoutes} user={user} />
       </Container>
     </div>
   )

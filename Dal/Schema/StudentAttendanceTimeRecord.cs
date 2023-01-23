@@ -17,6 +17,11 @@ namespace GrantTracker.Dal.Schema
 				.HasComment("Records for student attendance, with the start and end times. Multiple can exist for a single day.")
 				.HasKey(e => e.Guid);
 
+			entity.HasOne(x => x.StudentAttendanceRecord)
+				.WithMany(x => x.TimeRecords)
+				.HasForeignKey(e => e.StudentAttendanceRecordGuid)
+				.OnDelete(DeleteBehavior.Cascade);
+
 			entity.Property(e => e.EntryTime)
 				.IsRequired()
 				.HasColumnType("time");

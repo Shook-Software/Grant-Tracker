@@ -6,10 +6,7 @@ export default {
     path: '/home'
   },
   Reports: {
-    path: '/home/reporting',
-    Sessions: {
-      path: 'session',
-    }
+    path: '/home/reporting'
   },
   Edit: {
     path: '/home/edit',

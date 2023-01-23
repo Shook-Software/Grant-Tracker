@@ -31,11 +31,13 @@ interface Props {
   rowProps?: object
   defaultSort?: { index: number, direction: SortDirection }
   indexed?: boolean
+  bordered?: boolean
+  showHeader?: boolean
   className?: string
   tableProps?: object
 }
 
-export default ({ columns, dataset, rowProps, defaultSort, indexed = false, className, tableProps }: Props): JSX.Element => {
+export default ({ columns, dataset, rowProps, defaultSort, indexed = false, bordered = true, showHeader = true, className, tableProps }: Props): JSX.Element => {
   const [sortIndex, setSortIndex] = useState<number>(defaultSort?.index || 0)
   const [sortDirection, setSortDirection] = useState<SortDirection>(defaultSort?.direction || SortDirection.None)
 
@@ -59,16 +61,20 @@ export default ({ columns, dataset, rowProps, defaultSort, indexed = false, clas
     <Table
       className={className}
       striped
-      bordered
+      bordered={bordered}
       hover
       {...tableProps}
       style={{border: '2px solid black', ...tableProps?.style}}
     >
-      <Header
-        columns={columns}
-        indexed={indexed}
-        setSortIndex={(value: number) => handleSortIndexChange(value)}
-      />
+      {
+        showHeader ? 
+        <Header
+          columns={columns}
+          indexed={indexed}
+          setSortIndex={(value: number) => handleSortIndexChange(value)}
+        />
+        : null
+      }
       <Body
         columns={columns}
         dataset={dataset}

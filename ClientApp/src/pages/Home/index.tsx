@@ -30,7 +30,7 @@ export default (): JSX.Element => {
       </ListGroup.Item>
       <ListGroup.Item className='d-flex flex-column align-items-center'>
         <div className='fw-bold'>
-          <Link to={`${paths.Reports.path}/${paths.Reports.Sessions.path}`}>
+          <Link to={`${paths.Reports.path}/${paths.Reports.path}`}>
             Reporting
           </Link>
         </div>

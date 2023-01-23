@@ -10,22 +10,25 @@ import { saveCSVToFile } from '../fileSaver'
 const columns: Column[] = [
   {
     label: 'Last Name',
-    attributeKey: 'student.lastName',
+    attributeKey: 'lastName',
     sortable: true
   },
   {
     label: 'First Name',
-    attributeKey: 'student.firstName',
+    attributeKey: 'firstName',
     sortable: true
   },
   {
     label: 'Grade',
-    attributeKey: 'student.grade',
-    sortable: true
+    attributeKey: 'grade',
+    sortable: true,
+    cellProps: {
+      className: 'text-center'
+    }
   },
   {
     label: 'Matric Number',
-    attributeKey: 'student.matricNumber',
+    attributeKey: 'matricNumber',
     sortable: true
   },
   {
@@ -47,28 +50,26 @@ const columns: Column[] = [
 
 function exportToCSV(data, parameters) {
 
-  console.log(data)
-
   const fields = [
     {
       label: 'Organization',
-      value: 'student.organizationName'
+      value: 'organizationName'
     },
     {
       label: 'Last Name',
-      value: 'student.lastName'
+      value: 'lastName'
     },
     {
       label: 'First Name',
-      value: 'student.firstName'
+      value: 'firstName'
     },
     {
       label: 'Grade',
-      value: 'student.grade',
+      value: 'grade',
     },
     {
       label: 'Matric Number',
-      value: 'student.matricNumber'
+      value: 'matricNumber'
     },
     {
       label: 'Activity',
@@ -94,39 +95,31 @@ function exportToCSV(data, parameters) {
 }
 
 //thing is, an instructor may show up multiple times in a category or across categories if the date params bring in two quarters
-export default ({parameters}): JSX.Element => {
-  const [studentSurvey, setStudentSurvey] = useState<any[] | null>(null)
-  const [isLoading, setIsLoading] = useState<boolean>(false)
+export default ({parameters, reportIsLoading, studentSurveyReport}): JSX.Element => {
+  //const [studentSurvey, setStudentSurvey] = useState<any[] | null>(null)
+  //const [isLoading, setIsLoading] = useState<boolean>(false)
 
-  useEffect(() => {
-    setIsLoading(true)
-
-    getStudentSurveys(parameters.schoolYear?.startDate, parameters.schoolYear?.endDate, parameters.orgGuid)
-      .then(res => {
-        setStudentSurvey(res)
-      })
-      .catch(err => {
-        console.warn(err)
-      })
-      .finally(() => {
-        setIsLoading(false)
-      })
-  }, [parameters])
-
-  if (isLoading)
-    return <p>...Loading</p>
-
-  if (!studentSurvey)
-    return <p>An error occured in fetching results, please reload the page or file a report if the issue persists.</p>
+  if (Array.isArray(studentSurveyReport) && studentSurveyReport.length == 0) 
+    return (
+      <p>No records to display... Either no results were returned or no query has run.</p>
+    )
+  else if (!reportIsLoading && !studentSurveyReport || !Array.isArray(studentSurveyReport))
+    return (
+        <p>An error has been encountered in loading the report.</p>
+    )
+  else if (reportIsLoading)
+    return (
+        <p>...Loading</p>
+    )
 
   return (
-    <Container> 
+    <div style={{width: 'fit-content'}}> 
       <Row className='d-flex flex-row justify-content-center m-0'>
         <h4 className='text-center' style={{width: 'fit-content'}}>
           Student Surveys for {`${parameters.schoolYear?.startDate?.toString()} to ${parameters.schoolYear?.endDate?.toString()}`}
         </h4>
         <Button
-            onClick={() => exportToCSV(studentSurvey, parameters)}
+            onClick={() => exportToCSV(studentSurveyReport, parameters)}
             style={{width: 'fit-content', height: 'fit-content'}}
             size='sm'
           >
@@ -136,14 +129,14 @@ export default ({parameters}): JSX.Element => {
 
       <Row 
         style={{
-          maxHeight: '25rem',
-          overflowY: 'scroll'
+          maxHeight: '30rem',
+          overflowY: 'auto'
         }}
       >
         <Table 
           className='m-0'
           columns={columns} 
-          dataset={studentSurvey}
+          dataset={studentSurveyReport}
           defaultSort={{index: 0, direction: SortDirection.Ascending}}
           tableProps={{
             size: 'sm'
@@ -151,6 +144,6 @@ export default ({parameters}): JSX.Element => {
         />
       </Row>
      
-    </Container>
+    </div>
   )
 }

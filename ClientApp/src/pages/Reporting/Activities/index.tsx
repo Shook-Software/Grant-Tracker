@@ -18,12 +18,18 @@ const columns: Column[] = [
   {
     label: 'Total Attendees',
     attributeKey: 'totalAttendees',
-    sortable: true
+    sortable: true,
+    cellProps: {
+      className: 'text-center'
+    }
   },
   {
     label: 'Total Hours',
     attributeKey: 'totalHours',
-    sortable: true
+    sortable: true,
+    cellProps: {
+      className: 'text-center'
+    }
   }
 ]
 
@@ -57,28 +63,30 @@ function exportToCSV(data, parameters) {
   saveCSVToFile(data, options, `Total_Activity_${parameters.schoolYear?.startDate?.toString()}-${parameters.schoolYear?.endDate?.toString()}`)
 }
 
-export default ({parameters}): JSX.Element => {
-  const [generatedAt, setGeneratedAt] = useState(null)
-  const [activities, setActivities] = useState<any[]>([])
+export default ({parameters, reportIsLoading, activityReport}): JSX.Element => {
+  //const [activities, setActivities] = useState<any[] | null>([])
 
-  useEffect(() => {
-    getActivities(parameters.schoolYear?.startDate, parameters.schoolYear?.endDate, parameters.orgGuid)
-      .then(res => {
-        setGeneratedAt(res.generatedAt)
-        setActivities(res.data)
-      })
-  }, [parameters])
-
-  console.log(activities)
-
+  if (Array.isArray(activityReport) && activityReport.length == 0) 
+    return (
+      <p>No records to display... Either no results were returned or no query has run.</p>
+    )
+  else if (!reportIsLoading && !activityReport || !Array.isArray(activityReport))
+    return (
+        <p>An error has been encountered in loading the report.</p>
+    )
+  else if (reportIsLoading)
+    return (
+        <p>...Loading</p>
+    )
+ 
   return (
-    <Container>
+    <div  style={{width: 'fit-content'}}>
       <Row className='d-flex flex-row justify-content-center m-0'>
         <h4 className='text-center' style={{width: 'fit-content'}}>
           Total Activity for {`${parameters.schoolYear?.startDate?.toString()} to ${parameters.schoolYear?.endDate?.toString()}`}
         </h4>
         <Button
-            onClick={() => exportToCSV(activities, parameters)}
+            onClick={() => exportToCSV(activityReport, parameters)}
             style={{width: 'fit-content', height: 'fit-content'}}
             size='sm'
           >
@@ -88,17 +96,17 @@ export default ({parameters}): JSX.Element => {
 
       <Row 
         style={{
-          maxHeight: '25rem',
-          overflowY: 'scroll'
+          maxHeight: '30rem',
+          overflowY: 'auto'
         }}
       >
         <Table 
           className='m-0'
           columns={columns} 
-          dataset={activities} 
+          dataset={activityReport} 
           defaultSort={{index: 0, direction: SortDirection.Ascending}}
         />
       </Row>
-    </Container>
+    </div>
   )
 }

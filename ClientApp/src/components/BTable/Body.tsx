@@ -21,8 +21,9 @@ function createRow (
   return (
     <tr
       key={row[rowProps?.key]}
+      className={rowProps?.className}
       onClick={event => rowProps?.onClick? rowProps?.onClick(event, row) : null}
-      style={{ cursor: rowProps?.onClick ? 'pointer' : 'auto', height: '1px', backgroundColor: index % 2 == 0 ? '#CCE2FD' : '#D5E5F8'}}
+      style={{ cursor: rowProps?.onClick ? 'pointer' : 'auto', minHeight: '1px', minWidth: '100%', backgroundColor: index % 2 == 0 ? '#CCE2FD' : '#D5E5F8'}}
     >
       {[
         isIndexed ? <td key='index'>{index}</td> : null,
@@ -40,6 +41,7 @@ function createRow (
             <td 
               key={col.key} 
               {...col.cellProps}
+              style={{...col.cellProps?.style}}
             >
               {value}
             </td>
@@ -72,8 +74,8 @@ function sortDataset (
       firstValue = column.sortTransform(firstValue)
       secondValue = column.sortTransform(secondValue)
     } else if (column.transform) {
-      firstValue = column.transform(firstValue, null)
-      secondValue = column.transform(secondValue, null)
+      firstValue = column.transform(firstValue)
+      secondValue = column.transform(secondValue)
     }
 
     if (firstValue > secondValue)

@@ -4,66 +4,105 @@ import { Options } from 'json2csv'
 
 import Table, { Column, SortDirection } from 'components/BTable'
 
-import { getFamilyAttendance } from '../api'
 import { saveCSVToFile } from '../fileSaver'
 import FamilyMember from 'Models/FamilyMember'
 
 
 const familyMemberColumns: Column[] = [
   {
-    label: 'Family Member',
+    label: '',
     attributeKey: 'familyMember',
     sortable: true,
-    transform: (familyMember) => FamilyMember.toString(familyMember),
-    sortTransform: (familyMember) => FamilyMember.toString(familyMember)
+    cellProps: {
+      class: 'px-2',
+      style: {
+        width: '50%'
+      }
+    }
   },
   {
-    label: 'Total Days',
+    label: '',
     attributeKey: 'totalDays',
-    sortable: true
+    sortable: true,
+    transform: (days) => <div>{Math.floor(days * 10) / 10}</div>,
+    sortTransform: (days) => days,
+    headerProps: {
+      class: 'text-center'
+    },
+    cellProps: {
+      class: 'text-center px-2',
+      style: {
+        width: '25%'
+      }
+    }
   },
   {
-    label: 'Total Hours',
+    label: '',
     attributeKey: 'totalHours',
     sortable: true,
-    transform: (hours) => Math.floor(hours * 10) / 10
+    transform: (hours) => <div >{Math.floor(hours * 10) / 10}</div>,
+    sortTransform: (hours) => hours,
+    headerProps: {
+      class: 'text-center'
+    },
+    cellProps: {
+      class: 'text-center px-2',
+      style: {
+        width: '25%'
+      }
+    }
   },
 ]
 
 const columns: Column[] = [
   {
     label: 'Last Name',
-    attributeKey: 'student.lastName',
+    attributeKey: 'lastName',
     sortable: true
   },
   {
     label: 'First Name',
-    attributeKey: 'student.firstName',
-    sortable: true
-  },
-  {
-    label: 'Grade',
-    attributeKey: 'student.grade',
+    attributeKey: 'firstName',
     sortable: true
   },
   {
     label: 'Matric Number',
-    attributeKey: 'student.matricNumber',
+    attributeKey: 'matricNumber',
     sortable: true
+  },
+  {
+    label: 'Grade',
+    attributeKey: 'grade',
+    sortable: true,
+    cellProps: {
+      className: 'text-center'
+    }
   },
   {
     label: 'Family Member',
     attributeKey: 'familyAttendance',
     sortable: false,
     cellProps: {className: 'p-0'},
+    headerTransform: () => (
+      <div className='d-flex p-0 align-items-end' style={{minWidth: 'fit-content'}}>
+        <div className='px-2' style={{width: '50%'}}><b>Family Member</b></div>
+        <div className='px-2 text-center' style={{width: '25%'}}><b>Total Days</b></div>
+        <div className='px-2 text-center' style={{width: '25%'}}><b>Total Hours</b></div>
+      </div>
+    ),
     transform: (familyAttendance) => (
       <Table 
         columns={familyMemberColumns} 
         dataset={familyAttendance} 
         defaultSort={{index: 0, direction: SortDirection.Ascending}}
+        showHeader={false}
         tableProps={{
           size: 'sm',
-          className: 'm-0'
+          className: 'm-0',
+          bordered: false,
+          style: {
+            border: '0px'
+          }
         }}
       />
     )
@@ -79,11 +118,11 @@ function exportToCSV(data, parameters) {
       ...flattenedData,
       ...x.familyAttendance.map(fa => ({
         organizationName: x.organizationName,
-        firstName: x.student.firstName,
-        lastName: x.student.lastName,
-        grade: x.student.grade,
-        matricNumber: x.student.matricNumber,
-        familyMember: FamilyMember.toString(fa.familyMember),
+        firstName: x.firstName,
+        lastName: x.lastName,
+        grade: x.grade,
+        matricNumber: x.matricNumber,
+        familyMember: fa.familyMember,
         totalDays: fa.totalDays,
         totalHours: fa.totalHours
       }))
@@ -134,41 +173,30 @@ function exportToCSV(data, parameters) {
   saveCSVToFile(flattenedData, options, `Family_Attendance_${parameters.schoolYear?.startDate?.toString()}-${parameters.schoolYear?.endDate?.toString()}`)
 }
 
-export default ({parameters}): JSX.Element => {
-  const [generatedAt, setGeneratedAt] = useState(null)
-  const [familyAttendance, setFamilyAttendance] = useState<any[] | null>(null) 
-  const [isLoading, setIsLoading] = useState<boolean>(false)
+export default ({parameters, reportIsLoading, familyAttendanceReport}): JSX.Element => {
+  //const [familyAttendance, setFamilyAttendance] = useState<any[] | null>([]) 
 
-  useEffect(() => {
-    setIsLoading(true)
-
-    getFamilyAttendance(parameters.schoolYear?.startDate, parameters.schoolYear?.endDate, parameters.orgGuid)
-      .then(res => {
-        setGeneratedAt(res.generatedAt)
-        setFamilyAttendance(res.data)
-      })
-      .catch(err => {
-        console.warn(err)
-      })
-      .finally(() => {
-        setIsLoading(false)
-      })
-  }, [parameters])
-
-  if (isLoading)
-    return <p>...Loading</p>
-
-  if (!familyAttendance)
-    return <p>An error occured in fetching results, please reload the page or file a report if the issue persists.</p>
+  if (Array.isArray(familyAttendanceReport) && familyAttendanceReport.length == 0) 
+    return (
+      <p>No records to display... Either no results were returned or no query has run.</p>
+    )
+  else if (!reportIsLoading && !familyAttendanceReport || !Array.isArray(familyAttendanceReport))
+    return (
+        <p>An error has been encountered in loading the report.</p>
+    )
+  else if (reportIsLoading)
+    return (
+        <p>...Loading</p>
+    )
 
   return (
-    <Container>
+    <div style={{width: 'fit-content'}}>
       <Row className='d-flex flex-row justify-content-center m-0'>
         <h4 className='text-center' style={{width: 'fit-content'}}>
           Family Attendance for {`${parameters.schoolYear?.startDate?.toString()} to ${parameters.schoolYear?.endDate?.toString()}`}
         </h4>
         <Button
-            onClick={() => exportToCSV(familyAttendance, parameters)}
+            onClick={() => exportToCSV(familyAttendanceReport, parameters)}
             style={{width: 'fit-content', height: 'fit-content'}}
             size='sm'
           >
@@ -178,20 +206,20 @@ export default ({parameters}): JSX.Element => {
 
       <Row 
         style={{
-          maxHeight: '25rem',
-          overflowY: 'scroll'
+          maxHeight: '30rem',
+          overflowY: 'auto'
         }}
       >
         <Table 
           className='m-0'
           columns={columns} 
-          dataset={familyAttendance}
+          dataset={familyAttendanceReport}
           defaultSort={{index: 0, direction: SortDirection.Ascending}}
           tableProps={{
             size: 'sm'
           }}
         />
       </Row>
-    </Container>
+    </div>
   )
 }

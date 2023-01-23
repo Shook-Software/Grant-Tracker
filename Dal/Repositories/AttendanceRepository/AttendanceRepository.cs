@@ -112,16 +112,18 @@ namespace GrantTracker.Dal.Repositories.AttendanceRepository
 							Guid studentAttendanceRecordGuid = Guid.NewGuid();
 
 							List<FamilyAttendance> familyRecords = new();
-							sr.FamilyAttendance.ForEach(record =>
-							{
-								for (int i = 0; i < record.Count; i++)
-									familyRecords.Add(new FamilyAttendance()
-									{
-										Guid = Guid.NewGuid(),
-										StudentAttendanceRecordGuid = studentAttendanceRecordGuid,
-										FamilyMember = record.FamilyMember
-									});
-							});
+
+							if (sr.FamilyAttendance != null)
+								sr.FamilyAttendance?.ForEach(record =>
+								{
+									for (int i = 0; i < record.Count; i++)
+										familyRecords.Add(new FamilyAttendance()
+										{
+											Guid = Guid.NewGuid(),
+											StudentAttendanceRecordGuid = studentAttendanceRecordGuid,
+											FamilyMember = record.FamilyMember
+										});
+								});
 
 							return new StudentAttendanceRecord()
 							{
@@ -158,8 +160,8 @@ namespace GrantTracker.Dal.Repositories.AttendanceRepository
 				.FirstAsync();
 
 			_grantContext.FamilyAttendances.RemoveRange(existingAttendanceRecord.StudentAttendance.SelectMany(sa => sa.FamilyAttendance).ToList()); 
-			_grantContext.InstructorAttendanceRecords.RemoveRange(existingAttendanceRecord.InstructorAttendance);
-			_grantContext.StudentAttendanceRecords.RemoveRange(existingAttendanceRecord.StudentAttendance);
+			_grantContext.InstructorAttendanceRecords.RemoveRange(existingAttendanceRecord.InstructorAttendance.ToList());
+			_grantContext.StudentAttendanceRecords.RemoveRange(existingAttendanceRecord.StudentAttendance.ToList());
 			_grantContext.AttendanceRecords.Remove(existingAttendanceRecord);
 			await _grantContext.SaveChangesAsync();
 

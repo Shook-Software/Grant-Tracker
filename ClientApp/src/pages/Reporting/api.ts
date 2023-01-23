@@ -2,6 +2,21 @@ import { LocalDate } from '@js-joda/core'
 import { OrganizationView, OrganizationYearView, Quarter } from 'models/OrganizationYear'
 import api from 'utils/api'
 
+export function getReportsAsync(startDate: LocalDate, endDate: LocalDate, organizationGuid: string): Promise<any[]> {
+  return new Promise((resolve, reject) => {
+    api
+      .get('report', {
+        params: {
+          startDateStr: startDate.toString(),
+          endDateStr: endDate.toString(),
+          organizationGuid: organizationGuid || null
+        }
+      })
+      .then(res => {
+        resolve(res.data)
+      })
+  })
+}
 export function getStaffSummary(schoolYear: string, quarter: number, organizationGuid: string): Promise<any[]> {
   return new Promise((resolve, reject) => {
     api
@@ -113,6 +128,9 @@ export function getProgramOverview(startDate: LocalDate, endDate: LocalDate, org
       .then(res => {
         resolve(res.data)
       })
+      .catch(err => {
+        reject(err)
+      })
   })
 }
 
@@ -128,6 +146,9 @@ export function getStudentSurveys(startDate: LocalDate, endDate: LocalDate, orga
       })
       .then(res => {
         resolve(res.data)
+      })
+      .catch(err => {
+        reject(err)
       })
   })
 }

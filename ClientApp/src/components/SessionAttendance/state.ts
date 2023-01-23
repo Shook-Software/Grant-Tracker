@@ -173,7 +173,8 @@ export function reducer (state: AttendanceForm, action: ReducerAction): Attendan
       const newStudentRecord: StudentRecord = {
         isPresent: true,
         attendance: [...state.defaultSchedule],
-        studentSchoolYear: action.payload as StudentSchoolYearWithRecordsView
+        studentSchoolYear: action.payload as StudentSchoolYearWithRecordsView,
+        familyAttendance: []
       }
       return { ...state, studentRecords: [...state.studentRecords, newStudentRecord] }
 

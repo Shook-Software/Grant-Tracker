@@ -17,44 +17,49 @@ using GrantTracker.Dal.Repositories.YearRepository;
 using GrantTracker.Dal.Schema;
 using GrantTracker.Dal.SynergySchema;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 
-namespace GrantTracker.Utilities.OnStartup
+namespace GrantTracker.Utilities.OnStartup;
+
+public static class DatabaseContext
 {
-	public static class DatabaseContext
+	public static void Setup(WebApplicationBuilder builder, IConfiguration config)
 	{
-		public static void Setup(WebApplicationBuilder builder, IConfiguration config)
+		builder.Services.AddDbContextFactory<GrantTrackerContext>(options =>
 		{
-			builder.Services.AddDbContext<GrantTrackerContext>(options =>
-			{
-				options.UseSqlServer(config.GetConnectionString("GrantTracker"));
-			});
+			options.UseSqlServer(config.GetConnectionString("GrantTracker"));
+		});
 
-			builder.Services.AddDbContext<InterfaceDbContext>(options =>
-			{
-				options.UseSqlServer(config.GetConnectionString("InterfaceDb"));
-			});
+		builder.Services.AddDbContext<GrantTrackerContext>(options =>
+		{
+			options.UseSqlServer(config.GetConnectionString("GrantTracker"));
+		});
 
-			builder.Services.AddDbContext<SynergyEODContext>(options =>
-			{
-				options.UseSqlServer(config.GetConnectionString("SynergyEOD"));
-			});
+		builder.Services.AddDbContext<InterfaceDbContext>(options =>
+		{
+			options.UseSqlServer(config.GetConnectionString("InterfaceDb"));
+		});
 
-			//repositories
-			builder.Services.AddScoped<IDropdownRepository, DropdownRepository>();
-			builder.Services.AddScoped<ISessionRepository, SessionRepository>();
-			builder.Services.AddScoped<IRoleProvider, RoleProvider>();
-			builder.Services.AddScoped<IInstructorRepository, InstructorRepository>();
-			builder.Services.AddScoped<IInstructorSchoolYearRepository, InstructorSchoolYearRepository>();
-			builder.Services.AddScoped<IAttendanceRepository, AttendanceRepository>();
-			builder.Services.AddScoped<IStudentRepository, StudentRepository>();
-			builder.Services.AddScoped<IStudentSchoolYearRepository, StudentSchoolYearRepository>();
-			builder.Services.AddScoped<IAuthRepository, AuthRepository>();
-			builder.Services.AddScoped<ILookupRepository, LookupRepository>();
-			builder.Services.AddScoped<IDevRepository, DevRepository>();
-			builder.Services.AddScoped<IYearRepository, YearRepository>();
-			builder.Services.AddScoped<IOrganizationRepository, OrganizationRepository>();
-			builder.Services.AddScoped<IOrganizationYearRepository, OrganizationYearRepository>();
-			builder.Services.AddScoped<IReportRepository, ReportRepository>();
-		}
+		builder.Services.AddDbContext<SynergyEODContext>(options =>
+		{
+			options.UseSqlServer(config.GetConnectionString("SynergyEOD"));
+		});
+
+		//repositories
+		builder.Services.AddScoped<IDropdownRepository, DropdownRepository>();
+		builder.Services.AddScoped<ISessionRepository, SessionRepository>();
+		builder.Services.AddScoped<IRoleProvider, RoleProvider>();
+		builder.Services.AddScoped<IInstructorRepository, InstructorRepository>();
+		builder.Services.AddScoped<IInstructorSchoolYearRepository, InstructorSchoolYearRepository>();
+		builder.Services.AddScoped<IAttendanceRepository, AttendanceRepository>();
+		builder.Services.AddScoped<IStudentRepository, StudentRepository>();
+		builder.Services.AddScoped<IStudentSchoolYearRepository, StudentSchoolYearRepository>();
+		builder.Services.AddScoped<IAuthRepository, AuthRepository>();
+		builder.Services.AddScoped<ILookupRepository, LookupRepository>();
+		builder.Services.AddScoped<IDevRepository, DevRepository>();
+		builder.Services.AddScoped<IYearRepository, YearRepository>();
+		builder.Services.AddScoped<IOrganizationRepository, OrganizationRepository>();
+		builder.Services.AddScoped<IOrganizationYearRepository, OrganizationYearRepository>();
+		builder.Services.AddScoped<IReportRepository, ReportRepository>();
 	}
 }

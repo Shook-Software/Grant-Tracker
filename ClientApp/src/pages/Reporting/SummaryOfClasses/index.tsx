@@ -20,14 +20,26 @@ const columns: Column[] = [
     sortable: true
   },
   {
-    label: 'Activity\nType',
+    label: 'Activity Type',
     attributeKey: 'activityType',
     sortable: true
   },
   {
-    label: 'Funding\nSource',
+    label: 'Funding Source',
     attributeKey: 'fundingSource',
     sortable: true
+  },
+  {
+    label: 'Start Date',
+    attributeKey: 'firstSession',
+    sortable: true,
+    transform: (date: DateOnly) => DateOnly.toLocalDate(date).format(DateTimeFormatter.ofPattern('MMMM d, yyyy').withLocale(Locale.ENGLISH))
+  },
+  {
+    label: 'End Date',
+    attributeKey: 'lastSession',
+    sortable: true,
+    transform: (date: DateOnly) => DateOnly.toLocalDate(date).format(DateTimeFormatter.ofPattern('MMMM d, yyyy').withLocale(Locale.ENGLISH))
   },
   {
     label: 'Instructors',
@@ -37,7 +49,7 @@ const columns: Column[] = [
       <div style={{minWidth: 'fit-content'}}>
         {instructors.map((instructor, index) => (
           <>
-            <div style={{minWidth: 'fit-content'}}>{`${instructor.firstName} ${instructor.lastName}`}</div>
+            <p className='my-0 px-3' style={{minWidth: 'fit-content'}}>{instructor.firstName && instructor.lastName ? `${instructor.firstName} ${instructor.lastName}` : 'N/A'}</p>
             {index === instructors.length - 1 ? null : <hr className='m-1'/>}
           </>
         ))}
@@ -45,40 +57,31 @@ const columns: Column[] = [
     )
   },
   {
-    label: 'Start Date',
-    attributeKey: 'startDate',
-    sortable: true,
-    transform: (date: DateOnly) => DateOnly.toLocalDate(date).format(DateTimeFormatter.ofPattern('MMMM d, yyyy').withLocale(Locale.ENGLISH))
-  },
-  {
-    label: 'End Date',
-    attributeKey: 'endDate',
-    sortable: true,
-    transform: (date: DateOnly) => DateOnly.toLocalDate(date).format(DateTimeFormatter.ofPattern('MMMM d, yyyy').withLocale(Locale.ENGLISH))
-  },
-  {
-    label: 'Weeks\nto Date',
+    label: 'Weeks to Date',
     attributeKey: 'weeksToDate',
     sortable: true,
     transform: (weeks: number) => (
       <div className='text-center'>{Math.floor(weeks * 10) / 10}</div>
-    )
+    ),
+    sortTransform: (weeks: number) => weeks
   },
   {
-    label: 'Avg\nHours\nPer Day',
+    label: 'Avg Hours Per Day',
     attributeKey: 'avgHoursPerDay',
     sortable: true,
     transform: (hours: number) => (
       <div className='text-center'>{Math.floor(hours * 10) / 10}</div>
-    )
+    ),
+    sortTransform: (hours: number) => hours
   },
   {
-    label: 'Avg\nAttendees',
+    label: 'Avg Attendees',
     attributeKey: 'avgDailyAttendance',
     sortable: true,
     transform: (count: number) => (
       <div className='text-center'>{Math.floor(count * 10) / 10}</div>
-    )
+    ),
+    sortTransform: (count: number) => count
   }
 ]
 
@@ -197,39 +200,31 @@ function exportToCSV(data, parameters) {
 }
 
 //thing is, an instructor may show up multiple times in a category or across categories if the date params bring in two quarters
-export default ({parameters}): JSX.Element => {
-  const [summary, setSummary] = useState<any[] | null>(null)
-  const [isLoading, setIsLoading] = useState<boolean>(false)
+export default ({parameters, reportIsLoading, summaryOfClassesReport}): JSX.Element => {
+  //const [summary, setSummary] = useState<any[] | null>(null)
+  //const [isLoading, setIsLoading] = useState<boolean>(false)
 
-  useEffect(() => {
-    setIsLoading(true)
-
-    getSummaryOfClasses(parameters.schoolYear?.startDate, parameters.schoolYear?.endDate, parameters.orgGuid)
-      .then(res => {
-        setSummary(res)
-      })
-      .catch(err => {
-        console.warn(err)
-      })
-      .finally(() => {
-        setIsLoading(false)
-      })
-  }, [parameters])
-
-  if (isLoading)
-    return <p>...Loading</p>
-
-  if (!summary)
-    return <p>An error occured in fetching results, please reload the page or file a report if the issue persists.</p>
+  if (Array.isArray(summaryOfClassesReport) && summaryOfClassesReport.length == 0) 
+    return (
+      <p>No records to display... Either no results were returned or no query has run.</p>
+    )
+  else if (!reportIsLoading && !summaryOfClassesReport || !Array.isArray(summaryOfClassesReport))
+    return (
+        <p>An error has been encountered in loading the report.</p>
+    )
+  else if (reportIsLoading)
+    return (
+        <p>...Loading</p>
+    )
 
   return (
-    <Container>
+    <div style={{width: 'fit-content'}}>
       <Row className='d-flex flex-row justify-content-center'>
         <h4 className='text-center' style={{width: 'fit-content'}}>
           Summary of Classes for {`${parameters.schoolYear?.startDate?.toString()} to ${parameters.schoolYear?.endDate?.toString()}`}
         </h4>
         <Button
-            onClick={() => exportToCSV(summary, parameters)}
+            onClick={() => exportToCSV(summaryOfClassesReport, parameters)}
             style={{width: 'fit-content', height: 'fit-content'}}
             size='sm'
           >
@@ -239,25 +234,21 @@ export default ({parameters}): JSX.Element => {
 
       <Row 
         style={{
-          maxHeight: '25rem',
-          overflowX: 'visible'
+          maxHeight: '30rem',
+          overflowY: 'auto'
         }}
       >
         <Table 
           className='m-0'
           columns={columns} 
-          dataset={summary}
+          dataset={summaryOfClassesReport}
           defaultSort={{index: 0, direction: SortDirection.Ascending}}
           tableProps={{
-            size: 'sm',
-            style: {
-              overflowY: 'scroll',
-              overflowX: 'visible'
-            }
+            size: 'sm'
           }}
         />
       </Row>
      
-    </Container>
+    </div>
   )
 }

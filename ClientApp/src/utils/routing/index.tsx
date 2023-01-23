@@ -32,8 +32,8 @@ import InstructorPage from 'components/Displays/Instructor'
 import { User } from 'utils/authentication'
 
 
-export const RenderRoutes = ({ routes, user }) => (
-  useRoutes(routes(user))
+export const RenderRoutes = ({ routes, user, breadcrumbs }) => (
+  useRoutes(routes(user, breadcrumbs))
 )
 
 const editSessionChildren = [
@@ -55,7 +55,7 @@ const editSessionChildren = [
   }
 ]
 
-export default (user: User): RouteObject[] => [
+export default (user: User, Breadcrumbs: JSX.Element): RouteObject[] => [
   {
     path: paths.Root.path,
     element: <Navigate to='/home' />
@@ -66,29 +66,18 @@ export default (user: User): RouteObject[] => [
   },
   {
     path: paths.Reports.path,
-    children: [
-      {
-        path: paths.Reports.path,
-        children: [
-          {
-            path: paths.Reports.Sessions.path,
-            children: [
-              {
-                index: true,
-                element: <Reporting />
-              },
-            ]
-          }
-        ]
-      }
-    ]
+    element: <Reporting />
   },
   {
     path: paths.Edit.path,
     children: [
       {
         path: paths.Edit.Sessions.path,
-        element: <SessionEditor user={user} />,
+        element: 
+        <div>
+          {Breadcrumbs}
+          <SessionEditor user={user} />
+        </div>,
         children: editSessionChildren
       },
       {
@@ -100,7 +89,10 @@ export default (user: User): RouteObject[] => [
   },
   {
     path: paths.Admin.path,
-    element: <AdminPage user={user} />,
+    element: 
+    <>
+      <AdminPage user={user} breadcrumbs={Breadcrumbs} />
+    </>,
     children: [
       //Overview tab when ready for it, show site aggregates and information.
       {

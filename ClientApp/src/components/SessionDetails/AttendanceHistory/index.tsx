@@ -45,7 +45,8 @@ export default ({sessionGuid, attendanceRecords, onChange}: Props): JSX.Element 
       studentSchoolYear: {
         ...record.studentSchoolYear,
         student: { ...record.studentSchoolYear.student }
-      }
+      },
+      familyAttendance: []
     }))
 
     let instructorRecords = record.instructorAttendanceRecords.map(record => ({

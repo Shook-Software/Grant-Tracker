@@ -14,7 +14,7 @@ export default ({ paths, user, orgYearChange }): JSX.Element => (
     </Link>
 
     <Link
-      to={`${paths.Reports.path}/${paths.Reports.Sessions.path}`}
+      to={`${paths.Reports.path}`}
     >
       Reporting
     </Link>

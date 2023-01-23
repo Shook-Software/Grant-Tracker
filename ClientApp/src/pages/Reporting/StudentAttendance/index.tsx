@@ -19,24 +19,41 @@ const columns: Column[] = [
     sortable: true
   },
   {
-    label: 'Grade',
-    attributeKey: 'grade',
-    sortable: true
-  },
-  {
     label: 'Matric Number',
     attributeKey: 'matricNumber',
     sortable: true
   },
   {
+    label: 'Grade',
+    attributeKey: 'grade',
+    sortable: true,
+    cellProps: {
+      className: 'text-center'
+    }
+  },
+  {
     label: 'Total Days',
     attributeKey: 'totalDays',
-    sortable: true
+    sortable: true,
+    transform: (days: number) => (
+      <div className='text-center'>{Math.floor(days * 10) / 10}</div>
+    ),
+    sortTransform: (days: number) => days,
+    cellProps: {
+      className: 'text-center'
+    }
   },
   {
     label: 'Total Hours',
     attributeKey: 'totalHours',
-    sortable: true
+    sortable: true,
+    transform: (hours: number) => (
+      <div className='text-center'>{Math.floor(hours * 10) / 10}</div>
+    ),
+    sortTransform: (hours: number) => hours,
+    cellProps: {
+      className: 'text-center'
+    }
   },
 ]
 
@@ -82,26 +99,29 @@ function exportToCSV(data, parameters) {
   saveCSVToFile(data, options, `Student_Attendance_${parameters.schoolYear?.startDate?.toString()}-${parameters.schoolYear?.endDate?.toString()}`)
 }
 
-export default ({parameters}): JSX.Element => {
-  const [generatedAt, setGeneratedAt] = useState(null)
-  const [studentAttendance, setStudentAttendance] = useState<any[]>([])
+export default ({parameters, reportIsLoading, studentAttendanceReport}): JSX.Element => {
 
-  useEffect(() => {
-    getStudentAttendance(parameters.schoolYear?.startDate, parameters.schoolYear?.endDate, parameters.orgGuid)
-      .then(res => {
-        setGeneratedAt(res.generatedAt)
-        setStudentAttendance(res.data)
-      })
-  }, [parameters])
+  if (Array.isArray(studentAttendanceReport) && studentAttendanceReport.length == 0) 
+    return (
+      <p>No records to display... Either no results were returned or no query has run.</p>
+    )
+  else if (!reportIsLoading && !studentAttendanceReport || !Array.isArray(studentAttendanceReport))
+    return (
+        <p>An error has been encountered in loading the report.</p>
+    )
+  else if (reportIsLoading)
+    return (
+        <p>...Loading</p>
+    )
 
   return (
-    <Container>
+    <div style={{width: 'fit-content'}}>
       <Row className='d-flex flex-row justify-content-center m-0'>
         <h4 className='text-center' style={{width: 'fit-content'}}>
           Total Student Attendance for {`${parameters.schoolYear?.startDate?.toString()} to ${parameters.schoolYear?.endDate?.toString()}`}
         </h4>
         <Button
-            onClick={() => exportToCSV(studentAttendance, parameters)}
+            onClick={() => exportToCSV(studentAttendanceReport, parameters)}
             style={{width: 'fit-content', height: 'fit-content'}}
             size='sm'
           >
@@ -111,17 +131,17 @@ export default ({parameters}): JSX.Element => {
 
       <Row 
         style={{
-          maxHeight: '25rem',
-          overflowY: 'scroll'
+          maxHeight: '30rem',
+          overflowY: 'auto'
         }}
       >
         <Table 
           className='m-0'
           columns={columns} 
-          dataset={studentAttendance} 
+          dataset={studentAttendanceReport}
           defaultSort={{index: 0, direction: SortDirection.Ascending}}
         />
       </Row>
-    </Container>
+    </div>
   )
 }
