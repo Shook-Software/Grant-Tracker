@@ -39,12 +39,20 @@ const columns: Column[] = [
   {
     label: 'Total Days',
     attributeKey: 'totalDays',
-    sortable: true
+    sortable: true,
+    transform: (days: number) => (
+      <div className='text-center'>{Math.floor(days * 100) / 100}</div>
+    ),
+    sortTransform: (days: number) => days,
   },
   {
     label: 'Total Hours',
     attributeKey: 'totalHours',
-    sortable: true
+    sortable: true,
+    transform: (hours: number) => (
+      <div className='text-center'>{Math.floor(hours * 100) / 100}</div>
+    ),
+    sortTransform: (hours: number) => hours,
   }
 ]
 

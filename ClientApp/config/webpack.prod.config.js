@@ -6,9 +6,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = {
   mode: 'production',
-  //https://webpack.js.org/configuration/devtool/
-  devtool: 'source-map', //Allows us to track down errors and warnings to their original location. There are many options for this, that is to say, this should change between prod and dev
-  //kill source-map in production
+  //https://webpack.js.org/configuration/devtool/S
   entry: {
     index: {
       import: path.join(paths.src, 'index.tsx')

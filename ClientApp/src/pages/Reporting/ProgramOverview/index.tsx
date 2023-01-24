@@ -40,16 +40,18 @@ const columns: Column[] = [
     attributeKey: 'avgStudentAttendDaysPerWeek',
     sortable: true,
     transform: (days: number) => (
-      <div className='text-center'>{Math.floor(days * 10) / 10}</div>
-    )
+      <div className='text-center'>{Math.floor(days * 100) / 100}</div>
+    ),
+    sortTransform: (days: number) => days,
   },
   {
     label: 'Avg Attendance\nHours Per Week',
     attributeKey: 'avgStudentAttendHoursPerWeek',
     sortable: true,
     transform: (hours: number) => (
-      <div className='text-center'>{Math.floor(hours * 10) / 10}</div>
-    )
+      <div className='text-center'>{Math.floor(hours * 100) / 100}</div>
+    ),
+    sortTransform: (hours: number) => hours,
   }
 ]
 

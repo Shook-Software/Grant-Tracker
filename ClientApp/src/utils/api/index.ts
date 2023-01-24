@@ -14,7 +14,7 @@ function recursiveObjectSearch (object: any) {
   }
 }
 
-const siteURL: string = 'http://localhost:44394'
+const siteURL: string = 'http://granttracker2022/'
   //http://granttracker2022/
   //http://localhost:44394
 

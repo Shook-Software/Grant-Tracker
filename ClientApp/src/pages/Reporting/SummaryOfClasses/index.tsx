@@ -30,6 +30,11 @@ const columns: Column[] = [
     sortable: true
   },
   {
+    label: 'Objective',
+    attributeKey: 'objective',
+    sortable: true
+  },
+  {
     label: 'Start Date',
     attributeKey: 'firstSession',
     sortable: true,
@@ -61,7 +66,7 @@ const columns: Column[] = [
     attributeKey: 'weeksToDate',
     sortable: true,
     transform: (weeks: number) => (
-      <div className='text-center'>{Math.floor(weeks * 10) / 10}</div>
+      <div className='text-center'>{Math.floor(weeks * 100) / 100}</div>
     ),
     sortTransform: (weeks: number) => weeks
   },
@@ -70,7 +75,7 @@ const columns: Column[] = [
     attributeKey: 'avgHoursPerDay',
     sortable: true,
     transform: (hours: number) => (
-      <div className='text-center'>{Math.floor(hours * 10) / 10}</div>
+      <div className='text-center'>{Math.floor(hours * 100) / 100}</div>
     ),
     sortTransform: (hours: number) => hours
   },
@@ -79,7 +84,7 @@ const columns: Column[] = [
     attributeKey: 'avgDailyAttendance',
     sortable: true,
     transform: (count: number) => (
-      <div className='text-center'>{Math.floor(count * 10) / 10}</div>
+      <div className='text-center'>{Math.floor(count * 100) / 100}</div>
     ),
     sortTransform: (count: number) => count
   }

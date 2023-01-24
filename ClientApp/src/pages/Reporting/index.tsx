@@ -189,7 +189,16 @@ const ParamSelection = ({onSubmit}): JSX.Element => {
 
 export default (): JSX.Element => {
 	const [reportParameters, setReportParameters] = useState<any>({})
-	const [reports, setReports] = useState<any>(null)
+	const [reports, setReports] = useState<any>({
+		totalActivity: [],
+		totalStudentAttendance: [],
+		totalFamilyAttendance: [],
+		siteSessions: [],
+		classSummaries: [],
+		programOverviews: [],
+		staffSummaries: [],
+		studentSurvey: []
+	})
 	const [isLoading, setIsLoading] = useState<boolean>(false)
 
 	//temp

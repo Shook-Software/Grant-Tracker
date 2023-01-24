@@ -24,7 +24,7 @@ const familyMemberColumns: Column[] = [
     label: '',
     attributeKey: 'totalDays',
     sortable: true,
-    transform: (days) => <div>{Math.floor(days * 10) / 10}</div>,
+    transform: (days) => <div>{Math.floor(days * 100) / 100}</div>,
     sortTransform: (days) => days,
     headerProps: {
       class: 'text-center'
@@ -40,7 +40,7 @@ const familyMemberColumns: Column[] = [
     label: '',
     attributeKey: 'totalHours',
     sortable: true,
-    transform: (hours) => <div >{Math.floor(hours * 10) / 10}</div>,
+    transform: (hours) => <div >{Math.floor(hours * 100) / 100}</div>,
     sortTransform: (hours) => hours,
     headerProps: {
       class: 'text-center'

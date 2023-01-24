@@ -27,9 +27,10 @@ const columns: Column[] = [
     label: 'Total Hours',
     attributeKey: 'totalHours',
     sortable: true,
-    cellProps: {
-      className: 'text-center'
-    }
+    transform: (hours: number) => (
+      <div className='text-center'>{Math.floor(hours * 100) / 100}</div>
+    ),
+    sortTransform: (hours: number) => hours,
   }
 ]
 

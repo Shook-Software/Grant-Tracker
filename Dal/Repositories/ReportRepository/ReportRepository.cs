@@ -22,23 +22,23 @@ public class ReportRepository : RepositoryBase, IReportRepository
 
 	public async Task<ReportsViewModel> RunAllReportQueriesAsync(DateOnly startDate, DateOnly endDate, Guid organizationGuid = default)
 	{
-		await _grantContext.Database.ExecuteSqlInterpolatedAsync($"ReportQuery_Core {_processGuid}, {DateOnlyToSQLString(startDate)}, {DateOnlyToSQLString(endDate)}, {organizationGuid}");
+		await _grantContext.Database.ExecuteSqlInterpolatedAsync($"EXEC [GTkr].ReportQuery_Core {_processGuid}, {DateOnlyToSQLString(startDate)}, {DateOnlyToSQLString(endDate)}, {organizationGuid}");
 
 		Task<List<TotalStudentAttendanceViewModel>> totalStudentAttendanceQueryTask = _grantContext
 			.ReportTotalStudentAttendance
-			.FromSqlInterpolated($"EXEC ReportQuery_StudentAttendance {_processGuid}")
+			.FromSqlInterpolated($"EXEC [GTkr].ReportQuery_StudentAttendance {_processGuid}")
 			.AsNoTracking()
 			.ToListAsync();
 			
 		Task<List<TotalFamilyAttendanceDbModel>> totalFamilyAttendanceQueryTask = _grantContextFactory.CreateDbContext()
 			.ReportTotalFamilyAttendance
-			.FromSqlInterpolated($"EXEC ReportQuery_FamilyAttendance {_processGuid}")
+			.FromSqlInterpolated($"EXEC [GTkr].ReportQuery_FamilyAttendance {_processGuid}")
 			.AsNoTracking()
 			.ToListAsync();
 			
 		Task<List<TotalActivityViewModel>> totalActivityQueryTask = _grantContextFactory.CreateDbContext()
 			.ReportTotalActivity
-			.FromSqlInterpolated($"EXEC ReportQuery_TotalActivity {_processGuid}")
+			.FromSqlInterpolated($"EXEC [GTkr].ReportQuery_TotalActivity {_processGuid}")
 			.AsNoTracking()
 			.ToListAsync();
 
@@ -53,26 +53,26 @@ public class ReportRepository : RepositoryBase, IReportRepository
 			
 		Task<List<ClassSummaryDbModel>> classSummaryQueryTask = _grantContextFactory.CreateDbContext()
 			.ReportClassSummary
-			.FromSqlInterpolated($"EXEC ReportQuery_SummaryOfClasses {_processGuid}")
+			.FromSqlInterpolated($"EXEC [GTkr].ReportQuery_SummaryOfClasses {_processGuid}")
 			.AsNoTracking()
 			.ToListAsync();
 
 		double weeksToDate = (endDate.DayNumber - startDate.DayNumber) / 7f;
 		Task<List<ProgramViewModel>> programOverviewQueryTask = _grantContextFactory.CreateDbContext()
 			.ReportProgramOverview
-			.FromSqlInterpolated($"EXEC ReportQuery_ProgramOverview {_processGuid}, {weeksToDate}")
+			.FromSqlInterpolated($"EXEC [GTkr].ReportQuery_ProgramOverview {_processGuid}, {weeksToDate}")
 			.AsNoTracking()
 			.ToListAsync();
 			
 		Task<List<StaffSummaryDbModel>> staffSurveyQueryTask = _grantContextFactory.CreateDbContext()
 			.ReportStaffSurvey
-			.FromSqlInterpolated($"EXEC ReportQuery_Staffing {organizationGuid}")
+			.FromSqlInterpolated($"EXEC [GTkr].ReportQuery_Staffing {organizationGuid}")
 			.AsNoTracking()
 			.ToListAsync();
 			
 		Task<List<StudentSurveyViewModel>> studentSurveyQueryTask = _grantContextFactory.CreateDbContext()
 			.ReportStudentSurvey
-			.FromSqlInterpolated($"EXEC ReportQuery_StudentSurvey {_processGuid}")
+			.FromSqlInterpolated($"EXEC [GTkr].ReportQuery_StudentSurvey {_processGuid}")
 			.AsNoTracking()
 			.ToListAsync();
 
@@ -88,7 +88,7 @@ public class ReportRepository : RepositoryBase, IReportRepository
 			StudentSurvey = await studentSurveyQueryTask
 		};
 
-		await _grantContext.Database.ExecuteSqlInterpolatedAsync($"EXEC ReportQuery_Cleanup {_processGuid}");
+		await _grantContext.Database.ExecuteSqlInterpolatedAsync($"EXEC [GTkr].ReportQuery_Cleanup {_processGuid}");
 
 		return GroupReports(reports);
 	}
@@ -203,15 +203,15 @@ public class ReportRepository : RepositoryBase, IReportRepository
 
 		Guid tempProcessKey = Guid.NewGuid();
 
-		await _grantContext.Database.ExecuteSqlInterpolatedAsync($"ReportQuery_Core {tempProcessKey}, {DateOnlyToSQLString(startDate)}, {DateOnlyToSQLString(endDate)}, {organizationGuid}");
+		await _grantContext.Database.ExecuteSqlInterpolatedAsync($"EXEC [GTkr].ReportQuery_Core {tempProcessKey}, {DateOnlyToSQLString(startDate)}, {DateOnlyToSQLString(endDate)}, {organizationGuid}");
 
 		List<SiteSessionDbModel> siteSessions = await _grantContextFactory.CreateDbContext()
 			.ReportSiteSessions
-			.FromSqlInterpolated($"EXEC ReportQuery_SiteSessions {tempProcessKey}")
+			.FromSqlInterpolated($"EXEC [GTkr].ReportQuery_SiteSessions {tempProcessKey}")
 			.AsNoTracking()
 			.ToListAsync();
 
-		await _grantContext.Database.ExecuteSqlInterpolatedAsync($"EXEC ReportQuery_Cleanup {tempProcessKey}");
+		await _grantContext.Database.ExecuteSqlInterpolatedAsync($"EXEC [GTkr].ReportQuery_Cleanup {tempProcessKey}");
 
 		return siteSessions
 			.GroupBy(s => new { s.OrganizationName, s.SessionName, s.InstanceDate },
