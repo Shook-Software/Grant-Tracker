@@ -37,13 +37,13 @@ const columns: Column[] = [
 const tempColumns: Column[] = [
   {
     label: 'Arrived at',
-    attributeKey: 'entryTime',
+    attributeKey: 'startTime',
     sortable: true,
     transform: (time: LocalTime) => time.format(DateTimeFormatter.ofPattern('hh:mm a').withLocale(Locale.ENGLISH))
   },
   {
     label: 'Left at',
-    attributeKey: 'exitTime',
+    attributeKey: 'endTime',
     sortable: true,
     transform: (time: LocalTime) => time.format(DateTimeFormatter.ofPattern('hh:mm a').withLocale(Locale.ENGLISH))
   }

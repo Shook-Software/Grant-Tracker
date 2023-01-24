@@ -86,14 +86,14 @@ export interface StudentAttendanceView {
 
 export interface AttendanceTimeRecordDomain {
   guid: string
-  entryTime: TimeOnly
-  exitTime: TimeOnly
+  startTime: TimeOnly
+  endTime: TimeOnly
 }
 
 export interface AttendanceTimeRecordView {
   guid: string
-  entryTime: LocalTime
-  exitTime: LocalTime
+  startTime: LocalTime
+  endTime: LocalTime
 }
 
 export abstract class StudentAttendance {
@@ -109,8 +109,8 @@ export abstract class StudentAttendance {
       } : null,
       timeRecords: obj.timeRecords.map(time => ({
         guid: time.guid,
-        entryTime: TimeOnly.toLocalTime(time.entryTime),
-        exitTime: TimeOnly.toLocalTime(time.exitTime)
+        startTime: TimeOnly.toLocalTime(time.startTime),
+        endTime: TimeOnly.toLocalTime(time.endTime)
       }))
     }
   }

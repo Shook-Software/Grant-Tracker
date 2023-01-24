@@ -20,7 +20,7 @@ function createRow (
 ): JSX.Element {
   return (
     <tr
-      key={row[rowProps?.key]}
+      key={`${row[rowProps?.key]}-${index}`}
       className={rowProps?.className}
       onClick={event => rowProps?.onClick? rowProps?.onClick(event, row) : null}
       style={{ cursor: rowProps?.onClick ? 'pointer' : 'auto', minHeight: '1px', minWidth: '100%', backgroundColor: index % 2 == 0 ? '#CCE2FD' : '#D5E5F8'}}
@@ -52,40 +52,7 @@ function createRow (
   )
 }
 
-//Ensure that the sort does not modify the original object.
-//The column level value 'transform' needs to be applied here, as we sort what's on the screen, not the original api values
-function sortDataset (
-  dataset: any[],
-  sortIndex: number,
-  sortDirection: SortDirection,
-  columns: Column[]
-): object[] {
-  if (!dataset || dataset.length === 0) return []
-  if (sortDirection === SortDirection.None) return dataset
 
-  let column: Column = columns[sortIndex]
-
-  return [...dataset].sort((firstRow, secondRow) => {
-    //we could use generics to dictate type here, probably
-    let firstValue: any = getAttributeValue(firstRow, column.attributeKey)
-    let secondValue: any = getAttributeValue(secondRow, column.attributeKey)
-
-    if (column.sortTransform) {
-      firstValue = column.sortTransform(firstValue)
-      secondValue = column.sortTransform(secondValue)
-    } else if (column.transform) {
-      firstValue = column.transform(firstValue)
-      secondValue = column.transform(secondValue)
-    }
-
-    if (firstValue > secondValue)
-      return sortDirection === SortDirection.Ascending ? 1 : -1
-    else if (firstValue < secondValue)
-      return sortDirection === SortDirection.Ascending ? -1 : 1
-
-    return 0
-  })
-}
 
 interface Props {
   columns: Column[]
@@ -104,14 +71,10 @@ export const Body = ({
   sortIndex,
   sortDirection
 }: Props): JSX.Element => {
-  const sortedDataset: object[] = sortDataset(
-    dataset,
-    sortIndex,
-    sortDirection,
-    columns
-  )
 
-  const Rows: JSX.Element[] = sortedDataset?.map((item, index) =>
+  
+
+  const Rows: JSX.Element[] = dataset?.map((item, index) =>
     createRow(columns, item, indexed, index, rowProps)
   )
 

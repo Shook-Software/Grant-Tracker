@@ -38,9 +38,8 @@ export default ({sessionGuid, attendanceRecords, onChange}: Props): JSX.Element 
     let studentRecords = record.studentAttendanceRecords.map(record => ({
       isPresent: true,
       attendance: record.timeRecords.map(time => ({
-        ...time,
-        startTime: time.entryTime,
-        endTime: time.exitTime
+        startTime: time.startTime,
+        endTime: time.endTime
       })),
       studentSchoolYear: {
         ...record.studentSchoolYear,
@@ -53,8 +52,8 @@ export default ({sessionGuid, attendanceRecords, onChange}: Props): JSX.Element 
       isPresent: true,
       attendance: record.timeRecords.map(time => ({
         ...time,
-        startTime: time.entryTime,
-        endTime: time.exitTime
+        startTime: time.startTime,
+        endTime: time.endTime
       })),
       instructorSchoolYear: {
         ...record.instructorSchoolYear,

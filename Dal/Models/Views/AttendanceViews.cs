@@ -67,21 +67,21 @@ namespace GrantTracker.Dal.Models.Views
 	public class AttendanceTimeRecordViewModel
 	{
 		public Guid Guid { get; set; }
-		public TimeOnly EntryTime { get; set; }
-		public TimeOnly ExitTime { get; set; }
+		public TimeOnly StartTime { get; set; }
+		public TimeOnly EndTime { get; set; }
 
 		public static AttendanceTimeRecordViewModel FromDatabase(StudentAttendanceTimeRecord attendance) => new()
 		{
 			Guid = attendance.Guid,
-			EntryTime = attendance.EntryTime,
-			ExitTime = attendance.ExitTime
+			StartTime = attendance.EntryTime,
+			EndTime = attendance.ExitTime
 		};
 
 		public static AttendanceTimeRecordViewModel FromDatabase(InstructorAttendanceTimeRecord attendance) => new()
 		{
 			Guid = attendance.Guid,
-			EntryTime = attendance.EntryTime,
-			ExitTime = attendance.ExitTime
+			StartTime = attendance.EntryTime,
+			EndTime = attendance.ExitTime
 		};
 	}
 

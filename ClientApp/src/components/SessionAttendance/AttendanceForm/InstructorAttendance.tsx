@@ -18,7 +18,6 @@ const columnsBuilder = (dispatch): Column[] => [
     sortable: false,
     transform: (record: InstructorRecord) => (
       <div className='d-flex justify-content-center h-100'>
-        {console.log(record)}
         <Form.Check checked={record.isPresent} onChange={(e) => {}} />
       </div>
     ),
@@ -50,11 +49,13 @@ const columnsBuilder = (dispatch): Column[] => [
 
       return (
         <AttendanceTimeInput
+          key={registration.instructorSchoolYear + 'enter'}
+          id={registration.instructorSchoolYear + 'enter'}
           records={instructorRegistrations}
           inputType={TimeInputType.Start}
-          onChange={(guid, time) => dispatch({
-            type: 'instructorEndTime',
-            payload: { guid, endTime: time }
+          onChange={(guid, time, index) => dispatch({
+            type: 'instructorStartTime',
+            payload: { guid, startTime: time, index }
           })}
         />
       )
@@ -70,15 +71,17 @@ const columnsBuilder = (dispatch): Column[] => [
         personSchoolYearGuid: registration.instructorSchoolYear.guid,
         startTime: record.startTime,
         endTime: record.endTime
-      }))
+      })) 
 
       return (
-      <AttendanceTimeInput
+        <AttendanceTimeInput
+          key={registration.instructorSchoolYear + 'leave'}
+          id={registration.instructorSchoolYear + 'leave'}
           records={instructorRegistrations}
           inputType={TimeInputType.End}
-          onChange={(guid, time) => dispatch({
+          onChange={(guid, time, index) => dispatch({
             type: 'instructorEndTime',
-            payload: { guid, endTime: time }
+            payload: { guid, endTime: time, index }
           })}
         />
       )
@@ -93,6 +96,7 @@ export default ({state, dispatch}): JSX.Element => {
 
   function addInternalInstructor (instructor, instructorSchoolYearGuid): Promise<ApiResult> {
     return new Promise((resolve, reject) => {
+      instructor.id = instructorSchoolYearGuid || `${instructor.firstName}${instructor.lastName}`
       const payload = instructorSchoolYearGuid ? { instructor, instructorSchoolYearGuid } :  { instructor }
       dispatch({type: 'addSubstitute', payload})
       resolve({
@@ -104,6 +108,7 @@ export default ({state, dispatch}): JSX.Element => {
   
   function addExternalInstructor (instructor): Promise<ApiResult> {
     return new Promise((resolve, reject) => {
+      instructor.id = `${instructor.firstName}${instructor.lastName}`
       dispatch({type: 'addSubstitute', payload: { instructor }})
       resolve({
         label: `${instructor.firstName} ${instructor.lastName}`,

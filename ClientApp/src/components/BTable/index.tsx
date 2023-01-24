@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Table } from 'react-bootstrap'
 import { Header } from './Header'
 import { Body } from './Body'
@@ -40,7 +40,12 @@ interface Props {
 export default ({ columns, dataset, rowProps, defaultSort, indexed = false, bordered = true, showHeader = true, className, tableProps }: Props): JSX.Element => {
   const [sortIndex, setSortIndex] = useState<number>(defaultSort?.index || 0)
   const [sortDirection, setSortDirection] = useState<SortDirection>(defaultSort?.direction || SortDirection.None)
+  const [dataToRender, setDataToRender] = useState<any[]>(dataset)
 
+  useEffect(() => {
+    setDataToRender(sortDataset(dataset, sortIndex, sortDirection, columns))
+  }, [dataset])
+ 
   //default method of ensuring mapped elements have unique keys, not foolproof
   columns.forEach(col => {
     if (!col.key)
@@ -48,13 +53,12 @@ export default ({ columns, dataset, rowProps, defaultSort, indexed = false, bord
   })
 
   function handleSortIndexChange(value: number): void {
-    if (value === sortIndex) {
-      setSortDirection(mod(sortDirection + 1, 3))
-    }
-    else {
-      setSortIndex(value)
-      setSortDirection(SortDirection.Ascending)
-    }
+
+    let direction = value === sortIndex ? mod(sortDirection + 1, 3) : SortDirection.Ascending
+
+    setSortIndex(value)
+    setSortDirection(direction)
+    setDataToRender(sortDataset(dataset, value, direction, columns))
   }
 
   return (
@@ -77,7 +81,7 @@ export default ({ columns, dataset, rowProps, defaultSort, indexed = false, bord
       }
       <Body
         columns={columns}
-        dataset={dataset}
+        dataset={dataToRender}
         rowProps={rowProps}
         indexed={indexed}
         sortIndex={sortIndex}
@@ -85,4 +89,50 @@ export default ({ columns, dataset, rowProps, defaultSort, indexed = false, bord
       />
     </Table>
   )
+}
+
+function getAttributeValue (row: any, attributeKey: string): any {
+  const attributes: string[] = attributeKey.split('.')
+  //Allows us to access sub-indices with usual 'attribute.subAttribute' notation
+  let baseValue: any = row
+
+  attributes.forEach(attribute => {
+    if (attribute != '' && baseValue) baseValue = baseValue[attribute]
+  })
+  return baseValue
+}
+
+//Ensure that the sort does not modify the original object.
+//The column level value 'transform' needs to be applied here, as we sort what's on the screen, not the original api values
+function sortDataset (
+  dataset: any[],
+  sortIndex: number,
+  sortDirection: SortDirection,
+  columns: Column[]
+): object[] {
+  if (!dataset || dataset.length === 0) return []
+  if (sortDirection === SortDirection.None) return dataset
+
+  let column: Column = columns[sortIndex]
+
+  return [...dataset].sort((firstRow, secondRow) => {
+    //we could use generics to dictate type here, probably
+    let firstValue: any = getAttributeValue(firstRow, column.attributeKey)
+    let secondValue: any = getAttributeValue(secondRow, column.attributeKey)
+
+    if (column.sortTransform) {
+      firstValue = column.sortTransform(firstValue)
+      secondValue = column.sortTransform(secondValue)
+    } else if (column.transform) {
+      firstValue = column.transform(firstValue)
+      secondValue = column.transform(secondValue)
+    }
+
+    if (firstValue > secondValue)
+      return sortDirection === SortDirection.Ascending ? 1 : -1
+    else if (firstValue < secondValue)
+      return sortDirection === SortDirection.Ascending ? -1 : 1
+
+    return 0
+  })
 }

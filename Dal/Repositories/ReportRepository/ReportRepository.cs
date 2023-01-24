@@ -162,6 +162,7 @@ public class ReportRepository : RepositoryBase, IReportRepository
 					SessionName = key.SessionName,
 					ActivityType = firstRow.ActivityType,
 					FundingSource = firstRow.FundingSource,
+					Objective = firstRow.Objective,
 					FirstSession = firstRow.FirstSession,
 					LastSession = firstRow.LastSession,
 					DaysOfWeek = firstRow.DaysOfWeek,

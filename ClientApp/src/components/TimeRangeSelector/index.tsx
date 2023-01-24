@@ -20,12 +20,15 @@ import { mod } from 'utils/Math'
 //Create a visual indicator to open the absolute dropdown, just cause
 
 interface Props extends Omit<Omit<React.SelectHTMLAttributes<HTMLSelectElement>, 'value'>,'onChange'> {
+  id: string,
   value: LocalTime
   onChange: (input: LocalTime) => void
 }
 
-//utilize tab and shift tab
+//utilize tab and shift tab 
+//this component is notorious for having sync issues without an id/key provided
 export const TimeInput = ({
+  id,
   value,
   onChange,
   ...props
@@ -117,7 +120,7 @@ export const TimeInput = ({
   //Move this aria stuff into something else, make it a button
   return (
     <Container
-      key={`${simplifiedTime.hour}-${simplifiedTime.minute}`}
+      key={`${simplifiedTime.hour}-${simplifiedTime.minute}-${id}`}
       tabIndex={-1}
       isCollapsed={isCollapsed}
       ref={containerRef}

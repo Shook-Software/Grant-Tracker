@@ -5,9 +5,9 @@ import { AttendanceTimeRecordView } from 'Models/StudentAttendance'
 
 export default ({timeRecords}: {timeRecords: AttendanceTimeRecordView[]}): JSX.Element => {
   timeRecords = timeRecords.sort((first, second) => {
-    if (first.entryTime.isBefore(second.entryTime))
+    if (first.startTime.isBefore(second.startTime))
       return -1
-    if (first.entryTime.isAfter(second.entryTime))
+    if (first.endTime.isAfter(second.endTime))
       return 1
     return 0
   })
@@ -17,8 +17,8 @@ export default ({timeRecords}: {timeRecords: AttendanceTimeRecordView[]}): JSX.E
       { 
         timeRecords.map(record => (
           <>
-            <span className='w-50 text-center'>{record.entryTime.format(DateTimeFormatter.ofPattern('h:mm a').withLocale(Locale.ENGLISH))}</span>
-            <span className='w-50 text-center'>{record.exitTime.format(DateTimeFormatter.ofPattern('h:mm a').withLocale(Locale.ENGLISH))}</span>
+            <span className='w-50 text-center'>{record.startTime.format(DateTimeFormatter.ofPattern('h:mm a').withLocale(Locale.ENGLISH))}</span>
+            <span className='w-50 text-center'>{record.endTime.format(DateTimeFormatter.ofPattern('h:mm a').withLocale(Locale.ENGLISH))}</span>
           </>
         ))
       }

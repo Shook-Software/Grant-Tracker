@@ -6,6 +6,7 @@ public class ClassSummaryDbModel
 	public string SessionName { get; set; }
 	public string ActivityType { get; set; }
 	public string FundingSource { get; set; }
+	public string Objective { get; set; }
 	public string InstructorFirstName { get; set; }
 	public string InstructorLastName { get; set; }
 	public string InstructorStatus { get; set; }
@@ -30,6 +31,7 @@ public class ClassSummaryViewModel
 	public string SessionName { get; set; }
 	public string ActivityType { get; set; }
 	public string FundingSource { get; set; }
+	public string Objective { get; set; }
 	public DateOnly FirstSession { get; set; }
 	public DateOnly LastSession { get; set; }
 	public string DaysOfWeek { get; set; }

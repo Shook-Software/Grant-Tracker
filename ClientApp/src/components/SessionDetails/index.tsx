@@ -43,7 +43,7 @@ function createDefaultStudentRecords (studentRegistrations, daySchedule): Studen
 function createDefaultInstructorRecords (instructorRegistrations, daySchedule)/*: InstructorRecord[]*/ {
   return instructorRegistrations.map(registration => ({
       isPresent: true,
-      attendance: daySchedule.timeSchedules,
+      attendance: daySchedule.timeSchedules.map(sch => ({...sch})),
       instructorSchoolYear: registration
     })
   )
@@ -141,6 +141,7 @@ export default ({}) => {
     substituteRecords: SubstituteRecord[]
   ): Promise<void> {
     return new Promise((resolve, reject) => {
+      console.log(instructorRecords)
      postSessionAttendance(sessionGuid!, date, studentRecords, instructorRecords, substituteRecords)
       .then(res => {
           handleAttendanceModalClose()

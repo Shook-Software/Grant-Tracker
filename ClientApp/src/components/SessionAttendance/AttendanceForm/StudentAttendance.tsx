@@ -59,6 +59,8 @@ const columnsBuilder = (dispatch): Column[] => [
 
     return (
       <AttendanceTimeInput
+        key={registration.studentSchoolYear.guid + 'enter'}
+        id={registration.studentSchoolYear.guid + 'enter'}
         records={studentRegistrations}
         inputType={TimeInputType.Start}
         onChange={(guid, time, index) => dispatch({
@@ -82,6 +84,8 @@ const columnsBuilder = (dispatch): Column[] => [
 
     return (
       <AttendanceTimeInput
+        key={registration.studentSchoolYear.guid + 'leave'}
+        id={registration.studentSchoolYear.guid + 'leave'}
         records={studentRegistrations}
         inputType={TimeInputType.End}
         onChange={(guid, time, index) => dispatch({
