@@ -154,18 +154,19 @@ namespace GrantTracker.Dal.Repositories.AttendanceRepository
 			//Remove the existing record and all of it's components
 			var existingAttendanceRecord = await _grantContext
 				.AttendanceRecords
-				//.Include(ar => ar.StudentAttendance).ThenInclude(sa => sa.FamilyAttendance)
-				//.Include(ar => ar.InstructorAttendance).ThenInclude(ia => ia.TimeRecords)
+				.Include(ar => ar.StudentAttendance).ThenInclude(sa => sa.FamilyAttendance)
+				.Include(ar => ar.StudentAttendance).ThenInclude(sa => sa.TimeRecords)
+				.Include(ar => ar.InstructorAttendance).ThenInclude(ia => ia.TimeRecords)
 				.Where(ar => ar.Guid == attendanceGuid)
 				.FirstAsync();
 
-			_grantContext.FamilyAttendances.RemoveRange(_grantContext.FamilyAttendances.Include(fa => fa.StudentAttendanceRecord).Where(fa => fa.StudentAttendanceRecord.AttendanceRecordGuid == attendanceGuid).ToList());
-			_grantContext.InstructorAttendanceTimeRecords.RemoveRange(_grantContext.InstructorAttendanceTimeRecords.Include(iatr => iatr.InstructorAttendanceRecord).Where(tr => tr.InstructorAttendanceRecord.AttendanceRecordGuid == attendanceGuid).ToList());
-			_grantContext.InstructorAttendanceRecords.RemoveRange(_grantContext.InstructorAttendanceRecords.Where(ia => ia.AttendanceRecordGuid == attendanceGuid).ToList());
-			_grantContext.StudentAttendanceTimeRecords.RemoveRange(_grantContext.StudentAttendanceTimeRecords.Include(satr => satr.StudentAttendanceRecord).Where(satr => satr.StudentAttendanceRecord.AttendanceRecordGuid == attendanceGuid).ToList());
-			_grantContext.StudentAttendanceRecords.RemoveRange(_grantContext.StudentAttendanceRecords.Where(sar => sar.AttendanceRecordGuid == attendanceGuid).ToList());
+			_grantContext.FamilyAttendances.RemoveRange(existingAttendanceRecord.StudentAttendance.SelectMany(sa => sa.FamilyAttendance).ToList());
+			_grantContext.InstructorAttendanceTimeRecords.RemoveRange(existingAttendanceRecord.InstructorAttendance.SelectMany(ia => ia.TimeRecords).ToList());
+			_grantContext.InstructorAttendanceRecords.RemoveRange(existingAttendanceRecord.InstructorAttendance.ToList());
+			_grantContext.StudentAttendanceTimeRecords.RemoveRange(existingAttendanceRecord.StudentAttendance.SelectMany(sa => sa.TimeRecords).ToList());
+			_grantContext.StudentAttendanceRecords.RemoveRange(existingAttendanceRecord.StudentAttendance.ToList());
 			_grantContext.AttendanceRecords.Remove(existingAttendanceRecord);
-			int test = _grantContext.SaveChanges();
+			_grantContext.SaveChanges();
 
 			try
 			{

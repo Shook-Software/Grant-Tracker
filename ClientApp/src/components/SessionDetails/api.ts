@@ -82,17 +82,20 @@ export function patchAttendanceRecord (sessionGuid, attendanceGuid, attendanceRe
     console.warn('Attendance sent for:', attendanceGuid)
 
     attendanceRecord.studentRecords = attendanceRecord.studentRecords.filter(record => record.isPresent == true)
-    attendanceRecord.studentRecords = attendanceRecord.studentRecords.map(record => ({
-      studentSchoolYearGuid: record.studentSchoolYear?.guid,
-      studentGuid: record.studentSchoolYear?.student?.guid,
-      student: {
-        firstName: record.studentSchoolYear.student.firstName,
-        lastName: record.studentSchoolYear.student.lastName,
-        matricNumber: record.studentSchoolYear.student.matricNumber,
-        grade: record.studentSchoolYear.grade
-      },
-      attendance: [...record.attendance]
-    }))
+    attendanceRecord.studentRecords = attendanceRecord.studentRecords.map(record => {
+      return({
+        studentSchoolYearGuid: record.studentSchoolYear?.guid,
+        studentGuid: record.studentSchoolYear?.student?.guid,
+        familyAttendance: [...record.familyAttendance],
+        student: {
+          firstName: record.studentSchoolYear.student.firstName,
+          lastName: record.studentSchoolYear.student.lastName,
+          matricNumber: record.studentSchoolYear.student.matricNumber,
+          grade: record.studentSchoolYear.grade
+        },
+        attendance: [...record.attendance]
+      })
+  })
 
     attendanceRecord.instructorRecords = attendanceRecord.instructorRecords.filter(record => record.isPresent == true)
     attendanceRecord.instructorRecords = attendanceRecord.instructorRecords.map(record => ({

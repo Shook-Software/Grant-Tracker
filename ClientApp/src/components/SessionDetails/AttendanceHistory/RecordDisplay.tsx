@@ -168,9 +168,10 @@ interface Props {
   simpleRecord: SimpleAttendanceView
   onEditClick
   onDeleteClick
+  isFamilySession: boolean
 }
 
-export default ({sessionGuid, simpleRecord, onEditClick, onDeleteClick}: Props): JSX.Element => {
+export default ({sessionGuid, simpleRecord, onEditClick, onDeleteClick, isFamilySession}: Props): JSX.Element => {
   const [record, setRecord] = useState<AttendanceView | null>(null)
   const [isLoading, setIsLoading] = useState<boolean>(false)
 
@@ -183,7 +184,7 @@ export default ({sessionGuid, simpleRecord, onEditClick, onDeleteClick}: Props):
   }
 
   let studentTableColumns: Column[] = [...studentColumns]
-  if (record?.studentAttendanceRecords?.length > 0 && record?.studentAttendanceRecords.some(x => x.familyAttendance && x.familyAttendance.length > 0)) {
+  if (record?.studentAttendanceRecords?.length > 0 && isFamilySession) {
     studentTableColumns = addFamilyColumn(studentTableColumns)
   }
 

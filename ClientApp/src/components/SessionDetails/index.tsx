@@ -142,7 +142,7 @@ export default ({}) => {
     substituteRecords: SubstituteRecord[]
   ): Promise<void> {
     return new Promise((resolve, reject) => {
-      
+
      postSessionAttendance(sessionGuid!, date, studentRecords, instructorRecords, substituteRecords)
       .then(res => {
           handleAttendanceModalClose()
@@ -250,6 +250,7 @@ export default ({}) => {
                       sessionGuid={sessionGuid}
                       attendanceRecords={attendanceRecords} 
                       onChange={getAttendance} 
+                      isFamilySession={session!.sessionType.label.toLowerCase() != 'student'}
                     />
                   </Card.Title>
                 </Card.Body>

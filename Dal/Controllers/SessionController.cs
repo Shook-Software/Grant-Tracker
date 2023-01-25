@@ -342,6 +342,7 @@ namespace GrantTracker.Dal.Controllers
 				StudentAttendanceDto studentAttendanceDto = new()
 				{
 					StudentGuid = studentGuid,
+					FamilyAttendance = studentRecord.FamilyAttendance,
 					StudentSchoolYearGuid = studentSchoolYear.Guid,
 					Student = studentRecord.Student,
 					Attendance = studentRecord.Attendance

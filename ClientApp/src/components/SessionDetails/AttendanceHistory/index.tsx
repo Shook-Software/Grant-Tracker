@@ -49,7 +49,7 @@ export default ({sessionGuid, attendanceRecords, onChange, isFamilySession}: Pro
         ...record.studentSchoolYear,
         student: { ...record.studentSchoolYear.student }
       },
-      familyAttendance: []
+      familyAttendance: record.familyAttendance || []
     })) || []
 
     let instructorRecords = record.instructorAttendanceRecords?.map(record => ({
@@ -92,14 +92,18 @@ export default ({sessionGuid, attendanceRecords, onChange, isFamilySession}: Pro
 
         startTimeMapArray[index].forEach((value, key) => {
           if (value > highestStartFrequency)
+          {
             highestStartFrequency = value
-          highestFrequencyStartKey = key
+            highestFrequencyStartKey = key
+          }
         })
 
         endTimeMapArray[index].forEach((value, key) => {
           if (value > highestEndFrequency)
+          {
             highestEndFrequency = value
-          highestFrequencyEndKey = key
+            highestFrequencyEndKey = key
+          }
         })
 
         let startTimeSplit: string[] = highestFrequencyStartKey.split('-')
@@ -119,7 +123,7 @@ export default ({sessionGuid, attendanceRecords, onChange, isFamilySession}: Pro
       studentRecords,
       instructorRecords,
       substituteRecords: [],
-      defaultSchedule: studentRecords[0]?.attendance || instructorRecords[0]?.attendance
+      defaultSchedule: meanTimeRecords.length > 0 ? meanTimeRecords : [{startTime: LocalTime.MIDNIGHT, endTime: LocalTime.MIDNIGHT}]
     })
 
     setShowModal(true)
@@ -136,6 +140,7 @@ export default ({sessionGuid, attendanceRecords, onChange, isFamilySession}: Pro
                 simpleRecord={record} 
                 onEditClick={(record) => handleEditClick(record)}
                 onDeleteClick={(record) => handleDeleteClick(record)}
+                isFamilySession={isFamilySession}
               />
             </Accordion>
         )
