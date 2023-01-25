@@ -135,13 +135,14 @@ export default ({}) => {
   }
 
   function submitAttendance (
+    _: string,
     date: LocalDate, 
     studentRecords: StudentRecord[],
     instructorRecords: InstructorRecord[], 
     substituteRecords: SubstituteRecord[]
   ): Promise<void> {
     return new Promise((resolve, reject) => {
-      console.log(instructorRecords)
+      
      postSessionAttendance(sessionGuid!, date, studentRecords, instructorRecords, substituteRecords)
       .then(res => {
           handleAttendanceModalClose()

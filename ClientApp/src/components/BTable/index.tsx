@@ -68,7 +68,7 @@ export default ({ columns, dataset, rowProps, defaultSort, indexed = false, bord
       bordered={bordered}
       hover
       {...tableProps}
-      style={{border: '2px solid black', ...tableProps?.style}}
+      style={{border: bordered ? '2px solid black' : '', ...tableProps?.style}}
     >
       {
         showHeader ? 

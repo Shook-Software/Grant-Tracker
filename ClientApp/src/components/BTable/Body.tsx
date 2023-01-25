@@ -23,10 +23,10 @@ function createRow (
       key={`${row[rowProps?.key]}-${index}`}
       className={rowProps?.className}
       onClick={event => rowProps?.onClick? rowProps?.onClick(event, row) : null}
-      style={{ cursor: rowProps?.onClick ? 'pointer' : 'auto', minHeight: '1px', minWidth: '100%', backgroundColor: index % 2 == 0 ? '#CCE2FD' : '#D5E5F8'}}
+      style={{ cursor: rowProps?.onClick ? 'pointer' : 'auto', height: '1px', backgroundColor: index % 2 == 0 ? '#CCE2FD' : '#D5E5F8'}}
     >
       {[
-        isIndexed ? <td key='index'>{index}</td> : null,
+        isIndexed ? <td key='index' style={{height: 'inherit'}}>{index}</td> : null,
         columns.map(col => {
           let value: any = getAttributeValue(row, col.attributeKey)
 
@@ -41,7 +41,7 @@ function createRow (
             <td 
               key={col.key} 
               {...col.cellProps}
-              style={{...col.cellProps?.style}}
+              style={{height: 'inherit', ...col.cellProps?.style}}
             >
               {value}
             </td>

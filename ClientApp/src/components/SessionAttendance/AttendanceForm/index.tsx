@@ -16,7 +16,6 @@ interface Props {
 }
 
 export default ({ state, dispatch, dateOptions, isFamilySession }: Props): JSX.Element => {
-  
   return (
     <>
       <OverviewForm state={state} dispatch={dispatch} dateOptions={dateOptions} />

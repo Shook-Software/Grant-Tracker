@@ -28,6 +28,7 @@ interface Props {
   },
   handleClose: () => void
   handleSubmit: (
+    attendanceGuid: string,
     date: LocalDate,
     studentRecords: StudentRecord[],
     instructorRecords: InstructorRecord[],
@@ -96,14 +97,15 @@ export default ({
       <Modal.Footer>
         <Button onClick={() => handleClose()}>Close</Button>
         <Button
-          onClick={() =>
+          onClick={() => {
             handleSubmit(
+              state.attendanceGuid,
               state.date,
               state.studentRecords,
               state.instructorRecords,
               state.substituteRecords
             )
-          }
+          }}
         >
           Submit
         </Button>

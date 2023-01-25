@@ -4,6 +4,7 @@ import { LocalDate, DateTimeFormatter, LocalTime } from '@js-joda/core'
 import { Locale } from '@js-joda/locale_en-us'
 
 import Table, { Column, SortDirection } from 'components/BTable'
+import TimeRecordDisplay from 'components/SessionDetails/AttendanceHistory/TimeRecordDisplay'
 
 import { AttendanceTimeRecordView, AttendanceView, StudentAttendanceView } from 'Models/StudentAttendance'
 
@@ -29,23 +30,15 @@ const columns: Column[] = [
     label: 'Time Records',
     attributeKey: 'timeRecords',
     sortable: false,
-    transform: (timeRecord: AttendanceTimeRecordView[]) => <Table columns={tempColumns} dataset={timeRecord} className='m-0' />,
-    cellProps: {className: 'h-100 p-0'}
-  }
-]
-
-const tempColumns: Column[] = [
-  {
-    label: 'Arrived at',
-    attributeKey: 'startTime',
-    sortable: true,
-    transform: (time: LocalTime) => time.format(DateTimeFormatter.ofPattern('hh:mm a').withLocale(Locale.ENGLISH))
-  },
-  {
-    label: 'Left at',
-    attributeKey: 'endTime',
-    sortable: true,
-    transform: (time: LocalTime) => time.format(DateTimeFormatter.ofPattern('hh:mm a').withLocale(Locale.ENGLISH))
+    headerTransform: () => (
+      <th className='d-flex flex-wrap'>
+        <span className='w-100 text-center'>Time Records</span>
+        <span className='w-50 text-center'>Entered at:</span>
+        <span className='w-50 text-center'>Exited at:</span>
+      </th>
+    ),
+    transform: (timeRecord: AttendanceTimeRecordView[]) => <TimeRecordDisplay timeRecords={timeRecord} />,
+    cellProps: {className: 'py-1'},
   }
 ]
 

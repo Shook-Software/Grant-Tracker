@@ -79,6 +79,8 @@ export function getAttendanceRecord (sessionGuid: string, attendanceGuid: string
 export function patchAttendanceRecord (sessionGuid, attendanceGuid, attendanceRecord): Promise<void> {
   return new Promise((resolve, reject) => {
 
+    console.warn('Attendance sent for:', attendanceGuid)
+
     attendanceRecord.studentRecords = attendanceRecord.studentRecords.filter(record => record.isPresent == true)
     attendanceRecord.studentRecords = attendanceRecord.studentRecords.map(record => ({
       studentSchoolYearGuid: record.studentSchoolYear?.guid,

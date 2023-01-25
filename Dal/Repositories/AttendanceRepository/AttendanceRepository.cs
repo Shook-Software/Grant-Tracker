@@ -165,7 +165,7 @@ namespace GrantTracker.Dal.Repositories.AttendanceRepository
 			_grantContext.StudentAttendanceTimeRecords.RemoveRange(_grantContext.StudentAttendanceTimeRecords.Include(satr => satr.StudentAttendanceRecord).Where(satr => satr.StudentAttendanceRecord.AttendanceRecordGuid == attendanceGuid).ToList());
 			_grantContext.StudentAttendanceRecords.RemoveRange(_grantContext.StudentAttendanceRecords.Where(sar => sar.AttendanceRecordGuid == attendanceGuid).ToList());
 			_grantContext.AttendanceRecords.Remove(existingAttendanceRecord);
-			_grantContext.SaveChanges();
+			int test = _grantContext.SaveChanges();
 
 			try
 			{

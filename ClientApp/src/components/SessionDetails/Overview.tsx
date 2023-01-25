@@ -4,13 +4,26 @@ import { Locale } from '@js-joda/locale_en-us'
 
 import ListItem from 'components/Item'
 
-import { SessionView } from 'models/Session'
+import { SessionView } from 'Models/Session'
 
 interface Props {
   session: SessionView
 }
 
 export default ({ session }: Props): JSX.Element => {
+
+  let gradesSorted = session.grades?.sort((first, second) => {
+    let firstInt: number = first.value == 'KG' ? -1 : parseInt(first.value)
+    let secondInt: number = second.value == 'KG' ? -1 : parseInt(second.value)
+
+    if (firstInt > secondInt)
+      return 1
+    else if (firstInt < secondInt)
+      return -1
+
+    return 0
+  })
+
   return (
     <Card>
       <Card.Body>
@@ -26,8 +39,8 @@ export default ({ session }: Props): JSX.Element => {
             label='Grade Levels:'
             value={
               <p>
-                {session!.grades?.length
-                  ? session!.grades.map((grade, index) => (index !== session!.grades.length - 1 ? grade.value + ', ' : grade.value))
+                {gradesSorted?.length
+                  ? gradesSorted.map((grade, index) => (index !== gradesSorted.length - 1 ? grade.value + ', ' : grade.value))
                   : 'All Grade Levels'}
               </p>
             }

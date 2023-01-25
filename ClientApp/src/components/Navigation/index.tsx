@@ -107,17 +107,17 @@ const OrganizationYearSelect = ({user, onChange}: {user: User, onChange}) => {
         user
           .getOrganizationYearsAsync(lastOrganizationGuid)
           .then(res => {
-            console.log(res)
+            //console.log(res)
             let organizationYearGuid = res.find(orgYear => orgYear.organization.guid == lastOrganizationGuid)?.guid 
             user.setOrganization(organization)
             //user.setYear(res[0])
             user.setOrganizationYear(organizationYearGuid)
         
-            console.log(lastYearGuid, user.year.guid)
+            //console.log(lastYearGuid, user.year.guid)
             if (lastYearGuid)
             {
               const year: OrganizationYearView | undefined = res.find(sy => sy.year.guid === lastYearGuid)
-              console.log(year)
+              //console.log(year)
               user.setYear(year)
             }
 

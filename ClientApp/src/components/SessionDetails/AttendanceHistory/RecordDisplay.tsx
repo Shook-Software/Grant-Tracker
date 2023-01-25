@@ -29,7 +29,8 @@ const studentColumns: Column[] = [
   {
     label: 'Grade',
     attributeKey: 'studentSchoolYear.grade',
-    sortable: true
+    sortable: true,
+    cellProps: { className: 'text-center' }
   },
   {
     label: 'Time Records',
@@ -42,8 +43,8 @@ const studentColumns: Column[] = [
         <span className='w-50 text-center'>Exited at:</span>
       </th>
     ),
-    transform: (timeRecord: AttendanceTimeRecordView[]) => <TimeRecordDisplay timeRecords={timeRecord} />,//<Table columns={tempColumns} dataset={timeRecord} className='m-0' />,
-    cellProps: {className: 'h-100 p-0'},
+    transform: (timeRecord: AttendanceTimeRecordView[]) => <TimeRecordDisplay timeRecords={timeRecord} />,
+    cellProps: {className: 'py-1'},
   }
 ]
 
@@ -77,7 +78,7 @@ const instructorColumns: Column[] = [
       </th>
     ),
     transform: (timeRecord: AttendanceTimeRecordView[]) => <TimeRecordDisplay timeRecords={timeRecord} />,//<Table columns={tempColumns} dataset={timeRecord} className='m-0' />,
-    cellProps: {className: 'p-2'},
+    cellProps: {className: 'py-1'},
   }
 ]
 

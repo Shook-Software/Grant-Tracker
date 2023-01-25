@@ -236,7 +236,7 @@ export default (): JSX.Element => {
     api
       .get<DropdownOption[]>('dropdown/view/grades')
       .then(res => {
-        console.log(res.data)
+        //console.log(res.data)
         let gradeViews: GradeView[] = res.data
           .filter(option => props.values.grades.includes(option.guid))
           .map(

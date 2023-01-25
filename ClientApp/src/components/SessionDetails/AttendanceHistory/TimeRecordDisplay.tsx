@@ -13,12 +13,12 @@ export default ({timeRecords}: {timeRecords: AttendanceTimeRecordView[]}): JSX.E
   })
 
   return (
-    <div className='d-flex align-items-center flex-wrap h-100'>
+    <div className='row h-100 align-items-center'>
       { 
         timeRecords.map(record => (
           <>
-            <span className='w-50 text-center'>{record.startTime.format(DateTimeFormatter.ofPattern('h:mm a').withLocale(Locale.ENGLISH))}</span>
-            <span className='w-50 text-center'>{record.endTime.format(DateTimeFormatter.ofPattern('h:mm a').withLocale(Locale.ENGLISH))}</span>
+            <span className='col-6 p-0 text-center'>{record.startTime.format(DateTimeFormatter.ofPattern('h:mm a').withLocale(Locale.ENGLISH))}</span>
+            <span className='col-6 p-0 text-center'>{record.endTime.format(DateTimeFormatter.ofPattern('h:mm a').withLocale(Locale.ENGLISH))}</span>
           </>
         ))
       }

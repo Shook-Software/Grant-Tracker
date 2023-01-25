@@ -92,7 +92,20 @@ export default ({ registrations }: Props): JSX.Element => {
   return (
     <>
       <h3 className='mt-3'>Registrations</h3>
-      <div className='d-flex align-items-center pb-3'>
+      
+      <Container>
+        <Table
+          columns={columns}
+          dataset={registrations}
+          defaultSort={{ index: 0, direction: SortDirection.Ascending }}
+        />
+      </Container>
+    </>
+  )
+}
+
+/*
+<div className='d-flex align-items-center pb-3'>
         <Button
           variant='outline-dark'
           size='sm'
@@ -105,13 +118,5 @@ export default ({ registrations }: Props): JSX.Element => {
           Next
         </Button>
       </div>
-      <Container>
-        <Table
-          columns={columns}
-          dataset={registrations}
-          defaultSort={{ index: 0, direction: SortDirection.Ascending }}
-        />
-      </Container>
-    </>
-  )
-}
+
+*/
