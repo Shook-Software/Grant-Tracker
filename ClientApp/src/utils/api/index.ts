@@ -14,9 +14,9 @@ function recursiveObjectSearch (object: any) {
   }
 }
 
-const siteURL: string = 'http://granttracker2022/'
-  //http://granttracker2022/
-  //http://localhost:44394
+const siteURL: string = 'https://granttracker2022/'
+  //https://granttracker2022/
+  //https://localhost:44394
 
 export abstract class AxiosIdentityConfig {
   public static identity: {
