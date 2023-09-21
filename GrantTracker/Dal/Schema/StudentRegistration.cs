@@ -24,7 +24,7 @@ namespace GrantTracker.Dal.Schema
 			entity.HasOne(e => e.StudentSchoolYear)
 				.WithMany(e => e.SessionRegistrations)
 				.HasForeignKey(e => e.StudentSchoolYearGuid)
-				.OnDelete(DeleteBehavior.Restrict);
+				.OnDelete(DeleteBehavior.NoAction);
 
 			entity.HasOne(e => e.DaySchedule)
 				.WithMany(e => e.StudentRegistrations)

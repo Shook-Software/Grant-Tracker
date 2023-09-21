@@ -62,9 +62,10 @@ const OrganizationYearSelect = ({user, onChange}: {user: User, onChange}) => {
     user
       .getOrganizationYearsAsync(guid)
       .then(res => {
-        organizationYearGuid = res.find(orgYear => orgYear.organization.guid == guid)?.guid 
+        organizationYearGuid = res.find(orgYear => orgYear.organization.guid == guid)?.guid
+        const currentYear: OrganizationYearView | undefined = res.reduce((prev, current) => prev && prev.year.schoolYear > current.year.schoolYear && prev.year.quarter > current.year.quarter ? prev : current)
         user.setOrganization(organization)
-        user.setYear(res[0])
+        user.setYear(currentYear)
         user.setOrganizationYear(organizationYearGuid)
     
         onChange()
@@ -117,7 +118,6 @@ const OrganizationYearSelect = ({user, onChange}: {user: User, onChange}) => {
             if (lastYearGuid)
             {
               const year: OrganizationYearView | undefined = res.find(sy => sy.year.guid === lastYearGuid)
-              //console.log(year)
               user.setYear(year)
             }
 
@@ -150,7 +150,7 @@ const OrganizationYearSelect = ({user, onChange}: {user: User, onChange}) => {
             </div>
             <div style={{width: '1rem'}} />
             <div>
-              <label htmlFor='year' className='small'>Term for '{currentOrganization.name}'</label>
+              <label htmlFor='year' className='small'>Term for {currentOrganization.name}</label>
               <SelectSearch 
                 id='year'
                 options={yearOptions} 

@@ -1,11 +1,12 @@
 ﻿using GrantTracker.Dal.Schema;
 
-namespace GrantTracker.Dal.Repositories.OrganizationYearRepository
+namespace GrantTracker.Dal.Repositories.OrganizationYearRepository;
+
+public interface IOrganizationYearRepository
 {
-	public interface IOrganizationYearRepository
-	{
-		public Task<Guid> GetGuidAsync(Guid organizationGuid, Guid yearGuid);
-		public Task<List<OrganizationYear>> GetAsync(Guid yearGuid);
-		public Task CreateAsync(List<Organization> organizations, Guid yearGuid);
-	}
+	Task<Guid> GetGuidAsync(Guid organizationGuid, Guid yearGuid);
+	Task<List<OrganizationYear>> GetAsync(Guid yearGuid);
+	Task CreateAsync(List<Organization> organizations, Guid yearGuid);
+
+	Task DeleteOrganizationYearAsync(Guid OrganizationYearGuid);
 }

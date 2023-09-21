@@ -34,7 +34,13 @@ namespace GrantTracker.Dal.Models.Views
 		{
 			Guid = organization.OrganizationGuid,
 			Name = organization.Name,
-			OrganizationYears = organization.Years == null ? new List<OrganizationYearView>() : organization.Years.Select(OrganizationYearView.FromDatabase).ToList()
+			OrganizationYears = organization.Years == null 
+			? new List<OrganizationYearView>() 
+			: organization.Years
+				.Select(OrganizationYearView.FromDatabase)
+				.OrderByDescending(x => x.Year.SchoolYear)
+				.ThenBy(x => x.Year.Quarter)
+				.ToList()
 		};
 	}
 

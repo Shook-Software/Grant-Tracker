@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Tab, Nav, Row, Col, Modal, Form, Button } from 'react-bootstrap'
+import { Tab, Nav, Row, Col, Modal, Form, Button as BButton, Spinner, Accordion } from 'react-bootstrap'
 
 import Table, { Column } from 'components/BTable'
 import Button from 'components/Input/Button'
@@ -21,6 +21,7 @@ const columns: Column[] = [
   {
     label: 'Quarter',
     attributeKey: 'quarter',
+    transform: (quarter) => Quarter[quarter],
     sortable: true
   },
   {
@@ -44,23 +45,102 @@ const columns: Column[] = [
   {
     label: 'Set Active',
     attributeKey: '',
-    transform: (year) => <Button onClick={() => {
-      year.isCurrentSchoolYear = true
-      year.startDate = DateOnly.toLocalDate(year.startDate)
-      year.endDate = DateOnly.toLocalDate(year.endDate)
-      api
-        .patch('developer/year', year)
-        .then(res => console.log(res))
-    }}>
-      Set Active Year
-    </Button>,
+    transform: (year) => {
+      if (year.isCurrentSchoolYear)
+        return <></>
+    
+      return (
+        <BButton onClick={() => {
+          year.isCurrentSchoolYear = true
+          year.startDate = DateOnly.toLocalDate(year.startDate)
+          year.endDate = DateOnly.toLocalDate(year.endDate)
+          api
+            .patch('developer/year', year)
+            .then(res => console.log(res))
+        }}>
+          Set Active Year
+        </BButton>
+      )
+    },
     sortable: false
   }
   //extra statistics
 ]
 
+const orgYearColumns: Column[] = [
+  {
+    label: 'Year',
+    attributeKey: 'year.schoolYear',
+    sortable: true
+  }, 
+  {
+    label: 'Quarter',
+    attributeKey: 'year.quarter',
+    transform: (quarter) => Quarter[quarter],
+    sortable: true
+  },
+]
+
+const orgColumns: Column[] = [
+  {
+    label: "Organization",
+    attributeKey: 'name',
+    sortable: true
+  },
+  {
+    label: "Years",
+    attributeKey: "organizationYears",
+    cellProps: {
+      className: 'p-0'
+    },
+    transform: (orgYears) => {
+      return (
+        <Accordion>
+          <Accordion.Item eventKey="0">
+            <Accordion.Header>Years</Accordion.Header>
+            <Accordion.Body className='p-0'> 
+              <Table dataset={orgYears} columns={orgYearColumns} className='m-0' />
+            </Accordion.Body>
+          </Accordion.Item>
+        </Accordion>
+
+      )
+    },
+    sortable: false
+  },
+  {
+    label: "Organization",
+    attributeKey: '',
+    transform: (organization) => {
+      return (
+        <BButton variant="danger" onClick={() => deleteOrganization(organization.guid)}>
+          Delete
+        </BButton>  
+      )
+    },
+    sortable: false
+  }
+]
+
+const deleteOrganization = (organizationGuid): Promise<void> => {
+  return new Promise((resolve, reject) => {
+
+  })
+}
+
+const deleteOrganizationYear = (organizationYearGuid): Promise<void> => {
+  return new Promise((resolve, reject) => {
+
+  })
+}
+
 export default (): JSX.Element => {
   const [schoolYears, setSchoolYears] = useState([])
+
+  const [organizations, setOrganizations] = useState([])
+  const [organizationsAreLoading, setOrgsLoading] = useState<boolean>(false)
+  const [orgFetchError, setOrgFetchError] = useState<string>()
+
   const [show, setShow] = useState<boolean>(false)
 
   async function fetchYearsAsync (): Promise<void> {
@@ -69,6 +149,20 @@ export default (): JSX.Element => {
       .then(res => {setSchoolYears(res.data)})
       .catch(err => {null})
   } 
+
+  async function fetchOrganizationsAsync (): Promise<void> {
+
+    setOrgsLoading(true)
+
+    api
+      .get('organization')
+      .then(res => {
+        setOrganizations(res.data)
+        setOrgFetchError(undefined)
+      })
+      .catch(err => setOrgFetchError('An error has occured while fetching organizations.'))
+      .finally(() => setOrgsLoading(false))
+  }
 
   async function createNewYearAsync (year: YearView, userList: User[]): Promise<void> {
     const users = userList.map(user => ({
@@ -84,6 +178,7 @@ export default (): JSX.Element => {
 
   useEffect(() => {
     fetchYearsAsync()
+    fetchOrganizationsAsync()
   }, [])
 
   return (
@@ -95,6 +190,11 @@ export default (): JSX.Element => {
             <Nav.Item>
               <Nav.Link className='user-select-none' eventKey='year'>
                 School Years
+              </Nav.Link>
+            </Nav.Item>
+            <Nav.Item>
+              <Nav.Link className='user-select-none' eventKey='org'>
+                Organizations
               </Nav.Link>
             </Nav.Item>
           </Nav>
@@ -113,6 +213,26 @@ export default (): JSX.Element => {
               <Row className='my-3'>
                 <Table dataset={schoolYears} columns={columns} rowProps={{key: 'yearGuid'}} />
               </Row>
+
+            </Tab.Pane>
+            
+            <Tab.Pane eventKey='org'>
+
+              {
+                organizationsAreLoading ? <Spinner animation='border' role='status' />
+                : orgFetchError ? <div className='text-danger'>{orgFetchError}</div>
+                : <>
+                  <Row>
+                    <Button className='' onClick={() => setShow(true)}>
+                      Add Organization (Synergy)
+                    </Button>
+                  </Row>
+
+                  <Row className='my-3'>
+                    <Table dataset={organizations} columns={orgColumns} rowProps={{key: 'guid'}} />
+                  </Row>
+                </>
+              }
 
             </Tab.Pane>
           </Tab.Content>
@@ -165,25 +285,17 @@ const YearModal = ({show, handleClose, handleSubmit}): JSX.Element => {
     schoolYear: Year.now().toString(),
     startDate: LocalDate.now(), 
     endDate: LocalDate.now(),
-    quarter: Quarter['Summer One']
+    quarter: Quarter['Summer']
   })
 
   const quarters: DropdownOption[] = [
     {
-      guid: Quarter['Summer One'].toString(),
-      label: 'Summer One'
+      guid: Quarter['Summer'].toString(),
+      label: 'Summer'
     },
     {
-      guid: Quarter['Summer Two'].toString(),
-      label: 'Summer Two'
-    },
-    {
-      guid: Quarter.Fall.toString(),
-      label: 'Fall'
-    },
-    {
-      guid: Quarter.Spring.toString(),
-      label: 'Spring'
+      guid: Quarter['Academic Year'].toString(),
+      label: 'Academic Year'
     }
   ]
 

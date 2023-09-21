@@ -21,6 +21,11 @@ namespace GrantTracker.Dal.Schema
 
 			entity.Property(e => e.Name)
 				.HasMaxLength(100);
+
+			entity.HasMany(e => e.Years)
+				.WithOne(e => e.Organization)
+				.HasForeignKey(e => e.OrganizationGuid)
+				.OnDelete(DeleteBehavior.Cascade);
 		}
 	}
 }

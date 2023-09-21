@@ -21,7 +21,7 @@ export default ({ options, value, multiple = false, disabled = false, id, handle
         type='text'
         className={disabled ? 'text-white' : ''}
         id={id}
-        autoComplete='on'
+        autoComplete='off'
         placeholder={snapshot.search === '' ? snapshot.displayValue : snapshot.search}
         value={searchTerm}
         {...valueProps}

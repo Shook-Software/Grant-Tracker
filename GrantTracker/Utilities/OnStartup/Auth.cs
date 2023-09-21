@@ -36,7 +36,7 @@ namespace GrantTracker.Utilities.OnStartup
 			builder.Services.AddAuthentication(IISDefaults.AuthenticationScheme).AddNegotiate();
 			builder.Services.AddAuthorization(options =>
 			{
-				options.AddPolicy("Administrator", policy => policy.RequireClaim("Administrator"));
+				options.AddPolicy("Administrator", policy => policy.RequireClaim("UserRole", "Administrator"));
 				options.AddPolicy("AnyAuthorizedUser", policy => policy.RequireAuthenticatedUser());
 			});
 

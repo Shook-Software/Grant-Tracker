@@ -38,6 +38,11 @@ namespace GrantTracker.Dal.Schema
 				.HasFilter("[IsCurrentSchoolYear] = 1");
 
 			entity.HasCheckConstraint("CK_StartDate_Before_EndDate", "[StartDate] < [EndDate]");
+
+			entity.HasMany(e => e.Organizations)
+				.WithOne(e => e.Year)
+				.HasForeignKey(e => e.YearGuid)
+                .OnDelete(DeleteBehavior.Cascade);
 		}
 	}
 }

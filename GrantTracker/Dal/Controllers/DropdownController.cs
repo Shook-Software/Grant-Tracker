@@ -58,7 +58,7 @@ namespace GrantTracker.Dal.Controllers
 		}
 
 		[HttpGet("year")]
-		public async Task<ActionResult<List<YearView>>> GetOrganizationYears(Guid OrganizationGuid)
+		public async Task<ActionResult<List<YearView>>> GetOrganizationYears(Guid? OrganizationGuid = default)
 		{
 			if (!HttpContext.User.IsAuthorizedToViewOrganization(OrganizationGuid))
 				return Unauthorized();

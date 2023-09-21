@@ -40,7 +40,7 @@ namespace GrantTracker.Dal.Schema
 			entity.HasOne(e => e.OrganizationYear)
 				.WithMany(e => e.InstructorSchoolYears)
 				.HasForeignKey(e => e.OrganizationYearGuid)
-				.OnDelete(DeleteBehavior.Restrict);
+				.OnDelete(DeleteBehavior.NoAction);
 
 			/// /Properties
 		}

@@ -9,7 +9,7 @@ const string origins = "_allowDevOrigins";
 // Add services to the container.
 // Any issues with listener URL is likely set in the project file itself.
 JSONConverters.Setup(builder);
-Swagger.Setup(builder);
+//Swagger.Setup(builder);
 DatabaseContext.Setup(builder, configuration);
 MemoryCache.Setup(builder);
 Auth.Setup(builder);
@@ -39,7 +39,7 @@ app.UseStaticFiles();
 app.UseRouting();
 app.UseCors(origins);
 Auth.Configure(app);
-Swagger.Configure(app);
+//Swagger.Configure(app);
 
 app.MapControllers();
 app.MapFallbackToFile("index.html");

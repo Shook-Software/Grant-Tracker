@@ -27,13 +27,20 @@ namespace GrantTracker.Dal.Schema
 
 			entity.HasMany(e => e.InstructorSchoolYears)
 				.WithOne(e => e.OrganizationYear)
-				.HasForeignKey(e => e.OrganizationYearGuid);
+				.HasForeignKey(e => e.OrganizationYearGuid)
+                .OnDelete(DeleteBehavior.Cascade);
 
 			entity.HasMany(e => e.StudentSchoolYears)
 				.WithOne(e => e.OrganizationYear)
-				.HasForeignKey(e => e.OrganizationYearGuid);
+				.HasForeignKey(e => e.OrganizationYearGuid)
+                .OnDelete(DeleteBehavior.Cascade);
 
-			entity.HasOne(e => e.Organization)
+            entity.HasMany(e => e.Sessions)
+                .WithOne(e => e.OrganizationYear)
+                .HasForeignKey(e => e.OrganizationYearGuid)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Organization)
 				.WithMany(e => e.Years)
 				.HasForeignKey(e => e.OrganizationGuid);
 

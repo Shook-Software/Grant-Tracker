@@ -31,7 +31,7 @@ export default ({ session }: Props): JSX.Element => {
         <ListGroup variant='flush'>
           <ListItem label='Session Type:' value={session!.sessionType.label} />
           <ListItem label='Activity:' value={session!.activity.label} />
-          <ListItem label='Objective:' value={session!.objective.label} />
+          <ListItem label='Objective:' value={`(${session!.objective.abbreviation}) ${session!.objective.label}`} />
           <ListItem label='Funding Source:' value={session!.fundingSource.label} />
           <ListItem label='Organization Type:' value={session!.organizationType.label} />
           <ListItem label='Partnership Type:' value={session!.partnershipType.label} />

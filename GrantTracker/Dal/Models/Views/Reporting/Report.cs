@@ -11,6 +11,7 @@ public class ReportsDbModel
 	public List<StaffSummaryDbModel> StaffSummaries { get; set; }
 	public List<StudentSurveyViewModel> StudentSurvey { get; set; }
 	public List<AttendanceCheckDbModel> AttendanceCheck { get; set; }
+    public List<PayrollAuditDb> PayrollAudit { get; set; }
 }
 
 public class ReportsViewModel
@@ -24,5 +25,5 @@ public class ReportsViewModel
 	public List<StaffSummaryViewModel> StaffSummaries { get; set; }
 	public List<StudentSurveyViewModel> StudentSurvey { get; set; }
     public List<AttendanceCheckViewModel> AttendanceCheck { get; set; }
-	public List<AttendanceCheckSession> AttendanceCheckSessions { get; set; }
+    public List<PayrollAuditView> PayrollAudit { get; set; }
 }

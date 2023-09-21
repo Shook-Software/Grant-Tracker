@@ -31,7 +31,7 @@ namespace GrantTracker.Dal.Schema
 		public virtual ICollection<SessionDaySchedule> DaySchedules { get; set; }
 		public virtual ICollection<AttendanceRecord> AttendanceRecords { get; set; }
 		public virtual ICollection<InstructorRegistration> InstructorRegistrations { get; set; }
-		public virtual ICollection<SessionGrade> SessionGrades { get; set; }
+        public virtual ICollection<SessionGrade> SessionGrades { get; set; }
 
 		public static void Setup(ModelBuilder builder)
 		{
@@ -81,9 +81,24 @@ namespace GrantTracker.Dal.Schema
 				.WithOne(e => e.Session)
 				.HasForeignKey(e => e.SessionGuid);
 
-			/// /Properties
+            entity.HasMany(e => e.DaySchedules)
+                .WithOne(e => e.Session)
+                .HasForeignKey(e => e.SessionGuid)
+                .OnDelete(DeleteBehavior.Cascade);
 
-			entity.Property(e => e.SessionGuid)
+            entity.HasMany(e => e.InstructorRegistrations)
+                .WithOne(e => e.Session)
+                .HasForeignKey(e => e.SessionGuid)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasMany(e => e.AttendanceRecords)
+                .WithOne(e => e.Session)
+                .HasForeignKey(e => e.SessionGuid)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            /// /Properties
+
+            entity.Property(e => e.SessionGuid)
 				.IsRequired()
 				.HasColumnType("uniqueidentifier");
 
@@ -126,6 +141,6 @@ namespace GrantTracker.Dal.Schema
 				.IsRequired()
 				.HasColumnType("bit")
 				.HasComment("");
-		}
+        }
 	}
 }

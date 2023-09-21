@@ -29,12 +29,16 @@ namespace GrantTracker.Dal.Repositories.OrganizationRepository
 			return orgYears.Select(OrganizationYearView.FromDatabase).ToList();
 		}
 
-		public async Task<OrganizationView> GetYearsAsync(Guid organizationGuid)
+        public async Task<OrganizationView> GetYearsAsync(Guid OrganizationGuid)
 		{
-			var organization = await _grantContext
+
+            if (_identity.Claim != IdentityClaim.Administrator && _identity.Organization.Guid != OrganizationGuid)
+                throw new Exception("User is not authorized to view this resource.");
+
+            var organization = await _grantContext
 				.Organizations
 				.AsNoTracking()
-				.Where(org => org.OrganizationGuid == organizationGuid)
+				.Where(org => org.OrganizationGuid == OrganizationGuid)
 				.Include(org => org.Years)
 				.ThenInclude(oy => oy.Year)
 				.SingleAsync();
@@ -66,6 +70,27 @@ namespace GrantTracker.Dal.Repositories.OrganizationRepository
 				.Include(oy => oy.Organization)
 				.Select(oy => oy.Organization)
 				.ToListAsync();
+        }
+
+		//admin only
+        public async Task<List<OrganizationView>> GetOrganizationsAsync()
+        {
+           var organizations = await _grantContext
+                .Organizations
+                .AsNoTracking()
+                .Include(org => org.Years)
+                .ThenInclude(oy => oy.Year)
+				.OrderBy(o => o.Name)
+                .ToListAsync();
+
+			return organizations.Select(OrganizationView.FromDatabase).ToList();
+        }
+
+        public async Task DeleteOrganizationAsync(Guid OrganizationGuid)
+		{
+			var orgToDelete = await _grantContext.Organizations.FindAsync(OrganizationGuid);
+			_grantContext.Remove(orgToDelete);
+			await _grantContext.SaveChangesAsync();
 		}
-	}
+    }
 }

@@ -1,4 +1,4 @@
-﻿namespace GrantTracker.Utilities.OnStartup
+﻿/*namespace GrantTracker.Utilities.OnStartup
 {
 	public static class Swagger
 	{
@@ -26,4 +26,4 @@
 			app.UseSwaggerUi3();
 		}
 	}
-}
+}*/

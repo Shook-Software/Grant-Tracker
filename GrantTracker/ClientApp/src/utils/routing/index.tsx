@@ -19,15 +19,10 @@ import AdminStudentView from 'pages/Admin/Students'
 import Config from 'pages/Config'
 import Authentication from 'pages/Config/Authentication'
 import Dropdowns from 'pages/Config/Dropdowns'
-import Controls from 'pages/Config/Controls'
+import Controls from 'pages/Config/Controls/index'
 import DeveloperLogs from 'pages/Config/Logs'
 
 import Help from 'pages/Help'
-
-import SessionDetails from 'components/SessionDetails'
-import StudentDetails from 'components/StudentDetails'
-
-import InstructorPage from 'components/Displays/Instructor'
 
 import { User } from 'utils/authentication'
 
@@ -66,7 +61,7 @@ export default (user: User, Breadcrumbs: JSX.Element): RouteObject[] => [
   },
   {
     path: paths.Reports.path,
-    element: <Reporting />
+    element: <Reporting user={user} />
   },
   {
     path: paths.Edit.path,

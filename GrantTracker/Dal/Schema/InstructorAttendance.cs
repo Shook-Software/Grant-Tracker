@@ -29,12 +29,17 @@ namespace GrantTracker.Dal.Schema
 			entity.HasOne(e => e.InstructorSchoolYear)
 				.WithMany(s => s.AttendanceRecords)
 				.HasForeignKey(e => e.InstructorSchoolYearGuid)
-				.OnDelete(DeleteBehavior.Restrict);
+				.OnDelete(DeleteBehavior.Cascade);
 
 			entity.HasOne(e => e.AttendanceRecord)
 				.WithMany(s => s.InstructorAttendance)
 				.HasForeignKey(e => e.AttendanceRecordGuid)
-				.OnDelete(DeleteBehavior.Restrict);
+				.OnDelete(DeleteBehavior.Cascade);
+
+			entity.HasMany(e => e.TimeRecords)
+				.WithOne(e => e.InstructorAttendanceRecord)
+				.HasForeignKey(e => e.InstructorAttendanceRecordGuid)
+				.OnDelete(DeleteBehavior.Cascade);
 
 			/// /Properties
 
@@ -45,6 +50,11 @@ namespace GrantTracker.Dal.Schema
 			entity.Property(e => e.AttendanceRecordGuid)
 				.IsRequired()
 				.HasColumnType("uniqueidentifier");
+
+			entity.Property(e => e.IsSubstitute)
+                .IsRequired()
+                .HasDefaultValue(0)
+				.HasColumnType("bit");
 		}
 	}
 }

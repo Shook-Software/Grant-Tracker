@@ -17,7 +17,10 @@ namespace GrantTracker.Dal.Repositories.YearRepository
 
 		public async Task<List<Year>> GetAsync()
 		{
-			return await _grantContext.Years.ToListAsync();
+			return await _grantContext.Years
+                .OrderByDescending(x => x.SchoolYear)
+                .ThenBy(x => x.Quarter)
+				.ToListAsync();
 		}
 
 		public async Task<Year> GetAsync(int year, Quarter quarter)

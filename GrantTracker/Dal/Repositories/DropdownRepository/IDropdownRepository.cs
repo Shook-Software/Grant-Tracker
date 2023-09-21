@@ -14,6 +14,6 @@ namespace GrantTracker.Dal.Repositories.DropdownRepository
 
 		public Task<List<OrganizationView>> GetOrganizationsAsync(bool UserIsAdmin, Guid HomeOrganizationGuid);
 
-		public Task<List<OrganizationYearView>> GetOrganizationYearsAsync(Guid organizationGuid);
+		public Task<List<OrganizationYearView>> GetOrganizationYearsAsync(Guid? organizationGuid);
 	}
 }

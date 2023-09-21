@@ -19,7 +19,7 @@ public static class Extensions
         return Principal.Claims.First(x => x.Type == "UserRole").Value == "Administrator";
     }
 
-    public static bool IsAuthorizedToViewOrganization(this ClaimsPrincipal User, Guid OrganizationGuid)
+    public static bool IsAuthorizedToViewOrganization(this ClaimsPrincipal User, Guid? OrganizationGuid)
     {
         return User.IsAdmin() || User.HomeOrganizationGuid() == OrganizationGuid;
     }

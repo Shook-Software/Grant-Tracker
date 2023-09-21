@@ -10,6 +10,8 @@ import SummaryOfClasses from './SummaryOfClasses'
 import ProgramOverview from './ProgramOverview'
 import StaffingSummary from './Staffing'
 import StudentSurvey from './StudentSurveys'
+import AttendanceCheck from './AttendanceCheck'
+import PayrollAudit from './PayrollAudit'
 
 import { OrganizationView, OrganizationYearView, Quarter, YearView } from 'models/OrganizationYear'
 
@@ -20,21 +22,18 @@ import Dropdown from 'components/Input/Dropdown'
 import { DropdownOption } from 'Models/Session'
 import { DateOnly } from 'Models/DateOnly'
 import { LocalDate } from '@js-joda/core'
+import { IdentityClaim } from 'utils/authentication'
 
 //this could be entirely rewritten, I really hate it
-const ParamSelection = ({onSubmit}): JSX.Element => {
-	const [form, setForm] = useState<any>({schoolyear: {
-		startDate: '2022-01-01',//DateOnly.toLocalDate(startDateOfSchoolYear),
-		endDate: '2023-08-01'}})//DateOnly.toLocalDate(endDateOfSchoolYear),}})
+const ParamSelection = ({onSubmit, user}): JSX.Element => {
+	const [form, setForm] = useState<any>()
 	const [orgYear, setOrgYear] = useState<any/*{orgGuid, yearGuid, orgYearGuid}*/>({...AxiosIdentityConfig.identity})
 	const [orgs, setOrgs] = useState<OrganizationView[]>([])
 	const [orgYears, setOrgYears] = useState<OrganizationYearView[]>([])
 
-	function handleSchoolYearChange(year: YearView, orgYears: OrganizationYearView[]): void {
-		let currentSemesters = orgYears.filter(orgYear => orgYear.year.schoolYear == year.schoolYear)
-		//console.log(schoolYear, currentSemesters, orgYears)
-		let startDateOfSchoolYear = currentSemesters[0].year.startDate
-		let endDateOfSchoolYear = currentSemesters[currentSemesters.length - 1].year.endDate
+	function handleSchoolYearChange(year: YearView): void {
+		let startDateOfSchoolYear = year.startDate
+		let endDateOfSchoolYear = year.endDate
 
 		setForm({...form, schoolYear: {
 			startDate: DateOnly.toLocalDate(startDateOfSchoolYear),
@@ -51,11 +50,10 @@ const ParamSelection = ({onSubmit}): JSX.Element => {
 				let currentSchoolYear: OrganizationYearView | undefined = res.find(orgYear => orgYear.year.isCurrentYear)
 				setOrgYear({...orgYear, organizationYearGuid: currentSchoolYear.guid})
 				let currentYear: YearView = currentSchoolYear!.year
-				handleSchoolYearChange(currentYear, res)	
+				handleSchoolYearChange(currentYear)	
+				
 
-				//messy, can rewrite soon, maybe, just ensures data is loaded upon page load
 				let currentSemesters = res.filter(orgYear => orgYear.year.schoolYear == currentYear.schoolYear)
-				//console.log(schoolYear, currentSemesters, orgYears)
 				let startDateOfSchoolYear = currentSemesters[0].year.startDate
 				let endDateOfSchoolYear = currentSemesters[currentSemesters.length - 1].year.endDate
 
@@ -78,14 +76,16 @@ const ParamSelection = ({onSubmit}): JSX.Element => {
 	useEffect(() => {
 		getAuthorizedOrganizations()
 			.then(res => {
-				res = [
-				{ 
-					guid: null,
-					name: 'All Organizations',
-					organizationYears: []
-				},
-					...res
-				]
+				if (user.claim == IdentityClaim.Administrator) {
+					res = [
+						{ 
+							guid: null,
+							name: 'All Organizations',
+							organizationYears: []
+						},
+						...res
+					]
+				}
 
 				setOrgs(res)
 			})
@@ -98,6 +98,26 @@ const ParamSelection = ({onSubmit}): JSX.Element => {
 		handleOrgChange(orgYear.organizationGuid)
 	}, [orgYear.organizationGuid])
 
+	
+	
+	useEffect(() => {
+		handleOrgChange(AxiosIdentityConfig.identity.organizationGuid)
+	}, [AxiosIdentityConfig.identity.organizationGuid])
+
+	useEffect(() => {
+		getOrganizationYears(AxiosIdentityConfig.identity.organizationGuid)
+			.then(res => {
+				let selectedSchoolYear: OrganizationYearView | undefined = res.find(orgYear => orgYear.year.guid == AxiosIdentityConfig.identity.yearGuid)
+				if (!selectedSchoolYear)
+					return
+
+				handleSchoolYearChange(selectedSchoolYear.year)
+			})
+			.catch(err => {
+				console.warn(err)
+			})
+	}, [AxiosIdentityConfig.identity.yearGuid])
+
 	const orgOptions = orgs.map(org => ({
 		value: org.guid,
 		name: org.name,
@@ -107,8 +127,6 @@ const ParamSelection = ({onSubmit}): JSX.Element => {
 		guid: orgYear.guid,
 		label: `${orgYear.year.schoolYear} - ${Quarter[orgYear.year.quarter]}`
 	}))
-
-	console.log(form?.schoolyear?.startDate)
 
 	return (
 		<Container className='ms-0'>
@@ -190,7 +208,7 @@ const ParamSelection = ({onSubmit}): JSX.Element => {
 	)
 }
 
-export default (): JSX.Element => {
+export default ({user}): JSX.Element => {
 	const [reportParameters, setReportParameters] = useState<any>({})
 	const [reports, setReports] = useState<any>({
 		totalActivity: [],
@@ -200,7 +218,9 @@ export default (): JSX.Element => {
 		classSummaries: [],
 		programOverviews: [],
 		staffSummaries: [],
-		studentSurvey: []
+		studentSurvey: [],
+		attendanceCheck: [],
+		payrollAudit: []
 	})
 	const [isLoading, setIsLoading] = useState<boolean>(false)
 
@@ -237,7 +257,7 @@ export default (): JSX.Element => {
 
 	return (
 		<Container style={{minWidth: '90vw'}}>
-			<ParamSelection onSubmit={(form) => handleParameterChange(form)}/>
+			<ParamSelection onSubmit={(form) => handleParameterChange(form)} user={user} />
 
 			<hr />
 
@@ -298,6 +318,27 @@ export default (): JSX.Element => {
 											Student Surveys ({reports.studentSurvey.length})
 										</Nav.Link>
 									</Nav.Item>
+
+									{
+										user.claim == IdentityClaim.Administrator ?
+											<Nav.Item>
+												<Nav.Link eventKey='attendance-check'>
+													Attendance Check ({reports.attendanceCheck.length})
+												</Nav.Link>
+											</Nav.Item>
+										: null
+									}
+
+									{
+										user.claim == IdentityClaim.Administrator ?
+											<Nav.Item>
+												<Nav.Link eventKey='payroll-audit'>
+													Payroll Audit ({reports.payrollAudit.length})
+												</Nav.Link>
+											</Nav.Item>
+										: null
+									}
+									
 								</Nav>
 							</Row>
 
@@ -368,6 +409,22 @@ export default (): JSX.Element => {
 										reportIsLoading={isLoading}
 									 	parameters={{...reportParameters}}
 									 />
+								</Tab.Pane>
+
+								<Tab.Pane eventKey='attendance-check'>
+									<AttendanceCheck
+										attendanceCheckReport={reports?.attendanceCheck}
+										reportIsLoading={isLoading}
+										parameters={{...reportParameters}}
+									/>
+								</Tab.Pane>
+
+								<Tab.Pane eventKey='payroll-audit'>
+									<PayrollAudit
+										payrollAuditReport={reports?.payrollAudit}
+										reportIsLoading={isLoading}
+										parameters={{...reportParameters}}
+									/>
 								</Tab.Pane>
 
 							</Tab.Content>

@@ -99,18 +99,18 @@ namespace GrantTracker.Dal.Repositories.DropdownRepository
 			return organizations.Select(OrganizationView.FromDatabase).ToList();
 		}
 
-		public async Task<List<OrganizationYearView>> GetOrganizationYearsAsync(Guid organizationGuid)
+		public async Task<List<OrganizationYearView>> GetOrganizationYearsAsync(Guid? organizationGuid = default)
 		{
-			var organization = await _grantContext
+			var organizations = await _grantContext
 				.Organizations
 				.AsNoTracking()
-				.Where(org => org.OrganizationGuid == organizationGuid)
+				.Where(org => organizationGuid == default || org.OrganizationGuid == organizationGuid)
 				.Include(org => org.Years).ThenInclude(oy => oy.Year)
-				.SingleAsync();
+				.ToListAsync();
 
-			var organizationYears = organization
-				.Years
-				.OrderBy(oy => oy.Year.SchoolYear).ThenBy(oy => oy.Year.Quarter)
+			var organizationYears = organizations
+				.SelectMany(o => o.Years)
+				.OrderByDescending(oy => oy.Year.SchoolYear).ThenByDescending(oy => oy.Year.Quarter)
 				.ToList();
 
 			return organizationYears.Select(OrganizationYearView.FromDatabase).ToList();

@@ -63,23 +63,22 @@ namespace GrantTracker.Dal.Schema
 		public DbSet<StudentAttendanceTimeRecord> StudentAttendanceTimeRecords { get; set; }
 		public DbSet<InstructorAttendanceTimeRecord> InstructorAttendanceTimeRecords { get; set; }
 
-
-		//AttendanceRecords
-		public DbSet<TotalStudentAttendanceViewModel> ReportTotalStudentAttendance { get; set; }
-		public DbSet<TotalFamilyAttendanceDbModel> ReportTotalFamilyAttendance { get; set; }
-		public DbSet<TotalActivityViewModel> ReportTotalActivity { get; set; }
-		public DbSet<SiteSessionDbModel> ReportSiteSessions { get; set; }
-		public DbSet<ClassSummaryDbModel> ReportClassSummary { get; set; }
-		public DbSet<ProgramViewModel> ReportProgramOverview { get; set; }
-		public DbSet<StaffSummaryDbModel> ReportStaffSurvey { get; set; }
-		public DbSet<StudentSurveyViewModel> ReportStudentSurvey { get; set; }
-        public DbSet<AttendanceCheckDbModel> AttendanceCheck { get; set; }
-
         protected override void OnModelCreating(ModelBuilder builder)
 		{
 			builder.HasDefaultSchema("GTkr");
 
-			AuditLog.Setup(builder);
+			builder.Entity<TotalStudentAttendanceViewModel>().HasNoKey().ToView(null);
+            builder.Entity<StudentSurveyViewModel>().HasNoKey().ToView(null);
+            builder.Entity<TotalFamilyAttendanceDbModel>().HasNoKey().ToView(null);
+            builder.Entity<TotalActivityViewModel>().HasNoKey().ToView(null);
+            builder.Entity<SiteSessionDbModel>().HasNoKey().ToView(null);
+            builder.Entity<ClassSummaryDbModel>().HasNoKey().ToView(null);
+            builder.Entity<ProgramViewModel>().HasNoKey().ToView(null);
+            builder.Entity<StaffSummaryDbModel>().HasNoKey().ToView(null);
+            builder.Entity<PayrollAuditDb>().HasNoKey().ToView(null);
+            builder.Entity<AttendanceCheckDbModel>().HasNoKey().ToView(null);
+
+            AuditLog.Setup(builder);
 			Activity.Setup(builder);
 			FundingSource.Setup(builder);
 			Instructor.Setup(builder);
@@ -112,17 +111,6 @@ namespace GrantTracker.Dal.Schema
 			AttendanceRecord.Setup(builder);
 			StudentAttendanceTimeRecord.Setup(builder);
 			InstructorAttendanceTimeRecord.Setup(builder);
-
-			//Reporting POCOs
-			builder.Entity<TotalStudentAttendanceViewModel>().HasNoKey();
-			builder.Entity<TotalActivityViewModel>().HasNoKey();
-			builder.Entity<TotalFamilyAttendanceDbModel>().HasNoKey();
-			builder.Entity<SiteSessionDbModel>().HasNoKey();
-			builder.Entity<ClassSummaryDbModel>().HasNoKey();
-			builder.Entity<ProgramViewModel>().HasNoKey();
-			builder.Entity<StaffSummaryDbModel>().HasNoKey();
-			builder.Entity<StudentSurveyViewModel>().HasNoKey();
-            builder.Entity<AttendanceCheckDbModel>().HasNoKey();
         }
 
 		/*private async Task UpdateAuditLogAsync()

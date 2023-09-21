@@ -20,12 +20,12 @@ namespace GrantTracker.Dal.Schema
 			entity.HasOne(e => e.Session)
 				.WithMany(e => e.InstructorRegistrations)
 				.HasForeignKey(e => e.SessionGuid)
-				.OnDelete(DeleteBehavior.Restrict);
+				.OnDelete(DeleteBehavior.Cascade);
 
 			entity.HasOne(e => e.InstructorSchoolYear)
 				.WithMany(e => e.SessionRegistrations)
 				.HasForeignKey(e => e.InstructorSchoolYearGuid)
-				.OnDelete(DeleteBehavior.Restrict);
+				.OnDelete(DeleteBehavior.NoAction);
 		}
 	}
 }

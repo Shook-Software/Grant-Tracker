@@ -26,19 +26,19 @@ public class ReportRepository : RepositoryBase, IReportRepository
 		await _grantContext.Database.ExecuteSqlInterpolatedAsync($"EXEC [GTkr].ReportQuery_Core {_processGuid}, {DateOnlyToSQLString(startDate)}, {DateOnlyToSQLString(endDate)}, {(organizationGuid == new Guid() ? null : organizationGuid)}");
 
 		Task<List<TotalStudentAttendanceViewModel>> totalStudentAttendanceQueryTask = _grantContext
-			.ReportTotalStudentAttendance
+			.Set<TotalStudentAttendanceViewModel>()
 			.FromSqlInterpolated($"EXEC [GTkr].ReportQuery_StudentAttendance {_processGuid}")
 			.AsNoTracking()
 			.ToListAsync();
 			
 		Task<List<TotalFamilyAttendanceDbModel>> totalFamilyAttendanceQueryTask = _grantContextFactory.CreateDbContext()
-			.ReportTotalFamilyAttendance
+			.Set<TotalFamilyAttendanceDbModel>()
 			.FromSqlInterpolated($"EXEC [GTkr].ReportQuery_FamilyAttendance {_processGuid}")
 			.AsNoTracking()
 			.ToListAsync();
 			
 		Task<List<TotalActivityViewModel>> totalActivityQueryTask = _grantContextFactory.CreateDbContext()
-			.ReportTotalActivity
+			.Set<TotalActivityViewModel>()
 			.FromSqlInterpolated($"EXEC [GTkr].ReportQuery_TotalActivity {_processGuid}")
 			.AsNoTracking()
 			.ToListAsync();
@@ -53,38 +53,40 @@ public class ReportRepository : RepositoryBase, IReportRepository
 		*/
 			
 		Task<List<ClassSummaryDbModel>> classSummaryQueryTask = _grantContextFactory.CreateDbContext()
-			.ReportClassSummary
+			.Set<ClassSummaryDbModel>()
 			.FromSqlInterpolated($"EXEC [GTkr].ReportQuery_SummaryOfClasses {_processGuid}")
 			.AsNoTracking()
 			.ToListAsync();
 
 		double weeksToDate = (endDate.DayNumber - startDate.DayNumber) / 7f;
 		Task<List<ProgramViewModel>> programOverviewQueryTask = _grantContextFactory.CreateDbContext()
-			.ReportProgramOverview
+			.Set<ProgramViewModel>()
 			.FromSqlInterpolated($"EXEC [GTkr].ReportQuery_ProgramOverview {_processGuid}, {weeksToDate}")
 			.AsNoTracking()
 			.ToListAsync();
 			
 		Task<List<StaffSummaryDbModel>> staffSurveyQueryTask = _grantContextFactory.CreateDbContext()
-			.ReportStaffSurvey
+			.Set<StaffSummaryDbModel>()
 			.FromSqlInterpolated($"EXEC [GTkr].ReportQuery_Staffing {(organizationGuid == new Guid() ? null : organizationGuid)}")
 			.AsNoTracking()
 			.ToListAsync();
 			
 		Task<List<StudentSurveyViewModel>> studentSurveyQueryTask = _grantContextFactory.CreateDbContext()
-			.ReportStudentSurvey
+			.Set<StudentSurveyViewModel>()
 			.FromSqlInterpolated($"EXEC [GTkr].ReportQuery_StudentSurvey {_processGuid}")
 			.AsNoTracking()
 			.ToListAsync();
-
-
-		/*var testQuery = $"EXEC [GTkr].ReportQuery_AttendanceCheck {(organizationGuid == new Guid() ? null : organizationGuid)}, {DateOnlyToSQLString(startDate)}, {DateOnlyToSQLString(endDate)}";
+		
         Task<List<AttendanceCheckDbModel>> attendanceCheckQueryTask = _grantContextFactory.CreateDbContext()
-            .AttendanceCheck
-            .FromSqlInterpolated($"EXEC [GTkr].ReportQuery_AttendanceCheck {(organizationGuid == new Guid() ? null : organizationGuid)}, {DateOnlyToSQLString(startDate)}, {DateOnlyToSQLString(endDate)}")
+            .Set<AttendanceCheckDbModel>()
+            .FromSqlInterpolated($"EXEC [GTkr].ReportQuery_AttendanceCheck {_processGuid}")
             .AsNoTracking()
-            .ToListAsync();*/
+            .ToListAsync();
 
+		Task<List<PayrollAuditDb>> payrollAuditQueryTask = _grantContextFactory.CreateDbContext().Set<PayrollAuditDb>()
+			.FromSqlInterpolated($"EXEC ReportQuery_PayrollAudit {_processGuid}")
+			.AsNoTracking()
+			.ToListAsync();
 
         List<Task> awaitedTasks = new()
 		{
@@ -95,7 +97,7 @@ public class ReportRepository : RepositoryBase, IReportRepository
 			programOverviewQueryTask,
 			staffSurveyQueryTask,
 			studentSurveyQueryTask,
-            //attendanceCheckQueryTask
+            attendanceCheckQueryTask
         };
 
 		await Task.WhenAll(awaitedTasks);
@@ -110,77 +112,126 @@ public class ReportRepository : RepositoryBase, IReportRepository
 			ProgramOverviews = await programOverviewQueryTask,
 			StaffSummaries = await staffSurveyQueryTask,
 			StudentSurvey = await studentSurveyQueryTask,
-			//AttendanceCheck = await attendanceCheckQueryTask
+			AttendanceCheck = await attendanceCheckQueryTask,
+			PayrollAudit = await payrollAuditQueryTask
 		};
 
 		await _grantContext.Database.ExecuteSqlInterpolatedAsync($"EXEC [GTkr].ReportQuery_Cleanup {_processGuid}");
-        /*
-        var sessionGuids = reports.AttendanceCheck.Select(x => x.SessionGuid).Distinct().ToList();
+
+        var groupedReports = GroupReports(reports);
+		groupedReports.AttendanceCheck = await GroupAndFillAttendanceCheckAsync(organizationGuid, startDate, endDate, reports.AttendanceCheck); //must be handled specially
 		
-		var today = DateTime.Today;
-		var attendSessions = _grantContext.Sessions
-		.Where(s => sessionGuids.Contains(s.SessionGuid))
-        .Include(s => s.DaySchedules).ThenInclude(ds => ds.TimeSchedules)
-        .Include(s => s.OrganizationYear).ThenInclude(oy => oy.Organization)
-        .Include(s => s.InstructorRegistrations).ThenInclude(sr => sr.InstructorSchoolYear).ThenInclude(isy => isy.Instructor)
-        .Select(s => new
+		return groupedReports;
+	}
+
+	private async Task<List<AttendanceCheckViewModel>> GroupAndFillAttendanceCheckAsync(Guid? OrganizationGuid, DateOnly StartDate, DateOnly EndDate, List<AttendanceCheckDbModel> AttendanceChecks)
+	{
+		var sessions = await _grantContext.Sessions
+			.Where(x => x.OrganizationYear.OrganizationGuid == OrganizationGuid)
+			.Where(x => x.FirstSession <= EndDate)
+			.Where(x => x.LastSession >= StartDate)
+			.Include(x => x.OrganizationYear).ThenInclude(x => x.Organization)
+			.Include(x => x.DaySchedules).ThenInclude(ds => ds.TimeSchedules)
+			.Include(x => x.InstructorRegistrations).ThenInclude(ir => ir.InstructorSchoolYear).ThenInclude(isy => isy.Instructor)
+			.Include(x => x.AttendanceRecords)
+			.ToListAsync();
+
+		var attendanceChecksBySession = sessions.Select(s =>
 		{
-			SessionGuid = s.SessionGuid,
-			School = s.OrganizationYear.Organization.Name,
-			SessionName = s.Name,
-			DaySchedules = s.DaySchedules,
-			StartDate = s.FirstSession,
-			EndDate = s.LastSession
+			List<AttendanceCheckViewModel> attendances = new();
+
+			List<DateOnly> attendanceDates = AttendanceChecks
+				.Where(ac => ac.SessionGuid == s.SessionGuid)
+				.Select(ac => ac.InstanceDate)
+				.ToList();
+
+			foreach (var daySchedule in s.DaySchedules)
+			{
+				var dayOfWeek = daySchedule.DayOfWeek;
+
+				int daysUntilNextDoW = ((int)dayOfWeek - (int)s.FirstSession.DayOfWeek + 7) % 7;
+				var currentDate = s.FirstSession.AddDays(daysUntilNextDoW);
+
+				var today = DateOnly.FromDateTime(DateTime.Today);
+				var endDateBound = today > EndDate ? EndDate : today;
+
+                var lastSession = endDateBound > s.LastSession ? s.LastSession : endDateBound;
+				while (currentDate <= lastSession)
+				{
+					if (currentDate < StartDate)
+					{
+                        currentDate = currentDate.AddDays(7);
+						continue;
+                    }
+
+					bool hasAttendanceRecord = attendanceDates.Contains(currentDate);
+					if (!hasAttendanceRecord)
+					{
+						attendances.Add(new()
+						{
+							SessionGuid = s.SessionGuid,
+							InstanceDate = currentDate,
+							School = s.OrganizationYear.Organization.Name,
+							ClassName = s.Name,
+							Instructors = s.InstructorRegistrations
+								.Select(ir => new AttendanceCheckInstructor
+								{
+									InstructorSchoolYearGuid = ir.InstructorSchoolYearGuid,
+									FirstName = ir.InstructorSchoolYear.Instructor.FirstName,
+									LastName = ir.InstructorSchoolYear.Instructor.LastName
+								})
+								.ToList(),
+							TimeBounds = daySchedule.TimeSchedules
+								.Select(x => new AttendanceCheckTimeRecord
+								{
+									StartTime = x.StartTime,
+									EndTime = x.EndTime
+								})
+								.ToList(),
+							AttendanceEntry = false
+						});
+					}
+					else
+					{
+						attendances.Add(new()
+						{
+							SessionGuid = s.SessionGuid,
+							InstanceDate = currentDate,
+							School = s.OrganizationYear.Organization.Name,
+							ClassName = s.Name,
+							Instructors = s.InstructorRegistrations
+								.Select(ir => new AttendanceCheckInstructor
+								{
+									InstructorSchoolYearGuid = ir.InstructorSchoolYearGuid,
+									FirstName = ir.InstructorSchoolYear.Instructor.FirstName,
+									LastName = ir.InstructorSchoolYear.Instructor.LastName
+								})
+								.ToList(),
+							TimeBounds = daySchedule.TimeSchedules
+								.Select(x => new AttendanceCheckTimeRecord
+								{
+									StartTime = x.StartTime,
+									EndTime = x.EndTime
+								})
+								.ToList(),
+							AttendanceEntry = true
+						});
+					}
+
+					currentDate = currentDate.AddDays(7);
+				}
+			}
+
+			return attendances;
 		})
 		.ToList();
 
-		var groupedAttendanceBySession = reports.AttendanceCheck.GroupBy(x => x.SessionGuid,
-			(guid, attendance) => {
-
-				//we need to add the missing dates w/o attendance records
-
-				//grab first date/week for each day of week and iterate adding days or finding a match among the attendCheck
-				var sessionInfo = attendSessions.First(x => x.SessionGuid == guid);
-
-				foreach(var daySchedule in sessionInfo.DaySchedules)
-                {
-					var currentDate = sessionInfo.StartDate;
-                    int daysToAdd = ((int)daySchedule.DayOfWeek - (int)currentDate.DayOfWeek + 7) % 7;
-
-					currentDate = currentDate.AddDays(daysToAdd);
-
-                    while (currentDate < sessionInfo.EndDate)
-                    {
-						if (!attendance.Any(x => x.InstanceDate == currentDate))
-						{
-							attendance.Append(new AttendanceCheckDbModel
-							{
-								DayOfWeek = currentDate.DayOfWeek.ToString(),
-								SessionGuid = guid,
-								School = sessionInfo.School,
-								InstructorFirstName = string.Empty,
-								InstructorLastName = string.Empty,
-								ClassName = sessionInfo.SessionName
-							});
-						}
-						currentDate = currentDate.AddDays(7);
-
-                    }
-				}
-
-				var records = 
-
-				return new
-				{
-					SessionGuid = guid,
-					Records = attendance
-				};
-			})
-			.ToList();*/
-
-
-        return GroupReports(reports);
-	}
+		return attendanceChecksBySession
+			.SelectMany(x => x)
+			.OrderByDescending(x => x.InstanceDate)
+			.ThenBy(x => x.TimeBounds.Min(x => x.StartTime))
+			.ToList();
+    }
 
 	//ask liz if SiteSessions is to track hours and attendees by instructor or purely by session
 
@@ -286,39 +337,29 @@ public class ReportRepository : RepositoryBase, IReportRepository
 			)
 			.ToList(),
 
-		/*AttendanceCheck = reports.AttendanceCheck
-		.GroupBy(x => new { x.SessionGuid, x.AttendanceGuid, x.InstructorAttendanceGuid },
-			(ids, group) => new AttendanceCheckViewModel
+		PayrollAudit = reports.PayrollAudit
+			.GroupBy(x => new { x.School, x.ClassName, x.InstanceDate },
+			(id, grp) => new PayrollAuditView
 			{
-				DayOfWeek = group.First().DayOfWeek,
-				SessionGuid = group.First().SessionGuid,
-				InstanceDate = group.First().InstanceDate,
-				School = group.First().School,
-				ClassName = group.First().ClassName,
-				AttendanceEntry = group.First().AttendanceEntry,
-				InstructorAttendance = group.Select(x => new AttendanceCheckInstructor
-				{
-					FirstName = x.InstructorFirstName,
-					LastName = x.InstructorLastName,
-					AttendanceTimes = group.Select(x => new AttendanceCheckInstructorTime
+				School = id.School,
+				ClassName = id.ClassName,
+				InstanceDate = id.InstanceDate,
+				InstructorRecords = grp.GroupBy(x => x.InstructorSchoolYearGuid,
+					(isyGuid, iGrp) => new PayrollAuditInstructorRecord
 					{
-						StartTime = x.StartTime,
-						EndTime = x.EndTime
+						FirstName = iGrp.First().FirstName,
+						LastName = iGrp.First().LastName,
+						IsSubstitute = iGrp.First().IsSubstitute,
+						TimeRecords = iGrp.Select(x => new PayrollAuditTimeRecord
+						{
+							StartTime = x.EntryTime,
+							EndTime = x.ExitTime
+						})
+						.ToList()
 					})
-					.ToList()
-				})
 				.ToList()
 			})
-		.ToList(),
-
-		AttendanceCheckSessions = reports.AttendanceCheck
-		.DistinctBy(x => x.SessionGuid)
-		.Select(x => new AttendanceCheckSession
-		{
-			SessionGuid = x.SessionGuid,
-			SessionName = x.ClassName
-		})
-		.ToList()*/
+		.ToList()
 	};
 
 	public async Task<List<SiteSessionViewModel>> GetSiteSessionsAsync(DateOnly startDate, DateOnly endDate, Guid? organizationGuid = null)
@@ -329,7 +370,7 @@ public class ReportRepository : RepositoryBase, IReportRepository
 		await _grantContext.Database.ExecuteSqlInterpolatedAsync($"EXEC [GTkr].ReportQuery_Core {tempProcessKey}, {DateOnlyToSQLString(startDate)}, {DateOnlyToSQLString(endDate)}, {organizationGuid}");
 
 		List<SiteSessionDbModel> siteSessions = await _grantContextFactory.CreateDbContext()
-			.ReportSiteSessions
+			.Set<SiteSessionDbModel>()
 			.FromSqlInterpolated($"EXEC [GTkr].ReportQuery_SiteSessions {tempProcessKey}")
 			.AsNoTracking()
 			.ToListAsync();

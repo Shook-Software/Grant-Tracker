@@ -21,6 +21,7 @@ export const OptionList = styled.ul`
 
   list-style-type: none;
   background-color: white;
+  z-index: 101;
   overflow-y: scroll;
 
   &::first-child {

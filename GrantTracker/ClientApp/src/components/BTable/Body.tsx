@@ -8,6 +8,7 @@ function getAttributeValue (row: any, attributeKey: string): any {
   attributes.forEach(attribute => {
     if (attribute != '' && baseValue) baseValue = baseValue[attribute]
   })
+
   return baseValue
 }
 
@@ -34,7 +35,7 @@ function createRow (
             value =
               col.attributeKey === ''
                 ? col.transform(row, index)
-                : col.transform(row[col.attributeKey], index)
+                : col.transform(value, index)
           }
 
           return (

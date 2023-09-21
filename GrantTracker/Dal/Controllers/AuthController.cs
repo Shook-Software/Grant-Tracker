@@ -28,8 +28,15 @@ namespace GrantTracker.Dal.Controllers
 		[HttpGet("")]
 		public ActionResult<UserIdentityView> Get()
 		{
-			var identity = _authRepository.GetIdentity();
-			return Ok(identity);
+			try
+			{
+                var identity = _authRepository.GetIdentity();
+                return Ok(identity);
+            }
+			catch (Exception ex)
+			{
+				return StatusCode(500);
+			}
 		}
 
 		//this doesn't belong here

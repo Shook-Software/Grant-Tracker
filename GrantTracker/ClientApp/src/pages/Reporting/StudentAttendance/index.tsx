@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Container, Row, Button } from 'react-bootstrap'
+import { Container, Row, Button, Col, Form } from 'react-bootstrap'
 import { Options } from 'json2csv'
 
 import Table, { Column, SortDirection } from 'components/BTable'
@@ -100,6 +100,7 @@ function exportToCSV(data, parameters) {
 }
 
 export default ({parameters, reportIsLoading, studentAttendanceReport}): JSX.Element => {
+  const [minDaysFilter, setMinDaysFilter] = useState<number>(0)
 
   if (Array.isArray(studentAttendanceReport) && studentAttendanceReport.length == 0) 
     return (
@@ -113,6 +114,8 @@ export default ({parameters, reportIsLoading, studentAttendanceReport}): JSX.Ele
     return (
         <p>...Loading</p>
     )
+
+  const attendance = studentAttendanceReport.filter(x => x.totalDays >= minDaysFilter);
 
   return (
     <div style={{width: 'fit-content'}}>
@@ -129,6 +132,22 @@ export default ({parameters, reportIsLoading, studentAttendanceReport}): JSX.Ele
           </Button>
       </Row>
 
+    <Row>
+      <Col md={3} className='p-0'>
+        <Form.Control 
+          type='number' 
+          className='border-bottom-0'
+          placeholder='Minimum days...'
+          value={minDaysFilter} 
+          onChange={(e) => setMinDaysFilter(e.target.value)}
+          style={{borderBottomLeftRadius: 0, borderBottomRightRadius: 0}}
+        />
+      </Col>
+      <Col md={6}>
+        <span className='ms-1'># of students over {minDaysFilter} days: <b>{attendance.length}</b> </span>
+      </Col>
+    </Row>
+
       <Row 
         style={{
           maxHeight: '30rem',
@@ -138,7 +157,7 @@ export default ({parameters, reportIsLoading, studentAttendanceReport}): JSX.Ele
         <Table 
           className='m-0'
           columns={columns} 
-          dataset={studentAttendanceReport}
+          dataset={attendance}
           defaultSort={{index: 0, direction: SortDirection.Ascending}}
         />
       </Row>

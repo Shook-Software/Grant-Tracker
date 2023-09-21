@@ -23,7 +23,8 @@ namespace GrantTracker.Dal.Schema
 			entity.HasOne(s => s.DaySchedule)
 				.WithMany(s => s.TimeSchedules)
 				.HasForeignKey(s => s.SessionDayGuid)
-				.IsRequired(false);
+				.IsRequired(false)
+				.OnDelete(DeleteBehavior.Cascade);
 
 			/// /Properties
 
