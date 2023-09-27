@@ -1,7 +1,6 @@
-﻿
-
-using GrantTracker.Dal.Schema;
+﻿using GrantTracker.Dal.Schema;
 using System.Security.Claims;
+using System.Text.Json;
 
 namespace GrantTracker.Utilities;
 
@@ -9,9 +8,10 @@ public static class Extensions
 {
 
 
-    public static Guid HomeOrganizationGuid(this ClaimsPrincipal Principal)
+    public static List<Guid> HomeOrganizationGuids(this ClaimsPrincipal Principal)
     {
-        return new Guid(Principal.Claims.FirstOrDefault(x => x.Type == "HomeOrg")?.Value);
+        var organizationsJSON = Principal.Claims.FirstOrDefault(x => x.Type == "HomeOrg")?.Value;
+        return JsonSerializer.Deserialize<List<Guid>>(organizationsJSON);
     }
 
     public static bool IsAdmin(this ClaimsPrincipal Principal)
@@ -21,6 +21,6 @@ public static class Extensions
 
     public static bool IsAuthorizedToViewOrganization(this ClaimsPrincipal User, Guid? OrganizationGuid)
     {
-        return User.IsAdmin() || User.HomeOrganizationGuid() == OrganizationGuid;
+        return User.IsAdmin() || (OrganizationGuid is not null && User.HomeOrganizationGuids().Contains(OrganizationGuid.Value));
     }
 }

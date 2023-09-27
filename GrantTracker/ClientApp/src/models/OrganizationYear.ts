@@ -25,6 +25,7 @@ export interface YearView {
   guid: string
   schoolYear: string
   quarter: Quarter
+  isCurrentYear: boolean
   startDate?: LocalDate
   endDate?: LocalDate
 }

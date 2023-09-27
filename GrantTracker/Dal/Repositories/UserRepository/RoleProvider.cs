@@ -34,14 +34,23 @@ namespace GrantTracker.Dal.Repositories.UserRepository
 
 		public async Task<Guid?> GetCurrentUserOrganizationGuidAsync(string BadgeNumber)
 		{
-			Guid currentYearGuid = _db.Years.Where(y => y.IsCurrentSchoolYear).Select(y => y.YearGuid).FirstOrDefault();
-
 			var instructorSchoolYear = await _db.InstructorSchoolYears
 				.Include(isy => isy.OrganizationYear)
-				.Where(isy => isy.Instructor.BadgeNumber == BadgeNumber && isy.OrganizationYear.YearGuid == currentYearGuid)
+				.Where(isy => isy.Instructor.BadgeNumber == BadgeNumber)
+				.Where(isy => isy.OrganizationYear.Year.IsCurrentSchoolYear == true)
 				.FirstOrDefaultAsync();
 
 			return instructorSchoolYear?.OrganizationYear?.OrganizationGuid;
-		}
-	}
+        }
+
+        public async Task<List<Guid>> GetCurrentUserOrganizationGuidsAsync(string BadgeNumber)
+        {
+			return await _db.UserIdentities
+				.Include(id => id.SchoolYear).ThenInclude(isy => isy.OrganizationYear)
+				.Where(id => id.SchoolYear.Instructor.BadgeNumber == BadgeNumber)
+				.Where(id => id.SchoolYear.OrganizationYear.Year.IsCurrentSchoolYear == true)
+				.Select(id => id.SchoolYear.OrganizationYear.OrganizationGuid)
+                .ToListAsync();
+        }
+    }
 }

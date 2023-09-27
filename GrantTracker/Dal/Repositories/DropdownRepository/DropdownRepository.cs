@@ -86,13 +86,13 @@ namespace GrantTracker.Dal.Repositories.DropdownRepository
 		}
 
 		//Used solely for dropdown selections
-		public async Task<List<OrganizationView>> GetOrganizationsAsync(bool UserIsAdmin, Guid HomeOrganizationGuid)
+		public async Task<List<OrganizationView>> GetOrganizationsAsync(bool UserIsAdmin, List<Guid> HomeOrganizationGuids)
 		{
 			//Coordinators only receive their organization, administrators receive the full list
 			var organizations = await _grantContext
 				.Organizations
 				.AsNoTracking()
-                .Where(org => UserIsAdmin || org.OrganizationGuid == HomeOrganizationGuid)
+                .Where(org => UserIsAdmin || HomeOrganizationGuids.Contains(org.OrganizationGuid))
                 .OrderBy(org => org.Name)
 				.ToListAsync();
 

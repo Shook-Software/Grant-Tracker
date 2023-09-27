@@ -63,7 +63,7 @@ const OrganizationYearSelect = ({user, onChange}: {user: User, onChange}) => {
       .getOrganizationYearsAsync(guid)
       .then(res => {
         organizationYearGuid = res.find(orgYear => orgYear.organization.guid == guid)?.guid
-        const currentYear: OrganizationYearView | undefined = res.reduce((prev, current) => prev && prev.year.schoolYear > current.year.schoolYear && prev.year.quarter > current.year.quarter ? prev : current)
+        const currentYear: OrganizationYearView | undefined = res.find(oy => oy.year.isCurrentYear === true)
         user.setOrganization(organization)
         user.setYear(currentYear)
         user.setOrganizationYear(organizationYearGuid)

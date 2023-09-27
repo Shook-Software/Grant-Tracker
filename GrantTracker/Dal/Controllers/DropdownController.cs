@@ -53,7 +53,7 @@ namespace GrantTracker.Dal.Controllers
 		public async Task<ActionResult<List<OrganizationView>>> GetOrganizations()
 		{
 			var user = HttpContext.User;
-			var organizations = await _dropdownRepository.GetOrganizationsAsync(user.IsAdmin(), User.HomeOrganizationGuid());
+			var organizations = await _dropdownRepository.GetOrganizationsAsync(user.IsAdmin(), User.HomeOrganizationGuids());
 			return Ok(organizations);
 		}
 

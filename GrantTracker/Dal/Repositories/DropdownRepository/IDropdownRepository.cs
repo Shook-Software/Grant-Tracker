@@ -12,7 +12,7 @@ namespace GrantTracker.Dal.Repositories.DropdownRepository
 
 		public Task<List<DropdownOption>> GetGradesAsync();
 
-		public Task<List<OrganizationView>> GetOrganizationsAsync(bool UserIsAdmin, Guid HomeOrganizationGuid);
+		public Task<List<OrganizationView>> GetOrganizationsAsync(bool UserIsAdmin, List<Guid> HomeOrganizationGuid);
 
 		public Task<List<OrganizationYearView>> GetOrganizationYearsAsync(Guid? organizationGuid);
 	}

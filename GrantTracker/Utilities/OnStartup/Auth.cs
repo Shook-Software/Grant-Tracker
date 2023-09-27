@@ -7,6 +7,7 @@ using System.DirectoryServices.AccountManagement;
 using System.Security.Claims;
 using System.Text.RegularExpressions;
 using System.Text.Json.Serialization;
+using System.Text.Json;
 
 namespace GrantTracker.Utilities.OnStartup
 {
@@ -23,13 +24,13 @@ namespace GrantTracker.Utilities.OnStartup
 
 			if (!int.TryParse(badgeNumber, out int _))
 			{
-				var tusdContext = new PrincipalContext(ContextType.Domain, "10.15.64.11");
+				var tusdContext = new PrincipalContext(ContextType.Domain, "10.15.64.97");
 				var user = UserPrincipal.FindByIdentity(tusdContext, IdentityType.SamAccountName, identity.Name);
 				badgeNumber = user.EmployeeId;
 			}
 
 			return badgeNumber;
-		}
+        }
 
 		public static void Setup(WebApplicationBuilder builder)
 		{
@@ -80,10 +81,10 @@ namespace GrantTracker.Utilities.OnStartup
             string badgeNumber = Auth.GetBadgeNumber((ClaimsIdentity)principal.Identity);
 
 			var userRole = await _roleProvider.GetUserRoleAsync(badgeNumber);
-			var userOrg = await _roleProvider.GetCurrentUserOrganizationGuidAsync(badgeNumber);
+			var userOrgs = await _roleProvider.GetCurrentUserOrganizationGuidsAsync(badgeNumber);
 
             Claim roleClaim = new("UserRole", userRole);
-			Claim orgClaim = new("HomeOrg", userOrg.ToString());
+			Claim orgClaim = new("HomeOrg", JsonSerializer.Serialize(userOrgs));
 
 			identity.AddClaim(roleClaim);
 			identity.AddClaim(orgClaim);
@@ -108,8 +109,6 @@ namespace GrantTracker.Utilities.OnStartup
 			var user = context.User;
 			foreach (var requirement in context.PendingRequirements)
 			{
-				//context.Succeed(requirement);
-				//continue;
 				if (requirement is ClaimsAuthorizationRequirement claimsRequirement)
 				{
 					var requiredClaimType = claimsRequirement.ClaimType;

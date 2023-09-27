@@ -4,6 +4,7 @@
 	{
 		Task<string> GetUserRoleAsync(string badgeNumber);
 		Task<Guid?> GetCurrentUserOrganizationGuidAsync(string BadgeNumber);
+		Task<List<Guid>> GetCurrentUserOrganizationGuidsAsync(string BadgeNumber);
 
     }
 }
