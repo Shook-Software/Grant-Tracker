@@ -24,7 +24,7 @@ namespace GrantTracker.Utilities.OnStartup
 
 			if (!int.TryParse(badgeNumber, out int _))
 			{
-				var tusdContext = new PrincipalContext(ContextType.Domain, "10.15.64.97");
+				var tusdContext = new PrincipalContext(ContextType.Domain, "10.11.0.74");
 				var user = UserPrincipal.FindByIdentity(tusdContext, IdentityType.SamAccountName, identity.Name);
 				badgeNumber = user.EmployeeId;
 			}
