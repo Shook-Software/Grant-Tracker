@@ -72,7 +72,7 @@ namespace GrantTracker.Dal.Models.Views
                 .Select(ar => new InstructorAttendanceViewModel()
                 {
                     Guid = ar.Guid,
-                    AttendanceRecord = new AttendanceViewModel()
+                    AttendanceRecord = ar.AttendanceRecord is null ? null : new AttendanceViewModel()
                     {
                         Guid = ar.AttendanceRecord.Guid,
                         InstanceDate = ar.AttendanceRecord.InstanceDate,
@@ -82,16 +82,16 @@ namespace GrantTracker.Dal.Models.Views
                             Name = ar.AttendanceRecord.Session?.Name
                         }
                     },
-                    TimeRecords = ar.TimeRecords
+                    TimeRecords = ar.TimeRecords is null ? null : ar.TimeRecords
 						.Select(time => AttendanceTimeRecordViewModel.FromDatabase(time))
 						.OrderBy(x => x.StartTime.Hour).ThenBy(x => x.StartTime.Minute)
 						.ToList()
                 })
-				.OrderByDescending(x => x.AttendanceRecord.InstanceDate.Year)
-				.ThenByDescending(x => x.AttendanceRecord.InstanceDate.Month)
-				.ThenByDescending(x => x.AttendanceRecord.InstanceDate.Day)
-				.ThenBy(x => x.TimeRecords.FirstOrDefault()?.StartTime.Hour)
-                .ThenBy(x => x.TimeRecords.FirstOrDefault()?.StartTime.Minute)
+				.OrderByDescending(x => x.AttendanceRecord?.InstanceDate.Year)
+				.ThenByDescending(x => x.AttendanceRecord?.InstanceDate.Month)
+				.ThenByDescending(x => x.AttendanceRecord?.InstanceDate.Day)
+				.ThenBy(x => x.TimeRecords?.FirstOrDefault()?.StartTime.Hour)
+                .ThenBy(x => x.TimeRecords?.FirstOrDefault()?.StartTime.Minute)
                 .ToList()
         };
 	}

@@ -112,8 +112,20 @@ export default (): JSX.Element => {
   }
 
   useEffect(() => {
-    fetchSessions(null)
+    navigate(`${paths.Admin.path}/${paths.Admin.Tabs.Sessions.path}`)
   }, [user])
+
+  /*useEffect(() => {
+    api
+      .get(`/organizationYear/${AxiosIdentityConfig.identity.organizationYearGuid}/Attendance/Missing`)
+      .then(res => {
+        console.table(res.data.filter(x => x.sessionGuid == sessionGuid))
+      })
+  }, [sessionGuid])*/
+
+  useEffect(() => {
+    fetchSessions(null)
+  }, [AxiosIdentityConfig.identity.organizationYearGuid])
 
   let columns: Column[] = createColumns()
   let rowClick = null

@@ -58,7 +58,7 @@ namespace GrantTracker.Dal.Repositories.InstructorSchoolYearRepository
 		}
 
 		//we need to remove the latter part of this tbh, and query it separately
-		public async Task<InstructorSchoolYearViewModel> GetInstructorSchoolYearAsync(Guid instructorSchoolYearGuid)
+		public async Task<InstructorSchoolYearViewModel?> GetInstructorSchoolYearAsync(Guid instructorSchoolYearGuid)
 		{
 			//we could probably put these in two different functions and connect them from there
 			//all info for the given schoolYear
@@ -74,7 +74,10 @@ namespace GrantTracker.Dal.Repositories.InstructorSchoolYearRepository
 				.Include(isy => isy.AttendanceRecords).ThenInclude(ar => ar.TimeRecords)
 				.Include(isy => isy.AttendanceRecords).ThenInclude(sa => sa.AttendanceRecord).ThenInclude(ar => ar.Session)
                 .Where(isy => isy.InstructorSchoolYearGuid == instructorSchoolYearGuid)
-				.SingleAsync();
+                .FirstOrDefaultAsync();
+
+			if (instructorSchoolYear is null)
+				return null;
 
 			//A list of other school years
 			var organizationYears = await _grantContext
@@ -83,12 +86,15 @@ namespace GrantTracker.Dal.Repositories.InstructorSchoolYearRepository
 				.Include(i => i.InstructorSchoolYears).ThenInclude(isy => isy.OrganizationYear).ThenInclude(oy => oy.Year)
 				.Where(i => i.PersonGuid == instructorSchoolYear.InstructorGuid)
 				.Select(i => i.InstructorSchoolYears.Select(isy => isy.OrganizationYear).ToList())
-				.SingleAsync();
+				.FirstOrDefaultAsync();
+
+			if (organizationYears is null)
+				return null;
 
 			return InstructorSchoolYearViewModel.FromDatabase(instructorSchoolYear, organizationYears);
 		}
 
-		public async Task<InstructorSchoolYearViewModel> GetInstructorSchoolYearAsync(string badgeNumber, Guid organizationYearGuid)
+		public async Task<InstructorSchoolYearViewModel?> GetInstructorSchoolYearAsync(string badgeNumber, Guid organizationYearGuid)
 		{
 			var instructorSchoolYear = await _grantContext
 				.InstructorSchoolYears
@@ -101,29 +107,38 @@ namespace GrantTracker.Dal.Repositories.InstructorSchoolYearRepository
 				.Include(isy => isy.SessionRegistrations).ThenInclude(sr => sr.Session).ThenInclude(s => s.DaySchedules).ThenInclude(day => day.TimeSchedules)
 				.Include(isy => isy.AttendanceRecords)
 				.Where(isy => isy.Instructor.BadgeNumber == badgeNumber && isy.OrganizationYearGuid == organizationYearGuid)
-				.SingleAsync();
+				.FirstOrDefaultAsync();
 
-			//A list of other school years
-			var organizationYears = await _grantContext
+            if (instructorSchoolYear is null)
+                return null;
+
+            //A list of other school years
+            var organizationYears = await _grantContext
 				.Instructors
 				.Include(i => i.InstructorSchoolYears).ThenInclude(isy => isy.OrganizationYear).ThenInclude(oy => oy.Organization)
 				.Include(i => i.InstructorSchoolYears).ThenInclude(isy => isy.OrganizationYear).ThenInclude(oy => oy.Year)
 				.Where(i => i.PersonGuid == instructorSchoolYear.InstructorGuid)
 				.Select(i => i.InstructorSchoolYears.Select(isy => isy.OrganizationYear).ToList())
-				.SingleAsync();
+				.FirstOrDefaultAsync();
 
-			return InstructorSchoolYearViewModel.FromDatabase(instructorSchoolYear, organizationYears);
+            if (organizationYears is null)
+                return null;
+
+            return InstructorSchoolYearViewModel.FromDatabase(instructorSchoolYear, organizationYears);
 		}
 
-		public async Task<InstructorSchoolYearViewModel> GetAsync(Guid instructorSchoolYearGuid)
+		public async Task<InstructorSchoolYearViewModel?> GetAsync(Guid instructorSchoolYearGuid)
 		{
 			var instructorSchoolYear = await _grantContext
 				.InstructorSchoolYears
 				.Include(isy => isy.Instructor)
 				.Include(isy => isy.Status)
-				.FirstAsync(isy => isy.InstructorSchoolYearGuid == instructorSchoolYearGuid);
+				.FirstOrDefaultAsync(isy => isy.InstructorSchoolYearGuid == instructorSchoolYearGuid);
 
-			return InstructorSchoolYearViewModel.FromDatabase(instructorSchoolYear);
+            if (instructorSchoolYear is null)
+                return null;
+
+            return InstructorSchoolYearViewModel.FromDatabase(instructorSchoolYear);
 		}
 	}
 }

@@ -35,8 +35,6 @@ export default ({sessionGuid, attendanceRecords, onChange, isFamilySession}: Pro
   }
 
   function handleEditClick(record) {
-
-    console.warn('editing record:', record.guid)
     //set registrations in correct format
     //make sure copies are made, do not modify originals. Spread all arrays, etc
     let studentRecords = record.studentAttendanceRecords?.map(record => ({

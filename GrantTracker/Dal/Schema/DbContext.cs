@@ -1,10 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using GrantTracker.Dal.Models.Views;
-using GrantTracker.Dal.Models.Views.Reporting;
+using GrantTracker.Dal.Schema.Sprocs.Reporting;
+using GrantTracker.Dal.Schema.Sprocs;
 
 namespace GrantTracker.Dal.Schema
 {
-	public class GrantTrackerContext : DbContext
+    public class GrantTrackerContext : DbContext
 	{
 		public GrantTrackerContext(DbContextOptions<GrantTrackerContext> options) : base(options)
 		{ }
@@ -62,6 +63,7 @@ namespace GrantTracker.Dal.Schema
 		public DbSet<AttendanceRecord> AttendanceRecords { get; set; }
 		public DbSet<StudentAttendanceTimeRecord> StudentAttendanceTimeRecords { get; set; }
 		public DbSet<InstructorAttendanceTimeRecord> InstructorAttendanceTimeRecords { get; set; }
+        public DbSet<OrganizationBlackoutDate> BlackoutDates { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
 		{
@@ -77,6 +79,8 @@ namespace GrantTracker.Dal.Schema
             builder.Entity<StaffSummaryDbModel>().HasNoKey().ToView(null);
             builder.Entity<PayrollAuditDb>().HasNoKey().ToView(null);
             builder.Entity<AttendanceCheckDbModel>().HasNoKey().ToView(null);
+
+			builder.Entity<SessionAttendance>().HasNoKey().ToView(null);
 
             AuditLog.Setup(builder);
 			Activity.Setup(builder);
@@ -111,6 +115,7 @@ namespace GrantTracker.Dal.Schema
 			AttendanceRecord.Setup(builder);
 			StudentAttendanceTimeRecord.Setup(builder);
 			InstructorAttendanceTimeRecord.Setup(builder);
+			OrganizationBlackoutDate.Setup(builder);
         }
 
 		/*private async Task UpdateAuditLogAsync()

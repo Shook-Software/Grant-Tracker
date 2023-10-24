@@ -86,6 +86,28 @@ namespace GrantTracker.Dal.Repositories.OrganizationRepository
 			return organizations.Select(OrganizationView.FromDatabase).ToList();
         }
 
+        public async Task<List<OrganizationBlackoutDate>> GetBlackoutDatesAsync(Guid OrganizationGuid)
+        {
+			return await _grantContext.BlackoutDates.Where(x => x.OrganizationGuid == OrganizationGuid).ToListAsync();
+        }
+
+        public async Task AddBlackoutDateAsync(Guid OrganizationGuid, DateOnly BlackoutDate)
+		{
+			_grantContext.BlackoutDates.Add(new OrganizationBlackoutDate()
+			{
+				OrganizationGuid = OrganizationGuid,
+				Date = BlackoutDate
+			});
+
+			await _grantContext.SaveChangesAsync();
+		}
+
+        public async Task DeleteBlackoutDateAsync(Guid BlackoutDateGuid)
+		{
+			_grantContext.BlackoutDates.Remove(new OrganizationBlackoutDate() { Guid = BlackoutDateGuid });
+			await _grantContext.SaveChangesAsync();
+		}
+
         public async Task DeleteOrganizationAsync(Guid OrganizationGuid)
 		{
 			var orgToDelete = await _grantContext.Organizations.FindAsync(OrganizationGuid);
@@ -94,3 +116,10 @@ namespace GrantTracker.Dal.Repositories.OrganizationRepository
 		}
     }
 }
+
+
+public static class OrganizationExtensions
+{
+
+}
+

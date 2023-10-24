@@ -1,12 +1,12 @@
 ﻿using GrantTracker.Dal.Models.Views;
-using GrantTracker.Dal.Models.Views.Reporting;
 using GrantTracker.Dal.Schema;
+using GrantTracker.Dal.Schema.Sprocs.Reporting;
 
 namespace GrantTracker.Dal.Repositories.ReportRepository;
 
 public interface IReportRepository
 {
-	Task<ReportsViewModel> RunAllReportQueriesAsync(DateOnly startDate, DateOnly endDate, Guid? organizationGuid = null);
+	Task<ReportsViewModel> RunAllReportQueriesAsync(DateOnly startDate, DateOnly endDate, Guid organizationYearGuid, Guid? organizationGuid = null);
 
 	Task<List<SiteSessionViewModel>> GetSiteSessionsAsync(DateOnly startDate, DateOnly endDate, Guid? organizationGuid = null);
 

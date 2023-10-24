@@ -24,6 +24,7 @@ export default {
       Sessions: { path: 'sessions' },
       Staff: { path: 'staff' },
       Students: { path: 'students' },
+      Config: { path: 'config' }
     },
     Viewer: {
       Session: { path: 'session' },

@@ -34,7 +34,7 @@ const StudentPopover = forwardRef(
           <Button
             className='my-2'
             onClick={() => {
-              console.log(values)
+              //console.log(values)
               handleAddStudent(values)
               //add the student, successfully or not, then trigger the pop-up to be closed.
               document.body.click()

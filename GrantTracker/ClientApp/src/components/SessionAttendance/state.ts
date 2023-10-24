@@ -48,6 +48,11 @@ export function reducer (state: AttendanceForm, action: ReducerAction): Attendan
   switch (action.type) {
     
     case 'addSubstitute':
+      if (state.substituteRecords.some(x => x.substitute.id == action.payload.instructor.id))
+        return { ...state };
+      else if (state.instructorRecords.some(x => x.instructorSchoolYear.guid === action.payload.instructor.id || `${x.instructorSchoolYear.instructor.firstName.trim()}${x.instructorSchoolYear.instructor.lastName.trim()}` === action.payload.instructor.id))
+        return { ...state };
+
       substituteRecord = {
         instructorSchoolYearGuid: action.payload.instructorSchoolYearGuid,
         substitute: {...action.payload.instructor},

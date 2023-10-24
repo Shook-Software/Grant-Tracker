@@ -146,7 +146,6 @@ export default ({sessionGuid}: Props): JSX.Element => {
     substituteRecords: SubstituteRecord[]
   ): Promise<void> {
     return new Promise((resolve, reject) => {
-
      postSessionAttendance(sessionGuid!, date, studentRecords, instructorRecords, substituteRecords)
       .then(res => {
           handleAttendanceModalClose()
@@ -187,6 +186,7 @@ export default ({sessionGuid}: Props): JSX.Element => {
   /// /Effects
 
   useEffect(() => {
+    setAttendanceApiResult(undefined)
     getSessionDetails()
     getStudentRegistrationsAsync()
     getAttendance()

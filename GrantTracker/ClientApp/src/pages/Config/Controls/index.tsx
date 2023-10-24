@@ -5,7 +5,7 @@ import Table, { Column } from 'components/BTable'
 import Button from 'components/Input/Button'
 
 import api from 'utils/api'
-import { Quarter, YearView } from 'models/OrganizationYear'
+import { Quarter, YearView } from 'Models/OrganizationYear'
 
 import Years from './Years'
 

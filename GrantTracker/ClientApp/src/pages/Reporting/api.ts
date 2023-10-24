@@ -1,18 +1,39 @@
 import { LocalDate } from '@js-joda/core'
-import { OrganizationView, OrganizationYearView, Quarter } from 'models/OrganizationYear'
+import { DateOnly } from 'Models/DateOnly'
+import { OrganizationView, OrganizationYearView } from 'Models/OrganizationYear'
+import { TimeOnly } from 'Models/TimeOnly'
 import api from 'utils/api'
 
-export function getReportsAsync(startDate: LocalDate, endDate: LocalDate, organizationGuid: string): Promise<any[]> {
+export function getReportsAsync(startDate: LocalDate, endDate: LocalDate, organizationYearGuid: string, organizationGuid: string): Promise<any[]> {
   return new Promise((resolve, reject) => {
     api
       .get('report', {
         params: {
           startDateStr: startDate.toString(),
           endDateStr: endDate.toString(),
+          organizationYearGuid,
           organizationGuid: organizationGuid || null
         }
       })
       .then(res => {
+        res.data.attendanceCheck = res.data.attendanceCheck.map(x => ({
+          ...x,
+          instanceDate: DateOnly.toLocalDate(x.instanceDate),
+          timeBounds: x.timeBounds.map(t => ({
+            startTime: TimeOnly.toLocalTime(t.startTime),
+            endTime: TimeOnly.toLocalTime(t.endTime)
+          }))
+        }))
+
+        //rather than perform some awful cross-join, we are stealing from attendanceCheck here
+        res.data.payrollAudit = res.data.payrollAudit.map(audit => ({
+          ...audit,
+          sessionInstructors: [...res.data.attendanceCheck.find(check => check.sessionGuid == audit.sessionGuid).instructors]
+        }))
+
+        console.log(res.data.attendanceCheck)
+        console.log(res.data.payrollAudit)
+
         resolve(res.data)
       })
   })

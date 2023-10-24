@@ -24,3 +24,5 @@ public static class Extensions
         return User.IsAdmin() || (OrganizationGuid is not null && User.HomeOrganizationGuids().Contains(OrganizationGuid.Value));
     }
 }
+
+

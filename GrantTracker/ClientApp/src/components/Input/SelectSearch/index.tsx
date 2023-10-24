@@ -25,11 +25,11 @@ export default ({ options, value, multiple = false, disabled = false, id, handle
         placeholder={snapshot.search === '' ? snapshot.displayValue : snapshot.search}
         value={searchTerm}
         {...valueProps}
-        onChange={e => setSearchTerm(e.target.value)}
+        onChange={e => setSearchTerm(e.target.value.toLocaleLowerCase())}
       />
       {snapshot.focus && (
         <Styled.OptionList>
-          {snapshot.options.filter((option) => option.name.toString().toLowerCase().includes(snapshot.search)).map((option) => (
+          {snapshot.options.filter((option) => option.name.toString().toLocaleLowerCase().includes(snapshot.search)).map((option) => (
             <Styled.Option key={option.value}>
               <Styled.Button 
                 {...optionProps} 

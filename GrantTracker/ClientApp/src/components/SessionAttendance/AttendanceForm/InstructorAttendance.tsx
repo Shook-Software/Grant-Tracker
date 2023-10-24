@@ -95,8 +95,9 @@ export default ({state, dispatch}): JSX.Element => {
   const columns: Column[] = columnsBuilder(dispatch)
 
   function addInternalInstructor (instructor, instructorSchoolYearGuid): Promise<ApiResult> {
+
     return new Promise((resolve, reject) => {
-      instructor.id = instructorSchoolYearGuid || `${instructor.firstName}${instructor.lastName}`
+      instructor.id = instructorSchoolYearGuid || `${instructor.firstName.trim()}${instructor.lastName.trim()}`
       const payload = instructorSchoolYearGuid ? { instructor, instructorSchoolYearGuid } :  { instructor }
       dispatch({type: 'addSubstitute', payload})
       resolve({

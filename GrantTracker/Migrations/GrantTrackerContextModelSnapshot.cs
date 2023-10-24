@@ -18,10 +18,311 @@ namespace GrantTracker.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("GTkr")
-                .HasAnnotation("ProductVersion", "6.0.6")
+                .HasAnnotation("ProductVersion", "7.0.11")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
-            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder, 1L, 1);
+            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+
+            modelBuilder.Entity("GrantTracker.Dal.Models.Views.Reporting.AttendanceCheckDbModel", b =>
+                {
+                    b.Property<DateTime>("InstanceDate")
+                        .HasColumnType("date");
+
+                    b.Property<Guid>("SessionGuid")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.ToTable((string)null);
+
+                    b.ToView(null, (string)null);
+                });
+
+            modelBuilder.Entity("GrantTracker.Dal.Models.Views.Reporting.ClassSummaryDbModel", b =>
+                {
+                    b.Property<string>("ActivityType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<double>("AvgDailyAttendance")
+                        .HasColumnType("float");
+
+                    b.Property<double>("AvgHoursPerDay")
+                        .HasColumnType("float");
+
+                    b.Property<string>("DaysOfWeek")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("FirstSession")
+                        .HasColumnType("date");
+
+                    b.Property<string>("FundingSource")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("InstructorFirstName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("InstructorLastName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("InstructorStatus")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("LastSession")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Objective")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OrganizationName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SessionName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<double>("WeeksToDate")
+                        .HasColumnType("float");
+
+                    b.ToTable((string)null);
+
+                    b.ToView(null, (string)null);
+                });
+
+            modelBuilder.Entity("GrantTracker.Dal.Models.Views.Reporting.PayrollAuditDb", b =>
+                {
+                    b.Property<string>("ClassName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<TimeSpan>("EntryTime")
+                        .HasColumnType("time");
+
+                    b.Property<TimeSpan>("ExitTime")
+                        .HasColumnType("time");
+
+                    b.Property<string>("FirstName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("InstanceDate")
+                        .HasColumnType("date");
+
+                    b.Property<Guid>("InstructorSchoolYearGuid")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsSubstitute")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("LastName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("School")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.ToTable((string)null);
+
+                    b.ToView(null, (string)null);
+                });
+
+            modelBuilder.Entity("GrantTracker.Dal.Models.Views.Reporting.ProgramViewModel", b =>
+                {
+                    b.Property<double>("AvgStudentAttendDaysPerWeek")
+                        .HasColumnType("float");
+
+                    b.Property<double>("AvgStudentAttendHoursPerWeek")
+                        .HasColumnType("float");
+
+                    b.Property<int>("FamilyAttendanceCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("OrganizationName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("RegularStudentCount")
+                        .HasColumnType("int");
+
+                    b.Property<int>("StudentDaysOfferedCount")
+                        .HasColumnType("int");
+
+                    b.ToTable((string)null);
+
+                    b.ToView(null, (string)null);
+                });
+
+            modelBuilder.Entity("GrantTracker.Dal.Models.Views.Reporting.SiteSessionDbModel", b =>
+                {
+                    b.Property<string>("ActivityType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("AttendeeCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("FundingSource")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Grades")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("InstanceDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("InstructorFirstName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("InstructorLastName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("InstructorStatus")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Objective")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OrganizationName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OrganizationType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PartnershipType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SessionName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SessionType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.ToTable((string)null);
+
+                    b.ToView(null, (string)null);
+                });
+
+            modelBuilder.Entity("GrantTracker.Dal.Models.Views.Reporting.StaffSummaryDbModel", b =>
+                {
+                    b.Property<string>("FirstName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("InstructorSchoolYearGuid")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("LastName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OrganizationName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Status")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.ToTable((string)null);
+
+                    b.ToView(null, (string)null);
+                });
+
+            modelBuilder.Entity("GrantTracker.Dal.Models.Views.Reporting.StudentSurveyViewModel", b =>
+                {
+                    b.Property<string>("Activity")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FirstName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Grade")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("LastName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("MatricNumber")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OrganizationName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("TotalDays")
+                        .HasColumnType("int");
+
+                    b.Property<double>("TotalHours")
+                        .HasColumnType("float");
+
+                    b.ToTable((string)null);
+
+                    b.ToView(null, (string)null);
+                });
+
+            modelBuilder.Entity("GrantTracker.Dal.Models.Views.Reporting.TotalActivityViewModel", b =>
+                {
+                    b.Property<string>("Activity")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OrganizationName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("TotalAttendees")
+                        .HasColumnType("int");
+
+                    b.Property<double>("TotalHours")
+                        .HasColumnType("float");
+
+                    b.ToTable((string)null);
+
+                    b.ToView(null, (string)null);
+                });
+
+            modelBuilder.Entity("GrantTracker.Dal.Models.Views.Reporting.TotalFamilyAttendanceDbModel", b =>
+                {
+                    b.Property<string>("FamilyMember")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FirstName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Grade")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("LastName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("MatricNumber")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OrganizationName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("TotalDays")
+                        .HasColumnType("int");
+
+                    b.Property<double>("TotalHours")
+                        .HasColumnType("float");
+
+                    b.ToTable((string)null);
+
+                    b.ToView(null, (string)null);
+                });
+
+            modelBuilder.Entity("GrantTracker.Dal.Models.Views.Reporting.TotalStudentAttendanceViewModel", b =>
+                {
+                    b.Property<string>("FirstName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Grade")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("LastName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("MatricNumber")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OrganizationName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("TotalDays")
+                        .HasColumnType("int");
+
+                    b.Property<double>("TotalHours")
+                        .HasColumnType("float");
+
+                    b.ToTable((string)null);
+
+                    b.ToView(null, (string)null);
+                });
 
             modelBuilder.Entity("GrantTracker.Dal.Schema.Activity", b =>
                 {
@@ -33,18 +334,18 @@ namespace GrantTracker.Migrations
 
                     b.Property<string>("Abbreviation")
                         .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)")
+                        .HasColumnType("nvarchar")
                         .HasComment("Abbreviation of the label for use in frontend dropdowns.");
 
                     b.Property<string>("Description")
                         .HasMaxLength(400)
-                        .HasColumnType("nvarchar(400)")
+                        .HasColumnType("nvarchar")
                         .HasComment("Extended description of the activity for future use and ensuring the activity is well explained in the event it's label is unhelpful.");
 
                     b.Property<string>("Label")
                         .IsRequired()
                         .HasMaxLength(75)
-                        .HasColumnType("nvarchar(75)")
+                        .HasColumnType("nvarchar")
                         .HasComment("Short textual description of the activity type for use in frontend dropdowns.");
 
                     b.HasKey("Guid");
@@ -56,9 +357,10 @@ namespace GrantTracker.Migrations
                     b.HasIndex("Label")
                         .IsUnique();
 
-                    b.ToTable("Activity", "GTkr");
-
-                    b.HasComment("Lookup table for session activity types.");
+                    b.ToTable("Activity", "GTkr", t =>
+                        {
+                            t.HasComment("Lookup table for session activity types.");
+                        });
                 });
 
             modelBuilder.Entity("GrantTracker.Dal.Schema.AttendanceRecord", b =>
@@ -79,9 +381,10 @@ namespace GrantTracker.Migrations
                     b.HasIndex("SessionGuid", "InstanceDate")
                         .IsUnique();
 
-                    b.ToTable("AttendanceRecord", "GTkr");
-
-                    b.HasComment("Base record for attendance on a given date.");
+                    b.ToTable("AttendanceRecord", "GTkr", t =>
+                        {
+                            t.HasComment("Base record for attendance on a given date.");
+                        });
                 });
 
             modelBuilder.Entity("GrantTracker.Dal.Schema.AuditLog", b =>
@@ -101,13 +404,13 @@ namespace GrantTracker.Migrations
                     b.Property<string>("TableName")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)")
+                        .HasColumnType("nvarchar")
                         .HasComment("");
 
                     b.Property<string>("User")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
+                        .HasColumnType("nvarchar")
                         .HasComment("");
 
                     b.Property<string>("Values")
@@ -117,9 +420,10 @@ namespace GrantTracker.Migrations
 
                     b.HasKey("Guid");
 
-                    b.ToTable("AuditLog", "GTkr");
-
-                    b.HasComment("Change log for the database.");
+                    b.ToTable("AuditLog", "GTkr", t =>
+                        {
+                            t.HasComment("Change log for the database.");
+                        });
                 });
 
             modelBuilder.Entity("GrantTracker.Dal.Schema.ExceptionLog", b =>
@@ -153,9 +457,10 @@ namespace GrantTracker.Migrations
 
                     b.HasIndex("InstructorSchoolYearGuid");
 
-                    b.ToTable("ExceptionLog", "GTkr");
-
-                    b.HasComment("Log to view exceptions in production. The next programmer may have access to the production site and database, but I do not.");
+                    b.ToTable("ExceptionLog", "GTkr", t =>
+                        {
+                            t.HasComment("Log to view exceptions in production. The next programmer may have access to the production site and database, but I do not.");
+                        });
                 });
 
             modelBuilder.Entity("GrantTracker.Dal.Schema.FamilyAttendance", b =>
@@ -174,9 +479,10 @@ namespace GrantTracker.Migrations
 
                     b.HasIndex("StudentAttendanceRecordGuid");
 
-                    b.ToTable("FamilyAttendance", "GTkr");
-
-                    b.HasComment("Log for family attendance, tied to studentAttendanceRecords,");
+                    b.ToTable("FamilyAttendance", "GTkr", t =>
+                        {
+                            t.HasComment("Log for family attendance, tied to studentAttendanceRecords,");
+                        });
                 });
 
             modelBuilder.Entity("GrantTracker.Dal.Schema.FundingSource", b =>
@@ -189,18 +495,18 @@ namespace GrantTracker.Migrations
 
                     b.Property<string>("Abbreviation")
                         .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)")
+                        .HasColumnType("nvarchar")
                         .HasComment("Abbreviation of the label for use in frontend dropdowns.");
 
                     b.Property<string>("Description")
                         .HasMaxLength(400)
-                        .HasColumnType("nvarchar(400)")
+                        .HasColumnType("nvarchar")
                         .HasComment("Extended description of the source for future use and ensuring the source is well explained in the event it's label is unhelpful.");
 
                     b.Property<string>("Label")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
+                        .HasColumnType("nvarchar")
                         .HasComment("Short textual description of the funding source for use in frontend dropdowns.");
 
                     b.HasKey("Guid");
@@ -212,9 +518,10 @@ namespace GrantTracker.Migrations
                     b.HasIndex("Label")
                         .IsUnique();
 
-                    b.ToTable("FundingSource", "GTkr");
-
-                    b.HasComment("Lookup table for session funding sources.");
+                    b.ToTable("FundingSource", "GTkr", t =>
+                        {
+                            t.HasComment("Lookup table for session funding sources.");
+                        });
                 });
 
             modelBuilder.Entity("GrantTracker.Dal.Schema.Identity", b =>
@@ -227,9 +534,10 @@ namespace GrantTracker.Migrations
 
                     b.HasKey("Guid");
 
-                    b.ToTable("Identity", "GTkr");
-
-                    b.HasComment("User authentication for assignment of authorization claims. Only display this information to top-level users. Never send it to the front-end otherwise.");
+                    b.ToTable("Identity", "GTkr", t =>
+                        {
+                            t.HasComment("User authentication for assignment of authorization claims. Only display this information to top-level users. Never send it to the front-end otherwise.");
+                        });
                 });
 
             modelBuilder.Entity("GrantTracker.Dal.Schema.InstructorAttendanceRecord", b =>
@@ -256,9 +564,10 @@ namespace GrantTracker.Migrations
                     b.HasIndex("InstructorSchoolYearGuid", "AttendanceRecordGuid")
                         .IsUnique();
 
-                    b.ToTable("InstructorAttendanceRecord", "GTkr");
-
-                    b.HasComment("Records for instructor attendance, stemming from a base attendance record for an instance date.");
+                    b.ToTable("InstructorAttendanceRecord", "GTkr", t =>
+                        {
+                            t.HasComment("Records for instructor attendance, stemming from a base attendance record for an instance date.");
+                        });
                 });
 
             modelBuilder.Entity("GrantTracker.Dal.Schema.InstructorAttendanceTimeRecord", b =>
@@ -280,9 +589,10 @@ namespace GrantTracker.Migrations
 
                     b.HasIndex("InstructorAttendanceRecordGuid");
 
-                    b.ToTable("InstructorAttendanceTimeRecord", "GTkr");
-
-                    b.HasComment("Records for instructor attendance, with the start and end times. Multiple can exist for a single day.");
+                    b.ToTable("InstructorAttendanceTimeRecord", "GTkr", t =>
+                        {
+                            t.HasComment("Records for instructor attendance, with the start and end times. Multiple can exist for a single day.");
+                        });
                 });
 
             modelBuilder.Entity("GrantTracker.Dal.Schema.InstructorRegistration", b =>
@@ -297,9 +607,10 @@ namespace GrantTracker.Migrations
 
                     b.HasIndex("InstructorSchoolYearGuid");
 
-                    b.ToTable("InstructorRegistration", "GTkr");
-
-                    b.HasComment("");
+                    b.ToTable("InstructorRegistration", "GTkr", t =>
+                        {
+                            t.HasComment("");
+                        });
                 });
 
             modelBuilder.Entity("GrantTracker.Dal.Schema.InstructorSchoolYear", b =>
@@ -326,9 +637,10 @@ namespace GrantTracker.Migrations
                     b.HasIndex("InstructorGuid", "OrganizationYearGuid")
                         .IsUnique();
 
-                    b.ToTable("InstructorSchoolYear", "GTkr");
-
-                    b.HasComment("An instructor at a school during a given school year.");
+                    b.ToTable("InstructorSchoolYear", "GTkr", t =>
+                        {
+                            t.HasComment("An instructor at a school during a given school year.");
+                        });
                 });
 
             modelBuilder.Entity("GrantTracker.Dal.Schema.InstructorStatus", b =>
@@ -341,18 +653,18 @@ namespace GrantTracker.Migrations
 
                     b.Property<string>("Abbreviation")
                         .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)")
+                        .HasColumnType("nvarchar")
                         .HasComment("Abbreviation of the label for use in frontend dropdowns.");
 
                     b.Property<string>("Description")
                         .HasMaxLength(400)
-                        .HasColumnType("nvarchar(400)")
+                        .HasColumnType("nvarchar")
                         .HasComment("Extended description of the objective for future use and ensuring the objective is well explained in the event it's label is unhelpful.");
 
                     b.Property<string>("Label")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
+                        .HasColumnType("nvarchar")
                         .HasComment("Short textual description of the objective for use in frontend dropdowns.");
 
                     b.HasKey("Guid");
@@ -364,9 +676,10 @@ namespace GrantTracker.Migrations
                     b.HasIndex("Label")
                         .IsUnique();
 
-                    b.ToTable("InstructorStatus", "GTkr");
-
-                    b.HasComment("");
+                    b.ToTable("InstructorStatus", "GTkr", t =>
+                        {
+                            t.HasComment("");
+                        });
                 });
 
             modelBuilder.Entity("GrantTracker.Dal.Schema.LookupDefinition", b =>
@@ -378,13 +691,13 @@ namespace GrantTracker.Migrations
 
                     b.Property<string>("Description")
                         .HasMaxLength(400)
-                        .HasColumnType("nvarchar(400)")
+                        .HasColumnType("nvarchar")
                         .HasComment("Useful description of what is being defined.");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(75)
-                        .HasColumnType("nvarchar(75)")
+                        .HasColumnType("nvarchar")
                         .HasComment("Name of the definition.");
 
                     b.HasKey("Guid");
@@ -392,9 +705,10 @@ namespace GrantTracker.Migrations
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.ToTable("LookupDefinition", "GTkr");
-
-                    b.HasComment("Lookup table for persistent attributes.");
+                    b.ToTable("LookupDefinition", "GTkr", t =>
+                        {
+                            t.HasComment("Lookup table for persistent attributes.");
+                        });
                 });
 
             modelBuilder.Entity("GrantTracker.Dal.Schema.LookupValue", b =>
@@ -409,22 +723,23 @@ namespace GrantTracker.Migrations
 
                     b.Property<string>("Description")
                         .HasMaxLength(400)
-                        .HasColumnType("nvarchar(400)")
+                        .HasColumnType("nvarchar")
                         .HasComment("Useful description of the value.");
 
                     b.Property<string>("Value")
                         .IsRequired()
                         .HasMaxLength(25)
-                        .HasColumnType("varchar(25)")
+                        .HasColumnType("varchar")
                         .HasComment("Name of the value.");
 
                     b.HasKey("Guid");
 
                     b.HasIndex("DefinitionGuid");
 
-                    b.ToTable("LookupValue", "GTkr");
-
-                    b.HasComment("Lookup table for persistent attributes' values and their meaning.");
+                    b.ToTable("LookupValue", "GTkr", t =>
+                        {
+                            t.HasComment("Lookup table for persistent attributes' values and their meaning.");
+                        });
                 });
 
             modelBuilder.Entity("GrantTracker.Dal.Schema.Objective", b =>
@@ -437,18 +752,18 @@ namespace GrantTracker.Migrations
 
                     b.Property<string>("Abbreviation")
                         .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)")
+                        .HasColumnType("nvarchar")
                         .HasComment("Abbreviation of the label for use in frontend dropdowns.");
 
                     b.Property<string>("Description")
                         .HasMaxLength(400)
-                        .HasColumnType("nvarchar(400)")
+                        .HasColumnType("nvarchar")
                         .HasComment("Extended description of the objective for future use and ensuring the objective is well explained in the event it's label is unhelpful.");
 
                     b.Property<string>("Label")
                         .IsRequired()
                         .HasMaxLength(75)
-                        .HasColumnType("nvarchar(75)")
+                        .HasColumnType("nvarchar")
                         .HasComment("Short textual description of the objective for use in frontend dropdowns.");
 
                     b.HasKey("Guid");
@@ -460,9 +775,10 @@ namespace GrantTracker.Migrations
                     b.HasIndex("Label")
                         .IsUnique();
 
-                    b.ToTable("Objective", "GTkr");
-
-                    b.HasComment("Lookup table for session objectives.");
+                    b.ToTable("Objective", "GTkr", t =>
+                        {
+                            t.HasComment("Lookup table for session objectives.");
+                        });
                 });
 
             modelBuilder.Entity("GrantTracker.Dal.Schema.Organization", b =>
@@ -481,9 +797,33 @@ namespace GrantTracker.Migrations
                         .IsUnique()
                         .HasFilter("[Name] IS NOT NULL");
 
-                    b.ToTable("Organization", "GTkr");
+                    b.ToTable("Organization", "GTkr", t =>
+                        {
+                            t.HasComment("Organizations such as sites, a group of administrators, etc.");
+                        });
+                });
 
-                    b.HasComment("Organizations such as sites, a group of administrators, etc.");
+            modelBuilder.Entity("GrantTracker.Dal.Schema.OrganizationBlackoutDate", b =>
+                {
+                    b.Property<Guid>("Guid")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("date");
+
+                    b.Property<Guid>("OrganizationGuid")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Guid");
+
+                    b.HasIndex("OrganizationGuid", "Date")
+                        .IsUnique();
+
+                    b.ToTable("OrganizationBlackoutDate", "GTkr", t =>
+                        {
+                            t.HasComment("A date where no attendance is expected to be entered, removing it from attendance lists, attendance check report, and possibly other functionalities.");
+                        });
                 });
 
             modelBuilder.Entity("GrantTracker.Dal.Schema.OrganizationType", b =>
@@ -496,18 +836,18 @@ namespace GrantTracker.Migrations
 
                     b.Property<string>("Abbreviation")
                         .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)")
+                        .HasColumnType("nvarchar")
                         .HasComment("Abbreviation of the label for use in frontend dropdowns.");
 
                     b.Property<string>("Description")
                         .HasMaxLength(400)
-                        .HasColumnType("nvarchar(400)")
+                        .HasColumnType("nvarchar")
                         .HasComment("Extended description of the type for future use and ensuring the type is well explained in the event it's label is unhelpful.");
 
                     b.Property<string>("Label")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
+                        .HasColumnType("nvarchar")
                         .HasComment("Short textual description of the funding source for use in frontend dropdowns.");
 
                     b.HasKey("Guid");
@@ -519,9 +859,10 @@ namespace GrantTracker.Migrations
                     b.HasIndex("Label")
                         .IsUnique();
 
-                    b.ToTable("OrganizationType", "GTkr");
-
-                    b.HasComment("Lookup table for session organization types.");
+                    b.ToTable("OrganizationType", "GTkr", t =>
+                        {
+                            t.HasComment("Lookup table for session organization types.");
+                        });
                 });
 
             modelBuilder.Entity("GrantTracker.Dal.Schema.OrganizationYear", b =>
@@ -543,9 +884,10 @@ namespace GrantTracker.Migrations
                     b.HasIndex("OrganizationGuid", "YearGuid")
                         .IsUnique();
 
-                    b.ToTable("OrganizationYear", "GTkr");
-
-                    b.HasComment("An organization during a given school year.");
+                    b.ToTable("OrganizationYear", "GTkr", t =>
+                        {
+                            t.HasComment("An organization during a given school year.");
+                        });
                 });
 
             modelBuilder.Entity("GrantTracker.Dal.Schema.PartnershipType", b =>
@@ -558,18 +900,18 @@ namespace GrantTracker.Migrations
 
                     b.Property<string>("Abbreviation")
                         .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)")
+                        .HasColumnType("nvarchar")
                         .HasComment("Abbreviation of the label for use in frontend dropdowns.");
 
                     b.Property<string>("Description")
                         .HasMaxLength(400)
-                        .HasColumnType("nvarchar(400)")
+                        .HasColumnType("nvarchar")
                         .HasComment("Extended description of the partnership for future use and ensuring the partnership is well explained in the event it's label is unhelpful.");
 
                     b.Property<string>("Label")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
+                        .HasColumnType("nvarchar")
                         .HasComment("Short textual description of the partnership type for use in frontend dropdowns.");
 
                     b.HasKey("Guid");
@@ -581,9 +923,10 @@ namespace GrantTracker.Migrations
                     b.HasIndex("Label")
                         .IsUnique();
 
-                    b.ToTable("Partnership", "GTkr");
-
-                    b.HasComment("Lookup table for session partnership types.");
+                    b.ToTable("Partnership", "GTkr", t =>
+                        {
+                            t.HasComment("Lookup table for session partnership types.");
+                        });
                 });
 
             modelBuilder.Entity("GrantTracker.Dal.Schema.Person", b =>
@@ -595,13 +938,13 @@ namespace GrantTracker.Migrations
                     b.Property<string>("FirstName")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
+                        .HasColumnType("nvarchar")
                         .HasComment("The given, legal first name for a person.");
 
                     b.Property<string>("LastName")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)")
+                        .HasColumnType("nvarchar")
                         .HasComment("The given, legal last name(s) for a person.");
 
                     b.Property<string>("PersonType")
@@ -610,11 +953,14 @@ namespace GrantTracker.Migrations
 
                     b.HasKey("PersonGuid");
 
-                    b.ToTable("Person", "GTkr");
+                    b.ToTable("Person", "GTkr", t =>
+                        {
+                            t.HasComment("Basic information that is ubiquitous to all people stored for use in the Grant Tracker.");
+                        });
 
                     b.HasDiscriminator<string>("PersonType").HasValue("Person");
 
-                    b.HasComment("Basic information that is ubiquitous to all people stored for use in the Grant Tracker.");
+                    b.UseTphMappingStrategy();
                 });
 
             modelBuilder.Entity("GrantTracker.Dal.Schema.Session", b =>
@@ -640,7 +986,7 @@ namespace GrantTracker.Migrations
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)")
+                        .HasColumnType("nvarchar")
                         .HasComment("Name of the session, set by a responsible party.");
 
                     b.Property<Guid>("ObjectiveGuid")
@@ -679,9 +1025,10 @@ namespace GrantTracker.Migrations
 
                     b.HasIndex("SessionTypeGuid");
 
-                    b.ToTable("Session", "GTkr");
-
-                    b.HasComment("Base table for sessions in the database. Contains the universal attributes any session contains.");
+                    b.ToTable("Session", "GTkr", t =>
+                        {
+                            t.HasComment("Base table for sessions in the database. Contains the universal attributes any session contains.");
+                        });
                 });
 
             modelBuilder.Entity("GrantTracker.Dal.Schema.SessionDaySchedule", b =>
@@ -702,9 +1049,10 @@ namespace GrantTracker.Migrations
 
                     b.HasIndex("SessionGuid");
 
-                    b.ToTable("SessionDaySchedule", "GTkr");
-
-                    b.HasComment("");
+                    b.ToTable("SessionDaySchedule", "GTkr", t =>
+                        {
+                            t.HasComment("");
+                        });
                 });
 
             modelBuilder.Entity("GrantTracker.Dal.Schema.SessionGrade", b =>
@@ -727,9 +1075,10 @@ namespace GrantTracker.Migrations
                     b.HasIndex("SessionGuid", "GradeGuid")
                         .IsUnique();
 
-                    b.ToTable("SessionGrade", "GTkr");
-
-                    b.HasComment("Each row designates one of the allowable grade levels for a session.");
+                    b.ToTable("SessionGrade", "GTkr", t =>
+                        {
+                            t.HasComment("Each row designates one of the allowable grade levels for a session.");
+                        });
                 });
 
             modelBuilder.Entity("GrantTracker.Dal.Schema.SessionTimeSchedule", b =>
@@ -754,9 +1103,10 @@ namespace GrantTracker.Migrations
 
                     b.HasIndex("SessionDayGuid");
 
-                    b.ToTable("SessionTimeSchedule", "GTkr");
-
-                    b.HasComment("");
+                    b.ToTable("SessionTimeSchedule", "GTkr", t =>
+                        {
+                            t.HasComment("");
+                        });
                 });
 
             modelBuilder.Entity("GrantTracker.Dal.Schema.SessionType", b =>
@@ -769,18 +1119,18 @@ namespace GrantTracker.Migrations
 
                     b.Property<string>("Abbreviation")
                         .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)")
+                        .HasColumnType("nvarchar")
                         .HasComment("Abbreviation of the label for use in frontend dropdowns.");
 
                     b.Property<string>("Description")
                         .HasMaxLength(400)
-                        .HasColumnType("nvarchar(400)")
+                        .HasColumnType("nvarchar")
                         .HasComment("Extended description of the type for future use and ensuring the type is well explained in the event it's label is unhelpful.");
 
                     b.Property<string>("Label")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
+                        .HasColumnType("nvarchar")
                         .HasComment("Short textual description of the type for use in frontend dropdowns.");
 
                     b.HasKey("Guid");
@@ -792,9 +1142,10 @@ namespace GrantTracker.Migrations
                     b.HasIndex("Label")
                         .IsUnique();
 
-                    b.ToTable("SessionType", "GTkr");
-
-                    b.HasComment("Lookup table for session types.");
+                    b.ToTable("SessionType", "GTkr", t =>
+                        {
+                            t.HasComment("Lookup table for session types.");
+                        });
                 });
 
             modelBuilder.Entity("GrantTracker.Dal.Schema.StudentAttendanceRecord", b =>
@@ -816,9 +1167,10 @@ namespace GrantTracker.Migrations
                     b.HasIndex("StudentSchoolYearGuid", "AttendanceRecordGuid")
                         .IsUnique();
 
-                    b.ToTable("StudentAttendanceRecord", "GTkr");
-
-                    b.HasComment("Records for student attendance, stemming from a base attendance record for an instance date. Only one can exist per base record.");
+                    b.ToTable("StudentAttendanceRecord", "GTkr", t =>
+                        {
+                            t.HasComment("Records for student attendance, stemming from a base attendance record for an instance date. Only one can exist per base record.");
+                        });
                 });
 
             modelBuilder.Entity("GrantTracker.Dal.Schema.StudentAttendanceTimeRecord", b =>
@@ -840,9 +1192,10 @@ namespace GrantTracker.Migrations
 
                     b.HasIndex("StudentAttendanceRecordGuid");
 
-                    b.ToTable("StudentAttendanceTimeRecord", "GTkr");
-
-                    b.HasComment("Records for student attendance, with the start and end times. Multiple can exist for a single day.");
+                    b.ToTable("StudentAttendanceTimeRecord", "GTkr", t =>
+                        {
+                            t.HasComment("Records for student attendance, with the start and end times. Multiple can exist for a single day.");
+                        });
                 });
 
             modelBuilder.Entity("GrantTracker.Dal.Schema.StudentRegistration", b =>
@@ -857,9 +1210,10 @@ namespace GrantTracker.Migrations
 
                     b.HasIndex("DayScheduleGuid");
 
-                    b.ToTable("StudentRegistration", "GTkr");
-
-                    b.HasComment("Contains student registrees for a session, so that students can be added and expected for filling out their attendance record.");
+                    b.ToTable("StudentRegistration", "GTkr", t =>
+                        {
+                            t.HasComment("Contains student registrees for a session, so that students can be added and expected for filling out their attendance record.");
+                        });
                 });
 
             modelBuilder.Entity("GrantTracker.Dal.Schema.StudentSchoolYear", b =>
@@ -871,7 +1225,7 @@ namespace GrantTracker.Migrations
                     b.Property<string>("Grade")
                         .IsRequired()
                         .HasMaxLength(10)
-                        .HasColumnType("varchar(10)");
+                        .HasColumnType("varchar");
 
                     b.Property<Guid>("OrganizationYearGuid")
                         .HasColumnType("uniqueidentifier");
@@ -885,9 +1239,10 @@ namespace GrantTracker.Migrations
 
                     b.HasIndex("StudentGuid");
 
-                    b.ToTable("StudentSchoolYear", "GTkr");
-
-                    b.HasComment("A student at a school during a given school year.");
+                    b.ToTable("StudentSchoolYear", "GTkr", t =>
+                        {
+                            t.HasComment("A student at a school during a given school year.");
+                        });
                 });
 
             modelBuilder.Entity("GrantTracker.Dal.Schema.Year", b =>
@@ -920,11 +1275,12 @@ namespace GrantTracker.Migrations
                         .IsUnique()
                         .HasFilter("[IsCurrentSchoolYear] = 1");
 
-                    b.ToTable("Year", "GTkr");
+                    b.ToTable("Year", "GTkr", t =>
+                        {
+                            t.HasComment("A school year split into quarters.");
 
-                    b.HasComment("A school year split into quarters.");
-
-                    b.HasCheckConstraint("CK_StartDate_Before_EndDate", "[StartDate] < [EndDate]");
+                            t.HasCheckConstraint("CK_StartDate_Before_EndDate", "[StartDate] < [EndDate]");
+                        });
                 });
 
             modelBuilder.Entity("GrantTracker.Dal.Schema.Instructor", b =>
@@ -933,7 +1289,7 @@ namespace GrantTracker.Migrations
 
                     b.Property<string>("BadgeNumber")
                         .HasMaxLength(10)
-                        .HasColumnType("varchar(10)")
+                        .HasColumnType("varchar")
                         .HasComment("Some rare exceptions may not have a badge number, as free input must be allowed. Not required, but supply a badge number when possible.");
 
                     b.HasDiscriminator().HasValue("Instructor");
@@ -946,7 +1302,7 @@ namespace GrantTracker.Migrations
                     b.Property<string>("MatricNumber")
                         .IsRequired()
                         .HasMaxLength(10)
-                        .HasColumnType("varchar(10)");
+                        .HasColumnType("varchar");
 
                     b.HasDiscriminator().HasValue("Student");
                 });
@@ -1080,6 +1436,17 @@ namespace GrantTracker.Migrations
                         .IsRequired();
 
                     b.Navigation("Definition");
+                });
+
+            modelBuilder.Entity("GrantTracker.Dal.Schema.OrganizationBlackoutDate", b =>
+                {
+                    b.HasOne("GrantTracker.Dal.Schema.Organization", "Organization")
+                        .WithMany("BlackoutDates")
+                        .HasForeignKey("OrganizationGuid")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Organization");
                 });
 
             modelBuilder.Entity("GrantTracker.Dal.Schema.OrganizationYear", b =>
@@ -1318,6 +1685,8 @@ namespace GrantTracker.Migrations
 
             modelBuilder.Entity("GrantTracker.Dal.Schema.Organization", b =>
                 {
+                    b.Navigation("BlackoutDates");
+
                     b.Navigation("Years");
                 });
 

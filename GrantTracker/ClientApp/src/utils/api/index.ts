@@ -20,9 +20,9 @@ const siteURL: string = 'https://granttracker2022.tusd1.org'
 
 export abstract class AxiosIdentityConfig {
   public static identity: {
-    organizationYearGuid: undefined,
-    organizationGuid: undefined,
-    yearGuid: undefined
+    organizationYearGuid: string | undefined,
+    organizationGuid: string | undefined,
+    yearGuid: string | undefined
   }
 
   public static initialize (organizationGuid, yearGuid, organizationYearGuid, userGuid): void {

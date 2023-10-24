@@ -21,6 +21,10 @@ const TabSelector = (): JSX.Element => (
       path={paths.Admin.Tabs.Students.path}
       text='Students'
     />
+    <Tab
+      path={paths.Admin.Tabs.Config.path}
+      text='Config'
+    />
   </Tabset>
 )
 

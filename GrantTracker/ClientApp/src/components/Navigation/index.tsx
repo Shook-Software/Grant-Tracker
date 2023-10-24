@@ -5,7 +5,7 @@ import SelectSearch from 'components/Input/SelectSearch'
 import { User, IdentityClaim } from 'utils/authentication'
 import { Container, Nav, Link as NavLink } from './styles'
 
-import { OrganizationView, OrganizationYearView, Quarter } from 'models/OrganizationYear'
+import { OrganizationView, OrganizationYearView, Quarter } from 'Models/OrganizationYear'
 
 import { AxiosIdentityConfig } from 'utils/api'
 

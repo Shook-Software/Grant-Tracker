@@ -15,6 +15,7 @@ import SessionSubmit from 'pages/Editor/Session/Submit'
 import AdminSessionsView from 'pages/Admin/Sessions'
 import AdminStaffView from 'pages/Admin/Staff'
 import AdminStudentView from 'pages/Admin/Students'
+import AdminConfigView from 'pages/Admin/SiteConfig'
 
 import Config from 'pages/Config'
 import Authentication from 'pages/Config/Authentication'
@@ -126,6 +127,15 @@ export default (user: User, Breadcrumbs: JSX.Element): RouteObject[] => [
           {
             path: '/home/admin/students/:studentGuid',
             element: <AdminStudentView />
+          }
+        ]
+      },
+      {
+        path: paths.Admin.Tabs.Config.path,
+        children: [
+          {
+            index: true,
+            element: <AdminConfigView />
           }
         ]
       }

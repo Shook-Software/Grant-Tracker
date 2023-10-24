@@ -53,7 +53,6 @@ export default ({
   handleSubmit,
   isFamilySession
 }: Props): JSX.Element => {
-
   const sessionGuid: string = props.sessionGuid
   const [state, dispatch] = useReducer(reducer, props)
   const [dateOptions, setDateOptions] = useState<DropdownOption[]>([])

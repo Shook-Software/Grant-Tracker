@@ -1,5 +1,5 @@
 import api from 'utils/api'
-import { OrganizationYearView, OrganizationView, Quarter, YearView } from 'models/OrganizationYear'
+import { OrganizationYearView, OrganizationView, Quarter, YearView } from 'Models/OrganizationYear'
 
 export enum IdentityClaim {
   Administrator = 0,

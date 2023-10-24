@@ -1,27 +1,30 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using GrantTracker.Dal.Models.Views.Reporting;
 using GrantTracker.Dal.Schema;
 using GrantTracker.Utilities;
 using GrantTracker.Dal.Repositories.DevRepository;
 using System;
+using GrantTracker.Dal.Repositories.OrganizationRepository;
+using GrantTracker.Dal.Schema.Sprocs.Reporting;
 
 namespace GrantTracker.Dal.Repositories.ReportRepository;
 
 public class ReportRepository : RepositoryBase, IReportRepository
 {
-	private Guid _processGuid = Guid.NewGuid();
-	private IDbContextFactory<GrantTrackerContext> _grantContextFactory;
+	private readonly Guid _processGuid = Guid.NewGuid();
+	private readonly IDbContextFactory<GrantTrackerContext> _grantContextFactory;
+	private readonly IOrganizationRepository _organizationRepository;
 
-	public ReportRepository(IDbContextFactory<GrantTrackerContext> grantContextFactory, IDevRepository devRepository, IHttpContextAccessor httpContext)
+	public ReportRepository(IDbContextFactory<GrantTrackerContext> grantContextFactory, IDevRepository devRepository, IHttpContextAccessor httpContext, IOrganizationRepository organizationRepository)
 		: base(devRepository, httpContext, grantContextFactory.CreateDbContext())
 	{
 		_grantContextFactory = grantContextFactory;
+		_organizationRepository = organizationRepository;
 	}
 
 	private string DateOnlyToSQLString(DateOnly date) => $"{date.Year}-{date.Month}-{date.Day}";
 
-	public async Task<ReportsViewModel> RunAllReportQueriesAsync(DateOnly startDate, DateOnly endDate, Guid? organizationGuid = null)
+	public async Task<ReportsViewModel> RunAllReportQueriesAsync(DateOnly startDate, DateOnly endDate, Guid organizationYearGuid, Guid? organizationGuid = null)
 	{
 		await _grantContext.Database.ExecuteSqlInterpolatedAsync($"EXEC [GTkr].ReportQuery_Core {_processGuid}, {DateOnlyToSQLString(startDate)}, {DateOnlyToSQLString(endDate)}, {(organizationGuid == new Guid() ? null : organizationGuid)}");
 
@@ -59,6 +62,7 @@ public class ReportRepository : RepositoryBase, IReportRepository
 			.ToListAsync();
 
 		double weeksToDate = (endDate.DayNumber - startDate.DayNumber) / 7f;
+		weeksToDate = weeksToDate == 0 ? 1f / 7f : weeksToDate;
 		Task<List<ProgramViewModel>> programOverviewQueryTask = _grantContextFactory.CreateDbContext()
 			.Set<ProgramViewModel>()
 			.FromSqlInterpolated($"EXEC [GTkr].ReportQuery_ProgramOverview {_processGuid}, {weeksToDate}")
@@ -67,7 +71,7 @@ public class ReportRepository : RepositoryBase, IReportRepository
 			
 		Task<List<StaffSummaryDbModel>> staffSurveyQueryTask = _grantContextFactory.CreateDbContext()
 			.Set<StaffSummaryDbModel>()
-			.FromSqlInterpolated($"EXEC [GTkr].ReportQuery_Staffing {(organizationGuid == new Guid() ? null : organizationGuid)}")
+			.FromSqlInterpolated($"EXEC [GTkr].ReportQuery_Staffing {(organizationYearGuid == new Guid() ? null : organizationYearGuid)}")
 			.AsNoTracking()
 			.ToListAsync();
 			
@@ -84,7 +88,7 @@ public class ReportRepository : RepositoryBase, IReportRepository
             .ToListAsync();
 
 		Task<List<PayrollAuditDb>> payrollAuditQueryTask = _grantContextFactory.CreateDbContext().Set<PayrollAuditDb>()
-			.FromSqlInterpolated($"EXEC ReportQuery_PayrollAudit {_processGuid}")
+			.FromSqlInterpolated($"EXEC [GTkr].ReportQuery_PayrollAudit {_processGuid}")
 			.AsNoTracking()
 			.ToListAsync();
 
@@ -164,60 +168,29 @@ public class ReportRepository : RepositoryBase, IReportRepository
 						continue;
                     }
 
-					bool hasAttendanceRecord = attendanceDates.Contains(currentDate);
-					if (!hasAttendanceRecord)
+					attendances.Add(new()
 					{
-						attendances.Add(new()
-						{
-							SessionGuid = s.SessionGuid,
-							InstanceDate = currentDate,
-							School = s.OrganizationYear.Organization.Name,
-							ClassName = s.Name,
-							Instructors = s.InstructorRegistrations
-								.Select(ir => new AttendanceCheckInstructor
-								{
-									InstructorSchoolYearGuid = ir.InstructorSchoolYearGuid,
-									FirstName = ir.InstructorSchoolYear.Instructor.FirstName,
-									LastName = ir.InstructorSchoolYear.Instructor.LastName
-								})
-								.ToList(),
-							TimeBounds = daySchedule.TimeSchedules
-								.Select(x => new AttendanceCheckTimeRecord
-								{
-									StartTime = x.StartTime,
-									EndTime = x.EndTime
-								})
-								.ToList(),
-							AttendanceEntry = false
-						});
-					}
-					else
-					{
-						attendances.Add(new()
-						{
-							SessionGuid = s.SessionGuid,
-							InstanceDate = currentDate,
-							School = s.OrganizationYear.Organization.Name,
-							ClassName = s.Name,
-							Instructors = s.InstructorRegistrations
-								.Select(ir => new AttendanceCheckInstructor
-								{
-									InstructorSchoolYearGuid = ir.InstructorSchoolYearGuid,
-									FirstName = ir.InstructorSchoolYear.Instructor.FirstName,
-									LastName = ir.InstructorSchoolYear.Instructor.LastName
-								})
-								.ToList(),
-							TimeBounds = daySchedule.TimeSchedules
-								.Select(x => new AttendanceCheckTimeRecord
-								{
-									StartTime = x.StartTime,
-									EndTime = x.EndTime
-								})
-								.ToList(),
-							AttendanceEntry = true
-						});
-					}
-
+						SessionGuid = s.SessionGuid,
+						InstanceDate = currentDate,
+						School = s.OrganizationYear.Organization.Name,
+						ClassName = s.Name,
+						Instructors = s.InstructorRegistrations
+							.Select(ir => new AttendanceCheckInstructor
+							{
+								InstructorSchoolYearGuid = ir.InstructorSchoolYearGuid,
+								FirstName = ir.InstructorSchoolYear.Instructor.FirstName,
+								LastName = ir.InstructorSchoolYear.Instructor.LastName
+							})
+							.ToList(),
+						TimeBounds = daySchedule.TimeSchedules
+							.Select(x => new AttendanceCheckTimeRecord
+							{
+								StartTime = x.StartTime,
+								EndTime = x.EndTime
+							})
+							.ToList(),
+						AttendanceEntry = attendanceDates.Contains(currentDate)
+                    });
 					currentDate = currentDate.AddDays(7);
 				}
 			}
@@ -226,7 +199,19 @@ public class ReportRepository : RepositoryBase, IReportRepository
 		})
 		.ToList();
 
-		return attendanceChecksBySession
+        if (OrganizationGuid is not null && OrganizationGuid != default)
+        {
+            var blackoutDates = (await _organizationRepository.GetBlackoutDatesAsync(OrganizationGuid.Value)).Select(x => x.Date).ToList();
+
+            return attendanceChecksBySession
+				.SelectMany(x => x)
+				.Where(x => !blackoutDates.Contains(x.InstanceDate))
+				.OrderByDescending(x => x.InstanceDate)
+				.ThenBy(x => x.TimeBounds.Min(x => x.StartTime))
+				.ToList();
+        }
+
+        return attendanceChecksBySession
 			.SelectMany(x => x)
 			.OrderByDescending(x => x.InstanceDate)
 			.ThenBy(x => x.TimeBounds.Min(x => x.StartTime))
@@ -341,6 +326,7 @@ public class ReportRepository : RepositoryBase, IReportRepository
 			.GroupBy(x => new { x.School, x.ClassName, x.InstanceDate },
 			(id, grp) => new PayrollAuditView
 			{
+				SessionGuid = grp.First().SessionGuid,
 				School = id.School,
 				ClassName = id.ClassName,
 				InstanceDate = id.InstanceDate,

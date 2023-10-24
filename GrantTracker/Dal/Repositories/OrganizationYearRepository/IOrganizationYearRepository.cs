@@ -9,4 +9,7 @@ public interface IOrganizationYearRepository
 	Task CreateAsync(List<Organization> organizations, Guid yearGuid);
 
 	Task DeleteOrganizationYearAsync(Guid OrganizationYearGuid);
+
+
+	IQueryable<OrganizationYear> GetOrganizationYear(Guid OrganizationYearGuid);
 }

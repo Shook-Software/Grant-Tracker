@@ -156,15 +156,19 @@ namespace GrantTracker.Dal.Repositories.StudentRepository
 		{
 			//fetch active year
 			//var activeYear = await _grantContext.Years.Where(y => y.IsCurrentSchoolYear).SingleAsync();
-			var schoolYear = (await _grantContext
+			var gtYear = (await _grantContext
 				.OrganizationYears
 				.Include(oy => oy.Year)
 				.FirstOrDefaultAsync(oy => oy.OrganizationYearGuid == filter.OrganizationYearGuid))
-				.Year.SchoolYear;
+				.Year;
 
-			Expression<Func<EpcStuSchYr, bool>> filterExpression = ssy =>
-				ssy.Year.SchoolYear == schoolYear
-				&& (filter.FirstName == null || ssy.Student.Person.FirstName.Contains(filter.FirstName))
+            int synergyYear = gtYear.Quarter == Quarter.Summer && gtYear.IsCurrentSchoolYear ? gtYear.SchoolYear - 1 : gtYear.SchoolYear;
+            var synergyExtension = gtYear.Quarter == Quarter.Summer && gtYear.IsCurrentSchoolYear ? "S" : "R";
+
+            Expression<Func<EpcStuSchYr, bool>> filterExpression = ssy =>
+				ssy.Year.SchoolYear == synergyYear
+				&& ssy.Year.Extension == synergyExtension
+                && (filter.FirstName == null || ssy.Student.Person.FirstName.Contains(filter.FirstName))
 				&& (filter.LastName == null || ssy.Student.Person.LastName.Contains(filter.LastName))
 				&& (filter.MatricNumber == null || ssy.Student.SisNumber.Contains(filter.MatricNumber))
 				&& (filter.SynergyGrades.Count == 0 || filter.SynergyGrades.Contains(ssy.Grade));
@@ -194,11 +198,12 @@ namespace GrantTracker.Dal.Repositories.StudentRepository
             var grantTrackerResults = await _grantContext.StudentSchoolYears
 				.Include(ssy => ssy.Student)
 				.Include(ssy => ssy.OrganizationYear)
+				.Where(x => x.OrganizationYearGuid == filter.OrganizationYearGuid)
 				.Where(ssy => (
-				(filter.FirstName == null || ssy.Student.FirstName.Contains(filter.FirstName))
-				&& (filter.LastName == null || ssy.Student.LastName.Contains(filter.LastName))
-				&& (filter.MatricNumber == null || ssy.Student.MatricNumber.Contains(filter.MatricNumber))
-				&& (filter.GrantTrackerGrades.Count == 0 || filter.GrantTrackerGrades.Contains(ssy.Grade))))
+					(filter.FirstName == null || ssy.Student.FirstName.Contains(filter.FirstName))
+					&& (filter.LastName == null || ssy.Student.LastName.Contains(filter.LastName))
+					&& (filter.MatricNumber == null || ssy.Student.MatricNumber.Contains(filter.MatricNumber))
+					&& (filter.GrantTrackerGrades.Count == 0 || filter.GrantTrackerGrades.Contains(ssy.Grade))))
 				.Take(100)
 				.ToListAsync();
 			

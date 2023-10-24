@@ -6,9 +6,9 @@ namespace GrantTracker.Dal.Repositories.StudentSchoolYearRepository
 	{
 
 		//matric, orgYearGuid, orgGuid, yearGuid, ssyGuid
-		public Task<StudentSchoolYearViewModel> CreateIfNotExistsAsync(Guid studentGuid, Guid organizationYearGuid, string Grade);
+		public Task<StudentSchoolYearViewModel> CreateIfNotExistsAsync(Guid studentGuid, Guid organizationYearGuid);
 
-		public Task<StudentSchoolYearViewModel> CreateAsync(Guid studentGuid, Guid organizationYearGuid, string grade);
+		public Task<StudentSchoolYearViewModel> CreateAsync(Guid studentGuid, Guid organizationYearGuid);
 
 		public Task<StudentSchoolYearViewModel> GetAsync(Guid studentSchoolYearGuid);
 	}

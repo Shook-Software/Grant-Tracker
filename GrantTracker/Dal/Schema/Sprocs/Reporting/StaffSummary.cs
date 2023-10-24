@@ -1,4 +1,4 @@
-﻿namespace GrantTracker.Dal.Models.Views.Reporting;
+﻿namespace GrantTracker.Dal.Schema.Sprocs.Reporting;
 
 public class StaffSummaryDbModel
 {

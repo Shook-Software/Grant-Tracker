@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { LocalDate, Year } from '@js-joda/core'
 import { Row, Col, Modal, Form, Button, Spinner } from 'react-bootstrap'
 import { DateOnly } from "Models/DateOnly"
-import { Quarter, YearView } from 'models/OrganizationYear'
+import { Quarter, YearView } from 'Models/OrganizationYear'
 import { DropdownOption } from 'Models/Session'
 import PlusButton from 'components/Input/Button'
 import Table, { Column } from "components/BTable"
@@ -62,6 +62,41 @@ const columns: Column[] = [
 		)
 	  },
 	  sortable: false
+	},
+	{
+		label: '',
+		attributeKey: 'yearGuid',
+		transform: (yearGuid) => {
+			const [numRecordsUpdated, setNumRecordsUpdated] = useState<number | undefined>()
+			const [loading, setLoading] = useState<boolean>(false)
+
+			return (
+				<div>
+					<Button onClick={() => {
+						setLoading(true)
+						api
+							.patch(`developer/year/${yearGuid}/grades/sync`)
+							.then(res => {
+								setNumRecordsUpdated(res.data)
+							})
+							.catch(err => {
+								setNumRecordsUpdated(-1)
+							})
+							.finally(() => {
+								setLoading(false)
+							})
+						}}
+						disabled={loading}
+					>
+						{loading ? <Spinner animation="border" role="status" /> : 'Synchronize Synergy'}
+					</Button>
+					{
+						numRecordsUpdated == -1 ? <div className='text-danger'>Failed to sync</div> : null
+					}
+				</div>
+			)
+		},
+		sortable: false
 	}
 	//extra statistics
   ]

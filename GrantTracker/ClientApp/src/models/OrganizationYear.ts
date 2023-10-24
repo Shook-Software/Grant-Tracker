@@ -1,9 +1,16 @@
 import { LocalDate } from "@js-joda/core"
+import { DateOnly } from "Models/DateOnly"
 
 export interface OrganizationView {
   guid: string
   name: string
   organizationYears: OrganizationYearView[]
+}
+
+export interface OrganizationYearDomain {
+  guid: string
+  organization
+  year: YearDomain
 }
 
 export interface OrganizationYearView {
@@ -21,11 +28,40 @@ export enum Quarter {
   'Year to Date' = 4 //deprecated
 }
 
+export interface YearDomain {
+  guid: string
+  schoolYear: string
+  quarter: number
+  isCurrentYear: boolean
+  startDate: DateOnly
+  endDate: DateOnly
+}
+
 export interface YearView {
   guid: string
   schoolYear: string
   quarter: Quarter
   isCurrentYear: boolean
-  startDate?: LocalDate
-  endDate?: LocalDate
+  startDate: LocalDate
+  endDate: LocalDate
+}
+
+
+export abstract class Year {
+  public static toViewModel (obj: YearDomain): YearView {
+    return {
+      ...obj,
+      startDate: DateOnly.toLocalDate(obj.startDate),
+      endDate: DateOnly.toLocalDate(obj.endDate)
+    }
+  }
+}
+
+export abstract class OrganizationYear {
+  public static toViewModel (obj: OrganizationYearDomain): OrganizationYearView {
+    return {
+      ...obj,
+      year: Year.toViewModel(obj.year)
+    }
+  }
 }

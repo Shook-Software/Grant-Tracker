@@ -1,215 +1,47 @@
-import { useState, useEffect } from 'react'
-import { Container, Row, Col, Form, Tab, Nav, Button } from 'react-bootstrap'
-import SelectSearch from 'components/Input/SelectSearch'
+import { useEffect, useState } from 'react'
+import { Container, Row, Col, Tab, Nav, Form } from 'react-bootstrap'
+import Table, { SortDirection } from 'components/BTable'
 
-import StudentAttendance from './StudentAttendance'
-import FamilyAttendance from './FamilyAttendance'
-import Activities from './Activities'
-import SiteSessions from './SiteSessions'
-import SummaryOfClasses from './SummaryOfClasses'
-import ProgramOverview from './ProgramOverview'
-import StaffingSummary from './Staffing'
-import StudentSurvey from './StudentSurveys'
-import AttendanceCheck from './AttendanceCheck'
-import PayrollAudit from './PayrollAudit'
+import ReportParameterInput, { ReportParameters } from './ReportParameters'
 
-import { OrganizationView, OrganizationYearView, Quarter, YearView } from 'models/OrganizationYear'
-
-import { AxiosIdentityConfig } from 'utils/api'
-import { getAuthorizedOrganizations, getOrganizationYears, getReportsAsync } from './api'
-import { getSiteSessions } from './api'
 import Dropdown from 'components/Input/Dropdown'
-import { DropdownOption } from 'Models/Session'
-import { DateOnly } from 'Models/DateOnly'
-import { LocalDate } from '@js-joda/core'
+import ReportComponent from './ReportComponent'
+import { 
+	activityReportColumns, 
+	studentAttendanceColumns, 
+	familyAttendanceColumns,
+	siteSessionsColumns,
+	summaryOfClassesColumns,
+	programOverviewColumns,
+	staffingColumns,
+	studentSurveyColumns,
+	attendanceCheckColumns,
+	payrollAuditColumns
+} from './Definitions/Columns'
+import { 
+	activityFields, 
+	studentAttendanceFields, 
+	familyAttendanceFields, flattenFamilyAttendance,
+	siteSessionFields, flattenSiteSessions,
+	summaryOfClassesFields, flattenSummaryOfClasses,
+	programOverviewFields,
+	staffingFields, flattenStaffing,
+	studentSurveyFields,
+	attendanceCheckFields, flattenAttendanceCheck
+} from './Definitions/CSV'
+
+import { getReportsAsync, getSiteSessions } from './api'
 import { IdentityClaim } from 'utils/authentication'
 
-//this could be entirely rewritten, I really hate it
-const ParamSelection = ({onSubmit, user}): JSX.Element => {
-	const [form, setForm] = useState<any>()
-	const [orgYear, setOrgYear] = useState<any/*{orgGuid, yearGuid, orgYearGuid}*/>({...AxiosIdentityConfig.identity})
-	const [orgs, setOrgs] = useState<OrganizationView[]>([])
-	const [orgYears, setOrgYears] = useState<OrganizationYearView[]>([])
-
-	function handleSchoolYearChange(year: YearView): void {
-		let startDateOfSchoolYear = year.startDate
-		let endDateOfSchoolYear = year.endDate
-
-		setForm({...form, schoolYear: {
-			startDate: DateOnly.toLocalDate(startDateOfSchoolYear),
-			endDate:  DateOnly.toLocalDate(endDateOfSchoolYear),
-			year: year.schoolYear,
-			quarter: year.quarter
-		}})
-	}
-
-	function handleOrgChange(orgGuid) {
-		getOrganizationYears(orgGuid)
-			.then(res => {
-				setOrgYears(res)
-				let currentSchoolYear: OrganizationYearView | undefined = res.find(orgYear => orgYear.year.isCurrentYear)
-				setOrgYear({...orgYear, organizationYearGuid: currentSchoolYear.guid})
-				let currentYear: YearView = currentSchoolYear!.year
-				handleSchoolYearChange(currentYear)	
-				
-
-				let currentSemesters = res.filter(orgYear => orgYear.year.schoolYear == currentYear.schoolYear)
-				let startDateOfSchoolYear = currentSemesters[0].year.startDate
-				let endDateOfSchoolYear = currentSemesters[currentSemesters.length - 1].year.endDate
-
-				onSubmit({
-					schoolYear: {
-						year: currentYear.schoolYear,
-						quarter: currentYear.quarter,
-						startDate: DateOnly.toLocalDate(startDateOfSchoolYear),
-						endDate: DateOnly.toLocalDate(endDateOfSchoolYear)
-					},
-					orgGuid: orgYear.organizationGuid
-				})
-
-			})
-			.catch(err => {
-				console.warn(err)
-			})
-	}
-
-	useEffect(() => {
-		getAuthorizedOrganizations()
-			.then(res => {
-				if (user.claim == IdentityClaim.Administrator) {
-					res = [
-						{ 
-							guid: null,
-							name: 'All Organizations',
-							organizationYears: []
-						},
-						...res
-					]
-				}
-
-				setOrgs(res)
-			})
-			.catch(err => {
-				console.warn(err)
-			})
-	}, [])
-	
-	useEffect(() => {
-		handleOrgChange(orgYear.organizationGuid)
-	}, [orgYear.organizationGuid])
-
-	
-	
-	useEffect(() => {
-		handleOrgChange(AxiosIdentityConfig.identity.organizationGuid)
-	}, [AxiosIdentityConfig.identity.organizationGuid])
-
-	useEffect(() => {
-		getOrganizationYears(AxiosIdentityConfig.identity.organizationGuid)
-			.then(res => {
-				let selectedSchoolYear: OrganizationYearView | undefined = res.find(orgYear => orgYear.year.guid == AxiosIdentityConfig.identity.yearGuid)
-				if (!selectedSchoolYear)
-					return
-
-				handleSchoolYearChange(selectedSchoolYear.year)
-			})
-			.catch(err => {
-				console.warn(err)
-			})
-	}, [AxiosIdentityConfig.identity.yearGuid])
-
-	const orgOptions = orgs.map(org => ({
-		value: org.guid,
-		name: org.name,
-	}))
-
-	const orgYearOptions: DropdownOption[] = orgYears.map(orgYear => ({
-		guid: orgYear.guid,
-		label: `${orgYear.year.schoolYear} - ${Quarter[orgYear.year.quarter]}`
-	}))
-
-	return (
-		<Container className='ms-0'>
-			<Form>
-				<Row>
-					<Col lg='3'>
-						<Form.Group>
-							<Form.Label htmlFor='org'>Organization</Form.Label>
-							<SelectSearch 
-								id='org'
-								options={orgOptions}
-								value={orgYear.organizationGuid}
-								handleChange={(orgGuid: string) => {
-									setOrgYear({...orgYear, organizationGuid: orgGuid})
-								}}
-						    />
-						</Form.Group>
-					</Col>
-					<Col lg='3'>
-						<Form.Group>
-							<Form.Label htmlFor='school-year'>School Year <small>(Affects Staffing Only)</small></Form.Label> 
-							<Dropdown
-								id='school-year'
-								options={orgYearOptions}
-								value={orgYear.organizationYearGuid}
-								onChange={(orgYearGuid: string) => {
-									let year = orgYears.find(orgYear => orgYear.guid == orgYearGuid).year
-									handleSchoolYearChange(year, orgYears)
-									setOrgYear({...orgYear, organizationYearGuid: orgYearGuid, yearGuid: year.guid})
-								}}
-							/>
-						</Form.Group>
-					</Col>
-				</Row>
-				<Row>
-					<Col lg='3' className='w-25'>
-						<Form.Group>
-							<Form.Label htmlFor='start-date'>Start Date</Form.Label>
-							<Form.Control 
-								type='date' 
-								id='start-date' 
-								value={form?.schoolYear?.startDate}
-								onChange={(e) => setForm({...form, schoolYear: {
-									...form.schoolYear,
-									startDate: LocalDate.parse(e.target.value)
-								}})}
-							/>
-						</Form.Group>
-					</Col>
-
-					<Col lg='3' className='w-25'>
-						<Form.Group>
-							<Form.Label htmlFor='end-date'>End Date</Form.Label>
-							<Form.Control 
-								type='date'
-								id='end-date' 
-								value={form?.schoolYear?.endDate}
-								onChange={(e) => setForm({...form, schoolYear: {
-									...form.schoolYear,
-									endDate: LocalDate.parse(e.target.value)
-								}})}
-							/>
-						</Form.Group>
-					</Col>
-					
-					<Col lg='3' className='d-flex align-items-end'>	
-						<Button 
-							onClick={() => onSubmit({
-								...form,
-								orgGuid: orgYear.organizationGuid
-							})}
-						>
-							Submit
-						</Button>
-					</Col>
-				</Row>
-			</Form>
-		</Container>
-	)
-}
-
 export default ({user}): JSX.Element => {
-	const [reportParameters, setReportParameters] = useState<any>({})
+	const [reportParameters, setReportParameters] = useState<ReportParameters>({
+		organizationGuid: undefined,
+		organizationName: undefined,
+		organizationYearGuid: undefined,
+		startDate: undefined,
+		endDate: undefined
+	})
+
 	const [reports, setReports] = useState<any>({
 		totalActivity: [],
 		totalStudentAttendance: [],
@@ -222,49 +54,95 @@ export default ({user}): JSX.Element => {
 		attendanceCheck: [],
 		payrollAudit: []
 	})
+
 	const [isLoading, setIsLoading] = useState<boolean>(false)
 
 	//temp
 	const [siteSessions, setSiteSessions] = useState<any[] | null>([])
 	const [siteSessionsIsLoading, setSiteSessionsIsLoading] = useState<boolean>(false)
 
-	function handleParameterChange(form): void {
+	const [studentAttendMinDays, setStudentAttendMinDays] = useState<number>(0)
+
+	const [staffingStatusFilter, setStatusTypeFilter] = useState<string>('')
+	const [staffingDropdownOptions, setStaffingDropdownOptions] = useState<any[] | null>([])
+
+	const [attendanceCheckClassFilter, setAttendanceCheckFilter] = useState<string>('')
+	
+	const [payrollAuditClassFilter, setPayrollAuditClassFilter] = useState<string>('')
+	const [payrollAuditInstructorFilter, setPayrollAuditInstructorFilter] = useState<string>('')
+
+	const organizationFileString: string = reportParameters.organizationName?.replace(' ', '-') ?? ''
+
+	const reportDateDisplayString: string = reportParameters.startDate && reportParameters.startDate == reportParameters.endDate 
+		? `${reportParameters.startDate?.toString()}`
+		: `${reportParameters.startDate?.toString()} to ${reportParameters.endDate?.toString()}`
+
+	const reportDateFileString: string = reportParameters.startDate && reportParameters.startDate == reportParameters.endDate 
+		? `${reportParameters.startDate?.toString()}`
+		: `${reportParameters.startDate?.toString()}-${reportParameters.endDate?.toString()}`
+
+	function handleParameterChange(form: ReportParameters): void {
+		if (form.organizationGuid && form.organizationYearGuid && form.startDate && form.endDate)
+		{
+			setIsLoading(true)
+			setSiteSessionsIsLoading(true)
+
+			getReportsAsync(form.startDate, form.endDate, form.organizationYearGuid, form.organizationGuid)
+				.then(res => {
+					setReports(res)
+				})
+				.catch(err => {
+					setReports(null)
+				})
+				.finally(() => {
+					setIsLoading(false)
+				})
+
+			getSiteSessions(form.startDate, form.endDate, form.organizationGuid)
+				.then(res => {
+					setSiteSessions(res)
+				})
+				.catch(err => {
+					console.warn(err)
+				})
+				.finally(() => {
+					setSiteSessionsIsLoading(false)
+				})
+		}
+
 		setReportParameters(form)
-
-		setIsLoading(true)
-		getReportsAsync(form.schoolYear.startDate, form.schoolYear.endDate, form.orgGuid)
-			.then(res => {
-				setReports(res)
-			})
-			.catch(err => {
-				setReports(null)
-			})
-			.finally(() => {
-				setIsLoading(false)
-			})
-
-			getSiteSessions(form.schoolYear?.startDate, form.schoolYear?.endDate, form.orgGuid)
-      .then(res => {
-        setSiteSessions(res)
-      })
-      .catch(err => {
-        console.warn(err)
-      })
-      .finally(() => {
-        setSiteSessionsIsLoading(false)
-      })
 	}
+
+	useEffect(() => {
+		if (Array.isArray(reports.staffSummaries) && reports.staffSummaries.length > 0) {
+			setStatusTypeFilter(reports.staffSummaries[0].status)
+		
+			let options = [
+				{
+					guid: 'all',
+					label: `All (${reports.staffSummaries.reduce((total, current) => total + current.instructors.length, 0)})`
+				},
+				...reports.staffSummaries.map(statusGroup => ({
+					guid: statusGroup.status,
+					label: `${statusGroup.status} (${statusGroup.instructors.length})`
+				}))
+			]
+	
+			setStaffingDropdownOptions(options)
+		}
+	
+	  }, [reports.staffSummaries])
 
 	return (
 		<Container style={{minWidth: '90vw'}}>
-			<ParamSelection onSubmit={(form) => handleParameterChange(form)} user={user} />
+			<ReportParameterInput onSubmit={handleParameterChange} />
 
 			<hr />
 
 			<Row>
 				<Tab.Container defaultActiveKey='student-attendance'>
-					<Row >
-						<Col className='p-0' style={{maxWidth: '15rem'}}>
+					<Row className='d-flex flex-nowrap'>
+						<div style={{maxWidth: 'fit-content'}}>
 							<Row className='m-0' style={{width: 'fit-content'}}>
 								<h4 className='text-center'>Report Type</h4>
 							</Row>
@@ -309,7 +187,7 @@ export default ({user}): JSX.Element => {
 
 									<Nav.Item>
 										<Nav.Link eventKey='staffing'>
-											Staffing ({reports.staffSummaries.length})
+											Staffing ({reports.staffSummaries.flat().length})
 										</Nav.Link>
 									</Nav.Item>
 
@@ -319,15 +197,11 @@ export default ({user}): JSX.Element => {
 										</Nav.Link>
 									</Nav.Item>
 
-									{
-										user.claim == IdentityClaim.Administrator ?
-											<Nav.Item>
-												<Nav.Link eventKey='attendance-check'>
-													Attendance Check ({reports.attendanceCheck.length})
-												</Nav.Link>
-											</Nav.Item>
-										: null
-									}
+									<Nav.Item>
+										<Nav.Link eventKey='attendance-check'>
+											Attendance Check ({reports.attendanceCheck.length})
+										</Nav.Link>
+									</Nav.Item>
 
 									{
 										user.claim == IdentityClaim.Administrator ?
@@ -342,93 +216,285 @@ export default ({user}): JSX.Element => {
 								</Nav>
 							</Row>
 
-						</Col>
-
-						<Col className='ms-3'>
+						</div>
+						
+						<div className='flex-fill ps-3'>
 							<Tab.Content>
 
 								<Tab.Pane eventKey='student-attendance'>
-									<StudentAttendance
-										studentAttendanceReport={reports?.totalStudentAttendance}
-										reportIsLoading={isLoading}
-										parameters={...reportParameters}
-									/>
+									<ReportComponent
+										isLoading={isLoading}
+										displayData={reports?.totalStudentAttendance}
+										displayName={`Total Student Attendance for ${reportParameters.organizationName}, ${reportDateDisplayString}`}
+										fileData={reports?.totalStudentAttendance}
+										fileName={`Student_Attendance_${organizationFileString}_${reportDateFileString}`}
+										fileFields={studentAttendanceFields}
+									> 
+										<Row>
+											<Col md={3} className='p-0'>
+												<Form.Control 
+													type='number' 
+													className='border-bottom-0'
+													placeholder='Minimum days...'
+													value={studentAttendMinDays} 
+													onChange={(e) => setStudentAttendMinDays(e.target.value)}
+													style={{borderBottomLeftRadius: 0, borderBottomRightRadius: 0}}
+												/>
+											</Col>
+
+											<Col md={6}>
+												<span className='ms-1'># of students over {studentAttendMinDays} days: <b>{reports?.totalStudentAttendance.filter(x => x.totalDays >= studentAttendMinDays).length}</b> </span>
+											</Col>
+										</Row>
+								
+										<Row style={{maxHeight: '45rem', overflowY: 'auto'}}>
+											<Table 
+												className='m-0'
+												columns={studentAttendanceColumns} 
+												dataset={reports?.totalStudentAttendance.filter(x => x.totalDays >= studentAttendMinDays)}
+												defaultSort={{index: 0, direction: SortDirection.Ascending}}
+											/>
+										</Row>
+									</ReportComponent>
 								</Tab.Pane>
 
 								<Tab.Pane eventKey='family-attendance'>
-									<FamilyAttendance
-										familyAttendanceReport={reports?.totalFamilyAttendance}
-										reportIsLoading={isLoading}
-									 	parameters={{...reportParameters}} 
-									 />
+									<ReportComponent
+										isLoading={isLoading}
+										displayData={reports?.totalFamilyAttendance}
+										displayName={`Family Attendance for ${reportParameters.organizationName}, ${reportDateDisplayString}`}
+										fileData={flattenFamilyAttendance(reports?.totalFamilyAttendance)}
+										fileName={`Family_Attendance_${organizationFileString}_${reportDateFileString}`}
+										fileFields={familyAttendanceFields}
+									>
+										<Row style={{maxHeight: '45rem', overflowY: 'auto'}}>
+											<Table 
+												className='m-0'
+												columns={familyAttendanceColumns} 
+												dataset={reports?.totalFamilyAttendance} 
+												defaultSort={{index: 0, direction: SortDirection.Ascending}}
+											/>
+										</Row>
+									</ReportComponent>
 								</Tab.Pane>
 
 								<Tab.Pane eventKey='activities'>
-									<Activities 
-										activityReport={reports?.totalActivity}
-										reportIsLoading={isLoading}
-										parameters={{...reportParameters}} 
-									/>
+									<ReportComponent
+										isLoading={isLoading}
+										displayData={reports?.totalActivity}
+										displayName={`Total Activity for ${reportParameters.organizationName}, ${reportDateDisplayString}`}
+										fileData={reports?.totalActivity}
+										fileName={`Total_Activity_${organizationFileString}_${reportDateFileString}`}
+										fileFields={activityFields}
+									>
+										<Row style={{maxHeight: '45rem', overflowY: 'auto'}}>
+											<Table 
+												className='m-0'
+												columns={activityReportColumns} 
+												dataset={reports?.totalActivity} 
+												defaultSort={{index: 0, direction: SortDirection.Ascending}}
+											/>
+										</Row>
+									</ReportComponent>
 								</Tab.Pane>
 
 								<Tab.Pane eventKey='site-sessions'>
-									<SiteSessions 
-										siteSessionsReport={siteSessions}
-										reportIsLoading={siteSessionsIsLoading}
-										parameters={{...reportParameters}} 
-									/>
+									<ReportComponent
+										isLoading={siteSessionsIsLoading}
+										displayData={siteSessions}
+										displayName={`Site Sessions for ${reportParameters.organizationName}, ${reportDateDisplayString}`}
+										fileData={flattenSiteSessions(siteSessions)}
+										fileName={`Site_Sessions_${organizationFileString}_${reportDateFileString}`}
+										fileFields={siteSessionFields}
+									>
+										<Row style={{maxHeight: '45rem', overflowY: 'auto'}}>
+											<Table 
+												className='m-0'
+												columns={siteSessionsColumns} 
+												dataset={siteSessions} 
+												defaultSort={{index: 1, direction: SortDirection.Ascending}}
+												tableProps={{
+												  size: 'sm',
+												  style: {
+													overflowY: 'scroll',
+													overflowX: 'visible'
+												  }
+												}}
+											/>
+										</Row>
+									</ReportComponent>
 								</Tab.Pane>
 
 								<Tab.Pane eventKey='summary-of-classes'>
-									<SummaryOfClasses 
-										summaryOfClassesReport={reports?.classSummaries}
-										reportIsLoading={isLoading}
-										parameters={{...reportParameters}} 
-									/>
+									<ReportComponent
+										isLoading={isLoading}
+										displayData={reports?.classSummaries}
+										displayName={`Summary of Classes for ${reportParameters.organizationName}, ${reportDateDisplayString}`}
+										fileData={flattenSummaryOfClasses(reports?.classSummaries)}
+										fileName={`Summary_Of_Classes_${organizationFileString}_${reportDateFileString}`}
+										fileFields={summaryOfClassesFields}
+									>
+										<Row style={{maxHeight: '45rem', overflowY: 'auto'}}>
+											<Table 
+												className='m-0'
+												columns={summaryOfClassesColumns} 
+												dataset={reports?.classSummaries} 
+												defaultSort={{index: 0, direction: SortDirection.Ascending}}
+												tableProps={{
+												  size: 'sm'
+												}}
+											/>
+										</Row>
+									</ReportComponent>
 								</Tab.Pane>
 
 								<Tab.Pane eventKey='program-overview'>
-									<ProgramOverview 
-										programOverviewReport={reports?.programOverviews}
-										reportIsLoading={isLoading}
-										parameters={{...reportParameters}} 
-									/>
+									<ReportComponent
+										isLoading={isLoading}
+										displayData={reports?.programOverviews}
+										displayName={`Program Overview for ${reportParameters.organizationName}, ${reportDateDisplayString}`}
+										fileData={reports?.programOverviews}
+										fileName={`Program_Overview_${organizationFileString}_${reportDateFileString}`}
+										fileFields={programOverviewFields}
+									>
+										<Row style={{maxHeight: '45rem', overflowY: 'auto'}}>
+											<Table 
+												className='m-0'
+												columns={programOverviewColumns} 
+												dataset={reports?.programOverviews} 
+												defaultSort={{index: 0, direction: SortDirection.Ascending}}
+												tableProps={{
+												  size: 'sm'
+												}}
+											/>
+										</Row>
+									</ReportComponent>
 								</Tab.Pane>
 
 								<Tab.Pane eventKey='staffing'>
-									<StaffingSummary 
-										staffSummaryReport={reports?.staffSummaries}
-										reportIsLoading={isLoading}
-										parameters={{...reportParameters}}
-									/>
+									<ReportComponent
+										isLoading={isLoading}
+										displayData={reports?.staffSummaries}
+										displayName={`Staffing for ${reportParameters.organizationName}, ${reportDateDisplayString}`}
+										fileData={flattenStaffing(reports?.staffSummaries)}
+										fileName={`Staffing_${organizationFileString}_${reportDateFileString}`}
+										fileFields={staffingFields}
+									>
+										<Row class='d-flex flex-row'>
+											<Row>
+												<Form.Group className='mb-3'>
+													<Form.Label>Staff Status Type</Form.Label>
+													<Dropdown  
+														value={staffingStatusFilter}
+														options={staffingDropdownOptions}
+														onChange={(status: string) => setStatusTypeFilter(status)}
+													/>
+												</Form.Group>
+											</Row>
+							
+											<Row style={{maxHeight: '45rem', overflowY: 'auto'}}>
+												<Table 
+													className='m-0'
+													columns={staffingColumns} 
+													dataset={reports?.staffSummaries.find(statusGroup => statusGroup.status === staffingStatusFilter)?.instructors} 
+													defaultSort={{index: 0, direction: SortDirection.Ascending}}
+													tableProps={{
+														size: 'sm'
+													}}
+												/>
+											</Row>
+										</Row>
+									</ReportComponent>
 								</Tab.Pane>
 
 								<Tab.Pane eventKey='student-survey'>
-									<StudentSurvey
-										studentSurveyReport={reports?.studentSurvey}
-										reportIsLoading={isLoading}
-									 	parameters={{...reportParameters}}
-									 />
+									<ReportComponent
+										isLoading={isLoading}
+										displayData={reports?.studentSurvey}
+										displayName={`Student Survey for ${reportParameters.organizationName}, ${reportDateDisplayString}`}
+										fileData={reports?.studentSurvey}
+										fileName={`Student_Survey_${organizationFileString}_${reportDateFileString}`}
+										fileFields={studentSurveyFields}
+									>
+										<Row style={{maxHeight: '45rem', overflowY: 'auto'}}>
+											<Table 
+												className='m-0'
+												columns={studentSurveyColumns} 
+												dataset={reports?.studentSurvey} 
+												defaultSort={{index: 0, direction: SortDirection.Ascending}}
+												tableProps={{
+												  size: 'sm'
+												}}
+											/>
+										</Row>
+									</ReportComponent>
 								</Tab.Pane>
 
 								<Tab.Pane eventKey='attendance-check'>
-									<AttendanceCheck
-										attendanceCheckReport={reports?.attendanceCheck}
-										reportIsLoading={isLoading}
-										parameters={{...reportParameters}}
-									/>
+									<ReportComponent
+										isLoading={isLoading}
+										displayData={reports?.attendanceCheck}
+										displayName={`Attendance Check for ${reportParameters.organizationName}, ${reportDateDisplayString}`}
+									>
+										<Row>
+											<Col sm={3} className='p-0'>
+												<Form.Control 
+													type='text' 
+													className='border-bottom-0'
+													placeholder='Filter sessions...'
+													value={attendanceCheckClassFilter} 
+													onChange={(e) => setAttendanceCheckFilter(e.target.value.toLocaleLowerCase())}
+													style={{borderBottomLeftRadius: 0, borderBottomRightRadius: 0}}
+												/>
+											</Col>
+										</Row>
+										<Row style={{maxHeight: '45rem', overflowY: 'auto'}}>
+											<Table 
+												className='m-0'
+												columns={attendanceCheckColumns} 
+												dataset={reports?.attendanceCheck.filter(e => e.className.toLocaleLowerCase().includes(attendanceCheckClassFilter))} 
+												defaultSort={{index: 0, direction: SortDirection.Ascending}}
+												tableProps={{
+													size: 'sm',
+													style: {minWidth: '1100px'}
+												}}
+											/>
+										</Row>
+									</ReportComponent>
 								</Tab.Pane>
 
 								<Tab.Pane eventKey='payroll-audit'>
-									<PayrollAudit
-										payrollAuditReport={reports?.payrollAudit}
-										reportIsLoading={isLoading}
-										parameters={{...reportParameters}}
-									/>
+									<ReportComponent
+										isLoading={isLoading}
+										displayData={reports?.payrollAudit}
+										displayName={`Payroll Audit for ${reportParameters.organizationName}, ${reportDateDisplayString}`}
+									>
+										<Row>
+											<Col sm={3} className='p-0'>
+												<Form.Control 
+													type='text' 
+													className='border-bottom-0'
+													placeholder='Filter sessions...'
+													value={payrollAuditClassFilter} 
+													onChange={(e) => setPayrollAuditClassFilter(e.target.value.toLocaleLowerCase())}
+													style={{borderBottomLeftRadius: 0, borderBottomRightRadius: 0}}
+												/>
+											</Col>
+										</Row>
+										<Row style={{maxHeight: '45rem', overflowY: 'auto'}}>
+											<Table 
+												className='m-0'
+												columns={payrollAuditColumns} 
+												dataset={reports?.payrollAudit.filter(e => e.className.toLocaleLowerCase().includes(payrollAuditClassFilter))} 
+												defaultSort={{index: 0, direction: SortDirection.Ascending}}
+												tableProps={{style: {minWidth: '1100px', borderCollapse: 'collapse', borderSpacing: '0 3px'}}}
+											/>
+										</Row>
+									</ReportComponent>
 								</Tab.Pane>
 
 							</Tab.Content>
-						</Col>
+						</div>
 					</Row>
 				</Tab.Container>
 			</Row>
@@ -436,59 +502,3 @@ export default ({user}): JSX.Element => {
 		</Container>
 	)
 }
-
-/*
-<Tab.Pane eventKey='family-attendance'>
-									<FamilyAttendance parameters={{...reportParameters}} />
-								</Tab.Pane>
-
-								<Tab.Pane eventKey='activities'>
-									<Activities parameters={{...reportParameters}} />
-								</Tab.Pane>
-
-								<Tab.Pane eventKey='site-sessions'>
-									<SiteSessions parameters={{...reportParameters}} />
-								</Tab.Pane>
-
-								<Tab.Pane eventKey='summary-of-classes'>
-									<SummaryOfClasses parameters={{...reportParameters}} />
-								</Tab.Pane>
-
-								<Tab.Pane eventKey='program-overview'>
-									<ProgramOverview parameters={{...reportParameters}} />
-								</Tab.Pane>
-
-								<Tab.Pane eventKey='staffing'>
-									<StaffingSummary parameters={{...reportParameters}}/>
-								</Tab.Pane>
-
-								<Tab.Pane eventKey='student-survey'>
-									<StudentSurvey parameters={{...reportParameters}}/>
-								</Tab.Pane>
-*/
-
-/*
-We need:
-		Total student attendance: List of students with matric number, last name, first name, grade, total days, total hours
-		Similar for adult family member attendance
-
-		Total Activity by site
-		Table of activity types, the number of distinct participants, and the total hours
-
-		Site sessions
-		ask about what she means here
-
-		Summary of Classes
-		report sorted by dates, sites
-		by session with basic info, total weeks to date, avg hours per session, days of week it was fofered, and average attendance
-
-		Program Overview
-		Number of regular attendees to date?, number of days student sessions were offered, number of adult family members to date, avg student attend hours per week, avg student attend days per week
-
-		Staffing
-		Instructor statuses
-
-		Student Surveys
-		matric, first, last, grade, activity type, days, hours - I'd rather make something more intersting than multiple rows for students for each activity type.
-
-*/

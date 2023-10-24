@@ -84,6 +84,20 @@ namespace GrantTracker.Dal.Controllers
 			return NoContent();
 		}
 
+		[HttpPatch("year/{YearGuid:Guid}/grades/sync")]
+		public async Task<ActionResult<int>> SynchronizeSynergyGrades(Guid YearGuid)
+		{
+			try
+			{
+				var numRecordsUpdated = await _devRepository.SynchronizeStudentGradesWithSynergyAsync(YearGuid);
+				return Ok(numRecordsUpdated);
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500);
+			}
+		}
+
 		//Parameters
 		//4 digit year
 		//quarter of year

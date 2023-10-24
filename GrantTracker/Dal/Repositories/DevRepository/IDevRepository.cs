@@ -10,7 +10,8 @@ namespace GrantTracker.Dal.Repositories.DevRepository
 		public Task AddExceptionLogAsync(Exception exception, UserIdentity requestor);
 		public Task<List<ExceptionLogView>> GetExceptionLogsAsync();
 		public Task CreateUsersAsync(List<Identity> userIdentities);
+		Task<int> SynchronizeStudentGradesWithSynergyAsync(Guid YearGuid);
 
-		//public Task DeleteUsersAsync(List<Identity> userIdentities);
-	}
+        //public Task DeleteUsersAsync(List<Identity> userIdentities);
+    }
 }

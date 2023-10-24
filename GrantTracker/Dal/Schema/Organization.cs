@@ -8,6 +8,7 @@ namespace GrantTracker.Dal.Schema
 		public string Name { get; set; }
 
 		public ICollection<OrganizationYear> Years { get; set; }
+		public ICollection<OrganizationBlackoutDate> BlackoutDates { get; set; }
 
 		public static void Setup(ModelBuilder builder)
 		{
@@ -26,6 +27,11 @@ namespace GrantTracker.Dal.Schema
 				.WithOne(e => e.Organization)
 				.HasForeignKey(e => e.OrganizationGuid)
 				.OnDelete(DeleteBehavior.Cascade);
-		}
+
+            entity.HasMany(e => e.BlackoutDates)
+                .WithOne(e => e.Organization)
+                .HasForeignKey(e => e.OrganizationGuid)
+                .OnDelete(DeleteBehavior.Cascade);
+        }
 	}
 }

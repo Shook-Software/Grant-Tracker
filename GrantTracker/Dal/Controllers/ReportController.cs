@@ -2,9 +2,9 @@
 using Microsoft.Extensions.Caching.Memory;
 using GrantTracker.Dal.Repositories.ReportRepository;
 using GrantTracker.Dal.Models.Views;
-using GrantTracker.Dal.Models.Views.Reporting;
 using GrantTracker.Dal.Models.Dto;
 using GrantTracker.Dal.Schema;
+using GrantTracker.Dal.Schema.Sprocs.Reporting;
 
 namespace GrantTracker.Dal.Controllers;
 
@@ -74,46 +74,27 @@ public class ReportController : ControllerBase
 		Report<T> report;
 		var isStandardRequest = _standardReportBounds.Any(bound => bound.StartDateBound == startDate && bound.EndDateBound == endDate);
 
-		if (isStandardRequest)
-		{
-			//only those that match one of the 'standardReportBounds' will be added, ensuring non-runaway growth.
-			string cacheKey = $"{typeof(T).FullName}-{startDate}-{endDate}";
-
-			if (_memoryCache.TryGetValue(cacheKey, out report)) 
-			{
-
-			}
-			else
-			{
-				//if a standard request and not in the cache, fetch a new report from the database
-				report = new(await databaseCall(startDate, endDate, organizationGuid));
-				//then set it in the cache
-				_memoryCache.Set(cacheKey, report, _cacheEntryOptions);
-			}
-		}
-		else
-		{
-			//if not a standard request, fetch a new report from the database
-			report = new(await databaseCall(startDate, endDate, organizationGuid));
-		}
+		
+		//if not a standard request, fetch a new report from the database
+		report = new(await databaseCall(startDate, endDate, organizationGuid));
 
 		return report;
 	}
 
 	//except for site sessions rn
 	[HttpGet]
-	public async Task<ActionResult<ReportsViewModel>> GetAllReportsAsync(string startDateStr, string endDateStr, Guid organizationGuid = default)
+	public async Task<ActionResult<ReportsViewModel>> GetAllReportsAsync(string startDateStr, string endDateStr, Guid organizationYearGuid, Guid organizationGuid = default)
 	{
 		try
 		{
 			DateOnly startDate = DateOnly.Parse(startDateStr);
 			DateOnly endDate = DateOnly.Parse(endDateStr);
-			var reports = await _reportRepository.RunAllReportQueriesAsync(startDate, endDate, organizationGuid);
+			var reports = await _reportRepository.RunAllReportQueriesAsync(startDate, endDate, organizationYearGuid, organizationGuid);
 			return Ok(reports);
 		}
 		catch (Exception ex)
 		{
-			return StatusCode(500);
+            return StatusCode(500);
 		}
 	}
 

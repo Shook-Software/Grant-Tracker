@@ -135,7 +135,6 @@ const columnsBuilder2 = (handleAddInstructor): Column[] => ([
     sortable: false,
     transform: (value: InstructorSchoolYearView) => (
       <div className='d-flex justify-content-center'>
-        {console.log(value)}
         <Button onClick={() => handleAddInstructor(value.instructor, value.guid)}>
           +
         </Button>

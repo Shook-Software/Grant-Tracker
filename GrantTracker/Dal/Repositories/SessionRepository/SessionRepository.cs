@@ -26,8 +26,7 @@ namespace GrantTracker.Dal.Repositories.SessionRepository
 				var session = await _grantContext
 					.Sessions
 					.AsNoTracking()
-					.Where(s => s.SessionGuid == sessionGuid
-					&& (_identity.Claim == IdentityClaim.Administrator || s.OrganizationYear.OrganizationGuid == _identity.Organization.Guid))
+					.Where(s => s.SessionGuid == sessionGuid)
 					.Include(s => s.OrganizationYear).ThenInclude(oy => oy.Organization)
 					.Include(s => s.OrganizationYear).ThenInclude(oy => oy.Year)
 					.Include(s => s.SessionGrades).ThenInclude(g => g.Grade)
@@ -345,9 +344,6 @@ namespace GrantTracker.Dal.Repositories.SessionRepository
 
 				var organizationYearGuid = currentSession.OrganizationYearGuid;
 
-
-				//handle date change BULLSHIT HERE
-
 				var newDaySchedule = formSession.GetDaySchedule();
 				var currentSchedule = await _grantContext
 					.SessionDaySchedules
@@ -445,9 +441,6 @@ namespace GrantTracker.Dal.Repositories.SessionRepository
 
 					await _grantContext.SaveChangesAsync();
 				}
-
-
-				//fuck this fuck this fuck this function
 
 				await UpdateGradeLevels(newGrades, currentSession.SessionGrades.ToList());
 				await UpdateInstructors(newInstructors, currentSession.InstructorRegistrations.ToList());

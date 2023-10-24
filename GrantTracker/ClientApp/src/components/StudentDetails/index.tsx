@@ -8,7 +8,7 @@ import BasicDetails from './BasicDetails'
 import RegistrationDetails from './RegistrationDetails'
 import AttendanceDetails from './AttendanceDetails'
 
-import { Quarter } from 'models/OrganizationYear'
+import { Quarter } from 'Models/OrganizationYear'
 import { StudentSchoolYear, StudentSchoolYearWithRecordsView, StudentSchoolYearWithRecordsDomain, StudentView } from 'Models/Student'
 
 import api from 'utils/api'

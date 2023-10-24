@@ -1,7 +1,8 @@
-﻿namespace GrantTracker.Dal.Models.Views.Reporting;
+﻿namespace GrantTracker.Dal.Schema.Sprocs.Reporting;
 
 public class PayrollAuditDb
 {
+    public Guid SessionGuid { get; set; }
     public string School { get; set; }
     public string ClassName { get; set; }
     public DateOnly InstanceDate { get; set; }
@@ -15,6 +16,7 @@ public class PayrollAuditDb
 
 public class PayrollAuditView
 {
+    public Guid SessionGuid { get; set; }
     public string School { get; set; }
     public string ClassName { get; set; }
     public DateOnly InstanceDate { get; set; }

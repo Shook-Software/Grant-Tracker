@@ -232,14 +232,4 @@ _Pvt_Extensions
 .fake/
 
 #GrantTrackerEntity Testing
- .vs/GrantTracker/DesignTimeBuild/.dtbcache.v2
- .vs/GrantTracker/v17/.futdcache.v1
- .vs/GrantTracker/v17/.suo
- EntityTesting/bin/Debug/net6.0/CoverletSourceRootsMapping
- EntityTesting/obj/Debug/net6.0/EntityTesting.GeneratedMSBuildEditorConfig.editorconfig
- EntityTesting/obj/Debug/net6.0/EntityTesting.assets.cache
- EntityTesting/obj/Debug/net6.0/EntityTesting.csproj.AssemblyReference.cache
- EntityTesting/obj/EntityTesting.csproj.nuget.dgspec.json
- EntityTesting/obj/EntityTesting.csproj.nuget.g.props
- EntityTesting/obj/project.assets.json
- EntityTesting/obj/project.nuget.cache
+ .vs/

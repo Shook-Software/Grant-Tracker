@@ -10,7 +10,7 @@ import EnrollmentDisplay from './Enrollment'
 import AttendanceDetails from './AttendanceDetails'
 
 import { InstructorSchoolYearView, InstructorView } from 'Models/Instructor'
-import { Quarter } from 'models/OrganizationYear'
+import { Quarter } from 'Models/OrganizationYear'
 import { DropdownOption } from 'Models/Session'
 
 import { getInstructorStatusOptions, getInstructor, patchInstructorStatus } from './api'
