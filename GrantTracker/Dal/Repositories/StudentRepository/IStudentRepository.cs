@@ -16,8 +16,6 @@ namespace GrantTracker.Dal.Repositories.StudentRepository
 
 		public Task<List<StudentSchoolYearViewModel>> SearchSynergyAsync(StudentFilter filter);
 
-		public Task SyncStudentsWithSynergyAsync();
-
 
 		//public Task<List<Student>> Get(List<Guid> students);
 

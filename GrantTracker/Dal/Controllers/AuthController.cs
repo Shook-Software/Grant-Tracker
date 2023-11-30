@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using GrantTracker.Dal.Schema;
 using GrantTracker.Dal.Models.Views;
 
+
 namespace GrantTracker.Dal.Controllers
 {
 	[ApiController]
@@ -17,13 +18,15 @@ namespace GrantTracker.Dal.Controllers
 		private readonly IAuthRepository _authRepository;
 		private readonly IInstructorRepository _staffRepository;
 		private readonly IOrganizationYearRepository _organizationYearRepository;
+		private readonly ILogger<AuthRepository> _logger;
 
-		public AuthController(IAuthRepository repository, IInstructorRepository staffRepository, IOrganizationYearRepository organizationYearRepository)
+		public AuthController(IAuthRepository repository, IInstructorRepository staffRepository, IOrganizationYearRepository organizationYearRepository, ILogger<AuthRepository> logger)
 		{
 			_authRepository = repository;
 			_staffRepository = staffRepository;
-			_organizationYearRepository = organizationYearRepository;
-		}
+			_organizationYearRepository = organizationYearRepository; 
+			_logger = logger;
+        }
 
 		[HttpGet("")]
 		public ActionResult<UserIdentityView> Get()

@@ -10,6 +10,7 @@ namespace GrantTracker.Dal.Schema
 		public DateOnly InstanceDate { get; set; }
 		public virtual ICollection<InstructorAttendanceRecord> InstructorAttendance { get; set; }
 		public virtual ICollection<StudentAttendanceRecord> StudentAttendance { get; set; }
+		public virtual ICollection<FamilyAttendanceRecord> FamilyAttendance { get; set; }
 
 		public static void Setup(ModelBuilder builder)
 		{
@@ -36,9 +37,13 @@ namespace GrantTracker.Dal.Schema
 				.WithOne(e => e.AttendanceRecord)
 				.HasForeignKey(e => e.AttendanceRecordGuid);
 
-			/// /Properties
+            entity.HasMany(e => e.FamilyAttendance)
+                .WithOne(e => e.AttendanceRecord)
+                .HasForeignKey(e => e.AttendanceRecordGuid);
 
-			entity.Property(e => e.InstanceDate)
+            /// /Properties
+
+            entity.Property(e => e.InstanceDate)
 				.IsRequired()
 				.HasColumnType("date")
 				.HasComment("Specific date that the session took place on. Only one record is allowed per diem.");

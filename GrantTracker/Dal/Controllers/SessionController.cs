@@ -29,10 +29,12 @@ public class SessionController : ControllerBase
 	private readonly IInstructorSchoolYearRepository _instructorSchoolYearRepository;
     private readonly IOrganizationRepository _organizationRepository;
     private readonly IOrganizationYearRepository _organizationYearRepository;
+    private readonly ILogger<SessionController> _logger;
 
-	public SessionController(ISessionRepository sessionRepository, IStudentRepository studentRepository, IStudentSchoolYearRepository studentSchoolYearRepository, 
+    public SessionController(ISessionRepository sessionRepository, IStudentRepository studentRepository, IStudentSchoolYearRepository studentSchoolYearRepository, 
 		IAttendanceRepository attendanceRepository, IInstructorRepository instructorRepository, IOrganizationYearRepository organizationYearRepository, 
-		IOrganizationRepository organizationRepository, IInstructorSchoolYearRepository instructorSchoolYearRepository)
+		IOrganizationRepository organizationRepository, IInstructorSchoolYearRepository instructorSchoolYearRepository
+		, ILogger<SessionController> logger)
 	{
 		_sessionRepository = sessionRepository;
 		_studentRepository = studentRepository;
@@ -42,6 +44,7 @@ public class SessionController : ControllerBase
 		_instructorSchoolYearRepository = instructorSchoolYearRepository;
 		_organizationRepository = organizationRepository;
 		_organizationYearRepository = organizationYearRepository;
+		_logger = logger;
 	}
 
 	#region Get
@@ -108,53 +111,62 @@ public class SessionController : ControllerBase
 	[HttpGet("{sessionGuid:guid}/attendance/openDates")]
 	public async Task<ActionResult<List<DateOnly>>> GetOpenAttendanceDates(Guid sessionGuid, DayOfWeek dayOfWeek)
 	{
-		var session = await _sessionRepository.GetAsync(sessionGuid);
-
-		if (!User.IsAdmin() && !User.HomeOrganizationGuids().Contains(session.OrganizationYear.Organization.Guid))
-			return Unauthorized();
-
-		DateOnly startDate = session.FirstSession;
-		DateOnly endDate = session.LastSession;
-
-		List<DateOnly> GetWeekdaysBetween(DayOfWeek dayOfWeek, DateOnly startDate, DateOnly endDate)
+		try
 		{
-			List<DateOnly> openDates = new();
+			var session = await _sessionRepository.GetAsync(sessionGuid);
 
-			//check out yield return as an iterable
-			DateOnly currentDate;
-			if (startDate.DayOfWeek < dayOfWeek)
+			if (!User.IsAdmin() && !User.HomeOrganizationGuids().Contains(session.OrganizationYear.Organization.Guid))
+				return Unauthorized();
+
+			DateOnly startDate = session.FirstSession;
+			DateOnly endDate = session.LastSession;
+
+			List<DateOnly> GetWeekdaysBetween(DayOfWeek dayOfWeek, DateOnly startDate, DateOnly endDate)
 			{
-				currentDate = startDate.AddDays(dayOfWeek - startDate.DayOfWeek);
-			}
-			else if (startDate.DayOfWeek > dayOfWeek)
-			{
-				currentDate = startDate.AddDays((int)DayOfWeek.Saturday - (int)startDate.DayOfWeek + (int)dayOfWeek + 1);
-			}
-			else
-			{
-				currentDate = startDate;
+				List<DateOnly> openDates = new();
+
+				//check out yield return as an iterable
+				DateOnly currentDate;
+				if (startDate.DayOfWeek < dayOfWeek)
+				{
+					currentDate = startDate.AddDays(dayOfWeek - startDate.DayOfWeek);
+				}
+				else if (startDate.DayOfWeek > dayOfWeek)
+				{
+					currentDate = startDate.AddDays((int)DayOfWeek.Saturday - (int)startDate.DayOfWeek + (int)dayOfWeek + 1);
+				}
+				else
+				{
+					currentDate = startDate;
+				}
+
+				while (currentDate <= endDate)
+				{
+					openDates.Add(currentDate);
+					currentDate = currentDate.AddDays(7);
+				}
+
+				openDates.Sort();
+				return openDates;
 			}
 
-			while (currentDate <= endDate)
-			{
-				openDates.Add(currentDate);
-                currentDate = currentDate.AddDays(7);
-            }
+			IEnumerable<DateOnly> attendanceDates = await _attendanceRepository.GetAttendanceDatesAsync(sessionGuid);
+			IEnumerable<DateOnly> blackoutDates = (await _organizationRepository.GetBlackoutDatesAsync(session.OrganizationYear.Organization.Guid)).Select(x => x.Date);
 
-			openDates.Sort();
-			return openDates;
+			var openDates = GetWeekdaysBetween(dayOfWeek, startDate, endDate)
+				.Except(blackoutDates)
+				.Except(attendanceDates)
+				.ToList(); //filter coordinator-defined blackout dates and already existing attendance;
+
+			return Ok(openDates);
 		}
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "{Function} - An unhandled error occured.", nameof(GetOpenAttendanceDates));
+            return StatusCode(500);
+        }
+    }
 
-		IEnumerable<DateOnly> attendanceDates = await _attendanceRepository.GetAttendanceDatesAsync(sessionGuid);
-		IEnumerable<DateOnly> blackoutDates = (await _organizationRepository.GetBlackoutDatesAsync(session.OrganizationYear.Organization.Guid)).Select(x => x.Date);
-
-		var openDates = GetWeekdaysBetween(dayOfWeek, startDate, endDate)
-			.Except(blackoutDates)
-			.Except(attendanceDates)
-			.ToList(); //filter coordinator-defined blackout dates and already existing attendance;
-
-        return Ok(openDates);
-	}
 
 	#endregion Get
 
@@ -284,8 +296,9 @@ public class SessionController : ControllerBase
             return NoContent();
         }
 		catch (Exception ex)
-		{
-			return StatusCode(500);
+        {
+            _logger.LogError(ex, "{Function} - An unhandled error occured.", nameof(SubmitAttendance));
+            return StatusCode(500);
 		}
 	}
 
@@ -295,8 +308,16 @@ public class SessionController : ControllerBase
 	[HttpPatch("")]
 	public async Task<ActionResult<Guid>> EditSession([FromBody] FormSessionDto session)
 	{
-		await _sessionRepository.UpdateAsync(session);
-		return Ok(session.Guid);
+		try
+        {
+            await _sessionRepository.UpdateAsync(session);
+            return Ok(session.Guid);
+        }
+		catch (Exception ex)
+		{
+            _logger.LogError(ex, "{Function} - An unhandled error occured.", nameof(EditSession));
+            return StatusCode(500);
+        }
 	}
 
 	//We need a builder pattern for grabbing most variable info..
@@ -354,7 +375,8 @@ public class SessionController : ControllerBase
 		catch (Exception ex)
 		{
 			await _attendanceRepository.AddAttendanceAsync(existingAttendanceRecord);
-			return StatusCode(500, "An unexpected error occurred while editing attendance. No changes were made.");
+            _logger.LogError(ex, "{Function} - An unhandled error occured.", nameof(EditAttendance));
+            return StatusCode(500, "An unexpected error occurred while editing attendance. No changes were made.");
 		}
 	}
 
@@ -365,25 +387,49 @@ public class SessionController : ControllerBase
 	[HttpDelete("{sessionGuid:Guid}")]
 	public async Task<IActionResult> DeleteSession(Guid sessionGuid)
 	{
-		if (await _sessionRepository.GetStatusAsync(sessionGuid))
+		try
 		{
-			await _sessionRepository.DeleteAsync(sessionGuid);
-		}
-		return NoContent();
+            if (await _sessionRepository.GetStatusAsync(sessionGuid))
+            {
+                await _sessionRepository.DeleteAsync(sessionGuid);
+            }
+            return NoContent();
+        }
+		catch (Exception ex)
+        {
+            _logger.LogError(ex, "{Function} - An unhandled error occured.", nameof(DeleteSession));
+            return StatusCode(500);
+        }
 	}
 
 	[HttpDelete("registration")]
 	public async Task<IActionResult> UnregisterStudent(Guid studentSchoolYearGuid, [FromQuery(Name = "dayScheduleGuid[]")] Guid[] dayScheduleGuids)
 	{
-		await _sessionRepository.RemoveStudentAsync(studentSchoolYearGuid, dayScheduleGuids.ToList());
-		return Ok();
+		try
+		{
+            await _sessionRepository.RemoveStudentAsync(studentSchoolYearGuid, dayScheduleGuids.ToList());
+            return Ok();
+        }
+		catch (Exception ex)
+		{
+            _logger.LogError(ex, "{Function} - An unhandled error occured.", nameof(UnregisterStudent));
+            return StatusCode(500);
+        }
 	}
 
 	[HttpDelete("attendance")]
 	public async Task<IActionResult> DeleteAttendanceRecord(Guid attendanceGuid)
 	{
-		await _sessionRepository.RemoveAttendanceRecordAsync(attendanceGuid);
-		return Ok();
+		try
+		{
+            await _sessionRepository.RemoveAttendanceRecordAsync(attendanceGuid);
+            return Ok();
+        }
+		catch (Exception ex)
+		{
+            _logger.LogError(ex, "{Function} - An unhandled error occured.", nameof(DeleteAttendanceRecord));
+            return StatusCode(500);
+        }
 	}
 	#endregion Delete
 }

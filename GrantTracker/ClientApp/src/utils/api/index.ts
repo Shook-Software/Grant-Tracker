@@ -26,14 +26,8 @@ export abstract class AxiosIdentityConfig {
   }
 
   public static initialize (organizationGuid, yearGuid, organizationYearGuid, userGuid): void {
-    const lastOrganizationGuid = localStorage.getItem(`organizationGuid-${userGuid}`)
-    const lastYearGuid = localStorage.getItem(`yearGuid-${userGuid}`)
 
-    if (!lastOrganizationGuid || !lastYearGuid)
-      AxiosIdentityConfig.setOrganizationYear(organizationGuid, yearGuid, organizationYearGuid, userGuid)
-    else {
-      AxiosIdentityConfig.identity = { organizationGuid, yearGuid, organizationYearGuid }
-    }
+    AxiosIdentityConfig.identity = { organizationGuid, yearGuid, organizationYearGuid }
 
     if (!AxiosIdentityConfig.identity.organizationYearGuid)
     {
@@ -52,11 +46,9 @@ export abstract class AxiosIdentityConfig {
       || AxiosIdentityConfig.identity.organizationGuid !== organizationGuid 
       || AxiosIdentityConfig.identity.yearGuid !== yearGuid
       || AxiosIdentityConfig.identity.organizationYearGuid !== organizationYearGuid
-      ){
+      )
+    {
       AxiosIdentityConfig.identity = { organizationYearGuid, organizationGuid, yearGuid }
-
-      localStorage.setItem(`organizationGuid-${userGuid}`, organizationGuid)
-      localStorage.setItem(`yearGuid-${userGuid}`, yearGuid)
     }
     
     if (!organizationYearGuid)

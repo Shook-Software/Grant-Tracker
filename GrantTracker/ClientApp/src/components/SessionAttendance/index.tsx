@@ -35,7 +35,7 @@ interface Props {
     instructorRecords: InstructorRecord[],
     substituteRecords: SubstituteRecord[]
   ) => Promise<void>,
-  isFamilySession: boolean
+  sessionType: string
 }
 
 
@@ -51,7 +51,7 @@ export default ({
   props,
   handleClose,
   handleSubmit,
-  isFamilySession
+  sessionType
 }: Props): JSX.Element => {
   const sessionGuid: string = props.sessionGuid
   const [state, dispatch] = useReducer(reducer, props)
@@ -91,7 +91,7 @@ export default ({
           state={state}
           dispatch={dispatch}
           dateOptions={dateOptions}
-          isFamilySession={isFamilySession}
+          sessionType={sessionType}
         />
       </Modal.Body>
       <Modal.Footer>

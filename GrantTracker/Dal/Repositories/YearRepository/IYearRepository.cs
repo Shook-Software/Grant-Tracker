@@ -4,10 +4,11 @@ namespace GrantTracker.Dal.Repositories.YearRepository
 {
 	public interface IYearRepository
 	{
-		public Task<List<Year>> GetAsync();
-		public Task<Year> GetAsync(int year, Quarter quarter);
-		public Task AddAsync(Year yearModel);
-		public Task UpdateAsync(Year yearModel);
-		public Task<List<string>> ValidateYearAsync(Year year);
-	}
+		Task<List<Year>> GetAsync();
+		Task<Year> GetAsync(int year, Quarter quarter);
+		Task AddAsync(Year yearModel);
+		Task UpdateAsync(Year yearModel);
+		Task<List<string>> ValidateYearAsync(Year year);
+		IQueryable<Year> Get(Guid YearGuid);
+    }
 }

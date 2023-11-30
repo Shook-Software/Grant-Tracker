@@ -13,6 +13,7 @@ namespace GrantTracker.Dal.Schema
 
 		public virtual ICollection<StudentRegistration> SessionRegistrations { get; set; }
 		public virtual ICollection<StudentAttendanceRecord> AttendanceRecords { get; set; }
+		public virtual ICollection<FamilyAttendanceRecord> FamilyAttendance { get; set; }
 
 		public static void Setup(ModelBuilder builder)
 		{

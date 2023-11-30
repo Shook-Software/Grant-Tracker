@@ -12,16 +12,16 @@ interface Props {
   state: AttendanceForm
   dispatch: (action: ReducerAction) => void
   dateOptions: DropdownOption[],
-  isFamilySession: boolean
+  sessionType: string
 }
 
-export default ({ state, dispatch, dateOptions, isFamilySession }: Props): JSX.Element => {
+export default ({ state, dispatch, dateOptions, sessionType }: Props): JSX.Element => {
   return (
     <>
       <OverviewForm state={state} dispatch={dispatch} dateOptions={dateOptions} />
       <InstructorAttendance state={state} dispatch={dispatch} />
       <SubstituteAttendance state={state} dispatch={dispatch} />
-      <StudentAttendance state={state} dispatch={dispatch} isFamilySession={isFamilySession} />
+      <StudentAttendance state={state} dispatch={dispatch} sessionType={sessionType} />
     </>
   )
 }

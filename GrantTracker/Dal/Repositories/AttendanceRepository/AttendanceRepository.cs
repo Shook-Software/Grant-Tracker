@@ -23,9 +23,9 @@ public class AttendanceRepository : RepositoryBase, IAttendanceRepository
 			.AttendanceRecords
 			.AsNoTracking()
 			.Where(record => record.Guid == attendanceGuid)
+			.Include(ar => ar.FamilyAttendance)
 			.Include(ar => ar.StudentAttendance).ThenInclude(sa => sa.StudentSchoolYear).ThenInclude(ssy => ssy.Student)
 			.Include(ar => ar.StudentAttendance).ThenInclude(sa => sa.TimeRecords)
-			.Include(ar => ar.StudentAttendance).ThenInclude(sa => sa.FamilyAttendance)
 			.Include(ar => ar.InstructorAttendance).ThenInclude(ia => ia.InstructorSchoolYear).ThenInclude(isy => isy.Instructor)
 			.Include(ar => ar.InstructorAttendance).ThenInclude(ia => ia.InstructorSchoolYear).ThenInclude(isy => isy.Status)
 			.Include(ar => ar.InstructorAttendance).ThenInclude(ia => ia.TimeRecords)
@@ -75,88 +75,96 @@ public class AttendanceRepository : RepositoryBase, IAttendanceRepository
 
     public async Task AddAttendanceAsync(Guid sessionGuid, SessionAttendanceDto sessionAttendance)
 	{
-		await UseDeveloperLog(async () =>
+		//neither of these two should ever happen
+		foreach (var record in sessionAttendance.StudentRecords)
 		{
-			//neither of these two should ever happen
-			foreach (var record in sessionAttendance.StudentRecords)
-			{
-				if (record.StudentSchoolYearGuid == Guid.Empty)
-					throw new ArgumentException("One of the records contained an empty StudentSchoolYearGuid. StudentSchoolYearGuid cannot be empty.", nameof(sessionAttendance));
-			}
+			if (record.StudentSchoolYearGuid == Guid.Empty)
+				throw new ArgumentException("One of the records contained an empty StudentSchoolYearGuid. StudentSchoolYearGuid cannot be empty.", nameof(sessionAttendance));
+		}
 
-			foreach (var record in sessionAttendance.InstructorRecords)
-			{
-				if (record.InstructorSchoolYearGuid == Guid.Empty)
-					throw new ArgumentException("One of the records contained an empty InstructorSchoolYearGuid. InstructorSchoolYearGuid cannot be empty.", nameof(sessionAttendance));
-			}
+		foreach (var record in sessionAttendance.InstructorRecords)
+		{
+			if (record.InstructorSchoolYearGuid == Guid.Empty)
+				throw new ArgumentException("One of the records contained an empty InstructorSchoolYearGuid. InstructorSchoolYearGuid cannot be empty.", nameof(sessionAttendance));
+		}
 
-			Guid attendanceGuid = Guid.NewGuid();
-			var newAttendanceRecord = new AttendanceRecord()
+
+        Guid attendanceGuid = Guid.NewGuid();
+
+
+
+        List<FamilyAttendanceRecord> familyAttendance = new();
+
+
+		sessionAttendance.StudentRecords
+			.ForEach(sr =>
 			{
-				Guid = attendanceGuid,
-				SessionGuid = sessionGuid,
-				InstanceDate = sessionAttendance.Date,
-				InstructorAttendance = sessionAttendance.InstructorRecords
-				.Select(i => {
-					Guid instructorAttendanceRecordGuid = Guid.NewGuid();
-					return new InstructorAttendanceRecord()
-					{
-						Guid = instructorAttendanceRecordGuid,
-						InstructorSchoolYearGuid = i.InstructorSchoolYearGuid,
-						AttendanceRecordGuid = attendanceGuid,
-						IsSubstitute = i.IsSubstitute,
-						TimeRecords = i.Attendance
-						.Select(time => new InstructorAttendanceTimeRecord()
+				sr.FamilyAttendance.ForEach(fa =>
+				{
+					for (int count = 0; count < fa.Count; count++)
+						familyAttendance.Add(new FamilyAttendanceRecord()
 						{
 							Guid = Guid.NewGuid(),
-							InstructorAttendanceRecordGuid = instructorAttendanceRecordGuid,
+							AttendanceRecordGuid = attendanceGuid,
+							StudentSchoolYearGuid = sr.StudentSchoolYearGuid,
+							FamilyMember = fa.FamilyMember
+						});
+				});
+			});
+
+
+
+        var newAttendanceRecord = new AttendanceRecord()
+		{
+			Guid = attendanceGuid,
+			SessionGuid = sessionGuid,
+			InstanceDate = sessionAttendance.Date,
+			InstructorAttendance = sessionAttendance.InstructorRecords
+			.Select(i => {
+				Guid instructorAttendanceRecordGuid = Guid.NewGuid();
+				return new InstructorAttendanceRecord()
+				{
+					Guid = instructorAttendanceRecordGuid,
+					InstructorSchoolYearGuid = i.InstructorSchoolYearGuid,
+					AttendanceRecordGuid = attendanceGuid,
+					IsSubstitute = i.IsSubstitute,
+					TimeRecords = i.Attendance
+					.Select(time => new InstructorAttendanceTimeRecord()
+					{
+						Guid = Guid.NewGuid(),
+						InstructorAttendanceRecordGuid = instructorAttendanceRecordGuid,
+						EntryTime = time.StartTime,
+						ExitTime = time.EndTime
+					})
+					.ToList()
+				};
+			})
+			.ToList(),
+			StudentAttendance = sessionAttendance.StudentRecords
+				.Select(sr => {
+					Guid studentAttendanceRecordGuid = Guid.NewGuid();
+
+                    return new StudentAttendanceRecord()
+					{
+						Guid = studentAttendanceRecordGuid,
+						StudentSchoolYearGuid = sr.StudentSchoolYearGuid,
+						AttendanceRecordGuid = attendanceGuid,
+						TimeRecords = sr.Attendance.Select(time => new StudentAttendanceTimeRecord()
+						{
+							Guid = Guid.NewGuid(),
+							StudentAttendanceRecordGuid = studentAttendanceRecordGuid,
 							EntryTime = time.StartTime,
 							ExitTime = time.EndTime
 						})
-						.ToList()
+						.ToList(),
 					};
 				})
-				.ToList(),
-				StudentAttendance = sessionAttendance.StudentRecords
-					.Select(sr => {
-						Guid studentAttendanceRecordGuid = Guid.NewGuid();
+			.ToList(),
+			FamilyAttendance = familyAttendance
+        };
 
-						List<FamilyAttendance> familyRecords = new();
-
-						if (sr.FamilyAttendance != null)
-							sr.FamilyAttendance?.ForEach(record =>
-							{
-								for (int i = 0; i < record.Count; i++)
-									familyRecords.Add(new FamilyAttendance()
-									{
-										Guid = Guid.NewGuid(),
-										StudentAttendanceRecordGuid = studentAttendanceRecordGuid,
-										FamilyMember = record.FamilyMember
-									});
-							});
-
-						return new StudentAttendanceRecord()
-						{
-							Guid = studentAttendanceRecordGuid,
-							StudentSchoolYearGuid = sr.StudentSchoolYearGuid,
-							AttendanceRecordGuid = attendanceGuid,
-							TimeRecords = sr.Attendance.Select(time => new StudentAttendanceTimeRecord()
-							{
-								Guid = Guid.NewGuid(),
-								StudentAttendanceRecordGuid = studentAttendanceRecordGuid,
-								EntryTime = time.StartTime,
-								ExitTime = time.EndTime
-							})
-							.ToList(),
-							FamilyAttendance = familyRecords
-						};
-					})
-				.ToList()
-			};
-
-			await _grantContext.AttendanceRecords.AddAsync(newAttendanceRecord);
-			await _grantContext.SaveChangesAsync();
-		});
+		await _grantContext.AttendanceRecords.AddAsync(newAttendanceRecord);
+		await _grantContext.SaveChangesAsync();
 	}
 
 	public async Task<AttendanceRecord> DeleteAttendanceRecordAsync(Guid AttendanceGuid)
@@ -164,13 +172,13 @@ public class AttendanceRepository : RepositoryBase, IAttendanceRepository
             //Remove the existing record and all of it's components
         var existingAttendanceRecord = await _grantContext
             .AttendanceRecords
-            .Include(ar => ar.StudentAttendance).ThenInclude(sa => sa.FamilyAttendance)
+			.Include(ar => ar.FamilyAttendance)
             .Include(ar => ar.StudentAttendance).ThenInclude(sa => sa.TimeRecords)
             .Include(ar => ar.InstructorAttendance).ThenInclude(ia => ia.TimeRecords)
             .Where(ar => ar.Guid == AttendanceGuid)
             .FirstAsync();
 
-        _grantContext.FamilyAttendances.RemoveRange(existingAttendanceRecord.StudentAttendance.SelectMany(sa => sa.FamilyAttendance).ToList());
+        _grantContext.FamilyAttendances.RemoveRange(existingAttendanceRecord.FamilyAttendance.ToList());
         _grantContext.InstructorAttendanceTimeRecords.RemoveRange(existingAttendanceRecord.InstructorAttendance.SelectMany(ia => ia.TimeRecords).ToList());
         _grantContext.InstructorAttendanceRecords.RemoveRange(existingAttendanceRecord.InstructorAttendance.ToList());
         _grantContext.StudentAttendanceTimeRecords.RemoveRange(existingAttendanceRecord.StudentAttendance.SelectMany(sa => sa.TimeRecords).ToList());

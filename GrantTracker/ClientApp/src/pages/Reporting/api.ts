@@ -24,16 +24,7 @@ export function getReportsAsync(startDate: LocalDate, endDate: LocalDate, organi
             endTime: TimeOnly.toLocalTime(t.endTime)
           }))
         }))
-
-        //rather than perform some awful cross-join, we are stealing from attendanceCheck here
-        res.data.payrollAudit = res.data.payrollAudit.map(audit => ({
-          ...audit,
-          sessionInstructors: [...res.data.attendanceCheck.find(check => check.sessionGuid == audit.sessionGuid).instructors]
-        }))
-
-        console.log(res.data.attendanceCheck)
-        console.log(res.data.payrollAudit)
-
+        
         resolve(res.data)
       })
   })

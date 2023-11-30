@@ -14,15 +14,29 @@ import { DropdownOption } from 'types/Session'
 import paths from 'utils/routing/paths'
 import api, { AxiosIdentityConfig } from 'utils/api'
 import SessionDetails from 'components/SessionDetails'
+import { AttendanceRecord } from 'components/SessionAttendance/AttendanceForm/TimeInput'
 
 function dropdownOptionTransform (value: DropdownOption): string {
   return value.label
 }
 
-const createColumns = (): Column[] => [
+const createColumns = (missingAttendanceRecords, openSessionGuid): Column[] => [
   {
     label: 'Name',
-    attributeKey: 'name',
+    attributeKey: '',
+    transform: (session: SimpleSessionView) => {
+
+      if (session.sessionGuid === openSessionGuid)
+        var textColorClass = 'text-primary'
+      else if (missingAttendanceRecords.some(x => x.sessionGuid === session.sessionGuid))
+        var textColorClass = 'text-danger'
+      else 
+        var textColorClass = ''
+      
+      return (
+        <div className={`${textColorClass}`}>{session.name}</div>
+      )
+    },
     sortable: true
   },
   {
@@ -69,8 +83,6 @@ const createColumns = (): Column[] => [
     )
   }
 ]
-/*
-          */
 
 //Just use the organization a user is tied to on the API side, no need to send it from here.
 export default (): JSX.Element => {
@@ -80,6 +92,8 @@ export default (): JSX.Element => {
   const [state, setState] = useState<SimpleSessionView[]>([])
   const [isLoading, setIsLoading] = useState<boolean>(false) //can we make a custom hook for loading?
   const [searchTerm, setSearchTerm] = useState<string>('')
+  const [missingAttendanceRecords, setMissingAttendanceRecords] = useState<AttendanceRecord[]>([])
+  const [currentOrgYearGuid, setOrgYearGuid] = useState<string>('')
   const navigate = useNavigate()
 
   function fetchSessions (params) {
@@ -96,8 +110,8 @@ export default (): JSX.Element => {
           }
         })
         .then(res => {
-          const sessions: SimpleSessionView[] = res.data
-          setState(sessions)
+          setOrgYearGuid(user.organizationYearGuid)
+          setState(res.data)
         })
         .catch(err => console.warn(err))
         .finally(() => {
@@ -112,22 +126,25 @@ export default (): JSX.Element => {
   }
 
   useEffect(() => {
-    navigate(`${paths.Admin.path}/${paths.Admin.Tabs.Sessions.path}`)
+      if (user.organizationYearGuid == currentOrgYearGuid || currentOrgYearGuid === '')
+        return
+
+      navigate(`${paths.Admin.path}/${paths.Admin.Tabs.Sessions.path}`)
   }, [user])
 
-  /*useEffect(() => {
+  useEffect(() => {
     api
       .get(`/organizationYear/${AxiosIdentityConfig.identity.organizationYearGuid}/Attendance/Missing`)
       .then(res => {
-        console.table(res.data.filter(x => x.sessionGuid == sessionGuid))
+        setMissingAttendanceRecords(res.data)
       })
-  }, [sessionGuid])*/
+  }, [user])
 
   useEffect(() => {
-    fetchSessions(null)
+      fetchSessions(null)
   }, [AxiosIdentityConfig.identity.organizationYearGuid])
 
-  let columns: Column[] = createColumns()
+  let columns: Column[] = createColumns(missingAttendanceRecords, sessionGuid)
   let rowClick = null
   if (sessionGuid != null) {
     columns = [columns[0]]
@@ -137,15 +154,22 @@ export default (): JSX.Element => {
 
   return (
     <>
-      <AddButton
-        as={Link}
-        to={`${paths.Edit.path}/${paths.Edit.Sessions.path}/overview`}
-      >
-        Add New Session
-      </AddButton>
-
       <Container className='pt-3'>
-        <h5>Sessions for {user.organizationName}</h5>
+        <div className='d-flex mb-3'>
+          <div>
+            <h4 className='m-0 me-3 text-align-center'>Sessions for {user.organizationName}</h4>  
+            <small className='text-danger'>* Red sessions are missing attendance records</small>
+          </div>
+          <div>
+            <AddButton
+              as={Link}
+              to={`${paths.Edit.path}/${paths.Edit.Sessions.path}/overview`}
+            >
+              Add New Session
+            </AddButton>
+          </div>
+        </div>
+       
         {isLoading ? (
           <Spinner animation='border' />
         ) : !state || state.length === 0 ? (

@@ -114,6 +114,10 @@ function addFamilyColumn (columns: Column[]): Column[] {
   ]
 }
 
+function removeStudentTimeRecords(columns: Column[]): Column[] {
+  return columns.filter(x => x.label !== 'Time Records')
+}
+
 //{console.log(props.popper.state ? props.popper.state : props.popper)}
 const ConfirmDeletionPopover = ({title, onChange}): JSX.Element => (
   <Popover style={{width: '20rem'}}>
@@ -168,10 +172,10 @@ interface Props {
   simpleRecord: SimpleAttendanceView
   onEditClick
   onDeleteClick
-  isFamilySession: boolean
+  sessionType: string
 }
 
-export default ({sessionGuid, simpleRecord, onEditClick, onDeleteClick, isFamilySession}: Props): JSX.Element => {
+export default ({sessionGuid, simpleRecord, onEditClick, onDeleteClick, sessionType}: Props): JSX.Element => {
   const [record, setRecord] = useState<AttendanceView | null>(null)
   const [isLoading, setIsLoading] = useState<boolean>(false)
 
@@ -184,8 +188,14 @@ export default ({sessionGuid, simpleRecord, onEditClick, onDeleteClick, isFamily
   }
 
   let studentTableColumns: Column[] = [...studentColumns]
-  if (record?.studentAttendanceRecords?.length > 0 && isFamilySession) {
-    studentTableColumns = addFamilyColumn(studentTableColumns)
+  if (record?.studentAttendanceRecords?.length > 0) 
+  {
+      if (sessionType === 'family' || sessionType === 'parent')
+        studentTableColumns = addFamilyColumn(studentTableColumns)
+
+      if (sessionType === 'parent')
+        studentTableColumns = removeStudentTimeRecords(studentTableColumns)
+
   }
 
   useEffect(() => {

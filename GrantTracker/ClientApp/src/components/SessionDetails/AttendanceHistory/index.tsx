@@ -14,10 +14,10 @@ interface Props {
   sessionGuid: string
   attendanceRecords: SimpleAttendanceView[]
   onChange
-  isFamilySession: boolean
+  sessionType: string
 }
 
-export default ({sessionGuid, attendanceRecords, onChange, isFamilySession}: Props): JSX.Element => {
+export default ({sessionGuid, attendanceRecords, onChange, sessionType}: Props): JSX.Element => {
   const [modalProps, setModalProps] = useState<any>()
   const [showModal, setShowModal] = useState<boolean>(false)
   const [isLoading, setIsLoading] = useState<boolean>(false)
@@ -138,7 +138,7 @@ export default ({sessionGuid, attendanceRecords, onChange, isFamilySession}: Pro
                 simpleRecord={record} 
                 onEditClick={(record) => handleEditClick(record)}
                 onDeleteClick={(record) => handleDeleteClick(record)}
-                isFamilySession={isFamilySession}
+                sessionType={sessionType}
               />
             </Accordion>
         )
@@ -147,7 +147,7 @@ export default ({sessionGuid, attendanceRecords, onChange, isFamilySession}: Pro
         showModal ? 
         <AttendanceModal 
           props={modalProps}
-          isFamilySession={isFamilySession}
+          sessionType={sessionType}
           handleClose={() => setShowModal(false)} 
           handleSubmit={(attendanceGuid, date, studentRecords, instructorRecords, substituteRecords) => new Promise((resolve, reject) => {
             const editedRecord = {

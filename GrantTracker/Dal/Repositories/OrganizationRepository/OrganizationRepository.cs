@@ -31,7 +31,6 @@ namespace GrantTracker.Dal.Repositories.OrganizationRepository
 
         public async Task<OrganizationView> GetYearsAsync(Guid OrganizationGuid)
 		{
-
             if (_identity.Claim != IdentityClaim.Administrator && _identity.Organization.Guid != OrganizationGuid)
                 throw new Exception("User is not authorized to view this resource.");
 
@@ -88,7 +87,7 @@ namespace GrantTracker.Dal.Repositories.OrganizationRepository
 
         public async Task<List<OrganizationBlackoutDate>> GetBlackoutDatesAsync(Guid OrganizationGuid)
         {
-			return await _grantContext.BlackoutDates.Where(x => x.OrganizationGuid == OrganizationGuid).ToListAsync();
+			return await _grantContext.BlackoutDates.AsNoTracking().Where(x => x.OrganizationGuid == OrganizationGuid).ToListAsync();
         }
 
         public async Task AddBlackoutDateAsync(Guid OrganizationGuid, DateOnly BlackoutDate)
@@ -116,10 +115,3 @@ namespace GrantTracker.Dal.Repositories.OrganizationRepository
 		}
     }
 }
-
-
-public static class OrganizationExtensions
-{
-
-}
-

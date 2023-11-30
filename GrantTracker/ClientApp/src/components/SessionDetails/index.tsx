@@ -261,7 +261,7 @@ export default ({sessionGuid}: Props): JSX.Element => {
                       sessionGuid={sessionGuid}
                       attendanceRecords={attendanceRecords} 
                       onChange={getAttendance} 
-                      isFamilySession={session!.sessionType.label.toLowerCase() != 'student'}
+                      sessionType={session!.sessionType.label.toLowerCase()}
                     />
                   </Card.Title>
                 </Card.Body>
@@ -297,7 +297,7 @@ export default ({sessionGuid}: Props): JSX.Element => {
           }
           handleClose={handleAttendanceModalClose}
           handleSubmit={submitAttendance}
-          isFamilySession={session!.sessionType.label.toLowerCase() != 'student'}
+          sessionType={session!.sessionType.label.toLowerCase()}
         />
       ) : null}
     </PageContainer>

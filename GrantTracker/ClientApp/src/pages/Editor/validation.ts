@@ -1,3 +1,4 @@
+import { LocalTime } from '@js-joda/core'
 import * as Yup from 'yup'
 
 export default Yup.object().shape({
@@ -20,5 +21,30 @@ export default Yup.object().shape({
     .required(),
 
   partnershipType: Yup.string()
-    .required()
+    .required(),
+
+    scheduling: Yup.array().of(
+      Yup.object().shape({
+        dayOfWeek: Yup.string(),
+        recurs: Yup.boolean(),
+        timeSchedules: Yup.array()
+        .of(
+          Yup.object().shape({
+            guid: Yup.string().notRequired(),
+            startTime: Yup.mixed<LocalTime>().required(),
+            endTime: Yup.mixed<LocalTime>().required()
+          })
+        .test((x, { createError }) => {
+          if (x.startTime === x.endTime)
+            return createError({
+              message: `Start and end times cannot be equivalent.`,
+              path: 'timeSchedules'
+            })
+          
+          return true
+        })
+        )
+      })
+      .required()
+    )
 })

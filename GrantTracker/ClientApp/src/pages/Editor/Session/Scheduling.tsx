@@ -182,10 +182,12 @@ const DayScheduling = ({
 }
 
 export default (): JSX.Element => {
-  const { reducerDispatch, values }: Context = useSession()
+  const { reducerDispatch, values, errors }: Context = useSession()
   document.title = `${values.guid ? 'Edit' : 'New'} Session - Scheduling`
   const schedule: WeeklySchedule = values.scheduling
   let daySchedule: DayScheduleForm | undefined
+
+  console.log(errors)
 
   if (!values)
     return (

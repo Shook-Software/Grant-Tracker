@@ -96,42 +96,7 @@ const OrganizationYearSelect = ({user, onChange}: {user: User, onChange}) => {
         setYears(res)
       })
   }, [user])
-
-  useEffect(() => {
-    if (organizations.length > 0 && years.length > 0)
-    {
-      const lastOrganizationGuid = localStorage.getItem(`organizationGuid-${user.userGuid}`)
-      const lastYearGuid = localStorage.getItem(`yearGuid-${user.userGuid}`)
-      if (lastOrganizationGuid && lastOrganizationGuid != user.organization.guid)
-      {
-        const organization: OrganizationView | undefined = organizations.find(org => org.guid === lastOrganizationGuid)  
-        user
-          .getOrganizationYearsAsync(lastOrganizationGuid)
-          .then(res => {
-            //console.log(res)
-            let organizationYearGuid = res.find(orgYear => orgYear.organization.guid == lastOrganizationGuid)?.guid 
-            user.setOrganization(organization)
-            //user.setYear(res[0])
-            user.setOrganizationYear(organizationYearGuid)
-        
-            //console.log(lastYearGuid, user.year.guid)
-            if (lastYearGuid)
-            {
-              const year: OrganizationYearView | undefined = res.find(sy => sy.year.guid === lastYearGuid)
-              user.setYear(year)
-            }
-
-            onChange()
-          })
-      }
-      /*if (lastYearGuid && lastYearGuid != user.year.guid)
-      {
-        handleYearChange(lastYearGuid)
-      }*/
-    }
-    
-  }, [AxiosIdentityConfig.identity.organizationGuid, organizations, years])
-
+  
   return (
     <div className='position-absolute text-white' style={{zIndex: 500, right: '2rem', top: 0}}>
       {

@@ -9,7 +9,6 @@ namespace GrantTracker.Dal.Schema
 		public virtual StudentSchoolYear StudentSchoolYear { get; set; }
 		public Guid AttendanceRecordGuid { get; set; }
 		public virtual AttendanceRecord AttendanceRecord { get; set; }
-		public virtual ICollection<FamilyAttendance> FamilyAttendance { get; set; }
 		public virtual ICollection<StudentAttendanceTimeRecord> TimeRecords { get; set; }
 
 		public static void Setup(ModelBuilder builder)

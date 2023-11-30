@@ -3,6 +3,7 @@ using GrantTracker.Utilities;
 using GrantTracker.Dal.Repositories.DevRepository;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query;
 
 namespace GrantTracker.Dal.Repositories.YearRepository
 {
@@ -21,9 +22,14 @@ namespace GrantTracker.Dal.Repositories.YearRepository
                 .OrderByDescending(x => x.SchoolYear)
                 .ThenBy(x => x.Quarter)
 				.ToListAsync();
-		}
+        }
 
-		public async Task<Year> GetAsync(int year, Quarter quarter)
+        public IQueryable<Year> Get(Guid YearGuid)
+        {
+			return _grantContext.Years.Where(x => x.YearGuid == YearGuid);
+        }
+
+        public async Task<Year> GetAsync(int year, Quarter quarter)
 		{
 			return await _grantContext.Years
 				.Where(sy => sy.SchoolYear == year && sy.Quarter == quarter)
@@ -104,3 +110,25 @@ namespace GrantTracker.Dal.Repositories.YearRepository
 	}
 }
 
+public static class YearExtensions
+{
+	public static IIncludableQueryable<Year, IEnumerable<OrganizationYear>> WithOrganizationYears(this IQueryable<Year> Query)
+	{
+		return Query.Include(year => year.Organizations);
+	}
+
+	public static IIncludableQueryable<Year, Organization> WithOrganizations(this IIncludableQueryable<Year, IEnumerable<OrganizationYear>> Query)
+	{
+		return Query.ThenInclude(x => x.Organization);
+	}
+
+	public static IIncludableQueryable<Year, IEnumerable<InstructorSchoolYear>> WithInstructorSchoolYears(this IIncludableQueryable<Year, IEnumerable<OrganizationYear>> Query)
+	{
+		return Query.ThenInclude(x => x.InstructorSchoolYears);
+    }
+
+    public static IIncludableQueryable<Year, Identity> WithCoordinatorIdentities(this IIncludableQueryable<Year, IEnumerable<InstructorSchoolYear>> Query)
+    {
+        return Query.ThenInclude(x => x.Identity);
+    }
+}

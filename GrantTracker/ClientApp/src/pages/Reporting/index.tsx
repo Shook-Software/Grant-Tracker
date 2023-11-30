@@ -16,7 +16,7 @@ import {
 	staffingColumns,
 	studentSurveyColumns,
 	attendanceCheckColumns,
-	payrollAuditColumns
+	createPayrollAuditColumns
 } from './Definitions/Columns'
 import { 
 	activityFields, 
@@ -67,9 +67,6 @@ export default ({user}): JSX.Element => {
 	const [staffingDropdownOptions, setStaffingDropdownOptions] = useState<any[] | null>([])
 
 	const [attendanceCheckClassFilter, setAttendanceCheckFilter] = useState<string>('')
-	
-	const [payrollAuditClassFilter, setPayrollAuditClassFilter] = useState<string>('')
-	const [payrollAuditInstructorFilter, setPayrollAuditInstructorFilter] = useState<string>('')
 
 	const organizationFileString: string = reportParameters.organizationName?.replace(' ', '-') ?? ''
 
@@ -464,33 +461,12 @@ export default ({user}): JSX.Element => {
 								</Tab.Pane>
 
 								<Tab.Pane eventKey='payroll-audit'>
-									<ReportComponent
-										isLoading={isLoading}
-										displayData={reports?.payrollAudit}
-										displayName={`Payroll Audit for ${reportParameters.organizationName}, ${reportDateDisplayString}`}
-									>
-										<Row>
-											<Col sm={3} className='p-0'>
-												<Form.Control 
-													type='text' 
-													className='border-bottom-0'
-													placeholder='Filter sessions...'
-													value={payrollAuditClassFilter} 
-													onChange={(e) => setPayrollAuditClassFilter(e.target.value.toLocaleLowerCase())}
-													style={{borderBottomLeftRadius: 0, borderBottomRightRadius: 0}}
-												/>
-											</Col>
-										</Row>
-										<Row style={{maxHeight: '45rem', overflowY: 'auto'}}>
-											<Table 
-												className='m-0'
-												columns={payrollAuditColumns} 
-												dataset={reports?.payrollAudit.filter(e => e.className.toLocaleLowerCase().includes(payrollAuditClassFilter))} 
-												defaultSort={{index: 0, direction: SortDirection.Ascending}}
-												tableProps={{style: {minWidth: '1100px', borderCollapse: 'collapse', borderSpacing: '0 3px'}}}
-											/>
-										</Row>
-									</ReportComponent>
+									<PayrollAuditReport 
+										isLoading={isLoading} 
+										reportParameters={reportParameters}
+										reportDateDisplayString={reportDateDisplayString}
+										records={reports?.payrollAudit}
+									/>
 								</Tab.Pane>
 
 							</Tab.Content>
@@ -500,5 +476,60 @@ export default ({user}): JSX.Element => {
 			</Row>
 			
 		</Container>
+	)
+}
+
+
+const PayrollAuditReport = ({isLoading, reportParameters, reportDateDisplayString, records}): JSX.Element => {
+	const [payrollAuditRegisteredFilter, setPayrollAuditRegisteredFilter] = useState<string>('')
+	const [payrollAuditAttendingFilter, setPayrollAuditAttendingFilter] = useState<string>('')
+
+	const displayData: any[] = records
+		.filter(e => e.attendingInstructorRecords.some(air => `${air.firstName} ${air.lastName}`.toLocaleLowerCase().includes(payrollAuditAttendingFilter.toLocaleLowerCase()))
+			&& e.registeredInstructors.some(ri => `${ri.firstName} ${ri.lastName}`.toLocaleLowerCase().includes(payrollAuditRegisteredFilter.toLocaleLowerCase()))
+		)
+
+	console.log(displayData)
+
+	return (
+		<ReportComponent
+			isLoading={isLoading}
+			displayData={displayData}
+			displayName={`Payroll Audit for ${reportParameters.organizationName}, ${reportDateDisplayString}`}
+		>
+			<Form.Group as={Row} sm='3' className='p-0 mb-1' controlId='payroll-registered-instructors'>
+				<Form.Label column sm='2'>Registered Instructor</Form.Label>
+				<Col sm={10}>
+					<Form.Control 
+						type='text'
+						placeholder='Filter registered instructors...'
+						value={payrollAuditRegisteredFilter} 
+						onChange={(e) => setPayrollAuditRegisteredFilter(e.target.value)}
+					/>
+				</Col>
+			</Form.Group>
+			
+			<Form.Group as={Row} sm='3' className='p-0 mb-1' controlId='payroll-attending-instructors'>
+				<Form.Label column sm='2'>Attending Instructor</Form.Label>
+				<Col sm={10}>
+					<Form.Control 
+						type='text' 
+						placeholder='Filter attending instructors...'
+						value={payrollAuditAttendingFilter} 
+						onChange={(e) => setPayrollAuditAttendingFilter(e.target.value)}
+					/>
+				</Col>
+			</Form.Group>
+
+			<Row style={{maxHeight: '45rem', overflowY: 'auto'}}>
+				<Table 
+					className='m-0'
+					columns={createPayrollAuditColumns(payrollAuditAttendingFilter, payrollAuditRegisteredFilter)} 
+					dataset={displayData} 
+					defaultSort={{index: 0, direction: SortDirection.Ascending}}
+					tableProps={{style: {minWidth: '1100px', borderCollapse: 'collapse', borderSpacing: '0 3px'}}}
+				/>
+			</Row>
+		</ReportComponent>
 	)
 }

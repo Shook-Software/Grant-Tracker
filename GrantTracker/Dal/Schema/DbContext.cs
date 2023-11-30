@@ -45,7 +45,7 @@ namespace GrantTracker.Dal.Schema
 		public DbSet<OrganizationType> OrganizationTypes { get; set; }
 		public DbSet<PartnershipType> Partnerships { get; set; }
 		public DbSet<Student> Students { get; set; }
-		public DbSet<FamilyAttendance> FamilyAttendances { get; set; }
+		public DbSet<FamilyAttendanceRecord> FamilyAttendances { get; set; }
 		public DbSet<StudentAttendanceRecord> StudentAttendanceRecords { get; set; }
 		public DbSet<LookupDefinition> LookupDefinitions { get; set; }
 		public DbSet<LookupValue> LookupValues { get; set; }
@@ -96,7 +96,7 @@ namespace GrantTracker.Dal.Schema
 			SessionType.Setup(builder);
 			Student.Setup(builder);
 			StudentRegistration.Setup(builder);
-			FamilyAttendance.Setup(builder);
+			FamilyAttendanceRecord.Setup(builder);
 			StudentAttendanceRecord.Setup(builder);
 			LookupDefinition.Setup(builder);
 			LookupValue.Setup(builder);

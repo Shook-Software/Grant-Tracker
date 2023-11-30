@@ -6,6 +6,8 @@ import Table, { Column, SortDirection } from 'components/BTable'
 import { DateOnly } from 'Models/DateOnly'
 import { AttendanceTimeRecordView } from 'Models/InstructorAttendance'
 import { TimeOnly } from 'Models/TimeOnly'
+import paths from 'utils/routing/paths'
+import { Link } from 'react-router-dom'
 
 export const studentAttendanceColumns: Column[] = [
 	{
@@ -339,7 +341,7 @@ export const summaryOfClassesColumns: Column[] = [
 
 export const programOverviewColumns: Column[] = [
 	{
-	  label: 'Organization Name',
+	  label: 'Organization',
 	  attributeKey: 'organizationName',
 	  sortable: true
 	},
@@ -364,6 +366,29 @@ export const programOverviewColumns: Column[] = [
 	  headerProps: {
 		className: 'text-center'
 	  }
+	},
+	{
+		label: 'Student Days\nOffered',
+		attributeKey: 'studentDaysOfferedCount',
+		sortable: true,
+		transform: (count: number) => (
+		  <div className='text-center'>{count}</div>
+		),
+		headerProps: {
+		  className: 'text-center'
+		}
+	},
+	{
+		label: 'Avg Daily\nUnique Student Attendance',
+		attributeKey: 'avgStudentDailyAttendance',
+		sortable: true,
+		transform: (count: number) => (
+		  <div className='text-center'>{Math.floor(count * 100) / 100}</div>
+		),
+		headerProps: {
+		  className: 'text-center'
+		},
+		sortTransform: (count: number) => count,
 	},
 	{
 	  label: 'Avg Attendance\nDays Per Week',
@@ -484,6 +509,8 @@ const TimeRecordDisplay = ({timeRecords}: {timeRecords}): JSX.Element => {
 	)
 }
 
+
+//<Link to={`${paths.Admin.path}/${paths.Admin.Tabs.Sessions.path}/${attendanceCheck.sessionGuid}`}>{attendanceCheck.className}</Link>
 export const attendanceCheckColumns: Column[] = [
 	{
 		label: 'School',
@@ -492,8 +519,15 @@ export const attendanceCheckColumns: Column[] = [
 	},
 	{
 		label: 'Class',
-		attributeKey: 'className',
-		sortable: false
+		attributeKey: '',
+		sortable: false,
+		transform: (attendanceCheck) => {
+			return (
+				<div>
+					{attendanceCheck.className}
+				</div>
+			)
+		}
 	},
 	{
 		label: 'Weekday',
@@ -530,9 +564,6 @@ export const attendanceCheckColumns: Column[] = [
 ]
 
 
-
-
-
 const AttendanceCheckTimeRecordDisplay = ({timeRecords}: {timeRecords}): JSX.Element => {
 	timeRecords = timeRecords
 		.map(time => ({ startTime: TimeOnly.toLocalTime(time.startTime), endTime: TimeOnly.toLocalTime(time.endTime)}))
@@ -560,64 +591,63 @@ const AttendanceCheckTimeRecordDisplay = ({timeRecords}: {timeRecords}): JSX.Ele
 
 
 
-const payrollAuditRegisteredInstructorColumns: Column[] = [
+
+const createPayrollAuditRegisteredInstructorColumns = (filter: string): Column[] => [
 	{
-		label: 'First Name',
-		attributeKey: 'firstName', 
-		headerTransform: () => <th><small>First Name</small></th>,
-		sortable: true
-	  },
-	  {
-		label: 'Last Name',
-		attributeKey: 'lastName', 
-		headerTransform: () => <th><small>Last Name</small></th>,
+		label: 'Name',
+		attributeKey: '', 
+		headerTransform: () => <th><small>Name</small></th>,
+		transform: (record) => (
+			<div className={filter.trim() !== '' && `${record.firstName} ${record.lastName}`.toLocaleLowerCase().includes(filter.toLocaleLowerCase()) ? 'text-success fw-bold' : ''}>
+				{record.firstName} {record.lastName}
+			</div>
+		),
 		sortable: true
 	  }
 ]
 
-const payrollAuditAttendingInstructorColumns: Column[] = [
-  {
-    label: 'First Name',
-    attributeKey: 'firstName', 
-    headerTransform: () => <th><small>First Name</small></th>,
-    sortable: true
-  },
-  {
-    label: 'Last Name',
-    attributeKey: 'lastName', 
-    headerTransform: () => <th><small>Last Name</small></th>,
-    sortable: true
-  },
-  {
-    label: 'Sub?',
-    attributeKey: 'isSubstitute', 
-    headerTransform: () => <th><small>Substitute?</small></th>,
-    transform: (isSub: boolean) => isSub ? <span className='text-primary'>Yes</span> : '',
-    sortable: true
-  },
-  {
-    label: 'Total Time (m)',
-    attributeKey: 'totalTime', 
-    headerTransform: () => <th><small>Total Time</small></th>,
-    sortable: true
-  },
-  {
-    label: 'Time Records',
-    attributeKey: 'timeRecords',
-    sortable: false,
-    headerTransform: () => (
-      <th className=''>
-        <div className='d-flex'>
-          <div className='w-50'><small>Entered</small></div>
-          <div className='w-50'><small>Exited</small></div>
-        </div>
-      </th>
-    ),
-    transform: (timeRecord: AttendanceTimeRecordView[]) => <AttendanceCheckTimeRecordDisplay timeRecords={timeRecord} />
-  }
+const createPayrollAuditAttendingInstructorColumns = (filter: string): Column[] => [
+	{
+		label: 'Name',
+		attributeKey: '', 
+		headerTransform: () => <th><small>Name</small></th>,
+		transform: (record) => (
+			<div className={filter.trim() !== '' && `${record.firstName} ${record.lastName}`.toLocaleLowerCase().includes(filter.toLocaleLowerCase()) ? 'text-success fw-bold' : ''}>
+				{record.firstName} {record.lastName}
+			</div>
+		),
+		sortable: true
+	},
+	{
+		label: 'Sub?',
+		attributeKey: 'isSubstitute', 
+		headerTransform: () => <th><small>Substitute?</small></th>,
+		transform: (isSub: boolean) => isSub ? <span className='text-primary'>Yes</span> : '',
+		sortable: true
+	},
+	{
+		label: 'Total Time (m)',
+		attributeKey: 'totalTime', 
+		headerTransform: () => <th><small>Total Time</small></th>,
+		sortable: true
+	},
+	{
+		label: 'Time Records',
+		attributeKey: 'timeRecords',
+		sortable: false,
+		headerTransform: () => (
+		<th className=''>
+			<div className='d-flex'>
+			<div className='w-50'><small>Entered</small></div>
+			<div className='w-50'><small>Exited</small></div>
+			</div>
+		</th>
+		),
+		transform: (timeRecord: AttendanceTimeRecordView[]) => <AttendanceCheckTimeRecordDisplay timeRecords={timeRecord} />
+	}
 ]
 
-export const payrollAuditColumns: Column[] = [
+export const createPayrollAuditColumns = (attendingFilter, registeredFilter): Column[] => [
   {
     label: 'School',
     attributeKey: 'school',
@@ -636,11 +666,11 @@ export const payrollAuditColumns: Column[] = [
   },
   {
 	label: 'Registered Instructors',
-	attributeKey: 'sessionInstructors',
+	attributeKey: 'registeredInstructors',
 	sortable: false,
     transform: (records) => {
       return (
-        <Table columns={payrollAuditRegisteredInstructorColumns} dataset={records} bordered={false} className='m-0 border-0' />
+        <Table columns={createPayrollAuditRegisteredInstructorColumns(registeredFilter)} dataset={records} bordered={false} className='m-0 border-0' />
       )
     },
     cellProps: {
@@ -649,12 +679,11 @@ export const payrollAuditColumns: Column[] = [
   },
   {
     label: 'Attending Instructors',
-    attributeKey: 'instructorRecords',
+    attributeKey: 'attendingInstructorRecords',
     sortable: false,
     transform: (records) => {
-		console.log('attend', records)
       return (
-        <Table columns={payrollAuditAttendingInstructorColumns} dataset={records} bordered={false} className='m-0 border-0' />
+        <Table columns={createPayrollAuditAttendingInstructorColumns(attendingFilter)} dataset={records} bordered={false} className='m-0 border-0' />
       )
     },
     cellProps: {

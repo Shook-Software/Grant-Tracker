@@ -65,9 +65,11 @@ export class User implements IUser {
 
   public static initUserAsync (): Promise<User> {
     return new Promise((resolve, reject) => {
+
       api
         .get<IUser>('user')
         .then(async res => {
+
           const user: IUser = {
             userGuid: res.data.userGuid,
             userOrganizationYearGuid: res.data.userOrganizationYearGuid,

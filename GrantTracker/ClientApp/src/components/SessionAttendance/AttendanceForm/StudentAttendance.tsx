@@ -165,16 +165,26 @@ function addFamilyColumn(columns: Column[], dispatch): Column[] {
   ]
 }
 
+function removeStudentTimeRecords(columns: Column[]): Column[] {
+  return columns.filter(x => x.label !== 'Arrived at' && x.label !== 'Left at')
+}
+
 interface Props {
   state,
   dispatch,
   isFamilySession: boolean
 }
 
-export default ({state, dispatch, isFamilySession}: Props): JSX.Element => {
+export default ({state, dispatch, sessionType}: Props): JSX.Element => {
   const [showModal, setShowModal] = useState<boolean>(false);
 
-  const columns: Column[] = isFamilySession ? addFamilyColumn(columnsBuilder(dispatch), dispatch) : columnsBuilder(dispatch)
+  let columns: Column[] = columnsBuilder(dispatch)
+
+  if (sessionType === 'family' || sessionType === 'parent')
+    columns = addFamilyColumn(columns, dispatch)
+
+  if (sessionType === 'parent')
+    columns = removeStudentTimeRecords(columns)
 
 
   function addStudent(student): Promise<void> {

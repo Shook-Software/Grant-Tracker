@@ -17,7 +17,7 @@ export default (props): JSX.Element => (
   <Button
     variant='primary'
     as={props.as}
-    className='d-flex align-items-center mx-3 mt-3'
+    className='d-flex align-items-center'
     to={props.to}
     style={{ width: 'fit-content' }}
     {...props}

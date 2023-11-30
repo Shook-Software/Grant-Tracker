@@ -36,7 +36,7 @@ public class ReportRepository : RepositoryBase, IReportRepository
 			
 		Task<List<TotalFamilyAttendanceDbModel>> totalFamilyAttendanceQueryTask = _grantContextFactory.CreateDbContext()
 			.Set<TotalFamilyAttendanceDbModel>()
-			.FromSqlInterpolated($"EXEC [GTkr].ReportQuery_FamilyAttendance {_processGuid}")
+			.FromSqlInterpolated($"EXEC [GTkr].ReportQuery_FamilyAttendance {DateOnlyToSQLString(startDate)}, {DateOnlyToSQLString(endDate)}, {(organizationGuid == new Guid() ? null : organizationGuid)}")
 			.AsNoTracking()
 			.ToListAsync();
 			
@@ -221,132 +221,159 @@ public class ReportRepository : RepositoryBase, IReportRepository
 	//ask liz if SiteSessions is to track hours and attendees by instructor or purely by session
 
 	//is anything instructor centric or is their existence merely a datapoint on the session>?
-	private ReportsViewModel GroupReports(ReportsDbModel reports) => new()
+	private ReportsViewModel GroupReports(ReportsDbModel reports)
 	{
-		TotalStudentAttendance = reports.TotalStudentAttendance,
-		TotalActivity = reports.TotalActivity,
-		ProgramOverviews = reports.ProgramOverviews,
-		StudentSurvey = reports.StudentSurvey,
-
-		TotalFamilyAttendance = reports.TotalFamilyAttendance
-			.GroupBy(fa => new { fa.OrganizationName, fa.FirstName, fa.LastName, fa.Grade, fa.MatricNumber },
-			(key, fa) => new TotalFamilyAttendanceViewModel()
-			{
-				OrganizationName = key.OrganizationName,
-				MatricNumber = key.MatricNumber,
-				FirstName = key.FirstName,
-				LastName = key.LastName,
-				Grade = key.Grade,
-				FamilyAttendance = fa.Select(fa => new TotalFamilyAttendanceViewModel.FamilyMemberAttendanceViewModel()
+		var payrollSessionGuids = reports.PayrollAudit.Select(x => x.SessionGuid).ToList();
+		var registeredSessionPayrollAuditInstructors = _grantContext
+			.Sessions
+			.Where(x => payrollSessionGuids.Contains(x.SessionGuid))
+			.Include(x => x.InstructorRegistrations).ThenInclude(ir => ir.InstructorSchoolYear).ThenInclude(isy => isy.Instructor)
+			.SelectMany(x => x.InstructorRegistrations, 
+				(s, ir) => new
 				{
-					FamilyMember = fa.FamilyMember,
-					TotalDays = fa.TotalDays,
-					TotalHours = fa.TotalHours
-				})
-				.ToList()
-			})
-			.ToList(),
-
-		/*SiteSessions = reports.SiteSessions
-		.GroupBy(s => new { s.OrganizationName, s.SessionName, s.InstanceDate },
-			(key, s) => {
-				var firstRow = s.First();
-				return new SiteSessionViewModel()
-				{
-					OrganizationName = key.OrganizationName,
-					SessionName = key.SessionName,
-					ActivityType = firstRow.ActivityType,
-					Objective = firstRow.Objective,
-					SessionType = firstRow.SessionType,
-					FundingSource = firstRow.FundingSource,
-					PartnershipType = firstRow.PartnershipType,
-					OrganizationType = firstRow.PartnershipType,
-					Grades = firstRow.Grades,
-					InstanceDate = key.InstanceDate,
-					AttendeeCount = firstRow.AttendeeCount,
-					Instructors = s.Select(s => new SiteSessionViewModel.InstructorViewModel()
-					{
-						FirstName = s.InstructorFirstName,
-						LastName = s.InstructorLastName,
-						Status = s.InstructorStatus
-					})
-					.ToList(),
-				};
-			})
-		.ToList(),*/
-
-        ClassSummaries = reports.ClassSummaries
-		.GroupBy(s => new { s.OrganizationName, s.SessionName },
-			(key, s) =>
-			{
-				var firstRow = s.First();
-
-				return new ClassSummaryViewModel()
-				{
-					OrganizationName = key.OrganizationName,
-					SessionName = key.SessionName,
-					ActivityType = firstRow.ActivityType,
-					FundingSource = firstRow.FundingSource,
-					Objective = firstRow.Objective,
-					FirstSession = firstRow.FirstSession,
-					LastSession = firstRow.LastSession,
-					DaysOfWeek = firstRow.DaysOfWeek,
-					WeeksToDate = firstRow.WeeksToDate,
-					AvgDailyAttendance = firstRow.AvgDailyAttendance,
-					AvgHoursPerDay = firstRow.AvgHoursPerDay,
-					Instructors = s.Select(s => new ClassSummaryViewModel.InstructorViewModel()
-					{
-						FirstName = s.InstructorFirstName,
-						LastName = s.InstructorLastName,
-						Status = s.InstructorStatus
-					})
-					.ToList()
-				};
-			})
-		.ToList(),
-
-		StaffSummaries = reports.StaffSummaries
-			.GroupBy(s => s.Status,
-				(status, staff) => new StaffSummaryViewModel()
-				{
-					OrganizationName = staff.First().OrganizationName,
-					Status = status,
-					Instructors = staff.Select(s => new StaffSummaryViewModel.InstructorViewModel()
-					{
-						FirstName = s.FirstName,
-						LastName = s.LastName,
-						InstructorSchoolYearGuid = s.InstructorSchoolYearGuid
-					})
-					.ToList()
-				}
+					SessionGuid = s.SessionGuid,
+					FirstName = ir.InstructorSchoolYear.Instructor.FirstName,
+                    LastName = ir.InstructorSchoolYear.Instructor.LastName
+                }
 			)
-			.ToList(),
+			.ToList();
 
-		PayrollAudit = reports.PayrollAudit
-			.GroupBy(x => new { x.School, x.ClassName, x.InstanceDate },
-			(id, grp) => new PayrollAuditView
-			{
-				SessionGuid = grp.First().SessionGuid,
-				School = id.School,
-				ClassName = id.ClassName,
-				InstanceDate = id.InstanceDate,
-				InstructorRecords = grp.GroupBy(x => x.InstructorSchoolYearGuid,
-					(isyGuid, iGrp) => new PayrollAuditInstructorRecord
+        return new()
+		{
+			TotalStudentAttendance = reports.TotalStudentAttendance,
+			TotalActivity = reports.TotalActivity,
+			ProgramOverviews = reports.ProgramOverviews,
+			StudentSurvey = reports.StudentSurvey,
+
+			TotalFamilyAttendance = reports.TotalFamilyAttendance
+				.GroupBy(fa => new { fa.OrganizationName, fa.FirstName, fa.LastName, fa.Grade, fa.MatricNumber },
+				(key, fa) => new TotalFamilyAttendanceViewModel()
+				{
+					OrganizationName = key.OrganizationName,
+					MatricNumber = key.MatricNumber,
+					FirstName = key.FirstName,
+					LastName = key.LastName,
+					Grade = key.Grade,
+					FamilyAttendance = fa.Select(fa => new TotalFamilyAttendanceViewModel.FamilyMemberAttendanceViewModel()
 					{
-						FirstName = iGrp.First().FirstName,
-						LastName = iGrp.First().LastName,
-						IsSubstitute = iGrp.First().IsSubstitute,
-						TimeRecords = iGrp.Select(x => new PayrollAuditTimeRecord
+						FamilyMember = fa.FamilyMember,
+						TotalDays = fa.TotalDays,
+						TotalHours = fa.TotalHours
+					})
+					.ToList()
+				})
+				.ToList(),
+
+			/*SiteSessions = reports.SiteSessions
+			.GroupBy(s => new { s.OrganizationName, s.SessionName, s.InstanceDate },
+				(key, s) => {
+					var firstRow = s.First();
+					return new SiteSessionViewModel()
+					{
+						OrganizationName = key.OrganizationName,
+						SessionName = key.SessionName,
+						ActivityType = firstRow.ActivityType,
+						Objective = firstRow.Objective,
+						SessionType = firstRow.SessionType,
+						FundingSource = firstRow.FundingSource,
+						PartnershipType = firstRow.PartnershipType,
+						OrganizationType = firstRow.PartnershipType,
+						Grades = firstRow.Grades,
+						InstanceDate = key.InstanceDate,
+						AttendeeCount = firstRow.AttendeeCount,
+						Instructors = s.Select(s => new SiteSessionViewModel.InstructorViewModel()
 						{
-							StartTime = x.EntryTime,
-							EndTime = x.ExitTime
+							FirstName = s.InstructorFirstName,
+							LastName = s.InstructorLastName,
+							Status = s.InstructorStatus
+						})
+						.ToList(),
+					};
+				})
+			.ToList(),*/
+
+			ClassSummaries = reports.ClassSummaries
+			.GroupBy(s => new { s.OrganizationName, s.SessionName },
+				(key, s) =>
+				{
+					var firstRow = s.First();
+
+					return new ClassSummaryViewModel()
+					{
+						OrganizationName = key.OrganizationName,
+						SessionName = key.SessionName,
+						ActivityType = firstRow.ActivityType,
+						FundingSource = firstRow.FundingSource,
+						Objective = firstRow.Objective,
+						FirstSession = firstRow.FirstSession,
+						LastSession = firstRow.LastSession,
+						DaysOfWeek = firstRow.DaysOfWeek,
+						WeeksToDate = firstRow.WeeksToDate,
+						AvgDailyAttendance = firstRow.AvgDailyAttendance,
+						AvgHoursPerDay = firstRow.AvgHoursPerDay,
+						Instructors = s.Select(s => new ClassSummaryViewModel.InstructorViewModel()
+						{
+							FirstName = s.InstructorFirstName,
+							LastName = s.InstructorLastName,
+							Status = s.InstructorStatus
 						})
 						.ToList()
-					})
-				.ToList()
-			})
-		.ToList()
-	};
+					};
+				})
+			.ToList(),
+
+			StaffSummaries = reports.StaffSummaries
+				.GroupBy(s => s.Status,
+					(status, staff) => new StaffSummaryViewModel()
+					{
+						OrganizationName = staff.First().OrganizationName,
+						Status = status,
+						Instructors = staff.Select(s => new StaffSummaryViewModel.InstructorViewModel()
+						{
+							FirstName = s.FirstName,
+							LastName = s.LastName,
+							InstructorSchoolYearGuid = s.InstructorSchoolYearGuid
+						})
+						.ToList()
+					}
+				)
+				.ToList(),
+
+			PayrollAudit = reports.PayrollAudit
+				.GroupBy(x => new { x.School, x.ClassName, x.InstanceDate },
+				(id, grp) => new PayrollAuditView
+				{
+					SessionGuid = grp.First().SessionGuid,
+					School = id.School,
+					ClassName = id.ClassName,
+					InstanceDate = id.InstanceDate,
+					RegisteredInstructors = registeredSessionPayrollAuditInstructors
+						.Where(x => x.SessionGuid == grp.First().SessionGuid)
+						.Select(x => new Schema.Sprocs.Reporting.Instructor() 
+						{
+							FirstName = x.FirstName,
+							LastName = x.LastName
+						})
+						.ToList(),
+
+                    AttendingInstructorRecords = grp.GroupBy(x => x.InstructorSchoolYearGuid,
+						(isyGuid, iGrp) => new PayrollAuditInstructorRecord
+						{
+							FirstName = iGrp.First().FirstName,
+							LastName = iGrp.First().LastName,
+							IsSubstitute = iGrp.First().IsSubstitute,
+							TimeRecords = iGrp.Select(x => new PayrollAuditTimeRecord
+							{
+								StartTime = x.EntryTime,
+								EndTime = x.ExitTime
+							})
+							.ToList()
+						})
+					.ToList()
+				})
+			.ToList()
+		};
+	}
 
 	public async Task<List<SiteSessionViewModel>> GetSiteSessionsAsync(DateOnly startDate, DateOnly endDate, Guid? organizationGuid = null)
 	{

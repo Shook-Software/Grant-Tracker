@@ -16,11 +16,13 @@ namespace GrantTracker.Dal.Controllers
 	{
 		private readonly IInstructorRepository _instructorRepository;
 		private readonly IInstructorSchoolYearRepository _instructorSchoolYearRepository;
+        private readonly ILogger<IInstructorRepository> _logger;
 
-		public InstructorController(IInstructorRepository instructorRepository, IInstructorSchoolYearRepository instructorSchoolYearRepository)
+        public InstructorController(IInstructorRepository instructorRepository, IInstructorSchoolYearRepository instructorSchoolYearRepository, ILogger<IInstructorRepository> logger)
 		{
 			_instructorRepository = instructorRepository;
 			_instructorSchoolYearRepository = instructorSchoolYearRepository;
+			_logger = logger;
 		}
 
 		[HttpGet("")]

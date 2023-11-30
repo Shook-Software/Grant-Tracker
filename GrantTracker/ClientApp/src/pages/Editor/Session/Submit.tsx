@@ -15,10 +15,10 @@ function formatScheduling (scheduling: WeeklySchedule): JSX.Element[] {
   return scheduling.map(weekday => {
     if (weekday.recurs)
       return (
-        <div className='mb-2'>
+        <div>
           <p className='my-0'>{`${weekday.dayOfWeek}: `}</p>
           {weekday.timeSchedules.map(schedule => (
-            <p className='m-0'>
+            <p className={schedule.startTime === schedule.endTime ? 'text-danger m-0' : 'm-0'}>
               {`${schedule.startTime.format(
                 DateTimeFormatter.ofPattern('hh:mm a').withLocale(
                   Locale.ENGLISH
@@ -94,10 +94,11 @@ const SchedulingDisplay = ({
   values,
   errors
 }: Context): JSX.Element => {
-  const schedule = values.recurring
-    ? values.scheduling
-    : values.scheduling.find(s => s.timeSchedules.length !== 0)
-  console.log(values.recurring)
+  
+    const schedule = values.recurring
+      ? values.scheduling
+      : values.scheduling.find(s => s.timeSchedules.length !== 0)
+
   return (
     <Col>
       <ListGroup>
@@ -137,6 +138,7 @@ const SchedulingDisplay = ({
             values.recurring ? (
               <div className='d-flex flex-column'>
                 {formatScheduling(schedule)}
+                <small className='text-danger'>{errors.timeSchedules}</small>
               </div>
             ) : (
               <div className='d-flex flex-column'>
@@ -229,6 +231,8 @@ export default (): JSX.Element => {
     )
 
   document.title = `${props.values.guid ? 'Edit' : 'New'} Session - Submit`
+
+  console.log(props.errors)
 
   useEffect(() => {
     api

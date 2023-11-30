@@ -20,7 +20,15 @@ public class PayrollAuditView
     public string School { get; set; }
     public string ClassName { get; set; }
     public DateOnly InstanceDate { get; set; }
-    public List<PayrollAuditInstructorRecord> InstructorRecords { get; set; }
+    public List<Instructor> RegisteredInstructors { get; set; }
+    public List<PayrollAuditInstructorRecord> AttendingInstructorRecords { get; set; }
+}
+
+//Todo: Refactor all these instructor/person/time record whatevers into proper relations with inheritence and composition
+public class Instructor
+{
+    public string FirstName { get; set; }
+    public string LastName { get; set; }
 }
 
 public class PayrollAuditInstructorRecord

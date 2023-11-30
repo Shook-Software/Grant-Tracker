@@ -6,8 +6,10 @@ import Table, { Column } from "components/BTable"
 import { Button, Col, Form, Row, Spinner } from "react-bootstrap"
 import { DateTimeFormatter, LocalDate } from "@js-joda/core"
 import { Locale } from "@js-joda/locale_en-us"
+import { useAdminPage, Context } from ".."
 
 export const BlackoutDateConfig = ():JSX.Element => {
+	const { user }: Context = useAdminPage()
 	const [blackoutFetchError, setBlackoutFetchError] = useState<string | undefined>()
 	const [blackoutDates, setBlackoutDates] = useState<BlackoutDateView[]>([])
 	const [blackoutDatesAreLoading, setBlackoutDatesAreLoading] = useState<boolean>(false)
@@ -31,7 +33,7 @@ export const BlackoutDateConfig = ():JSX.Element => {
 
 	useEffect(() => {
 		getAndSetBlackoutDates()
-	}, [AxiosIdentityConfig.identity.organizationGuid])
+	}, [user])
 
 	const blackoutColumns: Column[] = createBlackoutColumns(getAndSetBlackoutDates, setBlackoutDeleteError)
 
@@ -47,8 +49,8 @@ export const BlackoutDateConfig = ():JSX.Element => {
 
 	return (
 		<div className='mt-3'>
-			<div className='text-danger'>{blackoutFetchError}</div>
-			<div className='text-danger'>{blackoutDeleteError}</div>
+			<div className='text-danger'>{blackoutFetchError?.toString()}</div>
+			<div className='text-danger'>{blackoutDeleteError?.toString()}</div>
 
 			<BlackoutDateInput getAndSetBlackoutDates={getAndSetBlackoutDates} />
 
@@ -65,8 +67,6 @@ export const BlackoutDateConfig = ():JSX.Element => {
 const BlackoutDateInput = ({getAndSetBlackoutDates}): JSX.Element => {
 	const [blackoutDate, setBlackoutDate] = useState<LocalDate>(LocalDate.now)
 	const [blackoutAddError, setBlackoutAddError] = useState<string | undefined>()
-
-	console.log(blackoutDate)
 
 	const addDate = () => {
 		addBlackoutDate(blackoutDate)

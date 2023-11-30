@@ -42,7 +42,8 @@ namespace GrantTracker.Dal.Models.Views
 							Guid = attend.Guid,
 							StudentSchoolYear = StudentSchoolYearViewModel.FromDatabase(attend.StudentSchoolYear),
 							TimeRecords = attend.TimeRecords.Select(time => AttendanceTimeRecordViewModel.FromDatabase(time)).ToList(),
-							FamilyAttendance = attend.FamilyAttendance
+							FamilyAttendance = record.FamilyAttendance
+								.Where(x => x.StudentSchoolYearGuid == attend.StudentSchoolYearGuid)
 								.GroupBy(fa => fa.FamilyMember,
 								(familyMember, group) => new FamilyAttendanceViewModel
 								{

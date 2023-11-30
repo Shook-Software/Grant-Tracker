@@ -216,41 +216,5 @@ namespace GrantTracker.Dal.Repositories.StudentRepository
 				.DistinctBy(ssy => new {ssy.Student.FirstName, ssy.Student.LastName, ssy.Student.MatricNumber})
 				.ToList();
 		}
-
-		public async Task SyncStudentsWithSynergyAsync()
-		{
-			/*
-			var grantTrackerStudents = await _grantContext.StudentSchoolYears
-				.Where(ssy => ssy.OrganizationYear.Year.IsCurrentSchoolYear == true)
-				.Include(ssy => ssy.Student)
-				.ToListAsync();
-
-			StudentFilter filter = new()
-			{
-				Grades = new List<string>()
-			};
-			var synergyStudents = await SearchSynergyAsync(filter);
-
-			var updatedGrantStudents = (
-				from ssy in grantTrackerStudents
-				join syn in synergyStudents on ssy.Student.MatricNumber equals syn.MatricNumber
-				select new StudentSchoolYearView
-				{
-					Guid = ssy.Student.PersonGuid,
-					FirstName = syn.FirstName, //sync
-					LastName = syn.LastName, //sync
-					MatricNumber = ssy.Student.MatricNumber,
-					Grade = syn.Grade, //sync
-				}
-			).ToList();
-
-			foreach (StudentSchoolYearView updatedStudent in updatedGrantStudents)
-			{
-				_grantContext.Entry(await _grantContext.StudentSchoolYears.FindAsync(updatedStudent.Guid)).CurrentValues.SetValues(updatedStudent);
-			}
-
-			await _grantContext.SaveChangesAsync();
-			*/
-		}
 	}
 }

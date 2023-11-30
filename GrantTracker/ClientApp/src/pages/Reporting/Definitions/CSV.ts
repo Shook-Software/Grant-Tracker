@@ -333,6 +333,14 @@ export const programOverviewFields = [
       value: 'familyAttendanceCount',
     },
     {
+      label: 'Student Days Offered',
+      value: 'studentDaysOfferedCount'
+    },
+    {
+      label: 'Avg Daily Unique Student Attendance',
+      value: 'avgStudentDailyAttendance'
+    },
+    {
       label: 'Avg Student Attendance Days Per Week',
       value: 'avgStudentAttendDaysPerWeek'
     },

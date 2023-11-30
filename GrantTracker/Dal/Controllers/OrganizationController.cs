@@ -16,11 +16,13 @@ namespace GrantTracker.Dal.Controllers
 	{
 		private readonly IOrganizationRepository _organizationRepository;
         private readonly IOrganizationYearRepository _organizationYearRepository;
+        private readonly ILogger<OrganizationController> _logger;
 
-        public OrganizationController(IOrganizationRepository OrganizationRepository, IOrganizationYearRepository OrganizationYearRepository)
+        public OrganizationController(IOrganizationRepository OrganizationRepository, IOrganizationYearRepository OrganizationYearRepository, ILogger<OrganizationController> logger)
 		{
 			_organizationRepository = OrganizationRepository;
 			_organizationYearRepository = OrganizationYearRepository;
+            _logger = logger;
 		}
 
         [HttpGet("organization")]

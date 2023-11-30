@@ -14,10 +14,12 @@ namespace GrantTracker.Dal.Controllers
 	public class DropdownController : ControllerBase
 	{
 		private readonly IDropdownRepository _dropdownRepository;
+        private readonly ILogger<IDropdownRepository> _logger;
 
-		public DropdownController(IDropdownRepository repository)
+        public DropdownController(IDropdownRepository repository, ILogger<IDropdownRepository> logger)
 		{
 			_dropdownRepository = repository;
+			_logger = logger;
 		}
 
         [HttpGet("view/all")]

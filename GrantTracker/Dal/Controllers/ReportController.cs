@@ -17,9 +17,10 @@ public class ReportController : ControllerBase
 	{
 		public DateOnly StartDateBound { get; set; }
 		public DateOnly EndDateBound { get; set; }
-	}
+    }
+    private readonly ILogger<ReportController> _logger;
 
-	private readonly IReportRepository _reportRepository;
+    private readonly IReportRepository _reportRepository;
 	//cache settings
 	private readonly IMemoryCache _memoryCache;
 	private readonly MemoryCacheEntryOptions _cacheEntryOptions = new MemoryCacheEntryOptions();
@@ -58,10 +59,11 @@ public class ReportController : ControllerBase
 		},
 	};
 
-	public ReportController(IReportRepository reportRepository, GrantTrackerContext grantContext, IMemoryCache memoryCache)
+	public ReportController(IReportRepository reportRepository, GrantTrackerContext grantContext, IMemoryCache memoryCache, ILogger<ReportController> logger)
 	{
 		_reportRepository = reportRepository;
 		_memoryCache = memoryCache;
+		_logger = logger;
 
 		//get the next whole hour from now, expirations should be on each hour of the day.
 		DateTime now = DateTime.Now;
@@ -94,6 +96,7 @@ public class ReportController : ControllerBase
 		}
 		catch (Exception ex)
 		{
+			_logger.LogError(ex, "{Function} - An unhandled error occured while fetching all reports.", nameof(GetAllReportsAsync));
             return StatusCode(500);
 		}
 	}
@@ -109,8 +112,9 @@ public class ReportController : ControllerBase
 			return Ok(siteSessions);
 		}
 		catch (Exception ex)
-		{
-			return StatusCode(500);
+        {
+            _logger.LogError(ex, "{Function} - An unhandled error occured while fetching the site session report.", nameof(GetSiteSessionsAsync));
+            return StatusCode(500);
 		}
 	}
 

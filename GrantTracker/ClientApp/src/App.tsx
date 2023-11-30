@@ -33,9 +33,8 @@ export const App = (): JSX.Element => {
     User
       .initUserAsync()
       .then(res => {
-        //AxiosIdentityConfig.setOrganizationYear(res.organization.guid, res.year.guid, res.organizationYearGuid, user.userGuid)
-        AxiosIdentityConfig.initialize(res.organization.guid, res.year.guid, res.organizationYearGuid, user.userGuid)
         setUser(res)
+        AxiosIdentityConfig.initialize(res.organization.guid, res.year.guid, res.organizationYearGuid, user.userGuid)
       })
       .finally(() => { setIsLoading(false)})
   }, [])

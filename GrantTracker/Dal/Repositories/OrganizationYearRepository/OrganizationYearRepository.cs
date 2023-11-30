@@ -69,9 +69,6 @@ public class OrganizationYearRepository : RepositoryBase, IOrganizationYearRepos
 		await _grantContext.SaveChangesAsync();
 	}
 
-
-
-
     public IQueryable<OrganizationYear> GetOrganizationYear(Guid OrganizationYearGuid)
     {
         return _grantContext.OrganizationYears.Where(x => x.OrganizationYearGuid == OrganizationYearGuid);
@@ -85,7 +82,6 @@ public class OrganizationYearRepository : RepositoryBase, IOrganizationYearRepos
 
 public static class OrganizationYearExtensions
 {
-
     public static IIncludableQueryable<OrganizationYear, IEnumerable<Session>> WithSessions(this IQueryable<OrganizationYear> Query)
 	{
 		return Query.Include(x => x.Sessions);
