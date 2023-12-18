@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { Container, Row, Col, Tab, Nav, Form } from 'react-bootstrap'
 import Table, { SortDirection } from 'components/BTable'
 
@@ -256,23 +256,13 @@ export default ({user}): JSX.Element => {
 								</Tab.Pane>
 
 								<Tab.Pane eventKey='family-attendance'>
-									<ReportComponent
+									<FamilyEngagementReport 
 										isLoading={isLoading}
-										displayData={reports?.totalFamilyAttendance}
-										displayName={`Family Attendance for ${reportParameters.organizationName}, ${reportDateDisplayString}`}
-										fileData={flattenFamilyAttendance(reports?.totalFamilyAttendance)}
+										reportParameters={reportParameters}
 										fileName={`Family_Attendance_${organizationFileString}_${reportDateFileString}`}
-										fileFields={familyAttendanceFields}
-									>
-										<Row style={{maxHeight: '45rem', overflowY: 'auto'}}>
-											<Table 
-												className='m-0'
-												columns={familyAttendanceColumns} 
-												dataset={reports?.totalFamilyAttendance} 
-												defaultSort={{index: 0, direction: SortDirection.Ascending}}
-											/>
-										</Row>
-									</ReportComponent>
+										reportDateDisplayString={reportDateDisplayString}
+										records={reports?.totalFamilyAttendance}
+									/>
 								</Tab.Pane>
 
 								<Tab.Pane eventKey='activities'>
@@ -479,6 +469,75 @@ export default ({user}): JSX.Element => {
 	)
 }
 
+const FamilyEngagementReport = ({isLoading, reportParameters, fileName, reportDateDisplayString, records}): React.ReactElement => { 
+	const [daysAttendedFilter, setDaysAttendedFilter] = useState<string>('')
+	const [familyType, setFamilyType] = useState<string>('')
+
+	console.log(records.flatMap(x => x.familyAttendance).map(attend => attend.familyMember))
+	const familyTypeOptions: string[] = useMemo<string[]>(() => [...new Set<string>(records.flatMap(x => x.familyAttendance).map(attend => attend.familyMember))], [records])
+
+	const filteredRecords = records
+		.filter(x => familyType == '' || x.familyAttendance.some(y => y.familyMember === familyType)) //filter those that don't have the specified family member
+		.filter(x => 
+			x.familyAttendance
+				.filter(y => familyType == '' || y.familyMember == familyType)
+				.reduce((sum, next) => sum + next.totalDays, 0) >= daysAttendedFilter
+		)
+
+	console.log(filteredRecords)
+	console.log(familyTypeOptions)
+
+	return (
+		<ReportComponent
+			isLoading={isLoading}
+			displayData={records}
+			displayName={`Family Attendance for ${reportParameters.organizationName}, ${reportDateDisplayString}`}
+			fileData={flattenFamilyAttendance(records)}
+			fileName={fileName}
+			fileFields={familyAttendanceFields}
+		>
+			<Row className='my-3'>
+				<Col md={3} className='p-0'>
+					<Form.Select value={familyType} onChange={(e) => setFamilyType(e.target.value)}>
+						{
+							[
+								<option value=''>All</option>,
+								...familyTypeOptions.map(type => <option value={type}>{type}</option>)
+							]
+						}
+					</Form.Select>
+				</Col>
+			</Row>
+
+			<Row>
+				<Col md={3} className='p-0'>
+					<Form.Control 
+						type='number' 
+						className='border-bottom-0'
+						placeholder='Minimum days...'
+						value={daysAttendedFilter} 
+						onChange={(e) => setDaysAttendedFilter(e.target.value)}
+						style={{borderBottomLeftRadius: 0, borderBottomRightRadius: 0}}
+					/>
+				</Col>
+
+				<Col md={6}>
+					<span className='ms-1'># of students over {daysAttendedFilter} days: <b>{filteredRecords.length}</b> </span>
+				</Col>
+			</Row>
+	
+			<Row style={{maxHeight: '45rem', overflowY: 'auto'}}>
+				<Table 
+					className='m-0'
+					columns={familyAttendanceColumns} 
+					dataset={filteredRecords} 
+					defaultSort={{index: 0, direction: SortDirection.Ascending}}
+				/>
+			</Row>
+		</ReportComponent>
+	)
+}
+
 
 const PayrollAuditReport = ({isLoading, reportParameters, reportDateDisplayString, records}): JSX.Element => {
 	const [payrollAuditRegisteredFilter, setPayrollAuditRegisteredFilter] = useState<string>('')
@@ -488,8 +547,6 @@ const PayrollAuditReport = ({isLoading, reportParameters, reportDateDisplayStrin
 		.filter(e => e.attendingInstructorRecords.some(air => `${air.firstName} ${air.lastName}`.toLocaleLowerCase().includes(payrollAuditAttendingFilter.toLocaleLowerCase()))
 			&& e.registeredInstructors.some(ri => `${ri.firstName} ${ri.lastName}`.toLocaleLowerCase().includes(payrollAuditRegisteredFilter.toLocaleLowerCase()))
 		)
-
-	console.log(displayData)
 
 	return (
 		<ReportComponent

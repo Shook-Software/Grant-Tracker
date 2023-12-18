@@ -37,7 +37,8 @@ const createColumns = (missingAttendanceRecords, openSessionGuid): Column[] => [
         <div className={`${textColorClass}`}>{session.name}</div>
       )
     },
-    sortable: true
+    sortable: true,
+    sortTransform: (session: SimpleSessionView) => session.name
   },
   {
     label: 'Activity',

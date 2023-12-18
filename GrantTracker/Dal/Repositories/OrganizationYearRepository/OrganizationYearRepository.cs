@@ -101,17 +101,19 @@ public static class OrganizationYearExtensions
 	{
 		List<AttendanceRecord> missingAttendanceRecords = new();
 		var organizationYear = await Query.Include(x => x.Sessions).ThenInclude(x => x.DaySchedules).FirstAsync();
+		var yesterday = DateOnly.FromDateTime(DateTime.Now).AddDays(-1);
 
 		return organizationYear.Sessions.Select(session =>
 		{
 			List<AttendanceRecord> missingAttendance = new();
+            DateOnly endDateBound = yesterday >= session.LastSession ? session.LastSession : yesterday;
 
-			foreach (var daySchedule in session.DaySchedules)
+            foreach (var daySchedule in session.DaySchedules)
 			{
 				int daysUntilNextDoW = ((int)daySchedule.DayOfWeek - (int)session.FirstSession.DayOfWeek + 7) % 7;
 
 				var currentDate = session.FirstSession.AddDays(daysUntilNextDoW);
-				while (currentDate <= session.LastSession)
+				while (currentDate <= endDateBound)
 				{
 					bool attendanceRecordExists = !session.AttendanceRecords.Any(ar => ar.InstanceDate == currentDate);
 					bool isABlackoutDate = BlackoutDates.Any(blackout => blackout.Date == currentDate);

@@ -81,7 +81,6 @@ namespace GrantTracker.Dal.Controllers
                     .GetMissingAttendanceRecordsAsync(blackoutDates);
 
                 return Ok(missingRecords);
-
             }
             catch (Exception ex)
             {
