@@ -473,7 +473,6 @@ const FamilyEngagementReport = ({isLoading, reportParameters, fileName, reportDa
 	const [daysAttendedFilter, setDaysAttendedFilter] = useState<string>('')
 	const [familyType, setFamilyType] = useState<string>('')
 
-	console.log(records.flatMap(x => x.familyAttendance).map(attend => attend.familyMember))
 	const familyTypeOptions: string[] = useMemo<string[]>(() => [...new Set<string>(records.flatMap(x => x.familyAttendance).map(attend => attend.familyMember))], [records])
 
 	const filteredRecords = records
@@ -483,9 +482,6 @@ const FamilyEngagementReport = ({isLoading, reportParameters, fileName, reportDa
 				.filter(y => familyType == '' || y.familyMember == familyType)
 				.reduce((sum, next) => sum + next.totalDays, 0) >= daysAttendedFilter
 		)
-
-	console.log(filteredRecords)
-	console.log(familyTypeOptions)
 
 	return (
 		<ReportComponent
@@ -546,12 +542,12 @@ const PayrollAuditReport = ({isLoading, reportParameters, reportDateDisplayStrin
 	const displayData: any[] = records
 		.filter(e => e.attendingInstructorRecords.some(air => `${air.firstName} ${air.lastName}`.toLocaleLowerCase().includes(payrollAuditAttendingFilter.toLocaleLowerCase()))
 			&& e.registeredInstructors.some(ri => `${ri.firstName} ${ri.lastName}`.toLocaleLowerCase().includes(payrollAuditRegisteredFilter.toLocaleLowerCase()))
-		)
+		)  
 
 	return (
 		<ReportComponent
 			isLoading={isLoading}
-			displayData={displayData}
+			displayData={records}
 			displayName={`Payroll Audit for ${reportParameters.organizationName}, ${reportDateDisplayString}`}
 		>
 			<Form.Group as={Row} sm='3' className='p-0 mb-1' controlId='payroll-registered-instructors'>
