@@ -10,7 +10,7 @@ import { AttendanceTimeRecordView, AttendanceView, SimpleAttendanceView } from '
 import { getAttendanceRecord } from '../api'
 import FamilyMemberOps from 'Models/FamilyMember'
 
-const studentColumns: Column[] = [
+const baseStudentColumns: Column[] = [
   {
     label: 'First Name',
     attributeKey: 'studentSchoolYear.student.firstName',
@@ -20,33 +20,63 @@ const studentColumns: Column[] = [
     label: 'Last Name',
     attributeKey: 'studentSchoolYear.student.lastName',
     sortable: true
-  },
-  {
-    label: 'Matric #',
-    attributeKey: 'studentSchoolYear.student.matricNumber',
-    sortable: true
-  },
-  {
-    label: 'Grade',
-    attributeKey: 'studentSchoolYear.grade',
-    sortable: true,
-    cellProps: { className: 'text-center' }
-  },
-  {
-    label: 'Time Records',
-    attributeKey: 'timeRecords',
-    sortable: false,
-    headerTransform: () => (
-      <th className='d-flex flex-wrap'>
-        <span className='w-100 text-center'>Time Records</span>
-        <span className='w-50 text-center'>Entered at:</span>
-        <span className='w-50 text-center'>Exited at:</span>
-      </th>
-    ),
-    transform: (timeRecord: AttendanceTimeRecordView[]) => <TimeRecordDisplay timeRecords={timeRecord} />,
-    cellProps: {className: 'py-1'},
   }
 ]
+
+const studentMatricColumn: Column = {
+  label: 'Matric #',
+  attributeKey: 'studentSchoolYear.student.matricNumber',
+  sortable: true
+}
+
+const studentGradeColumn: Column = {
+  label: 'Grade',
+  attributeKey: 'studentSchoolYear.grade',
+  sortable: true,
+  cellProps: { className: 'text-center' }
+}
+
+const studentTimeColumn: Column = {
+  label: 'Time Records',
+  attributeKey: 'timeRecords',
+  sortable: false,
+  headerTransform: () => (
+    <th className='d-flex flex-wrap'>
+      <span className='w-100 text-center'>Time Records</span>
+      <span className='w-50 text-center'>Entered at:</span>
+      <span className='w-50 text-center'>Exited at:</span>
+    </th>
+  ),
+  transform: (timeRecord: AttendanceTimeRecordView[]) => <TimeRecordDisplay timeRecords={timeRecord} />,
+  cellProps: {className: 'py-1'},
+}
+
+const studentFamilyColumn = {
+  label: 'Family Attendance',
+  attributeKey: 'familyAttendance',
+  key: 'familyAttendance',
+  sortable: false,
+  headerTransform: () => (
+    <th>
+      <div className='d-flex flex-wrap'> 
+        <span className='w-100 text-center'>Family Attendance</span>
+        <span className='w-50 text-center'>Family Member</span>
+        <span className='w-50 text-center'>Count</span>
+      </div>
+    </th>
+  ),
+  transform: (familyAttendanceRecord) => 
+    <div className='d-flex align-items-center flex-wrap h-100'>
+      {
+        familyAttendanceRecord.map(fa => (
+          <>
+            <span className='w-50 text-center'>{FamilyMemberOps.toString(fa.familyMember)}</span>
+            <span className='w-50 text-center'>{fa.count}</span>
+          </>
+        ))
+      }
+    </div>
+}
 
 const instructorColumns: Column[] = [
   {
@@ -81,42 +111,6 @@ const instructorColumns: Column[] = [
     cellProps: {className: 'py-1'},
   }
 ]
-
-function addFamilyColumn (columns: Column[]): Column[] {
-  return [
-    ...columns,
-    {
-      label: 'Family Attendance',
-      attributeKey: 'familyAttendance',
-      key: 'familyAttendance',
-      sortable: false,
-      headerTransform: () => (
-        <th>
-          <div className='d-flex flex-wrap'> 
-            <span className='w-100 text-center'>Family Attendance</span>
-            <span className='w-50 text-center'>Family Member</span>
-            <span className='w-50 text-center'>Count</span>
-          </div>
-        </th>
-      ),
-      transform: (familyAttendanceRecord) => 
-        <div className='d-flex align-items-center flex-wrap h-100'>
-          {
-            familyAttendanceRecord.map(fa => (
-              <>
-                <span className='w-50 text-center'>{FamilyMemberOps.toString(fa.familyMember)}</span>
-                <span className='w-50 text-center'>{fa.count}</span>
-              </>
-            ))
-          }
-        </div>
-    }
-  ]
-}
-
-function removeStudentTimeRecords(columns: Column[]): Column[] {
-  return columns.filter(x => x.label !== 'Time Records')
-}
 
 //{console.log(props.popper.state ? props.popper.state : props.popper)}
 const ConfirmDeletionPopover = ({title, onChange}): JSX.Element => (
@@ -187,15 +181,15 @@ export default ({sessionGuid, simpleRecord, onEditClick, onDeleteClick, sessionT
       .finally(() => setIsLoading(false))
   }
 
-  let studentTableColumns: Column[] = [...studentColumns]
+  let studentTableColumns: Column[] = [...baseStudentColumns]
   if (record?.studentAttendanceRecords?.length > 0) 
   {
-      if (sessionType === 'family' || sessionType === 'parent')
-        studentTableColumns = addFamilyColumn(studentTableColumns)
-
-      if (sessionType === 'parent')
-        studentTableColumns = removeStudentTimeRecords(studentTableColumns)
-
+      if (sessionType === 'family')
+        studentTableColumns = [studentMatricColumn, studentGradeColumn, studentTimeColumn, studentFamilyColumn]
+      else if (sessionType === 'parent')
+        studentTableColumns = [studentMatricColumn, studentGradeColumn, studentFamilyColumn]
+      else 
+        studentTableColumns = [studentMatricColumn, studentGradeColumn, studentTimeColumn]
   }
 
   useEffect(() => {
