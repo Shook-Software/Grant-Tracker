@@ -90,11 +90,7 @@ public class AttendanceRepository : RepositoryBase, IAttendanceRepository
 
 
         Guid attendanceGuid = Guid.NewGuid();
-
-
-
         List<FamilyAttendanceRecord> familyAttendance = new();
-
 
 		sessionAttendance.StudentRecords
 			.ForEach(sr =>
@@ -189,8 +185,20 @@ public class AttendanceRepository : RepositoryBase, IAttendanceRepository
 		return existingAttendanceRecord;
     }
 
-	public async Task EditAttendanceAsync(Guid attendanceGuid, SessionAttendanceDto sessionAttendance)
-	{
-		await this.AddAttendanceAsync(sessionAttendance.SessionGuid, sessionAttendance);
+	public async Task UpdateAttendanceAsync(Guid attendanceGuid, SessionAttendanceDto sessionAttendance)
+    {
+		using var transaction = await _grantContext.Database.BeginTransactionAsync();
+
+		try
+		{
+            var existingAttendanceRecord = await DeleteAttendanceRecordAsync(attendanceGuid);
+            await this.AddAttendanceAsync(sessionAttendance.SessionGuid, sessionAttendance);
+
+			await transaction.CommitAsync();
+        }
+		catch (Exception ex)
+		{
+			await transaction.RollbackAsync();
+		}
 	}
 }

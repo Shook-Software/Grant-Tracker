@@ -13,6 +13,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using GrantTracker.Dal.Repositories.OrganizationRepository;
 using GrantTracker.Utilities;
+using GrantTracker.Dal.Schema.Sprocs;
+using GrantTracker.Dal.Models.Dto.Attendance;
 
 namespace GrantTracker.Dal.Controllers;
 
@@ -168,11 +170,11 @@ public class SessionController : ControllerBase
     }
 
 
-	#endregion Get
+    #endregion Get
 
-	#region Post
+    #region Post
 
-	[HttpPost("")]
+    [HttpPost("")]
 	public async Task<ActionResult<Guid>> AddSession([FromBody] FormSessionDto session)
 	{
 		await _sessionRepository.AddAsync(session);
@@ -213,85 +215,35 @@ public class SessionController : ControllerBase
 
 		return Created($"{destinationSessionGuid}/registration/copy", studentSchoolYearGuids);
 	}
-
-
-	private async Task<List<InstructorAttendanceDto>> ConcatSubstituteRecordsAsync(List<InstructorAttendanceDto> instructorAttendance, List<SubstituteAttendanceDto> substituteAttendance, Guid OrganizationYearGuid)
-	{
-		List<InstructorAttendanceDto> recordsToAdd = new();
-        foreach (var substituteRecord in substituteAttendance)
-        {
-            Guid instructorSchoolYearGuid = substituteRecord.InstructorSchoolYearGuid;
-
-            //this needs to check the organization year specified by the session, not just try and find one for her
-            bool instructorSchoolYearGuidExists = instructorSchoolYearGuid != Guid.Empty;
-
-            if (!instructorSchoolYearGuidExists)
-            {
-                bool substituteHasBadgeNumber = !substituteRecord.Substitute.BadgeNumber.IsNullOrEmpty();
-                if (substituteHasBadgeNumber)
-                {
-                    instructorSchoolYearGuid = await _instructorRepository.CreateAsync(substituteRecord.Substitute, OrganizationYearGuid);
-                }
-
-                if (instructorSchoolYearGuid == Guid.Empty)
-                    instructorSchoolYearGuid = await _instructorRepository.CreateAsync(substituteRecord.Substitute, OrganizationYearGuid);
-            }
-
-            InstructorAttendanceDto instructorAttendanceRecord = new()
-            {
-                InstructorSchoolYearGuid = instructorSchoolYearGuid,
-				IsSubstitute = true,
-                Attendance = substituteRecord.Attendance
-            };
-
-            recordsToAdd.Add(instructorAttendanceRecord);
-        }
-
-        instructorAttendance.AddRange(recordsToAdd);
-        return instructorAttendance.Distinct().ToList(); //ensure the substitutes haven't introduced a duplication error
-    }
-
-	private async Task<List<StudentAttendanceDto>> ValidateOrCreateStudentsFromAttendanceAsync(Guid OrganizationYearGuid, List<StudentAttendanceDto> StudentAttendance)
-	{
-		foreach(var record in StudentAttendance)
-        {
-            if (record.StudentGuid == default)
-			{
-                var student = await _studentRepository.CreateIfNotExistsAsync(record.Student);
-                record.StudentGuid = student.Guid;
-            }
-
-			if (record.StudentSchoolYearGuid == default)
-            {
-                var studentSchoolYear = await _studentSchoolYearRepository.CreateIfNotExistsAsync(record.StudentGuid, OrganizationYearGuid);
-				record.StudentSchoolYearGuid = studentSchoolYear.Guid;
-            }
-        }
-
-		return StudentAttendance;
-    }
 	
 	[HttpPost("{sessionGuid:guid}/attendance")]
 	public async Task<IActionResult> SubmitAttendance(Guid sessionGuid, [FromBody] SessionAttendanceDto sessionAttendance)
 	{
 		try
 		{
+			List<AttendanceConflict> conflicts = new();
+
             //A lot of this could be moved to the repository side
             var organizationYearGuid = (await _sessionRepository.GetAsync(sessionGuid)).OrganizationYear.Guid;
+			var session = await _sessionRepository.GetAsync(sessionGuid);
 
             if (sessionAttendance.SessionGuid == Guid.Empty)
                 throw new ArgumentException("SessionGuid cannot be empty.", nameof(sessionAttendance));
-
-            sessionAttendance.InstructorRecords = await ConcatSubstituteRecordsAsync(sessionAttendance.InstructorRecords, sessionAttendance.SubstituteRecords, organizationYearGuid);
+			
+            sessionAttendance.InstructorRecords.AddRange(await ValidateOrCreateSubsituteInstructorsFromAttendanceAsync(organizationYearGuid, sessionAttendance.SubstituteRecords));
+            sessionAttendance.InstructorRecords = sessionAttendance.InstructorRecords.Distinct().ToList(); //ensure the substitutes haven't introduced a duplication error
             sessionAttendance.StudentRecords = await ValidateOrCreateStudentsFromAttendanceAsync(organizationYearGuid, sessionAttendance.StudentRecords);
 
-            var errorList = await _sessionRepository.ValidateStudentAttendanceAsync(sessionAttendance.Date, sessionAttendance.StudentRecords);
-            sessionAttendance.StudentRecords = sessionAttendance.StudentRecords.ExceptBy(errorList.Select(x => x.StudentSchoolYearGuid), record => record.StudentSchoolYearGuid).ToList();
+			if (session.SessionType.Label != "Parent")
+			{
+                conflicts = await _sessionRepository.ValidateStudentAttendanceAsync(sessionAttendance.Date, sessionAttendance.StudentRecords);
+				sessionAttendance.StudentRecords = sessionAttendance.StudentRecords.ExceptBy(conflicts.Select(x => x.StudentSchoolYearGuid), record => record.StudentSchoolYearGuid).ToList();
+			}
 
             await _attendanceRepository.AddAttendanceAsync(sessionGuid, sessionAttendance);
 
-            if (errorList.Count > 0)
-                return Conflict(errorList.Select(x => x.Error));
+            if (conflicts.Count > 0)
+                return Conflict(conflicts.Select(x => x.Error));
 
             return NoContent();
         }
@@ -325,56 +277,26 @@ public class SessionController : ControllerBase
 	[HttpPatch("attendance")]
 	public async Task<IActionResult> EditAttendance(Guid attendanceGuid, [FromBody] SessionAttendanceDto sessionAttendance)
 	{
-		var existingAttendanceRecord = await _attendanceRepository.DeleteAttendanceRecordAsync(attendanceGuid);
-
 		try
 		{
             var organizationYearGuid = (await _sessionRepository.GetAsync(sessionAttendance.SessionGuid)).OrganizationYear.Guid;
-            //instructors don't need validation as they are ensured to exist in the given orgYear
-            //Ensure substitutes have all information required and are added to the session's organizationYear
-            List<InstructorAttendanceDto> substituteAttendance = new();
-            foreach (var substituteRecord in sessionAttendance.SubstituteRecords)
-            {
-                Guid instructorSchoolYearGuid = substituteRecord.InstructorSchoolYearGuid;
-
-                bool substituteHasBadgeNumber = !substituteRecord.Substitute.BadgeNumber.IsNullOrEmpty();
-                if (substituteHasBadgeNumber)
-                    instructorSchoolYearGuid = (await _instructorSchoolYearRepository.GetInstructorSchoolYearAsync(substituteRecord.Substitute.BadgeNumber, organizationYearGuid))?.Guid ?? Guid.Empty;
-
-                if (instructorSchoolYearGuid == Guid.Empty)
-                    instructorSchoolYearGuid = await _instructorRepository.CreateAsync(substituteRecord.Substitute, organizationYearGuid);
-
-                InstructorAttendanceDto instructorAttendanceRecord = new()
-                {
-                    InstructorSchoolYearGuid = instructorSchoolYearGuid,
-                    IsSubstitute = true,
-                    Attendance = substituteRecord.Attendance
-                };
-
-                substituteAttendance.Add(instructorAttendanceRecord);
-            }
-
-            //reassign with verified instructor records
-            sessionAttendance.InstructorRecords.AddRange(substituteAttendance);
+          
+            sessionAttendance.InstructorRecords.AddRange(await ValidateOrCreateSubsituteInstructorsFromAttendanceAsync(organizationYearGuid, sessionAttendance.SubstituteRecords));
             sessionAttendance.InstructorRecords = sessionAttendance.InstructorRecords.Distinct().ToList(); //ensure the substitutes haven't introduced a duplication error
             sessionAttendance.StudentRecords = await ValidateOrCreateStudentsFromAttendanceAsync(organizationYearGuid, sessionAttendance.StudentRecords);
 
             var errorList = await _sessionRepository.ValidateStudentAttendanceAsync(sessionAttendance.Date, sessionAttendance.StudentRecords);
             sessionAttendance.StudentRecords = sessionAttendance.StudentRecords.ExceptBy(errorList.Select(x => x.StudentSchoolYearGuid), record => record.StudentSchoolYearGuid).ToList();
 
-            await _attendanceRepository.EditAttendanceAsync(attendanceGuid, sessionAttendance);
+            await _attendanceRepository.UpdateAttendanceAsync(attendanceGuid, sessionAttendance);
 
             if (errorList.Count > 0)
-			{
-				await _attendanceRepository.AddAttendanceAsync(existingAttendanceRecord);
                 return Conflict(errorList.Select(x => x.Error));
-            }
 
             return Ok();
         }
 		catch (Exception ex)
 		{
-			await _attendanceRepository.AddAttendanceAsync(existingAttendanceRecord);
             _logger.LogError(ex, "{Function} - An unhandled error occured.", nameof(EditAttendance));
             return StatusCode(500, "An unexpected error occurred while editing attendance. No changes were made.");
 		}
@@ -431,5 +353,58 @@ public class SessionController : ControllerBase
             return StatusCode(500);
         }
 	}
-	#endregion Delete
+    #endregion Delete
+
+
+    #region AttendanceUtility
+
+
+    private async Task<List<InstructorAttendanceDto>> ValidateOrCreateSubsituteInstructorsFromAttendanceAsync(Guid OrganizationYearGuid, List<SubstituteAttendanceDto> SubstituteAttendance)
+    {
+        List<InstructorAttendanceDto> validatedSubstituteAttendance = new();
+        foreach (var substituteRecord in SubstituteAttendance)
+        {
+            Guid instructorSchoolYearGuid = substituteRecord.InstructorSchoolYearGuid;
+
+            bool substituteHasBadgeNumber = !substituteRecord.Substitute.BadgeNumber.IsNullOrEmpty();
+            if (substituteHasBadgeNumber)
+                instructorSchoolYearGuid = (await _instructorSchoolYearRepository.GetInstructorSchoolYearAsync(substituteRecord.Substitute.BadgeNumber, OrganizationYearGuid))?.Guid ?? Guid.Empty;
+
+            if (instructorSchoolYearGuid == Guid.Empty)
+                instructorSchoolYearGuid = await _instructorRepository.CreateAsync(substituteRecord.Substitute, OrganizationYearGuid);
+
+            InstructorAttendanceDto instructorAttendanceRecord = new()
+            {
+                InstructorSchoolYearGuid = instructorSchoolYearGuid,
+                IsSubstitute = true,
+                Attendance = substituteRecord.Attendance
+            };
+
+            validatedSubstituteAttendance.Add(instructorAttendanceRecord);
+        }
+
+        return validatedSubstituteAttendance;
+    }
+
+    private async Task<List<StudentAttendanceDto>> ValidateOrCreateStudentsFromAttendanceAsync(Guid OrganizationYearGuid, List<StudentAttendanceDto> StudentAttendance)
+    {
+        foreach (var record in StudentAttendance)
+        {
+            if (record.StudentGuid == default)
+            {
+                var student = await _studentRepository.CreateIfNotExistsAsync(record.Student);
+                record.StudentGuid = student.Guid;
+            }
+
+            if (record.StudentSchoolYearGuid == default)
+            {
+                var studentSchoolYear = await _studentSchoolYearRepository.CreateIfNotExistsAsync(record.StudentGuid, OrganizationYearGuid);
+                record.StudentSchoolYearGuid = studentSchoolYear.Guid;
+            }
+        }
+
+        return StudentAttendance;
+    }
+
+    #endregion AttendanceUtility
 }
