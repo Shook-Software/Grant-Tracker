@@ -12,7 +12,7 @@ namespace GrantTracker.Dal.Repositories.AttendanceRepository
 		Task AddAttendanceAsync(AttendanceRecord Record);
         public Task AddAttendanceAsync(Guid sessionGuid, SessionAttendanceDto sessionAttendance);
 		Task<AttendanceRecord> DeleteAttendanceRecordAsync(Guid AttendanceGuid);
-        public Task EditAttendanceAsync(Guid attendanceGuid, SessionAttendanceDto sessionAttendance);
+        public Task UpdateAttendanceAsync(Guid attendanceGuid, SessionAttendanceDto sessionAttendance);
 
 
 		//public Task<List<StudentAttendance>> GetSessionAttendance(Guid sessionGuid, DateOnly date);
