@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useContext } from 'react'
 import { Container, Spinner, Form, Button, Card, Row, Col } from 'react-bootstrap'
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 
 import CopyRegistrations from './CopyRegistrations'
-import { useAdminPage, Context } from 'pages/Admin'
+import { useAdminPage, Context, OrgYearContext } from 'pages/Admin'
 import AddButton from 'components/Input/Button'
 import Table, { Column, SortDirection } from 'components/BTable'
 
@@ -85,34 +85,37 @@ const createColumns = (missingAttendanceRecords, openSessionGuid): Column[] => [
   }
 ]
 
-//Just use the organization a user is tied to on the API side, no need to send it from here.
 export default (): JSX.Element => {
   document.title = 'GT - Admin / Sessions'
   const { sessionGuid } = useParams()
-  const { user }: Context = useAdminPage()
   const [state, setState] = useState<SimpleSessionView[]>([])
-  const [isLoading, setIsLoading] = useState<boolean>(false) //can we make a custom hook for loading?
+  const [isLoading, setIsLoading] = useState<boolean>(false)
   const [searchTerm, setSearchTerm] = useState<string>('')
   const [missingAttendanceRecords, setMissingAttendanceRecords] = useState<AttendanceRecord[]>([])
-  const [currentOrgYearGuid, setOrgYearGuid] = useState<string>('')
+  const { orgYear, setOrgYear } = useContext(OrgYearContext)
   const navigate = useNavigate()
 
   function fetchSessions (params) {
-    if (user.organization.guid && user.year.guid) {
+    if (orgYear) {
       setIsLoading(true)
 
       api
         .get('/session', {
           params: { 
             sessionName: params?.sessionName, 
-            grades: params?.grades,
-            organizationGuid: AxiosIdentityConfig.identity.organizationGuid,
-            yearGuid: AxiosIdentityConfig.identity.yearGuid
+            organizationGuid: orgYear?.organization.guid,
+            yearGuid: orgYear?.year.guid
           }
         })
         .then(res => {
-          setOrgYearGuid(user.organizationYearGuid)
-          setState(res.data)
+          var sessions: SimpleSessionView[] = res.data
+          setState(sessions)
+
+          if (sessionGuid && !sessions.some(s => s.sessionGuid === sessionGuid))
+          {
+            api.get(`/session/${sessionGuid}/orgYear`)
+              .then(res => setOrgYear(res.data))
+          }
         })
         .catch(err => console.warn(err))
         .finally(() => {
@@ -127,23 +130,14 @@ export default (): JSX.Element => {
   }
 
   useEffect(() => {
-      if (user.organizationYearGuid == currentOrgYearGuid || currentOrgYearGuid === '')
-        return
-
-      navigate(`${paths.Admin.path}/${paths.Admin.Tabs.Sessions.path}`)
-  }, [user])
-
-  useEffect(() => {
-    api
-      .get(`/organizationYear/${AxiosIdentityConfig.identity.organizationYearGuid}/Attendance/Missing`)
-      .then(res => {
-        setMissingAttendanceRecords(res.data)
-      })
-  }, [user])
-
-  useEffect(() => {
       fetchSessions(null)
-  }, [AxiosIdentityConfig.identity.organizationYearGuid])
+
+      api
+        .get(`/organizationYear/${orgYear?.guid}/Attendance/Missing`)
+        .then(res => {
+          setMissingAttendanceRecords(res.data)
+        })
+  }, [orgYear?.guid])
 
   let columns: Column[] = createColumns(missingAttendanceRecords, sessionGuid)
   let rowClick = null
@@ -152,13 +146,12 @@ export default (): JSX.Element => {
     rowClick = (event, row) => navigate(`${paths.Admin.path}/${paths.Admin.Tabs.Sessions.path}/${row.sessionGuid}`)
   }
 
-
   return (
     <>
       <Container className='pt-3'>
         <div className='d-flex mb-3'>
           <div>
-            <h4 className='m-0 me-3 text-align-center'>Sessions for {user.organizationName}</h4>  
+            <h4 className='m-0 me-3 text-align-center'>Sessions for {orgYear?.organization.name}</h4>  
             <small className='text-danger'>* Red sessions are missing attendance records</small>
           </div>
           <div>

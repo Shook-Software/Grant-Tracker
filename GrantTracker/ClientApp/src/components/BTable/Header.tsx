@@ -25,7 +25,7 @@ export const Header = ({ columns, indexed, setSortIndex }: Props): JSX.Element =
         ? col.headerTransform()
         : 
         <HeaderCell
-          key={col.key}
+          key={index + col.key}
           id={col.key}
           className='px-2'
           sortable={col.sortable}

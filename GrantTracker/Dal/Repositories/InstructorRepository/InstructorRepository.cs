@@ -5,19 +5,24 @@ using GrantTracker.Dal.Models.Views;
 using GrantTracker.Dal.Repositories.DevRepository;
 using GrantTracker.Dal.Schema;
 using GrantTracker.Utilities;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace GrantTracker.Dal.Repositories.InstructorRepository
 {
-	public class InstructorRepository : RepositoryBase, IInstructorRepository
+	public class InstructorRepository : IInstructorRepository
 	{
 		private readonly InterfaceDbContext _staffContext;
+        protected readonly GrantTrackerContext _grantContext;
+        protected readonly ClaimsPrincipal _user;
 
-		public InstructorRepository(GrantTrackerContext grantContext, IDevRepository devRepository, IHttpContextAccessor httpContext, InterfaceDbContext staffContext)
-			: base(devRepository, httpContext, grantContext)
+        public InstructorRepository(GrantTrackerContext grantContext, IDevRepository devRepository, IHttpContextAccessor httpContextAccessor, InterfaceDbContext staffContext)
 		{
 			_staffContext = staffContext;
-		}
+            _grantContext = grantContext;
+            _user = httpContextAccessor.HttpContext.User;
+        }
 
 		public async Task<List<EmployeeDto>> SearchSynergyStaffAsync(string name, string badgeNumber)
 		{

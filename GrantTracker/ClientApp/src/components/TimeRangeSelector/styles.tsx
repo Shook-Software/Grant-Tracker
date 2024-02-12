@@ -2,9 +2,13 @@
 import { standardInput, onHoverBehavior } from 'mixins'
 import { Container as BContainer, Row } from 'react-bootstrap'
 import '../../../node_modules/bootstrap/scss/bootstrap.scss'
-const width: number = 150
+const width: number = 200
 
-export const Container = styled(BContainer)<{ isCollapsed: boolean }>`
+export const Container = styled.div<{ isCollapsed: boolean, small: boolean }>`
+  position: relative; 
+  display: flex;
+  flex-wrap: none;
+
   margin: 0;
   ${standardInput}
 
@@ -21,6 +25,8 @@ export const Container = styled(BContainer)<{ isCollapsed: boolean }>`
     border: 1px solid rgb(134, 183, 254);
     box-shadow: var(--input-box-shadow);
   }
+
+  ${props => props.small ? 'padding: 0.15rem 0.5rem' : ''}
 `
 
 export const TextInputButton = styled.button`
@@ -48,11 +54,13 @@ export const VisualInputContainer = styled(Row)`
 
 export const SelectionGrid = styled.div<{ isCollapsed: boolean }>`
   position: absolute;
-  width: ${width}px;
+  min-width: ${width}px;
   display: grid;
   grid-template-columns: 40% 40% 20%;
 
-  top: 0;
+  top: 100%;
+  left: 0;
+  right: 0;
 
   background-color: white;
   ${standardInput}

@@ -1,8 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useContext } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { Row, Col, Card, ListGroup, Button, Spinner } from 'react-bootstrap'
 
-import { useAdminPage, Context } from 'pages/Admin'
 import Dropdown from 'components/Input/Dropdown'
 import Table, { Column } from 'components/BTable'
 import ListItem from 'components/Item'
@@ -16,6 +15,7 @@ import { DropdownOption } from 'Models/Session'
 import { getInstructorStatusOptions, getInstructor, patchInstructorStatus } from './api'
 import paths from 'utils/routing/paths'
 import { PageContainer } from 'styles'
+import { OrgYearContext } from 'pages/Admin'
 
 
 //name
@@ -119,7 +119,7 @@ const BasicDetails = ({instructor: instructorSchoolYear, onChange, editing}: Bas
 }
 
 export default ({instructorSchoolYearGuid}): JSX.Element => {
-  const { user }: Context = useAdminPage() //I should use a function in here to push Breadcrumbs
+	const { orgYear } = useContext(OrgYearContext)
   const [instructorSchoolYear, setInstructorSchoolYear] = useState<InstructorSchoolYearView | null>(null)
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const [editing, setEditing] = useState<boolean>(false)

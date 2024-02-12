@@ -87,7 +87,7 @@ export function reducer (state: AttendanceForm, action: ReducerAction): Attendan
       })
 
       const adjustedStartTimeInstructorRecords = state.instructorRecords.map(record => {
-        record.attendance = record.attendance.map((att, index) => {
+        record.times = record.times.map((att, index) => {
           if (index === action.payload.index)
             att.startTime = action.payload.startTime
 
@@ -127,7 +127,7 @@ export function reducer (state: AttendanceForm, action: ReducerAction): Attendan
       })
 
       const adjustedEndTimeInstructorRecords = state.instructorRecords.map(record => {
-        record.attendance = record.attendance.map((att, index) => {
+        record.times = record.times.map((att, index) => {
           if (index === action.payload.index)
             att.endTime = action.payload.endTime
 

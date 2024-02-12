@@ -27,7 +27,6 @@ namespace GrantTracker.Dal.Models.Views
 			Name = session.Name,
 			FirstSession = session.FirstSession,
 			LastSession = session.LastSession,
-			Recurring = session.Recurring,
 			OrganizationYear = OrganizationYearView.FromDatabase(session.OrganizationYear),
 			SessionType = DropdownOption.FromDatabase(session.SessionType),
 			Activity = DropdownOption.FromDatabase(session.Activity),

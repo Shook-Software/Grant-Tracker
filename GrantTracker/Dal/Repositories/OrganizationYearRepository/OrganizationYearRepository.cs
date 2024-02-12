@@ -7,44 +7,68 @@ using GrantTracker.Dal.Schema.Sprocs;
 using GrantTracker.Dal.Models.Dto;
 using GrantTracker.Dal.Schema.Sprocs.Reporting;
 using Microsoft.AspNetCore.Http;
+using System.Security.Claims;
 
 namespace GrantTracker.Dal.Repositories.OrganizationYearRepository;
 
-public class OrganizationYearRepository : RepositoryBase, IOrganizationYearRepository
+public class OrganizationYearRepository : IOrganizationYearRepository
 {
-	public OrganizationYearRepository(GrantTrackerContext grantContext, IDevRepository devRepository, IHttpContextAccessor httpContext)
-		: base(devRepository, httpContext, grantContext)
+    protected readonly GrantTrackerContext _grantContext;
+	protected readonly ClaimsPrincipal _user;
+    public OrganizationYearRepository(GrantTrackerContext grantContext, IDevRepository devRepository, IHttpContextAccessor httpContextAccessor)
 	{
+		_grantContext = grantContext;
+        _user = httpContextAccessor.HttpContext.User;
+    }
 
-	}
-	public async Task<Guid> GetGuidAsync(Guid organizationGuid, Guid yearGuid)
+	public async Task<List<OrganizationYear>> GetAsync()
 	{
-		return await UseDeveloperLog(async () =>
-		{
-			//ensure they are authorized to access the specified organization
-			if (_identity.Claim.Equals(IdentityClaim.Coordinator) && !_identity.Organization.Guid.Equals(organizationGuid))
-			{
-				throw new Exception("The requestor is not authorized to access this resource.");
-			}
-
-			return await _grantContext
+		return await _grantContext
 			.OrganizationYears
-			.AsNoTracking()
-			.Where(oy => oy.YearGuid == yearGuid && oy.OrganizationGuid == organizationGuid)
-			.Select(oy => oy.OrganizationYearGuid)
-			.SingleAsync();
-		});
+			.Where(x => _user.IsAdmin() || _user.HomeOrganizationGuids().Contains(x.OrganizationGuid))
+			.Include(oy => oy.Organization)
+			.Include(oy => oy.Year)
+			.ToListAsync();
 	}
 
-	public async Task<List<OrganizationYear>> GetAsync(Guid yearGuid)
+    public async Task<List<OrganizationYear>> GetAsync(Guid yearGuid)
+    {
+        return await _grantContext
+            .OrganizationYears
+            .AsNoTracking()
+            .Where(oy => oy.YearGuid == yearGuid)
+            .Include(oy => oy.Organization)
+            .Include(oy => oy.Year)
+            .ToListAsync();
+    }
+
+	public async Task<OrganizationYear> GetAsyncBySessionId(Guid sessionGuid)
 	{
 		return await _grantContext
 			.OrganizationYears
 			.AsNoTracking()
-			.Where(oy => oy.YearGuid == yearGuid)
+			.Where(x => _user.IsAdmin() || _user.HomeOrganizationGuids().Contains(x.OrganizationGuid))
+			.Where(x => x.Sessions.Any(s => s.SessionGuid == sessionGuid))
 			.Include(oy => oy.Organization)
 			.Include(oy => oy.Year)
-			.ToListAsync();
+			.FirstAsync();
+    }
+
+	//this is silly
+    public async Task<Guid> GetGuidAsync(Guid organizationGuid, Guid yearGuid)
+	{
+			//ensure they are authorized to access the specified organization
+		if (!_user.IsAuthorizedToViewOrganization(organizationGuid))
+		{
+			throw new Exception("The requestor is not authorized to access this resource.");
+		}
+
+		return await _grantContext
+		.OrganizationYears
+		.AsNoTracking()
+		.Where(oy => oy.YearGuid == yearGuid && oy.OrganizationGuid == organizationGuid)
+		.Select(oy => oy.OrganizationYearGuid)
+		.SingleAsync();
 	}
 
 	public async Task CreateAsync(List<Organization> organizations, Guid yearGuid)

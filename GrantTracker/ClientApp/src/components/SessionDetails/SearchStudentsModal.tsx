@@ -160,6 +160,7 @@ export default ({
         })
       })
       .catch(err => {
+        console.error(err)
         setApiResult({
           label: fullName,
           success: false,
@@ -179,7 +180,7 @@ export default ({
     if (tableRef && tableRef.current) {
       tableRef.current.scrollIntoView()
     }
-  }, [state])
+  }, [state.length])
 
   return (
     <Modal

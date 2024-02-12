@@ -3,18 +3,24 @@ using GrantTracker.Dal.Models.Views;
 using GrantTracker.Dal.Repositories.DevRepository;
 using GrantTracker.Dal.Schema;
 using GrantTracker.Utilities;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace GrantTracker.Dal.Repositories.AttendanceRepository;
 
-public class AttendanceRepository : RepositoryBase, IAttendanceRepository
+public class AttendanceRepository : IAttendanceRepository
 {
+    protected readonly GrantTrackerContext _grantContext;
+    protected readonly ClaimsPrincipal _user;
 
-	public AttendanceRepository(GrantTrackerContext grantContext, IDevRepository devRepository, IHttpContextAccessor httpContext)
-		: base(devRepository, httpContext, grantContext)
+
+    public AttendanceRepository(GrantTrackerContext grantContext, IDevRepository devRepository, IHttpContextAccessor httpContextAccessor)
 	{
 
-	}
+        _grantContext = grantContext;
+        _user = httpContextAccessor.HttpContext.User;
+    }
 
 	//needs auth fix
 	public async Task<AttendanceViewModel> GetAttendanceRecordAsync(Guid attendanceGuid)

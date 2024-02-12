@@ -5,13 +5,13 @@ import api, { AxiosIdentityConfig } from 'utils/api'
 
 
 
-export function fetchGrantTrackerInstructors (): Promise<any[]> {
+export function fetchGrantTrackerInstructors (orgGuid, yearGuid): Promise<any[]> {
   return new Promise((resolve, reject) => {
     api
       .get('instructor', { 
           params: {
-          organizationGuid: AxiosIdentityConfig.identity.organizationGuid,
-          yearGuid: AxiosIdentityConfig.identity.yearGuid
+          organizationGuid: orgGuid,
+          yearGuid: yearGuid
         }
       })
       .then(res => resolve(res.data))

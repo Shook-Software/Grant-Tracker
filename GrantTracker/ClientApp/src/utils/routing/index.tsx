@@ -12,6 +12,7 @@ import SessionInvolved from 'pages/Editor/Session/Involved'
 import SessionScheduling from 'pages/Editor/Session/Scheduling'
 import SessionSubmit from 'pages/Editor/Session/Submit'
 
+import AttendancePage from 'pages/Admin/Attendance'
 import AdminSessionsView from 'pages/Admin/Sessions'
 import AdminStaffView from 'pages/Admin/Staff'
 import AdminStudentView from 'pages/Admin/Students'
@@ -82,6 +83,10 @@ export default (user: User, Breadcrumbs: JSX.Element): RouteObject[] => [
         children: editSessionChildren
       }
     ]
+  },
+  {
+    path: 'attendance',
+    element: <AttendancePage />
   },
   {
     path: paths.Admin.path,

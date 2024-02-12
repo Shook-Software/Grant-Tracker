@@ -19,27 +19,22 @@ export interface FamilyRecord {
 }
 
 export interface StudentRecord {
+  id: string
   isPresent: boolean
-  studentSchoolYear: StudentSchoolYearWithRecordsView
-  attendance: TimeScheduleForm[]
+  firstName: string
+  lastName: string
+  matricNumber: string
+  times: TimeScheduleForm[]
   familyAttendance: FamilyRecord[]
 }
 
 export interface InstructorRecord {
+  id: string
   isPresent: boolean
-  attendance: TimeScheduleForm[]
-  instructorSchoolYear: InstructorSchoolYearView
-}
-
-export interface SubstituteRecord {
-  substitute: {
-    id: string
-    firstName: string
-    lastName: string
-    badgeNumber: string
-    statusGuid: string
-  },
-  attendance: TimeScheduleForm[]
+  isSubstitute: boolean
+  firstName: string
+  lastName: string
+  times: TimeScheduleForm[]
 }
 
 export interface AttendanceDomain {

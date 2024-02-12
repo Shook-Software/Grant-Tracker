@@ -3,7 +3,7 @@ import { TimeOnly } from "./TimeOnly"
 
 
 export interface TimeScheduleDomain {
-  timeScheduleGuid: string
+  guid: string
   dayScheduleGuid: string
   startTime: TimeOnly
   endTime: TimeOnly
@@ -30,7 +30,7 @@ export function timeScheduleComparer(first: TimeScheduleView, second: TimeSchedu
 export abstract class TimeSchedule {
   public static toViewModel(obj: TimeScheduleDomain): TimeScheduleView {
     return {
-      guid: obj.timeScheduleGuid,
+      guid: obj.guid,
       startTime: TimeOnly.toLocalTime(obj.startTime),
       endTime: TimeOnly.toLocalTime(obj.endTime)
     }
@@ -38,7 +38,7 @@ export abstract class TimeSchedule {
 
   public static toFormModel(obj: TimeScheduleDomain): TimeScheduleForm {
     return {
-      guid: obj.timeScheduleGuid,
+      guid: obj.guid,
       startTime: TimeOnly.toLocalTime(obj.startTime),
       endTime: TimeOnly.toLocalTime(obj.endTime)
     }

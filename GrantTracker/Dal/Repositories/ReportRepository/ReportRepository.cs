@@ -6,21 +6,25 @@ using GrantTracker.Dal.Repositories.DevRepository;
 using System;
 using GrantTracker.Dal.Repositories.OrganizationRepository;
 using GrantTracker.Dal.Schema.Sprocs.Reporting;
+using Microsoft.AspNetCore.Http;
+using System.Security.Claims;
 
 namespace GrantTracker.Dal.Repositories.ReportRepository;
 
-public class ReportRepository : RepositoryBase, IReportRepository
+public class ReportRepository : IReportRepository
 {
 	private readonly Guid _processGuid = Guid.NewGuid();
 	private readonly IDbContextFactory<GrantTrackerContext> _grantContextFactory;
 	private readonly IOrganizationRepository _organizationRepository;
+    protected readonly GrantTrackerContext _grantContext;
+    protected readonly ClaimsPrincipal _user;
 
-	public ReportRepository(IDbContextFactory<GrantTrackerContext> grantContextFactory, IDevRepository devRepository, IHttpContextAccessor httpContext, IOrganizationRepository organizationRepository)
-		: base(devRepository, httpContext, grantContextFactory.CreateDbContext())
+    public ReportRepository(IDbContextFactory<GrantTrackerContext> grantContextFactory, IHttpContextAccessor httpContextAccessor, IOrganizationRepository organizationRepository)
 	{
 		_grantContextFactory = grantContextFactory;
 		_organizationRepository = organizationRepository;
-	}
+        _user = httpContextAccessor.HttpContext.User;
+    }
 
 	private string DateOnlyToSQLString(DateOnly date) => $"{date.Year}-{date.Month}-{date.Day}";
 
@@ -28,7 +32,7 @@ public class ReportRepository : RepositoryBase, IReportRepository
 	{
 		await _grantContext.Database.ExecuteSqlInterpolatedAsync($"EXEC [GTkr].ReportQuery_Core {_processGuid}, {DateOnlyToSQLString(startDate)}, {DateOnlyToSQLString(endDate)}, {(organizationGuid == new Guid() ? null : organizationGuid)}");
 
-		Task<List<TotalStudentAttendanceViewModel>> totalStudentAttendanceQueryTask = _grantContext
+		Task<List<TotalStudentAttendanceViewModel>> totalStudentAttendanceQueryTask = _grantContextFactory.CreateDbContext()
 			.Set<TotalStudentAttendanceViewModel>()
 			.FromSqlInterpolated($"EXEC [GTkr].ReportQuery_StudentAttendance {_processGuid}")
 			.AsNoTracking()
@@ -301,6 +305,8 @@ public class ReportRepository : RepositoryBase, IReportRepository
 					return new ClassSummaryViewModel()
 					{
 						OrganizationName = key.OrganizationName,
+						OrganizationYearGuid = firstRow.OrganizationYearGuid,
+						SessionGuid = firstRow.SessionGuid,
 						SessionName = key.SessionName,
 						ActivityType = firstRow.ActivityType,
 						FundingSource = firstRow.FundingSource,

@@ -12,15 +12,21 @@ namespace GrantTracker.Dal.Models.Views
 		public bool IsCurrentYear { get; set; }
 		//Add other attributes as needed
 
-		public static YearView FromDatabase(Year year) => new()
+		public static YearView? FromDatabase(Year? year) 
 		{
-			Guid = year.YearGuid,
-			SchoolYear = year.SchoolYear,
-			Quarter = year.Quarter,
-			StartDate = year.StartDate,
-			EndDate = year.EndDate,
-			IsCurrentYear = year.IsCurrentSchoolYear
-		};
+			if (year is null)
+				return null;
+
+			return new()
+			{
+				Guid = year.YearGuid,
+				SchoolYear = year.SchoolYear,
+				Quarter = year.Quarter,
+				StartDate = year.StartDate,
+				EndDate = year.EndDate,
+				IsCurrentYear = year.IsCurrentSchoolYear
+			};
+		}
 	}
 
 	public class OrganizationView
@@ -30,18 +36,17 @@ namespace GrantTracker.Dal.Models.Views
 
 		public List<OrganizationYearView> OrganizationYears { get; set; }
 
-		public static OrganizationView FromDatabase(Organization organization) => new()
+		public static OrganizationView? FromDatabase(Organization? organization)
 		{
-			Guid = organization.OrganizationGuid,
-			Name = organization.Name,
-			OrganizationYears = organization.Years == null 
-			? new List<OrganizationYearView>() 
-			: organization.Years
-				.Select(OrganizationYearView.FromDatabase)
-				.OrderByDescending(x => x.Year.SchoolYear)
-				.ThenBy(x => x.Year.Quarter)
-				.ToList()
-		};
+			if (organization is null)
+				return null;
+
+			return new()
+			{
+				Guid = organization.OrganizationGuid,
+				Name = organization.Name
+			};
+		}
 	}
 
 	public class OrganizationYearView
@@ -54,11 +59,7 @@ namespace GrantTracker.Dal.Models.Views
 		{
 			Guid = organizationYear.OrganizationYearGuid,
 			Year = YearView.FromDatabase(organizationYear.Year),
-			Organization = new()
-			{
-				Guid = organizationYear.Organization.OrganizationGuid,
-				Name = organizationYear.Organization.Name
-			}
+			Organization = OrganizationView.FromDatabase(organizationYear.Organization)
 		};
 	}
 }

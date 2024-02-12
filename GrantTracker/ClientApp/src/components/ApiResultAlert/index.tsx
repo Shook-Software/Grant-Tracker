@@ -6,7 +6,7 @@ import WordBreak from 'components/Wordbreak'
 export interface ApiResult {
   label: string
   success: boolean
-  message?: string[]
+  message?: string | string[]
 }
 
 export default ({ apiResult, scroll = true }: { apiResult: ApiResult | undefined, scroll: boolean }): JSX.Element => {
@@ -35,7 +35,12 @@ export default ({ apiResult, scroll = true }: { apiResult: ApiResult | undefined
       ref={alertRef}
     >
       <h4 className='p-0 m-0'>{result}</h4>
-      <p className='p-0 m-0'>{apiResult.message?.map(string => (<>{WordBreak(string)}<br /></>))}</p>
+      <p className='p-0 m-0'>
+        {Array.isArray(apiResult.message) 
+          ? apiResult.message?.map(string => (<>{WordBreak(string)}<br /></>))
+          : apiResult.message
+        }
+      </p>
     </Alert>
   )
 }

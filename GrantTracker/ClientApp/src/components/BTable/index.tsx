@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, ReactElement } from 'react'
 import { Table } from 'react-bootstrap'
 import { Header } from './Header'
 import { Body } from './Body'
@@ -14,7 +14,7 @@ export interface Column {
   sortable: boolean
   sortTransform?: (value: any) => string
   transform?: (value: any, index: number | null) => any
-  headerTransform?: () => JSX.Element
+  headerTransform?: () => ReactElement | ReactElement[]
   headerProps?: object
   cellProps?: object
 }

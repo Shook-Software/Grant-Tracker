@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using GrantTracker.Dal.Repositories.OrganizationRepository;
 using GrantTracker.Utilities;
+using System.Diagnostics;
 
 namespace GrantTracker.Dal.Controllers;
 
@@ -50,26 +51,38 @@ public class SessionController : ControllerBase
 	#region Get
 
 	[HttpGet("")]
-	public async Task<ActionResult<List<SimpleSessionView>>> GetAsync(string sessionName, [FromQuery(Name = "grades[]")] Guid[] grades, Guid organizationGuid, Guid yearGuid)
-	{
-		var organizationYearGuid = await _organizationYearRepository.GetGuidAsync(organizationGuid, yearGuid);
-		var sessions = await _sessionRepository.GetAsync(sessionName, organizationYearGuid);
-		return Ok(sessions);
+	public async Task<ActionResult<List<SimpleSessionView>>> GetAsync(Guid organizationGuid, Guid yearGuid)
+    {
+        Stopwatch watch = new(); watch.Start();
+        var organizationYearGuid = await _organizationYearRepository.GetGuidAsync(organizationGuid, yearGuid);
+		var sessions = await _sessionRepository.GetAsync("", organizationYearGuid);
+        Debug.WriteLine($"Returned sessionS in {watch.ElapsedMilliseconds / 1000d:#.##}");
+        return Ok(sessions);
 	}
 
 	//Users must be able to receive single sessions to view, edit, fill out attendance, and add students.
 	[HttpGet("{sessionGuid:guid}")]
 	public async Task<ActionResult<SessionView>> Get(Guid sessionGuid)
+    {
+        Stopwatch watch = new(); watch.Start();
+        var session = await _sessionRepository.GetAsync(sessionGuid);
+        Debug.WriteLine($"Returned session in {watch.ElapsedMilliseconds / 1000d:#.##}");
+        return Ok(session);
+	}
+
+	[HttpGet("{sessionGuid:guid}/orgYear")]
+	public async Task<ActionResult<OrganizationYearView>> GetOrganizationYearForSessionId(Guid sessionGuid)
 	{
-		var session = await _sessionRepository.GetAsync(sessionGuid);
-		session.Instructors = session.Instructors.Select(i =>
+		try
 		{
-			i.EnrollmentRecords = null;
-			i.AttendanceRecords = null;
-			return i;
-		})
-		.ToList();
-		return Ok(session);
+			var orgYear = await _organizationYearRepository.GetAsyncBySessionId(sessionGuid);
+			return Ok(OrganizationYearView.FromDatabase(orgYear));
+		}
+		catch (Exception ex)
+		{
+			_logger.LogError("", ex);
+			return StatusCode(500);
+		}
 	}
 
 	[HttpGet("{sessionGuid:guid}/status")]
@@ -109,7 +122,7 @@ public class SessionController : ControllerBase
 	}
 
 	[HttpGet("{sessionGuid:guid}/attendance/openDates")]
-	public async Task<ActionResult<List<DateOnly>>> GetOpenAttendanceDates(Guid sessionGuid, DayOfWeek dayOfWeek)
+	public async Task<ActionResult<List<DateOnly>>> GetOpenAttendanceDates(Guid sessionGuid, DayOfWeek? dayOfWeek)
 	{
 		try
 		{
@@ -153,12 +166,31 @@ public class SessionController : ControllerBase
 			IEnumerable<DateOnly> attendanceDates = await _attendanceRepository.GetAttendanceDatesAsync(sessionGuid);
 			IEnumerable<DateOnly> blackoutDates = (await _organizationRepository.GetBlackoutDatesAsync(session.OrganizationYear.Organization.Guid)).Select(x => x.Date);
 
-			var openDates = GetWeekdaysBetween(dayOfWeek, startDate, endDate)
-				.Except(blackoutDates)
-				.Except(attendanceDates)
-				.ToList(); //filter coordinator-defined blackout dates and already existing attendance;
+			if (dayOfWeek is null)
+			{
+				List<DateOnly> openDates = new();
 
-			return Ok(openDates);
+				foreach (var doW in session.DaySchedules.Select(x => x.DayOfWeek))
+				{
+                    var dates = GetWeekdaysBetween(doW, startDate, endDate)
+						.Except(blackoutDates)
+						.Except(attendanceDates)
+						.ToList(); //filter coordinator-defined blackout dates and already existing attendance;
+
+					openDates.AddRange(dates);
+                }
+
+				return Ok(openDates);
+			}
+			else
+			{
+                var openDates = GetWeekdaysBetween(dayOfWeek.Value, startDate, endDate)
+                    .Except(blackoutDates)
+                    .Except(attendanceDates)
+                    .ToList(); //filter coordinator-defined blackout dates and already existing attendance;
+
+                return Ok(openDates);
+            }
 		}
         catch (Exception ex)
         {

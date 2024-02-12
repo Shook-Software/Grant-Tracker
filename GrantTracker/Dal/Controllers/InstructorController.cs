@@ -47,10 +47,18 @@ namespace GrantTracker.Dal.Controllers
 		}
 
 		[HttpPost("add")]
-		public async Task<IActionResult> AddInstructor(InstructorDto instructor, Guid organizationYearGuid)
+		public async Task<ActionResult> AddInstructor(InstructorDto instructor, Guid organizationYearGuid)
 		{
-			await _instructorRepository.CreateAsync(instructor, organizationYearGuid);
-			return NoContent();
+			try
+            {
+                Guid instructorSchoolYearGuid = await _instructorRepository.CreateAsync(instructor, organizationYearGuid);
+                return Ok(instructorSchoolYearGuid);
+            }
+			catch (Exception ex)
+			{
+				_logger.LogError("Unhandled", ex);
+				return StatusCode(500);
+			}
 		}
 
 		public class PatchStatusProps
