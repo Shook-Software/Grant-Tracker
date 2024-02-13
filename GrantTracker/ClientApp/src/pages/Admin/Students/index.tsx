@@ -5,7 +5,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import Table, { Column, SortDirection } from 'components/BTable'
 import StudentDetails from 'components/StudentDetails'
 
-import { useAdminPage, Context, OrgYearContext } from '../index'
+import { OrgYearContext } from '../index'
 
 import api from 'utils/api'
 import paths from 'utils/routing/paths'
@@ -73,12 +73,13 @@ const createColumns = (): Column[] => [
 
 export default (): JSX.Element => {
   document.title = 'GT - Admin / Students'
+  const navigate = useNavigate()
   const { studentGuid } = useParams()
   const { orgYear } = useContext(OrgYearContext)
   const [state, setState] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState<boolean>(false)
-  const [searchTerm, setSearchTerm] = useState<string>('')
-  const navigate = useNavigate()
+  const [nameFilter, setNameFilter] = useState<string>('')
+  const [matricFilter, setMatricFilter] = useState<string>('')
 
   function getStudents (): void {
     setIsLoading(true)
@@ -93,9 +94,17 @@ export default (): JSX.Element => {
       .finally(() => setIsLoading(false))
   }
   
-  function handleSearchTermChange(term) {
+  function handleNameFilterChange(term: string) {
     term = term.toLocaleLowerCase()
-    setSearchTerm(term)
+    setNameFilter(term)
+  }
+  
+  function handleMatricFilterChange(term: string) {
+    console.log(term, term[term.length - 1])
+    if (Number.isNaN(term[term.length - 1]))
+      return
+
+    setMatricFilter(term)
   }
 
   useEffect(() => {
@@ -103,10 +112,13 @@ export default (): JSX.Element => {
   }, [orgYear])
   
   let columns: Column[] = createColumns()
-  let rowClick = null
+  let rowClick =  (event, row) => navigate(`${paths.Admin.path}/${paths.Admin.Tabs.Students.path}/${row.guid}`)
+  const data = state
+    .filter(ssy => `${ssy.student.firstName} ${ssy.student.lastName}`.toLocaleLowerCase().includes(nameFilter))
+    .filter(ssy => ssy.student.matricNumber.startsWith(matricFilter))
+  
   if (studentGuid != null) {
     columns = [columns[0], columns[1]]
-    rowClick = (event, row) => navigate(`${paths.Admin.path}/${paths.Admin.Tabs.Students.path}/${row.guid}`)
   }
 
   return (
@@ -129,17 +141,25 @@ export default (): JSX.Element => {
                     <Form.Control 
                       type='text' 
                       className='border-bottom-0'
-                      placeholder='Filter students...'
-                      value={searchTerm} 
-                      onChange={(e) => handleSearchTermChange(e.target.value)}
+                      placeholder='Filter by name...'
+                      value={nameFilter} 
+                      onChange={(e) => handleNameFilterChange(e.target.value)}
                       style={{borderBottomLeftRadius: 0, borderBottomRightRadius: 0}}
+                    />
+                    <Form.Control
+                      type='text' 
+                      className='border-bottom-0'
+                      placeholder='Filter by matric...'
+                      value={matricFilter} 
+                      onChange={(e) => handleMatricFilterChange(e.target.value)}
+                      style={{borderRadius: 0}}
                     />
                   </Col>
                 </Row>
                 <Row>
                   <Table 
                     columns={columns} 
-                    dataset={state.filter(ssy => `${ssy.student.firstName} ${ssy.student.lastName}`.toLocaleLowerCase().includes(searchTerm))}  
+                    dataset={data}  
                     defaultSort={{index: 1, direction: SortDirection.Ascending}}
                     rowProps={{key: 'studentSchoolYearGuid', onClick: rowClick}} 
                   />

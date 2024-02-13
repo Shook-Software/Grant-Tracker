@@ -24,7 +24,7 @@ const columns: Column[] = [
     label: 'Date',
     attributeKey: 'attendanceRecord',
     sortable: true,
-    transform: (record: AttendanceView): string => record.instanceDate.format(DateTimeFormatter.ofPattern('MMMM, dd').withLocale(Locale.ENGLISH))
+    transform: (record: AttendanceView): string => record.instanceDate.format(DateTimeFormatter.ofPattern('MM/dd/y').withLocale(Locale.ENGLISH))
   },
   {
     label: 'Time Records',
