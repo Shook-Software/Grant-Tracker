@@ -47,7 +47,7 @@ export default (): React.ReactElement => {
 	})
 
 	const { isPending: fetchingStudentRegs, data: studentRegs, error: studentRegError } = useQuery({
-		queryKey: [`session/${sessionGuid}/registration?dayOfWeek=${date?.dayOfWeek().value()}`],
+		queryKey: [`session/${sessionGuid}/registration?dayOfWeek=${(date?.dayOfWeek().value() % 7)}`],
 		select: (regs: StudentRegistrationDomain[]) => regs.map(reg =>StudentRegistration.toViewModel(reg)),
 		enabled: !!date,
 		retry: false,
@@ -74,6 +74,7 @@ export default (): React.ReactElement => {
 
 					if (session && studentRegs && timeSchedules) {
 						if (!attendanceGuid) {
+							console.log(session.instructors, studentRegs, timeSchedules)
 							dispatch({ type: 'populateInstructors', payload: { instructors: session?.instructors, times: timeSchedules }})
 							dispatch({ type: 'populateStudents', payload: { students: studentRegs.map(reg => reg.studentSchoolYear), times: timeSchedules }})
 						}
@@ -90,6 +91,11 @@ export default (): React.ReactElement => {
 	}
 
 	function renderForm(): React.ReactElement {
+		const continueEnabled: boolean = date
+			&& timeSchedules && timeSchedules.length >= 0
+			&& (attendanceGuid === null || priorAttendance !== undefined)
+			&& !fetchingStudentRegs
+
 		switch (formState) {
 			case FormState.DateTimeSelect:
 				return (
@@ -100,8 +106,8 @@ export default (): React.ReactElement => {
 						times={timeSchedules}
 						onTimeChange={setTimeSchedules}
 						progressFormState={() => handleFormStateChange(FormState.AttendanceRecords)}
-						isNewAttendance={attendanceGuid === null}
 						originalAttendDate={priorAttendance ? DateOnly.toLocalDate(priorAttendance.instanceDate) : undefined}
+						stateIsValidToContinue={continueEnabled}
 					/>
 				);
 			case FormState.AttendanceRecords:
@@ -119,7 +125,7 @@ export default (): React.ReactElement => {
 		}
 	}
 
-	if (!session)
+	if (fetchingSession || !session)
 		return <span>Loading...</span>
 
 	const subHeading: ReactElement | null = priorAttendance?.instanceDate 
@@ -175,7 +181,7 @@ const AttendanceForm = ({session, attendanceGuid, date, state, dispatch}: Attend
 	)
 }
 
-const DateTimeSelection = ({session, date, onDateChange, times, onTimeChange, progressFormState, isNewAttendance, originalAttendDate}): ReactElement => {
+const DateTimeSelection = ({session, date, onDateChange, times, onTimeChange, progressFormState, originalAttendDate, stateIsValidToContinue}): ReactElement => {
 	const [editDateInitialized, setEditDateInitialized] = useState<boolean>(false)
 
 
@@ -217,7 +223,7 @@ const DateTimeSelection = ({session, date, onDateChange, times, onTimeChange, pr
 		if (session && date)
 		{
 			let timeScheduleForDate = session.daySchedules
-				.find(d => DayOfWeek.toInt(d.dayOfWeek) == date.dayOfWeek().value())
+				.find(d => DayOfWeek.toInt(d.dayOfWeek) == date.dayOfWeek().value() % 7)
 				?.timeSchedules;
 
 			if (timeScheduleForDate)
@@ -233,9 +239,6 @@ const DateTimeSelection = ({session, date, onDateChange, times, onTimeChange, pr
 	}, [dates?.length, originalAttendDate])
 
 	const dateFormatter = DateTimeFormatter.ofPattern('eeee, MMMM dd').withLocale(Locale.ENGLISH)
-	const continueDisabled: boolean = !dates || !date
-		|| !times || times.length <= 0
-		|| (!isNewAttendance && !originalAttendDate)
 
 	return (
 		<div className='row'>
@@ -270,7 +273,7 @@ const DateTimeSelection = ({session, date, onDateChange, times, onTimeChange, pr
 			</div>
 
 			<div className='col-xl-2 d-flex align-items-end'>
-				<button className='btn btn-primary' onClick={progressFormState} disabled={continueDisabled}>Continue</button>
+				<button className='btn btn-primary' onClick={progressFormState} disabled={!stateIsValidToContinue}>Continue</button>
 			</div>	
 		</div>
 	)

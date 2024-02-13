@@ -103,11 +103,11 @@ export abstract class StudentAttendance {
         instanceDate: DateOnly.toLocalDate(obj.attendanceRecord.instanceDate),
         session: {...obj.attendanceRecord.session}
       } : null,
-      timeRecords: obj.timeRecords.map(time => ({
+      timeRecords: obj.timeRecords?.map(time => ({
         guid: time.guid,
         startTime: TimeOnly.toLocalTime(time.startTime),
         endTime: TimeOnly.toLocalTime(time.endTime)
-      }))
+      })) || null
     }
   }
 }

@@ -14,12 +14,12 @@ export const studentAttendanceFields = [
 	value: 'firstName'
   },
   {
-	label: 'Grade',
-	value: 'grade',
-  },
-  {
 	label: 'Matric Number',
 	value: 'matricNumber'
+  },
+  {
+	label: 'Grade',
+	value: 'grade',
   },
   {
 	label: 'Total Days',
@@ -45,12 +45,12 @@ export const familyAttendanceFields = [
       value: 'firstName'
     },
     {
-      label: 'Grade',
-      value: 'grade',
-    },
-    {
       label: 'Matric Number',
       value: 'matricNumber'
+    },
+    {
+      label: 'Grade',
+      value: 'grade',
     },
     {
       label: 'Family Member',
@@ -403,12 +403,12 @@ export const studentSurveyFields = [
 		value: 'firstName'
 	},
 	{
-		label: 'Grade',
-		value: 'grade',
-	},
-	{
 		label: 'Matric Number',
 		value: 'matricNumber'
+	},
+	{
+		label: 'Grade',
+		value: 'grade',
 	},
 	{
 		label: 'Activity',

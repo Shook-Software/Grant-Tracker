@@ -475,13 +475,12 @@ const FamilyEngagementReport = ({isLoading, reportParameters, fileName, reportDa
 
 	const familyTypeOptions: string[] = useMemo<string[]>(() => [...new Set<string>(records.flatMap(x => x.familyAttendance).map(attend => attend.familyMember))], [records])
 
+
+
 	const filteredRecords = records
+		.map(x => ({...x, familyAttendance: x.familyAttendance.filter(y => familyType == '' || y.familyMember === familyType).filter(z => z.totalDays >= daysAttendedFilter)}))
 		.filter(x => familyType == '' || x.familyAttendance.some(y => y.familyMember === familyType)) //filter those that don't have the specified family member
-		.filter(x => 
-			x.familyAttendance
-				.filter(y => familyType == '' || y.familyMember == familyType)
-				.reduce((sum, next) => sum + next.totalDays, 0) >= daysAttendedFilter
-		)
+		.filter(x => x.familyAttendance.some(y => y.totalDays >= daysAttendedFilter))
 
 	return (
 		<ReportComponent

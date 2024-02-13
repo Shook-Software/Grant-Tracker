@@ -134,7 +134,7 @@ function postAttendance(sessionGuid: string, attendanceGuid: string | null, date
 			id: sr.id,
 			firstName: sr.firstName,
 			lastName: sr.lastName,
-			times: sr.times.slice(),
+			times: sr.times?.slice(),
 			familyAttendance: sr.familyAttendance.slice()
 		}))
 	}

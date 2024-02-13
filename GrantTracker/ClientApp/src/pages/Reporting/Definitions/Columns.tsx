@@ -450,17 +450,17 @@ export const staffingColumns: Column[] = [
 	  sortable: true
 	},
 	{
+	  label: 'Matric Number',
+	  attributeKey: 'matricNumber',
+	  sortable: true
+	},
+	{
 	  label: 'Grade',
 	  attributeKey: 'grade',
 	  sortable: true,
 	  cellProps: {
 		className: 'text-center'
 	  }
-	},
-	{
-	  label: 'Matric Number',
-	  attributeKey: 'matricNumber',
-	  sortable: true
 	},
 	{
 	  label: 'Activity',

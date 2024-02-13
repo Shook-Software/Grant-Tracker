@@ -25,19 +25,33 @@ public class AttendanceRepository : IAttendanceRepository
 	//needs auth fix
 	public async Task<AttendanceViewModel> GetAttendanceRecordAsync(Guid attendanceGuid)
 	{
-		var record = await _grantContext
+		var session = await _grantContext
+			.AttendanceRecords
+			.AsNoTracking()
+			.Where(ar => ar.Guid == attendanceGuid)
+			.Include(ar => ar.Session).ThenInclude(s => s.SessionType)
+			.Select(ar => ar.Session)
+			.FirstAsync();
+
+		var query = _grantContext
 			.AttendanceRecords
 			.AsNoTracking()
 			.Where(record => record.Guid == attendanceGuid)
-			.Include(ar => ar.FamilyAttendance)
-			.Include(ar => ar.StudentAttendance).ThenInclude(sa => sa.StudentSchoolYear).ThenInclude(ssy => ssy.Student)
-			.Include(ar => ar.StudentAttendance).ThenInclude(sa => sa.TimeRecords)
 			.Include(ar => ar.InstructorAttendance).ThenInclude(ia => ia.InstructorSchoolYear).ThenInclude(isy => isy.Instructor)
 			.Include(ar => ar.InstructorAttendance).ThenInclude(ia => ia.InstructorSchoolYear).ThenInclude(isy => isy.Status)
-			.Include(ar => ar.InstructorAttendance).ThenInclude(ia => ia.TimeRecords)
-			.SingleAsync();
+			.Include(ar => ar.InstructorAttendance).ThenInclude(ia => ia.TimeRecords);
 
-		return AttendanceViewModel.FromDatabase(record);
+
+		AttendanceRecord record = session.SessionType.Label == "Parent"
+			? await query
+				.Include(ar => ar.FamilyAttendance).ThenInclude(sa => sa.StudentSchoolYear).ThenInclude(ssy => ssy.Student)
+				.SingleAsync()
+			: await query.Include(ar => ar.FamilyAttendance)
+				.Include(ar => ar.StudentAttendance).ThenInclude(sa => sa.StudentSchoolYear).ThenInclude(ssy => ssy.Student)
+				.Include(ar => ar.StudentAttendance).ThenInclude(sa => sa.TimeRecords)
+				.SingleAsync();
+
+        return AttendanceViewModel.FromDatabase(record);
 	}
 
 	public async Task<List<SimpleAttendanceViewModel>> GetAttendanceOverviewAsync(Guid sessionGuid)

@@ -172,12 +172,11 @@ const RemoveAttendanceRecord = ({date, onChange}): JSX.Element => {
 interface Props {
   sessionGuid: string
   simpleRecord: SimpleAttendanceView
-  onEditClick
   onDeleteClick
   sessionType: string
 }
 
-export default ({sessionGuid, simpleRecord, onEditClick, onDeleteClick, sessionType}: Props): JSX.Element => {
+export default ({sessionGuid, simpleRecord, onDeleteClick, sessionType}: Props): JSX.Element => {
   const [record, setRecord] = useState<AttendanceView | null>(null)
   const [isLoading, setIsLoading] = useState<boolean>(false)
 
@@ -213,7 +212,7 @@ export default ({sessionGuid, simpleRecord, onEditClick, onDeleteClick, sessionT
 
   if (!record)
     return (
-      <Accordion.Item eventKey='-1' onClick={() => fetchAttendanceRecord(simpleRecord.guid)}>
+      <Accordion.Item eventKey='-1' onClick={() => !record ? fetchAttendanceRecord(simpleRecord.guid) : null}>
         <Accordion.Header>
           <div className='d-flex flex-row align-items-center'>
             <div>{simpleRecord.instanceDate.format(DateTimeFormatter.ofPattern('eeee, MMMM d').withLocale(Locale.ENGLISH))}</div>

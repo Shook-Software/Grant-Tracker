@@ -18,7 +18,6 @@ export type ReducerAction =
 
     | { type: 'populateExistingRecords', payload: { instructorAttendance, studentAttendance }}
 
-
     | { type: 'setAttendanceTime', payload: { personId: string, times: TimeScheduleForm[] } }
 
     | { type: 'addInstructor'; payload: InstructorRecord }
@@ -43,7 +42,6 @@ function getInstructorRecord(state: AttendanceForm, id: string): InstructorRecor
 
 //add in validation
 export function reducer(state: AttendanceForm, action: ReducerAction): AttendanceForm {
-    let substituteRecord
     let record
     let studentRecord: StudentRecord
     let studentRecords: StudentRecord[]
@@ -55,6 +53,7 @@ export function reducer(state: AttendanceForm, action: ReducerAction): Attendanc
             return { ...state, defaultTimeSchedule: action.payload }
 
         case 'populateInstructors':
+            console.log(action.payload)
             instructorRecords = action.payload.instructors.map(i => ({
                 id: i.guid,
                 isPresent: true,
@@ -68,6 +67,7 @@ export function reducer(state: AttendanceForm, action: ReducerAction): Attendanc
             return { ...state, instructorRecords }
 
         case 'populateStudents':
+            console.log(action.payload)
             studentRecords = action.payload.students.map(s => ({
                 id: s.guid,
                 isPresent: true,
@@ -100,7 +100,7 @@ export function reducer(state: AttendanceForm, action: ReducerAction): Attendanc
                 firstName: x.studentSchoolYear.student.firstName,
                 lastName: x.studentSchoolYear.student.lastName,
                 matricNumber: x.studentSchoolYear.student.matricNumber,
-                times: x.timeRecords.map(y => ({
+                times: x.timeRecords?.map(y => ({
                     startTime: TimeOnly.toLocalTime(y.startTime),
                     endTime: TimeOnly.toLocalTime(y.endTime)
                 })),

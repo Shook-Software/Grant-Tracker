@@ -59,7 +59,7 @@ public class ReportController : ControllerBase
 		},
 	};
 
-	public ReportController(IReportRepository reportRepository, GrantTrackerContext grantContext, IMemoryCache memoryCache, ILogger<ReportController> logger)
+	public ReportController(IReportRepository reportRepository, IMemoryCache memoryCache, ILogger<ReportController> logger)
 	{
 		_reportRepository = reportRepository;
 		_memoryCache = memoryCache;
