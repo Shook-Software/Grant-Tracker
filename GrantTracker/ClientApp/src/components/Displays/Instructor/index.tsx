@@ -157,14 +157,14 @@ export default ({instructorSchoolYearGuid}): JSX.Element => {
     fetchInstructor(instructorSchoolYearGuid)
   }, [instructorSchoolYearGuid])
   
-  if (!instructorSchoolYear && isLoading) 
+  if (isLoading) 
     return (
       <div className="d-flex flex-column align-items-center">
         <Spinner animation='border' role='status' />
         <small className='text-muted'>Loading Instructor...</small>
       </div>
     )
-  else if (!instructorSchoolYear && !isLoading) 
+  else if (!instructorSchoolYear) 
     return (
       <div className='d-flex justify-content-center'>
         <p className='text-danger'>An error occured while loading the instructor.</p>

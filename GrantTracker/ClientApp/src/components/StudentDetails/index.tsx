@@ -39,7 +39,7 @@ export default ({studentGuid}): JSX.Element => {
       })
       .catch()
       .finally(() => setIsLoading(false))
-  }, [])
+  }, [studentGuid])
 
   if (!studentSchoolYear && isLoading) 
     return (
@@ -48,7 +48,8 @@ export default ({studentGuid}): JSX.Element => {
         <small className='text-muted'>Loading Student Details...</small>
       </div>
     )
-  else if (!studentSchoolYear && !isLoading) return <p>An error occured while loading student details.</p>
+  else if (!studentSchoolYear) return <p>An error occured while loading student details.</p>
+
 
   const student: StudentView = studentSchoolYear.student
 
@@ -58,14 +59,13 @@ export default ({studentGuid}): JSX.Element => {
         <Card.Header className='d-flex flex-column align-items-center'>
           <h2>{`${student.firstName} ${student.lastName}`}</h2>
           <h6> {studentSchoolYear.organizationYear.year.schoolYear} - {Quarter[studentSchoolYear.organizationYear.year.quarter]}</h6>
-          <Button 
-              variant='secondary' 
-              as={Link} 
-              className='ms-3 px-2 py-1' 
+          <Link 
+              className='btn btn-secondary ms-3 px-2 py-1' 
               to={`${paths.Admin.path}/${paths.Admin.Tabs.Students.path}`}
+              replace
           >
             Close
-          </Button>
+          </Link>
         </Card.Header>
         <Card.Body>
           <p>{error}</p>
