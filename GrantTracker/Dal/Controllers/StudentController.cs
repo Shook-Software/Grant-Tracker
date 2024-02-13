@@ -2,6 +2,7 @@
 using GrantTracker.Dal.Models.Views;
 using GrantTracker.Dal.Repositories.LookupRepository;
 using GrantTracker.Dal.Repositories.StudentRepository;
+using GrantTracker.Dal.Repositories.StudentSchoolYearRepository;
 using GrantTracker.Dal.Schema;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -14,11 +15,13 @@ namespace GrantTracker.Dal.Controllers
 	public class StudentController : ControllerBase
 	{
 		private readonly IStudentRepository _studentRepository;
-		private readonly ILookupRepository _lookupRepository;
+        private readonly IStudentSchoolYearRepository _studentSchoolYearRepository;
+        private readonly ILookupRepository _lookupRepository;
         private readonly ILogger<StudentController> _logger;
 
-        public StudentController(IStudentRepository studentRepository, ILookupRepository lookupRepository, ILogger<StudentController> logger)
+        public StudentController(IStudentRepository studentRepository, IStudentSchoolYearRepository ssyRepo, ILookupRepository lookupRepository, ILogger<StudentController> logger)
 		{
+			_studentSchoolYearRepository = ssyRepo;
 			_studentRepository = studentRepository;
 			_lookupRepository = lookupRepository;
 			_logger = logger;
@@ -76,6 +79,23 @@ namespace GrantTracker.Dal.Controllers
 		{
 			var studentSchoolYear = await _studentRepository.GetAsync(studentYearGuid);
 			return Ok(studentSchoolYear.AttendanceRecords);
+		}
+
+		[HttpPost("")]
+		public async Task<ActionResult<Guid>> CreateNewStudentAsync([FromBody] StudentDto studentDto, Guid orgYearGuid)
+		{
+			try
+			{
+				StudentViewModel student = await _studentRepository.CreateIfNotExistsAsync(studentDto);
+				StudentSchoolYearViewModel studentSchoolYear = await _studentSchoolYearRepository.CreateIfNotExistsAsync(student.Guid, orgYearGuid);
+
+				return Ok(studentSchoolYear.Guid);
+            }
+			catch (Exception ex)
+			{
+				_logger.LogError("Unhandled", ex);
+				return StatusCode(500);
+			}
 		}
 	}
 }

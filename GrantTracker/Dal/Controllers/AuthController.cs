@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using GrantTracker.Dal.Schema;
 using GrantTracker.Dal.Models.Views;
+using Serilog;
 
 
 namespace GrantTracker.Dal.Controllers
@@ -18,9 +19,9 @@ namespace GrantTracker.Dal.Controllers
 		private readonly IAuthRepository _authRepository;
 		private readonly IInstructorRepository _staffRepository;
 		private readonly IOrganizationYearRepository _organizationYearRepository;
-		private readonly ILogger<AuthRepository> _logger;
+		private readonly Serilog.ILogger _logger;
 
-		public AuthController(IAuthRepository repository, IInstructorRepository staffRepository, IOrganizationYearRepository organizationYearRepository, ILogger<AuthRepository> logger)
+		public AuthController(IAuthRepository repository, IInstructorRepository staffRepository, IOrganizationYearRepository organizationYearRepository, Serilog.ILogger logger)
 		{
 			_authRepository = repository;
 			_staffRepository = staffRepository;
@@ -37,9 +38,25 @@ namespace GrantTracker.Dal.Controllers
                 return Ok(identity);
             }
 			catch (Exception ex)
-			{
-				return StatusCode(500);
+            {
+                _logger.Error("Unhandled exception.", ex);
+                return StatusCode(500);
 			}
+		}
+
+		[HttpGet("orgYear")]
+		public async Task<ActionResult<List<OrganizationYearView>>> GetAuthorizedOrganizationYearsAsync()
+		{
+			try
+			{
+				var authorizedOrgYears = await _organizationYearRepository.GetAsync();
+				return Ok(authorizedOrgYears.Select(OrganizationYearView.FromDatabase));
+			}
+			catch (Exception ex)
+			{
+				_logger.Error("Unhandled exception.", ex);
+                return StatusCode(500);
+            }
 		}
 
 		//this doesn't belong here

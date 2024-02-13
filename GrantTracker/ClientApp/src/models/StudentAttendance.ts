@@ -5,6 +5,7 @@ import { TimeScheduleForm } from './TimeSchedule'
 import { InstructorSchoolYearView } from './Instructor'
 import { TimeOnly } from './TimeOnly'
 import { FamilyMember } from './FamilyMember'
+import { InstructorAttendanceView } from './InstructorAttendance'
 
 //change to form or something
 export interface StudentAttendanceDto {
@@ -19,27 +20,22 @@ export interface FamilyRecord {
 }
 
 export interface StudentRecord {
+  id: string
   isPresent: boolean
-  studentSchoolYear: StudentSchoolYearWithRecordsView
-  attendance: TimeScheduleForm[]
+  firstName: string
+  lastName: string
+  matricNumber: string
+  times: TimeScheduleForm[]
   familyAttendance: FamilyRecord[]
 }
 
 export interface InstructorRecord {
+  id: string
   isPresent: boolean
-  attendance: TimeScheduleForm[]
-  instructorSchoolYear: InstructorSchoolYearView
-}
-
-export interface SubstituteRecord {
-  substitute: {
-    id: string
-    firstName: string
-    lastName: string
-    badgeNumber: string
-    statusGuid: string
-  },
-  attendance: TimeScheduleForm[]
+  isSubstitute: boolean
+  firstName: string
+  lastName: string
+  times: TimeScheduleForm[]
 }
 
 export interface AttendanceDomain {
@@ -67,7 +63,7 @@ export interface AttendanceView {
   }
   instanceDate: LocalDate
   studentAttendanceRecords: StudentAttendanceView[]
-  //arrays that can be null
+  instructorAttendanceRecords: InstructorAttendanceView[]
 }
 
 export interface StudentAttendanceDomain {
@@ -107,11 +103,11 @@ export abstract class StudentAttendance {
         instanceDate: DateOnly.toLocalDate(obj.attendanceRecord.instanceDate),
         session: {...obj.attendanceRecord.session}
       } : null,
-      timeRecords: obj.timeRecords.map(time => ({
+      timeRecords: obj.timeRecords?.map(time => ({
         guid: time.guid,
         startTime: TimeOnly.toLocalTime(time.startTime),
         endTime: TimeOnly.toLocalTime(time.endTime)
-      }))
+      })) || null
     }
   }
 }

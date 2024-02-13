@@ -26,9 +26,9 @@ namespace GrantTracker.Dal.Controllers
 		}
 
 		[HttpGet("")]
-		public async Task<ActionResult<List<InstructorSchoolYearViewModel>>> GetInstructors(string name, Guid organizationGuid, Guid yearGuid)
+		public async Task<ActionResult<List<InstructorSchoolYearViewModel>>> GetInstructors(Guid orgYearGuid)
 		{
-			var instructors = await _instructorRepository.GetInstructorsAsync(organizationGuid, yearGuid);
+			var instructors = await _instructorRepository.GetInstructorsAsync(orgYearGuid);
 			return Ok(instructors);
 		}
 
@@ -47,10 +47,18 @@ namespace GrantTracker.Dal.Controllers
 		}
 
 		[HttpPost("add")]
-		public async Task<IActionResult> AddInstructor(InstructorDto instructor, Guid organizationYearGuid)
+		public async Task<ActionResult> AddInstructor(InstructorDto instructor, Guid organizationYearGuid)
 		{
-			await _instructorRepository.CreateAsync(instructor, organizationYearGuid);
-			return NoContent();
+			try
+            {
+                Guid instructorSchoolYearGuid = await _instructorRepository.CreateAsync(instructor, organizationYearGuid);
+                return Ok(instructorSchoolYearGuid);
+            }
+			catch (Exception ex)
+			{
+				_logger.LogError("Unhandled", ex);
+				return StatusCode(500);
+			}
 		}
 
 		public class PatchStatusProps

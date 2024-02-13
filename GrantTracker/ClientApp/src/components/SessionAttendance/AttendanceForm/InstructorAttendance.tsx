@@ -41,7 +41,7 @@ const columnsBuilder = (dispatch): Column[] => [
     attributeKey: '',
     sortable: false,
     transform: (registration: InstructorRecord) => {
-      const instructorRegistrations: AttendanceRecord[] = registration.attendance.map(record => ({
+      const instructorRegistrations: AttendanceRecord[] = registration.times.map(record => ({
         personSchoolYearGuid: registration.instructorSchoolYear.guid,
         startTime: record.startTime,
         endTime: record.endTime
@@ -67,7 +67,7 @@ const columnsBuilder = (dispatch): Column[] => [
     attributeKey: '',
     sortable: false,
     transform: (registration: InstructorRecord) => {
-      const instructorRegistrations: AttendanceRecord[] = registration.attendance.map(record => ({
+      const instructorRegistrations: AttendanceRecord[] = registration.times.map(record => ({
         personSchoolYearGuid: registration.instructorSchoolYear.guid,
         startTime: record.startTime,
         endTime: record.endTime

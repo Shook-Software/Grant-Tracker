@@ -80,16 +80,23 @@ namespace GrantTracker.Dal.Controllers
 		}
 
 		[HttpPatch("year")]
-		public async Task<IActionResult> SetActiveYear([FromBody] Year yearModel)
+		public async Task<IActionResult> UpdateYear([FromBody] Year yearModel)
 		{
-			if (yearModel is null)
-				throw new Exception("Parameter object cannot be null.");
+			try
+            {
+                if (yearModel is null)
+                    throw new Exception("Parameter object cannot be null.");
 
-			await _yearRepository.UpdateAsync(yearModel);
-			return NoContent();
-		}
+                await _yearRepository.UpdateAsync(yearModel);
+                return NoContent();
+            }
+			catch (Exception ex)
+			{
+				return StatusCode(500);
+			}
+        }
 
-		[HttpPatch("year/{YearGuid:Guid}/grades/sync")]
+        [HttpPatch("year/{YearGuid:Guid}/grades/sync")]
 		public async Task<ActionResult<int>> SynchronizeSynergyGrades(Guid YearGuid)
 		{
 			try

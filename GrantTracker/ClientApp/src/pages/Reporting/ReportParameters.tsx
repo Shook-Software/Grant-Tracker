@@ -2,12 +2,12 @@ import { useEffect, useState } from "react"
 import { Button, Col, Container, Form, Row, Spinner } from "react-bootstrap"
 import { LocalDate } from "@js-joda/core"
 
-import SelectSearch from "components/Input/SelectSearch"
 import Dropdown from "components/Input/Dropdown"
 
 import { OrganizationView, OrganizationYear, OrganizationYearDomain, OrganizationYearView, Quarter } from "Models/OrganizationYear"
 
 import api, { AxiosIdentityConfig } from "utils/api"
+import Select from "react-select"
 
 export interface ReportParameters {
 	organizationGuid: string | undefined
@@ -90,16 +90,11 @@ export default ({onSubmit}): JSX.Element => {
 					<Col sm={3} xs={6}> 
 						<Form.Group>
 							<Form.Label htmlFor='org'>Organization</Form.Label>
-								<SelectSearch 
+								<Select 
 									id='org'
-									options={organizations.map(org => ({
-										value: org.guid,
-										name: org.name,
-									}))}
-									value={organizationGuid}
-									handleChange={(orgGuid: string) => {
-										setOrgGuid(orgGuid)
-									}}
+									options={organizations.map(org => ({ value: org.guid, label: org.name }))}
+									value={{ value: organizationGuid, label: organizations.find(o => o.guid == organizationGuid)?.name}}
+									onChange={option => setOrgGuid(option.value)}
 								/>
 						</Form.Group>
 					</Col>

@@ -28,7 +28,7 @@ function createRow (
     >
       {[
         isIndexed ? <td key='index' style={{height: 'inherit'}}>{index}</td> : null,
-        columns.map(col => {
+        columns.map((col, colIdx) => {
           let value: any = getAttributeValue(row, col.attributeKey)
 
           if (col.transform) {
@@ -40,7 +40,7 @@ function createRow (
 
           return (
             <td 
-              key={col.key} 
+              key={colIdx + index + col.key} 
               {...col.cellProps}
               style={{height: 'inherit', ...col.cellProps?.style}}
             >

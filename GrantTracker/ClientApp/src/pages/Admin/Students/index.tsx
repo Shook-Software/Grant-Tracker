@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useContext, useEffect, useState } from 'react'
 import { Container, Row, Col, Spinner, Button, Form } from 'react-bootstrap'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 
 import Table, { Column, SortDirection } from 'components/BTable'
 import StudentDetails from 'components/StudentDetails'
 
-import { useAdminPage, Context } from '../index'
+import { useAdminPage, Context, OrgYearContext } from '../index'
 
 import api from 'utils/api'
 import paths from 'utils/routing/paths'
@@ -74,7 +74,7 @@ const createColumns = (): Column[] => [
 export default (): JSX.Element => {
   document.title = 'GT - Admin / Students'
   const { studentGuid } = useParams()
-  const { user }: Context = useAdminPage()
+  const { orgYear } = useContext(OrgYearContext)
   const [state, setState] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const [searchTerm, setSearchTerm] = useState<string>('')
@@ -85,8 +85,8 @@ export default (): JSX.Element => {
     api
       .get('student', { params: {
         name: '',
-        organizationGuid: user.organization.guid,
-        yearGuid: user.year.guid
+        organizationGuid: orgYear.organization.guid,
+        yearGuid: orgYear.year.guid
       }})
       .then(res => setState(res.data))
       .catch(err => console.warn(err))
@@ -100,7 +100,7 @@ export default (): JSX.Element => {
 
   useEffect(() => {
     getStudents()
-  }, [user])
+  }, [orgYear])
   
   let columns: Column[] = createColumns()
   let rowClick = null
@@ -113,7 +113,7 @@ export default (): JSX.Element => {
     <Container>
       <Row className='my-3'>
         <Col>
-          <h5>Students for {user.organizationName}</h5>
+          <h5>Students for {orgYear?.organization.name}</h5>
           {isLoading ? (
           <Spinner animation='border' />
         ) : !state || state.length === 0 ? (

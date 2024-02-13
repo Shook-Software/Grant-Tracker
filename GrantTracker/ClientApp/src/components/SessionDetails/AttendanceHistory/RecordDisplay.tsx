@@ -9,6 +9,8 @@ import Table, { Column } from 'components/BTable'
 import { AttendanceTimeRecordView, AttendanceView, SimpleAttendanceView } from 'Models/StudentAttendance'
 import { getAttendanceRecord } from '../api'
 import FamilyMemberOps from 'Models/FamilyMember'
+import paths from 'utils/routing/paths'
+import { Link } from 'react-router-dom'
 
 const studentColumns: Column[] = [
   {
@@ -170,12 +172,11 @@ const RemoveAttendanceRecord = ({date, onChange}): JSX.Element => {
 interface Props {
   sessionGuid: string
   simpleRecord: SimpleAttendanceView
-  onEditClick
   onDeleteClick
   sessionType: string
 }
 
-export default ({sessionGuid, simpleRecord, onEditClick, onDeleteClick, sessionType}: Props): JSX.Element => {
+export default ({sessionGuid, simpleRecord, onDeleteClick, sessionType}: Props): JSX.Element => {
   const [record, setRecord] = useState<AttendanceView | null>(null)
   const [isLoading, setIsLoading] = useState<boolean>(false)
 
@@ -211,7 +212,7 @@ export default ({sessionGuid, simpleRecord, onEditClick, onDeleteClick, sessionT
 
   if (!record)
     return (
-      <Accordion.Item eventKey='-1' onClick={() => fetchAttendanceRecord(simpleRecord.guid)}>
+      <Accordion.Item eventKey='-1' onClick={() => !record ? fetchAttendanceRecord(simpleRecord.guid) : null}>
         <Accordion.Header>
           <div className='d-flex flex-row align-items-center'>
             <div>{simpleRecord.instanceDate.format(DateTimeFormatter.ofPattern('eeee, MMMM d').withLocale(Locale.ENGLISH))}</div>
@@ -223,6 +224,8 @@ export default ({sessionGuid, simpleRecord, onEditClick, onDeleteClick, sessionT
         </Accordion.Header>
       </Accordion.Item>
     )
+    
+  const attendanceHref: string = `${paths.Admin.Attendance.path}?session=${sessionGuid}&attendanceId=${record.guid}` 
 
   return (
     <Accordion.Item eventKey='-1'>
@@ -237,13 +240,17 @@ export default ({sessionGuid, simpleRecord, onEditClick, onDeleteClick, sessionT
       </Accordion.Header>
       <Accordion.Body className='p-0' >
         <Row className='justify-content-between'>
-          <Button 
-            className='my-3 mx-3'
+          <Link 
+            className='btn btn-primary my-3 mx-3'
+            to={attendanceHref}
             style={{width: 'fit-content'}}
-            onClick={() => onEditClick(record)}
+            onClick={(e) => {
+              e.preventDefault()
+              window.open(attendanceHref, '_blank')
+            }}
           >
-            Edit Attendance Record
-          </Button>
+            Edit Record
+          </Link>
           <RemoveAttendanceRecord 
             date={record.instanceDate} 
             onChange={() => onDeleteClick(record)}

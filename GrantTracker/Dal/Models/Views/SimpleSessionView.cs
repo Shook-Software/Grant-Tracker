@@ -18,6 +18,7 @@ namespace GrantTracker.Dal.Models.Views
 
 	public class TimeScheduleView
 	{
+		public string Guid { get; set; }
 		public TimeOnly StartTime { get; set; }
 		public TimeOnly EndTime { get; set; }
 
@@ -25,6 +26,7 @@ namespace GrantTracker.Dal.Models.Views
 		{
 			return new TimeScheduleView()
 			{
+				Guid = time.SessionTimeGuid.ToString(),
 				StartTime = time.StartTime,
 				EndTime = time.EndTime
 			};

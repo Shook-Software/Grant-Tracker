@@ -7,7 +7,7 @@ import { DateOnly } from 'Models/DateOnly'
 import { AttendanceTimeRecordView } from 'Models/InstructorAttendance'
 import { TimeOnly } from 'Models/TimeOnly'
 import paths from 'utils/routing/paths'
-import { Link } from 'react-router-dom'
+import { Link, NavLink } from 'react-router-dom'
 
 export const studentAttendanceColumns: Column[] = [
 	{
@@ -264,7 +264,10 @@ export const siteSessionsColumns = [
 export const summaryOfClassesColumns: Column[] = [
 	{
 	  label: 'Name',
-	  attributeKey: 'sessionName',
+	  attributeKey: '',
+	  transform: (ses: any) => <NavLink to={`/home/admin/sessions/${ses.sessionGuid}?oyGuid=${ses.organizationYearGuid}`}>
+		{ses.sessionName}
+	  </NavLink>,
 	  sortable: true
 	},
 	{
@@ -447,17 +450,17 @@ export const staffingColumns: Column[] = [
 	  sortable: true
 	},
 	{
+	  label: 'Matric Number',
+	  attributeKey: 'matricNumber',
+	  sortable: true
+	},
+	{
 	  label: 'Grade',
 	  attributeKey: 'grade',
 	  sortable: true,
 	  cellProps: {
 		className: 'text-center'
 	  }
-	},
-	{
-	  label: 'Matric Number',
-	  attributeKey: 'matricNumber',
-	  sortable: true
 	},
 	{
 	  label: 'Activity',

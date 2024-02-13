@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useContext } from 'react'
 import { Container, Row, Col, Spinner, Button as BButton, Form } from 'react-bootstrap'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 
@@ -6,13 +6,13 @@ import Table, { Column, SortDirection } from 'components/BTable'
 import AddInstructorsModal from 'components/Modals/AddInstructorModal'
 import Button from 'components/Input/Button'
 
-import { useAdminPage, Context } from '../index'
 import { DropdownOption } from 'types/Session'
 import { addInstructor, fetchGrantTrackerInstructors } from './api'
 import { ApiResult } from 'components/ApiResultAlert'
 
 import InstructorPage from 'components/Displays/Instructor'
 import paths from 'utils/routing/paths'
+import { OrgYearContext } from '..'
 
 
 const createColumns = (): Column[] => [
@@ -56,7 +56,7 @@ const createColumns = (): Column[] => [
 export default (): JSX.Element => {
   document.title = 'GT - Admin / Staff'
   const { instructorSchoolYearGuid } = useParams()
-  const { user }: Context = useAdminPage()
+  const { orgYear } = useContext(OrgYearContext)
   const [state, setState] = useState<any[]>([])
   const [showModal, setShowModal] = useState<boolean>(false)
   const [isLoading, setIsLoading] = useState<boolean>(false)
@@ -71,7 +71,7 @@ export default (): JSX.Element => {
   function fetchInstructors (): void {
     setIsLoading(true)
 
-    fetchGrantTrackerInstructors()
+    fetchGrantTrackerInstructors(orgYear?.guid)
       .then(res => setState(res))
       .catch(err => console.warn(err))
       .finally(() => setIsLoading(false))
@@ -121,7 +121,7 @@ export default (): JSX.Element => {
 
   useEffect(() => {
     fetchInstructors()
-  }, [user])
+  }, [orgYear])
 
   let columns: Column[] = createColumns()
   let rowClick = null
@@ -134,6 +134,7 @@ export default (): JSX.Element => {
     <Container>
       <AddInstructorsModal
         show={showModal}
+        orgYearGuid={orgYear?.guid}
         handleClose={handleCloseModal}
         onInternalChange={addInternalInstructor}
         onExternalChange={addExternalInstructor}
@@ -150,7 +151,7 @@ export default (): JSX.Element => {
       </Row>
       <Row className='my-3'>
         <Col>
-          <h5>Instructors for {user.organizationName}</h5>
+          <h5>Instructors for {orgYear?.organization.name}</h5>
           {isLoading ? (
             <Spinner animation='border' />
           ): !state || state.length === 0 ? (

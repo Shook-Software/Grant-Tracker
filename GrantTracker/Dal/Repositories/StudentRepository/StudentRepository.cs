@@ -4,174 +4,145 @@ using GrantTracker.Dal.Repositories.DevRepository;
 using GrantTracker.Dal.Schema;
 using GrantTracker.Dal.SynergySchema;
 using GrantTracker.Utilities;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
+using System.Security.Claims;
 
-namespace GrantTracker.Dal.Repositories.StudentRepository
+namespace GrantTracker.Dal.Repositories.StudentRepository;
+
+public class StudentFilter
 {
-	public class StudentFilter
+	public string FirstName { get; set; }
+	public string LastName { get; set; }
+	public List<string> SynergyGrades { get; set; }
+	public List<string> GrantTrackerGrades { get; set; }
+	public string MatricNumber { get; set; }
+	public Guid OrganizationYearGuid { get; set; }
+}
+
+public class StudentRepository : IStudentRepository
+{
+	private readonly SynergyEODContext _synergy;
+    protected readonly GrantTrackerContext _grantContext;
+    protected readonly ClaimsPrincipal _user;
+
+    public StudentRepository(GrantTrackerContext grantContext, IHttpContextAccessor httpContextAccessor, SynergyEODContext synergyContext)
 	{
-		public string FirstName { get; set; }
-		public string LastName { get; set; }
-		public List<string> SynergyGrades { get; set; }
-		public List<string> GrantTrackerGrades { get; set; }
-		public string MatricNumber { get; set; }
-		public Guid OrganizationYearGuid { get; set; }
+		_synergy = synergyContext;
+        _grantContext = grantContext;
+        _user = httpContextAccessor.HttpContext.User;
+    }
+
+	public async Task<StudentViewModel> CreateIfNotExistsAsync(StudentDto newStudent)
+	{
+		var student = await _grantContext
+			.Students
+			.AsNoTracking()
+			.Where(s => s.MatricNumber == newStudent.MatricNumber)
+			.FirstOrDefaultAsync();
+
+		if (student == null)
+		{
+			return await this.CreateAsync(newStudent);
+		}
+
+		return StudentViewModel.FromDatabase(student);
 	}
 
-	public class StudentRepository : RepositoryBase, IStudentRepository
+	public async Task<StudentViewModel> CreateAsync(StudentDto newStudent)
 	{
-		private readonly SynergyEODContext _synergy;
+		Guid PersonGuid = Guid.NewGuid();
 
-		public StudentRepository(GrantTrackerContext grantContext, IDevRepository devRepository, IHttpContextAccessor httpContext, SynergyEODContext synergyContext)
-			: base(devRepository, httpContext, grantContext)
+		Student dbStudent = new()
 		{
-			_synergy = synergyContext;
-		}
+			PersonGuid = PersonGuid,
+			FirstName = newStudent.FirstName,
+			LastName = newStudent.LastName,
+			MatricNumber = newStudent.MatricNumber,
+		};
 
-		public async Task<StudentViewModel> CreateIfNotExistsAsync(StudentDto newStudent)
-		{
-			return await UseDeveloperLog(async () =>
-			{
-				var student = await _grantContext
-				.Students
-				.AsNoTracking()
-				.Where(s => s.MatricNumber == newStudent.MatricNumber)
-				.FirstOrDefaultAsync();
+		await _grantContext.Students.AddAsync(dbStudent);
+		await _grantContext.SaveChangesAsync();
 
-				if (student == null)
-				{
-					return await this.CreateAsync(newStudent);
-				}
+		return await this.GetAsync(PersonGuid);
+	}
 
-				return StudentViewModel.FromDatabase(student);
-			});
-		}
+	public async Task<StudentViewModel> GetAsync(Guid studentGuid)
+	{
+		var student = await _grantContext
+			.Students
+			.FindAsync(studentGuid);
 
-		public async Task<StudentViewModel> CreateAsync(StudentDto newStudent)
-		{
-			return await UseDeveloperLog(async () =>
-			{
-				Guid PersonGuid = Guid.NewGuid();
+		return StudentViewModel.FromDatabase(student);
+	}
 
-				Student dbStudent = new()
-				{
-					PersonGuid = PersonGuid,
-					FirstName = newStudent.FirstName,
-					LastName = newStudent.LastName,
-					MatricNumber = newStudent.MatricNumber,
-				};
+	//todo
+	//add
+	public async Task<List<StudentSchoolYearViewModel>> GetAsync(string name, Guid organizationGuid, Guid yearGuid)
+	{
+		return await _grantContext.StudentSchoolYears
+			.Include(ssy => ssy.Student)
+			.Include(ssy => ssy.AttendanceRecords)
+			.Where(ssy => ssy.OrganizationYear.OrganizationGuid == organizationGuid && ssy.OrganizationYear.YearGuid == yearGuid)
+			.Select(ssy => StudentSchoolYearViewModel.FromDatabase(ssy))
+			.ToListAsync();
+	}
 
-				await _grantContext.Students.AddAsync(dbStudent);
-				await _grantContext.SaveChangesAsync();
+	public async Task<StudentSchoolYearWithRecordsViewModel> GetAsync(Guid studentYearGuid, Guid organizationYearGuid = new Guid())
+	{
+		return await _grantContext.StudentSchoolYears
+			.AsNoTracking()
+			.Where(ssy => ssy.StudentSchoolYearGuid == studentYearGuid)
+			.Include(ssy => ssy.Student)
+			.Include(ssy => ssy.SessionRegistrations)
+			.Include(ssy => ssy.OrganizationYear).ThenInclude(oy => oy.Organization)
+			.Include(ssy => ssy.OrganizationYear).ThenInclude(oy => oy.Year)
+			.Include(ssy => ssy.SessionRegistrations).ThenInclude(reg => reg.DaySchedule).ThenInclude(day => day.Session)
+			.Include(ssy => ssy.SessionRegistrations).ThenInclude(reg => reg.DaySchedule).ThenInclude(day => day.TimeSchedules)
+			.Include(ssy => ssy.AttendanceRecords).ThenInclude(sa => sa.AttendanceRecord).ThenInclude(ar => ar.Session)
+			.Include(ssy => ssy.AttendanceRecords).ThenInclude(sa => sa.TimeRecords).Select(ssy => StudentSchoolYearWithRecordsViewModel.FromDatabase(ssy))
+			.FirstOrDefaultAsync();
+	}
 
-				return await this.GetAsync(PersonGuid);
-				
+	public async Task<StudentSchoolYearWithRecordsViewModel> GetSingleAsync(string matricNumber)
+	{
+		return await _grantContext.StudentSchoolYears
+			.AsNoTracking()
+			.Include(ssy => ssy.Student)
+			.Include(ssy => ssy.SessionRegistrations)
+			.Include(ssy => ssy.AttendanceRecords)
+			.Include(ssy => ssy.OrganizationYear).ThenInclude(oy => oy.Organization)
+			.Include(ssy => ssy.OrganizationYear).ThenInclude(oy => oy.Year)
+			.Include(ssy => ssy.SessionRegistrations).ThenInclude(reg => reg.DaySchedule).ThenInclude(day => day.Session)
+			.Include(ssy => ssy.SessionRegistrations).ThenInclude(reg => reg.DaySchedule).ThenInclude(day => day.TimeSchedules)
+			.Include(ssy => ssy.AttendanceRecords).ThenInclude(sa => sa.AttendanceRecord).ThenInclude(ar => ar.Session)
+			.Include(ssy => ssy.AttendanceRecords).ThenInclude(sa => sa.TimeRecords)
+			.Where(ssy => ssy.Student.MatricNumber == matricNumber && ssy.OrganizationYear.Year.IsCurrentSchoolYear == true)
+			.Select(ssy => StudentSchoolYearWithRecordsViewModel.FromDatabase(ssy))
+			.FirstOrDefaultAsync();
+	}
 
-
-				//await CreateNewStudentSchoolYear(dbStudent.PersonGuid, newStudent.Grade);
-
-				/*var existingStudentSchoolYear = await _grantContext.StudentSchoolYears
-					.Include(ssy => ssy.OrganizationYear).ThenInclude(oy => oy.Year)
-					.Include(ssy => ssy.OrganizationYear).ThenInclude(oy => oy.Organization)
-					.Where(ssy => ssy.OrganizationYearGuid == _identity.OrganizationYearGuid && ssy.StudentGuid == existingStudent.PersonGuid)
-					.FirstOrDefaultAsync();
-
-				if (existingStudentSchoolYear is null)
-				{
-					await CreateNewStudentSchoolYear(existingStudent.PersonGuid, newStudent.Grade);
-					return;
-				}*/
-			});
-		}
-
-		public async Task<StudentViewModel> GetAsync(Guid studentGuid)
-		{
-			var student = await _grantContext
-				.Students
-				.FindAsync(studentGuid);
-
-			return StudentViewModel.FromDatabase(student);
-		}
-
-		//todo
-		//add
-		public async Task<List<StudentSchoolYearViewModel>> GetAsync(string name, Guid organizationGuid, Guid yearGuid)
-		{
-			return await UseDeveloperLog(async () =>
-			{
-				return await _grantContext.StudentSchoolYears
-					.Include(ssy => ssy.Student)
-					.Include(ssy => ssy.AttendanceRecords)
-					.Where(ssy => ssy.OrganizationYear.OrganizationGuid == organizationGuid && ssy.OrganizationYear.YearGuid == yearGuid)
-					.Select(ssy => StudentSchoolYearViewModel.FromDatabase(ssy))
-					.ToListAsync();
-			});
-		}
-
-		public async Task<StudentSchoolYearWithRecordsViewModel> GetAsync(Guid studentYearGuid, Guid organizationYearGuid = new Guid())
-		{
-			//change this - 9/1/2022
-			if (organizationYearGuid == Guid.Empty)
-				organizationYearGuid = _identity.OrganizationYearGuid;
-
-			return await UseDeveloperLog(async () =>
-			{
-				return await _grantContext.StudentSchoolYears
-					.AsNoTracking()
-					.Where(ssy => ssy.StudentSchoolYearGuid == studentYearGuid)
-					.Include(ssy => ssy.Student)
-					.Include(ssy => ssy.SessionRegistrations)
-					.Include(ssy => ssy.OrganizationYear).ThenInclude(oy => oy.Organization)
-					.Include(ssy => ssy.OrganizationYear).ThenInclude(oy => oy.Year)
-					.Include(ssy => ssy.SessionRegistrations).ThenInclude(reg => reg.DaySchedule).ThenInclude(day => day.Session)
-					.Include(ssy => ssy.SessionRegistrations).ThenInclude(reg => reg.DaySchedule).ThenInclude(day => day.TimeSchedules)
-					.Include(ssy => ssy.AttendanceRecords).ThenInclude(sa => sa.AttendanceRecord).ThenInclude(ar => ar.Session)
-					.Include(ssy => ssy.AttendanceRecords).ThenInclude(sa => sa.TimeRecords)
-					.Where(ssy => _identity.Claim == IdentityClaim.Administrator || ssy.OrganizationYear.OrganizationGuid == _identity.Organization.Guid || ssy.OrganizationYearGuid == organizationYearGuid)
-					.Select(ssy => StudentSchoolYearWithRecordsViewModel.FromDatabase(ssy))
-					.FirstOrDefaultAsync();
-			});
-		}
-
-		public async Task<StudentSchoolYearWithRecordsViewModel> GetSingleAsync(string matricNumber)
-		{
-			return await _grantContext.StudentSchoolYears
-				.AsNoTracking()
-					.Include(ssy => ssy.Student)
-					.Include(ssy => ssy.SessionRegistrations)
-					.Include(ssy => ssy.AttendanceRecords)
-					.Include(ssy => ssy.OrganizationYear).ThenInclude(oy => oy.Organization)
-					.Include(ssy => ssy.OrganizationYear).ThenInclude(oy => oy.Year)
-					.Include(ssy => ssy.SessionRegistrations).ThenInclude(reg => reg.DaySchedule).ThenInclude(day => day.Session)
-					.Include(ssy => ssy.SessionRegistrations).ThenInclude(reg => reg.DaySchedule).ThenInclude(day => day.TimeSchedules)
-					.Include(ssy => ssy.AttendanceRecords).ThenInclude(sa => sa.AttendanceRecord).ThenInclude(ar => ar.Session)
-					.Include(ssy => ssy.AttendanceRecords).ThenInclude(sa => sa.TimeRecords)
-				.Where(ssy => ssy.Student.MatricNumber == matricNumber && ssy.OrganizationYear.Year.IsCurrentSchoolYear == true)
-				.Select(ssy => StudentSchoolYearWithRecordsViewModel.FromDatabase(ssy))
-				.FirstOrDefaultAsync();
-		}
-
-		public async Task<List<StudentSchoolYearViewModel>> SearchSynergyAsync(StudentFilter filter)
-		{
-			//fetch active year
-			//var activeYear = await _grantContext.Years.Where(y => y.IsCurrentSchoolYear).SingleAsync();
-			var gtYear = (await _grantContext
-				.OrganizationYears
-				.Include(oy => oy.Year)
-				.FirstOrDefaultAsync(oy => oy.OrganizationYearGuid == filter.OrganizationYearGuid))
-				.Year;
+	public async Task<List<StudentSchoolYearViewModel>> SearchSynergyAsync(StudentFilter filter)
+	{
+		//fetch active year
+		//var activeYear = await _grantContext.Years.Where(y => y.IsCurrentSchoolYear).SingleAsync();
+		var gtYear = (await _grantContext
+			.OrganizationYears
+			.Include(oy => oy.Year)
+			.FirstOrDefaultAsync(oy => oy.OrganizationYearGuid == filter.OrganizationYearGuid))
+			.Year;
 
             int synergyYear = gtYear.Quarter == Quarter.Summer && gtYear.IsCurrentSchoolYear ? gtYear.SchoolYear - 1 : gtYear.SchoolYear;
             var synergyExtension = gtYear.Quarter == Quarter.Summer && gtYear.IsCurrentSchoolYear ? "S" : "R";
 
             Expression<Func<EpcStuSchYr, bool>> filterExpression = ssy =>
-				ssy.Year.SchoolYear == synergyYear
-				&& ssy.Year.Extension == synergyExtension
+			ssy.Year.SchoolYear == synergyYear
+			&& ssy.Year.Extension == synergyExtension
                 && (filter.FirstName == null || ssy.Student.Person.FirstName.Contains(filter.FirstName))
-				&& (filter.LastName == null || ssy.Student.Person.LastName.Contains(filter.LastName))
-				&& (filter.MatricNumber == null || ssy.Student.SisNumber.Contains(filter.MatricNumber))
-				&& (filter.SynergyGrades.Count == 0 || filter.SynergyGrades.Contains(ssy.Grade));
+			&& (filter.LastName == null || ssy.Student.Person.LastName.Contains(filter.LastName))
+			&& (filter.MatricNumber == null || ssy.Student.SisNumber.Contains(filter.MatricNumber))
+			&& (filter.SynergyGrades.Count == 0 || filter.SynergyGrades.Contains(ssy.Grade));
 
             //&& (_identity.Claim == IdentityClaim.Administrator || ssy.OrganizationYear.OrganizationGu == filter.OrganizationYearGuid)
 
@@ -196,25 +167,24 @@ namespace GrantTracker.Dal.Repositories.StudentRepository
 
             //&& (_identity.Claim == IdentityClaim.Administrator || ssy.OrganizationYearGuid == filter.OrganizationYearGuid)
             var grantTrackerResults = await _grantContext.StudentSchoolYears
-				.Include(ssy => ssy.Student)
-				.Include(ssy => ssy.OrganizationYear)
-				.Where(x => x.OrganizationYearGuid == filter.OrganizationYearGuid)
-				.Where(ssy => (
-					(filter.FirstName == null || ssy.Student.FirstName.Contains(filter.FirstName))
-					&& (filter.LastName == null || ssy.Student.LastName.Contains(filter.LastName))
-					&& (filter.MatricNumber == null || ssy.Student.MatricNumber.Contains(filter.MatricNumber))
-					&& (filter.GrantTrackerGrades.Count == 0 || filter.GrantTrackerGrades.Contains(ssy.Grade))))
-				.Take(100)
-				.ToListAsync();
-			
+			.Include(ssy => ssy.Student)
+			.Include(ssy => ssy.OrganizationYear)
+			.Where(x => x.OrganizationYearGuid == filter.OrganizationYearGuid)
+			.Where(ssy => (
+				(filter.FirstName == null || ssy.Student.FirstName.Contains(filter.FirstName))
+				&& (filter.LastName == null || ssy.Student.LastName.Contains(filter.LastName))
+				&& (filter.MatricNumber == null || ssy.Student.MatricNumber.Contains(filter.MatricNumber))
+				&& (filter.GrantTrackerGrades.Count == 0 || filter.GrantTrackerGrades.Contains(ssy.Grade))))
+			.Take(100)
+			.ToListAsync();
+		
 
-			//return synergyResults;
-				
-			return grantTrackerResults
-				.Select(ssy => StudentSchoolYearViewModel.FromDatabase(ssy))
-				.Concat(synergyResults)
-				.DistinctBy(ssy => new {ssy.Student.FirstName, ssy.Student.LastName, ssy.Student.MatricNumber})
-				.ToList();
-		}
+		//return synergyResults;
+			
+		return grantTrackerResults
+			.Select(ssy => StudentSchoolYearViewModel.FromDatabase(ssy))
+			.Concat(synergyResults)
+			.DistinctBy(ssy => new {ssy.Student.FirstName, ssy.Student.LastName, ssy.Student.MatricNumber})
+			.ToList();
 	}
 }

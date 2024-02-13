@@ -66,7 +66,7 @@ export function postSessionAttendance(
       .filter(record => record.isPresent !== false)
       .map(record => ({
         instructorSchoolYearGuid: record.instructorSchoolYear.guid,
-        attendance: record.attendance
+        attendance: record.times
       }))
   
     const params = {

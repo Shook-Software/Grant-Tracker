@@ -40,6 +40,12 @@ builder.Services.AddCors(options =>
         });
 });
 
+builder.Services.AddResponseCompression(options =>
+{
+    options.EnableForHttps = true;
+});
+builder.Services.AddResponseCaching();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -48,6 +54,10 @@ if (!app.Environment.IsDevelopment())
 	// The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
 	app.UseHsts();
 }
+
+app.UseResponseCaching();
+app.UseResponseCompression();
+
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseSerilogRequestLogging();

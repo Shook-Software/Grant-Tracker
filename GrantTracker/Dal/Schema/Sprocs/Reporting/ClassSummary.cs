@@ -2,7 +2,9 @@
 
 public class ClassSummaryDbModel
 {
+    public Guid OrganizationYearGuid { get; set; }
     public string OrganizationName { get; set; }
+    public Guid SessionGuid { get; set; }
     public string SessionName { get; set; }
     public string ActivityType { get; set; }
     public string FundingSource { get; set; }
@@ -27,7 +29,9 @@ public class ClassSummaryViewModel
         public string Status { get; set; }
     }
 
+    public Guid OrganizationYearGuid { get; set; }
     public string OrganizationName { get; set; }
+    public Guid SessionGuid { get; set; }
     public string SessionName { get; set; }
     public string ActivityType { get; set; }
     public string FundingSource { get; set; }

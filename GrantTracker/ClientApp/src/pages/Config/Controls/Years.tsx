@@ -11,95 +11,6 @@ import api from 'utils/api'
 import Dropdown from 'components/Input/Dropdown'
 
 
-const columns: Column[] = [
-	{
-	  label: 'Year',
-	  attributeKey: 'schoolYear',
-	  sortable: true
-	}, 
-	{
-	  label: 'Quarter',
-	  attributeKey: 'quarter',
-	  transform: (quarter) => Quarter[quarter],
-	  sortable: true
-	},
-	{
-	  label: 'Start Date',
-	  attributeKey: 'startDate',
-	  transform: (value) => `${value.month}/${value.day}/${value.year}`,
-	  sortable: true
-	},
-	{
-	  label: 'End Date',
-	  attributeKey: 'endDate',
-	  transform: (value) => `${value.month}/${value.day}/${value.year}`,
-	  sortable: true
-	},
-	{
-	  label: 'Is Active',
-	  attributeKey: 'isCurrentSchoolYear',
-	  transform: (isCurrent: boolean) => isCurrent ? 'Yes' : 'No',
-	  sortable: true
-	},
-	{
-	  label: 'Set Active',
-	  attributeKey: '',
-	  transform: (year) => {
-		if (year.isCurrentSchoolYear)
-		  return <></>
-	  
-		return (
-		  <Button onClick={() => {
-			year.isCurrentSchoolYear = true
-			year.startDate = DateOnly.toLocalDate(year.startDate)
-			year.endDate = DateOnly.toLocalDate(year.endDate)
-			api
-			  .patch('developer/year', year)
-			  .then(res => console.log(res))
-		  }}>
-			Set Active Year
-		  </Button>
-		)
-	  },
-	  sortable: false
-	},
-	{
-		label: '',
-		attributeKey: 'yearGuid',
-		transform: (yearGuid) => {
-			const [numRecordsUpdated, setNumRecordsUpdated] = useState<number | undefined>()
-			const [loading, setLoading] = useState<boolean>(false)
-
-			return (
-				<div>
-					<Button onClick={() => {
-						setLoading(true)
-						api
-							.patch(`developer/year/${yearGuid}/grades/sync`)
-							.then(res => {
-								setNumRecordsUpdated(res.data)
-							})
-							.catch(err => {
-								setNumRecordsUpdated(-1)
-							})
-							.finally(() => {
-								setLoading(false)
-							})
-						}}
-						disabled={loading}
-					>
-						{loading ? <Spinner animation="border" role="status" /> : 'Synchronize Synergy'}
-					</Button>
-					{
-						numRecordsUpdated == -1 ? <div className='text-danger'>Failed to sync</div> : null
-					}
-				</div>
-			)
-		},
-		sortable: false
-	}
-	//extra statistics
-  ]
 
 
 
@@ -107,7 +18,7 @@ export default (): JSX.Element => {
 	const [schoolYears, setSchoolYears] = useState([])
 	const [yearsAreLoading, setYearsLoading] = useState<boolean>(false)
 	const [yearsFetchError, setYearsFetchError] = useState<string>()
-	const [show, setShow] = useState<boolean>(false) 
+	const [editing, setEditing] = useState<boolean>(false) 
 	
 	
 	async function fetchYearsAsync (): Promise<void> {
@@ -118,7 +29,7 @@ export default (): JSX.Element => {
 		  .then(res => {setSchoolYears(res.data)})
 		  .catch(err => setYearsFetchError('An error has occured while fetching organizations.'))
 		  .finally(() => setYearsLoading(false))
-	  } 
+	} 
 
 	  async function createNewYearAsync (year: YearView, userList: User[]): Promise<void> {
 		const users = userList.map(user => ({
@@ -139,9 +50,9 @@ export default (): JSX.Element => {
 	return (
 		<>
 			<Row>
-				<PlusButton className='' onClick={() => setShow(true)}>
-					New School Year
-				</PlusButton>
+				<button className='btn' onClick={() => setEditing(true)}>
+					Edit
+				</button>
 			</Row>
 			
 			{
@@ -153,8 +64,6 @@ export default (): JSX.Element => {
 					</Row>
 				</>
 			}
-
-			<YearModal show={show} handleClose={() => setShow(false)} handleSubmit={(year: YearView, userList: string[]) => createNewYearAsync(year, userList)} />
 		</>
 	)
 }
@@ -317,3 +226,95 @@ const YearModal = ({show, handleClose, handleSubmit}): JSX.Element => {
 	  </Modal>
 	)
   }
+
+
+  
+const columns: Column[] = [
+	{
+	  label: 'Year',
+	  attributeKey: 'schoolYear',
+	  sortable: true
+	}, 
+	{
+	  label: 'Quarter',
+	  attributeKey: 'quarter',
+	  transform: (quarter) => Quarter[quarter],
+	  sortable: true
+	},
+	{
+	  label: 'Start Date',
+	  attributeKey: 'startDate',
+	  transform: (value) => `${value.month}/${value.day}/${value.year}`,
+	  sortable: true
+	},
+	{
+	  label: 'End Date',
+	  attributeKey: 'endDate',
+	  transform: (value) => `${value.month}/${value.day}/${value.year}`,
+	  sortable: true
+	},
+	{
+	  label: 'Is Active',
+	  attributeKey: 'isCurrentSchoolYear',
+	  transform: (isCurrent: boolean) => isCurrent ? 'Yes' : 'No',
+	  sortable: true
+	},
+	{
+	  label: 'Set Active',
+	  attributeKey: '',
+	  transform: (year) => {
+		if (year.isCurrentSchoolYear)
+		  return <></>
+	  
+		return (
+		  <Button onClick={() => {
+			year.isCurrentSchoolYear = true
+			year.startDate = DateOnly.toLocalDate(year.startDate)
+			year.endDate = DateOnly.toLocalDate(year.endDate)
+			api
+			  .patch('developer/year', year)
+			  .then(res => console.log(res))
+		  }}>
+			Set Active Year
+		  </Button>
+		)
+	  },
+	  sortable: false
+	},
+	{
+		label: '',
+		attributeKey: 'yearGuid',
+		transform: (yearGuid) => {
+			const [numRecordsUpdated, setNumRecordsUpdated] = useState<number | undefined>()
+			const [loading, setLoading] = useState<boolean>(false)
+
+			return (
+				<div>
+					<Button onClick={() => {
+						setLoading(true)
+						api
+							.patch(`developer/year/${yearGuid}/grades/sync`)
+							.then(res => {
+								setNumRecordsUpdated(res.data)
+							})
+							.catch(err => {
+								setNumRecordsUpdated(-1)
+							})
+							.finally(() => {
+								setLoading(false)
+							})
+						}}
+						disabled={loading}
+					>
+						{loading ? <Spinner animation="border" role="status" /> : 'Synchronize Synergy'}
+					</Button>
+					{
+						numRecordsUpdated == -1 ? <div className='text-danger'>Failed to sync</div> : null
+					}
+				</div>
+			)
+		},
+		sortable: false
+	}
+	//extra statistics
+  ]

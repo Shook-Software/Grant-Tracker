@@ -21,6 +21,7 @@ import { mod } from 'utils/Math'
 
 interface Props extends Omit<Omit<React.SelectHTMLAttributes<HTMLSelectElement>, 'value'>,'onChange'> {
   id: string,
+  small?: boolean
   value: LocalTime
   onChange: (input: LocalTime) => void
 }
@@ -30,6 +31,7 @@ interface Props extends Omit<Omit<React.SelectHTMLAttributes<HTMLSelectElement>,
 export const TimeInput = ({
   id,
   value,
+  small = false,
   onChange,
   ...props
 }: Props): JSX.Element => {
@@ -122,12 +124,13 @@ export const TimeInput = ({
     <Container
       key={`${simplifiedTime.hour}-${simplifiedTime.minute}-${id}`}
       tabIndex={-1}
+      small={small}
       isCollapsed={isCollapsed}
       ref={containerRef}
       {...props}
     >
-      <Row onClick={() => setFocus(Input.Hour)}>
-        <Col lg='auto' md='auto'>
+      <div className='d-inline-flex w-100' onClick={() => setFocus(Input.Hour)}>
+        <div >
           <HourInput.Text
             key={`hour - ${simplifiedTime.hour}`}
             value={simplifiedTime.hour}
@@ -149,8 +152,8 @@ export const TimeInput = ({
             focus={currentFocus}
             setFocus={setFocus}
           />
-        </Col>
-        <Col className='d-inline-flex flex-row-reverse'>
+        </div>
+        <div className='d-inline-flex flex-row-reverse flex-grow-1'>
           <TextInputButton
             id={props.id}
             aria-expanded={isCollapsed === false}
@@ -160,24 +163,22 @@ export const TimeInput = ({
           >
             &#11167;
           </TextInputButton>
-        </Col>
-      </Row>
-      <VisualInputContainer className='px-0'>
-        <SelectionGrid isCollapsed={isCollapsed}>
-          <HourInput.Visual
-            value={simplifiedTime.hour}
-            onChange={handleHourChange}
-          />
-          <MinuteInput.Visual
-            value={simplifiedTime.minute}
-            onChange={handleMinuteChange}
-          />
-          <PeriodInput.Visual
-            value={simplifiedTime.hour >= 12 ? Period.PM : Period.AM}
-            onChange={handlePeriodChange}
-          />
-        </SelectionGrid>
-      </VisualInputContainer>
+        </div>
+      </div>
+      <SelectionGrid isCollapsed={isCollapsed}>
+        <HourInput.Visual
+          value={simplifiedTime.hour}
+          onChange={handleHourChange}
+        />
+        <MinuteInput.Visual
+          value={simplifiedTime.minute}
+          onChange={handleMinuteChange}
+        />
+        <PeriodInput.Visual
+          value={simplifiedTime.hour >= 12 ? Period.PM : Period.AM}
+          onChange={handlePeriodChange}
+        />
+      </SelectionGrid>
     </Container>
   )
 }

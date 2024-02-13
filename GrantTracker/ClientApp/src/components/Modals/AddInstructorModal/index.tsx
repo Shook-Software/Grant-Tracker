@@ -135,7 +135,7 @@ const columnsBuilder2 = (handleAddInstructor): Column[] => ([
     sortable: false,
     transform: (value: InstructorSchoolYearView) => (
       <div className='d-flex justify-content-center'>
-        <Button onClick={() => handleAddInstructor(value.instructor, value.guid)}>
+        <Button onClick={() => handleAddInstructor({...value.instructor, statusGuid: value.status.guid}, value.guid)}>
           +
         </Button>
       </div>
@@ -143,7 +143,7 @@ const columnsBuilder2 = (handleAddInstructor): Column[] => ([
   }
 ])
 
-const ExistingEmployeeTab = ({onChange, headerRef}): JSX.Element => {
+const ExistingEmployeeTab = ({orgYearGuid, onChange, headerRef}): JSX.Element => {
   const [instructors, setInstructors] = useState<any[]>([])
   const [apiResult, setApiResult] = useState<ApiResult>()
 
@@ -157,7 +157,7 @@ const ExistingEmployeeTab = ({onChange, headerRef}): JSX.Element => {
   const columns = columnsBuilder2(handleInstructorAddition)
 
   useEffect(() => {
-    fetchGrantTrackerInstructors()
+    fetchGrantTrackerInstructors(orgYearGuid)
       .then(res => setInstructors(res))
       .catch(err => console.warn(err))
   }, [])
@@ -326,7 +326,7 @@ const DistrictEmployeeTab = ({dropdownOptions, onChange, headerRef}) => {
 //they need to be able to handle users viewing their changes on 'review changes'
 // intercept and use addInstructor as a callback after pushing results to a list
 //variant - attendance/default
-export default ({ show, handleClose, onInternalChange, onExternalChange, variant = 'default' }): JSX.Element => {
+export default ({ show, orgYearGuid, handleClose, onInternalChange, onExternalChange, variant = 'default' }): JSX.Element => {
   const [dropdownOptions, setOptions] = useState<DropdownOption[]>([])
   const headerRef = useRef<any>(null)
   const isAttendanceVariant: boolean = variant === 'attendance' ? true : false
@@ -370,7 +370,7 @@ export default ({ show, handleClose, onInternalChange, onExternalChange, variant
               {
                 isAttendanceVariant 
                 ? <Tab.Pane eventKey='existing'>
-                    <ExistingEmployeeTab onChange={onInternalChange} headerRef={headerRef} />
+                    <ExistingEmployeeTab orgYearGuid={orgYearGuid} onChange={onInternalChange} headerRef={headerRef} />
                   </Tab.Pane>
                 : <></>
               }

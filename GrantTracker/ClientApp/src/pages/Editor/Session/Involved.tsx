@@ -3,10 +3,10 @@ import { Form, Container, Row, Col, ListGroup, CloseButton } from 'react-bootstr
 
 import { useSession } from '../index'
 import Dropdown from 'components/Input/Dropdown'
-import SelectSearch from 'components/Input/SelectSearch'
 import { DropdownOption } from 'Models/Session'
 
 import api, { AxiosIdentityConfig } from 'utils/api'
+import Select from 'react-select'
 
 //Second Section - Instructor/Funding
 ////Instructor -- Searchable Dropdown
@@ -94,13 +94,12 @@ export default (): JSX.Element => {
         <Col>
           <Form.Group>
             <Form.Label>Instructor(s)</Form.Label>
-            <SelectSearch 
+            <Select 
               id='select-instructors'
-              options={instructors.map(option => ({name: option.label, value: option.guid}))}
-              multiple={true}
-              value={''}
-              handleChange={(guid: string) => {
-                const instructor = instructors.filter(i => i.guid === guid)[0]
+              value={{value: '', label: ''}}
+              options={instructors.map(option => ({label: option.label, value: option.guid}))}
+              onChange={option => {
+                const instructor = instructors.filter(i => i.guid === option.value)[0]
                 handleInstructorAddition(instructor.guid, instructor.label)
               }}
             />

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useContext, useEffect, useState } from "react"
 import { BlackoutDate, BlackoutDateDomain, BlackoutDateView } from 'Models/BlackoutDate'
 
 import api, { AxiosIdentityConfig } from "utils/api"
@@ -6,10 +6,10 @@ import Table, { Column } from "components/BTable"
 import { Button, Col, Form, Row, Spinner } from "react-bootstrap"
 import { DateTimeFormatter, LocalDate } from "@js-joda/core"
 import { Locale } from "@js-joda/locale_en-us"
-import { useAdminPage, Context } from ".."
+import { OrgYearContext } from ".."
 
 export const BlackoutDateConfig = ():JSX.Element => {
-	const { user }: Context = useAdminPage()
+	const { orgYear, setOrgYear } = useContext(OrgYearContext)
 	const [blackoutFetchError, setBlackoutFetchError] = useState<string | undefined>()
 	const [blackoutDates, setBlackoutDates] = useState<BlackoutDateView[]>([])
 	const [blackoutDatesAreLoading, setBlackoutDatesAreLoading] = useState<boolean>(false)
@@ -33,7 +33,7 @@ export const BlackoutDateConfig = ():JSX.Element => {
 
 	useEffect(() => {
 		getAndSetBlackoutDates()
-	}, [user])
+	}, [orgYear])
 
 	const blackoutColumns: Column[] = createBlackoutColumns(getAndSetBlackoutDates, setBlackoutDeleteError)
 
