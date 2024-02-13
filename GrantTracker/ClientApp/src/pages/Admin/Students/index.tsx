@@ -111,14 +111,15 @@ export default (): JSX.Element => {
     getStudents()
   }, [orgYear])
   
+  let rowClick
   let columns: Column[] = createColumns()
-  let rowClick =  (event, row) => navigate(`${paths.Admin.path}/${paths.Admin.Tabs.Students.path}/${row.guid}`)
   const data = state
     .filter(ssy => `${ssy.student.firstName} ${ssy.student.lastName}`.toLocaleLowerCase().includes(nameFilter))
     .filter(ssy => ssy.student.matricNumber.startsWith(matricFilter))
   
   if (studentGuid != null) {
     columns = [columns[0], columns[1]]
+    rowClick =  (event, row) => navigate(`${paths.Admin.path}/${paths.Admin.Tabs.Students.path}/${row.guid}`)
   }
 
   return (
