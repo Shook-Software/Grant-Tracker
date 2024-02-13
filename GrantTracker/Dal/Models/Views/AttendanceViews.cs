@@ -57,6 +57,7 @@ namespace GrantTracker.Dal.Models.Views
 					.Select(attend => new InstructorAttendanceViewModel()
 					{
 						Guid = attend.Guid,
+						IsSubstitute = attend.IsSubstitute,
 						InstructorSchoolYear = InstructorSchoolYearViewModel.FromDatabase(attend.InstructorSchoolYear),
 						TimeRecords = attend.TimeRecords.Select(time => AttendanceTimeRecordViewModel.FromDatabase(time)).ToList()
 					})
@@ -104,10 +105,9 @@ namespace GrantTracker.Dal.Models.Views
 	public class InstructorAttendanceViewModel
 	{
 		public Guid Guid { get; set; }
-		public AttendanceViewModel AttendanceRecord { get; set; }
+        public bool IsSubstitute { get; set; }
+        public AttendanceViewModel AttendanceRecord { get; set; }
 		public InstructorSchoolYearViewModel InstructorSchoolYear { get; set; }
 		public List<AttendanceTimeRecordViewModel> TimeRecords { get; set; }
 	}
-
-
 }

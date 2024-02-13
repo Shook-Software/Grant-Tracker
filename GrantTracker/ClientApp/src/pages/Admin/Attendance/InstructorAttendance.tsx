@@ -79,6 +79,7 @@ export const InstructorAttendance = ({ orgYearGuid, state, dispatch }: IAttendPr
 
 			<AddInstructorModal 
 				show={showAddModal} 
+				orgYearGuid={orgYearGuid}
 				handleClose={() => setShowAddModal(false)} 
 				onInternalChange={addInternalInstructor} 
 				onExternalChange={addExternalInstructor}

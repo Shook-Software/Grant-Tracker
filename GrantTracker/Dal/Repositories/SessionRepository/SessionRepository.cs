@@ -121,7 +121,7 @@ namespace GrantTracker.Dal.Repositories.SessionRepository
 			await _grantContext.SaveChangesAsync();
 		}
 
-		private bool HasTimeConflict(StudentAttendanceTimeRecord existingTimeSchedule, SessionTimeSchedule newTimeSchedule)
+		private static bool HasTimeConflict(StudentAttendanceTimeRecord existingTimeSchedule, SessionTimeSchedule newTimeSchedule)
 		{
 				//if new end time is after the existing start time, and the new start time is before the existing end time
 			if (existingTimeSchedule.EntryTime < newTimeSchedule.EndTime && existingTimeSchedule.ExitTime > newTimeSchedule.StartTime)
@@ -132,41 +132,41 @@ namespace GrantTracker.Dal.Repositories.SessionRepository
 			return false;
 		}
 
-		//Initially, we're going to copy over entire schedules, with no selective day of week, but we MAY add that in future releases
-		public async Task<List<AttendanceConflict>> ValidateStudentAttendanceAsync(DateOnly instanceDate, List<StudentAttendanceDto> studentAttendance)
+		public async Task<List<AttendanceConflict>> ValidateStudentAttendanceAsync(DateOnly instanceDate, List<StudentAttendanceDto> studentAttendance, Guid? ignoredAttendanceGuid = default)
 		{
 			List<AttendanceConflict> validationErrors = new();
 
 			var existingAttendanceOnDay = await _grantContext
 				.AttendanceRecords
 				.Where(ar => ar.InstanceDate == instanceDate)
+				.Where(ar => ar.Guid != ignoredAttendanceGuid)
 				.Include(ar => ar.StudentAttendance).ThenInclude(sa => sa.TimeRecords)
 				.Include(ar => ar.StudentAttendance).ThenInclude(sa => sa.StudentSchoolYear)
 				.ToListAsync();
 
 			var existingStudentAttendance = existingAttendanceOnDay
-				.Where(ar => ar.StudentAttendance.Any(sa => studentAttendance.Any(record => sa.StudentSchoolYearGuid == record.StudentSchoolYearGuid)))
+				.Where(ar => ar.StudentAttendance.Any(sa => studentAttendance.Any(record => sa.StudentSchoolYearGuid == record.Id)))
 				.SelectMany(ar => ar.StudentAttendance)
-				.Where(sa => studentAttendance.Any(record => sa.StudentSchoolYearGuid == record.StudentSchoolYearGuid))
+				.Where(sa => studentAttendance.Any(record => sa.StudentSchoolYearGuid == record.Id))
 				.ToList();
 
 			foreach (StudentAttendanceDto newAttendance in studentAttendance)
 			{
 				List<StudentAttendanceTimeRecord> existingAttendance = existingStudentAttendance
-					.Where(sa => sa.StudentSchoolYearGuid == newAttendance.StudentSchoolYearGuid)
+					.Where(sa => sa.StudentSchoolYearGuid == newAttendance.Id)
 					.SelectMany(sa => sa.TimeRecords)
 					.ToList();
 
 				foreach (StudentAttendanceTimeRecord existingTime in existingAttendance)
 				{
-					foreach (SessionTimeSchedule newTime in newAttendance.Attendance)
+					foreach (SessionTimeSchedule newTime in newAttendance.Times)
 						if (HasTimeConflict(existingTime, newTime))
 						{
 							//check how the ui looks if someone conflicts every student registration on an attempted copy
 							AttendanceConflict conflict = new()
 							{
-								StudentSchoolYearGuid = newAttendance.StudentSchoolYearGuid,
-								Error = $"{newAttendance.Student.FirstName} {newAttendance.Student.LastName} has a conflict with an existing attendance record from {existingTime.EntryTime.ToShortTimeString()} to {existingTime.ExitTime.ToShortTimeString()}"
+								StudentSchoolYearGuid = newAttendance.Id,
+								Error = $"{newAttendance.FirstName} {newAttendance.LastName} has a conflict with an existing attendance record from {existingTime.EntryTime.ToShortTimeString()} to {existingTime.ExitTime.ToShortTimeString()}"
 							};
 							validationErrors.Add(conflict);
 						}

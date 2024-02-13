@@ -85,7 +85,7 @@ export default (user: User, Breadcrumbs: JSX.Element): RouteObject[] => [
     ]
   },
   {
-    path: 'attendance',
+    path: paths.Admin.Attendance.path,
     element: <AttendancePage />
   },
   {

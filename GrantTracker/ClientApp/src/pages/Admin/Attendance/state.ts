@@ -1,8 +1,9 @@
 import { FamilyMember } from 'Models/FamilyMember'
 import { StudentSchoolYearView } from 'Models/Student'
-import { InstructorRecord, StudentRecord } from 'Models/StudentAttendance'
+import { FamilyRecord, InstructorRecord, StudentRecord } from 'Models/StudentAttendance'
 import { TimeScheduleForm, TimeScheduleView } from 'Models/TimeSchedule'
 import { InstructorSchoolYearView } from 'Models/Instructor'
+import { TimeOnly } from 'Models/TimeOnly'
 
 export interface AttendanceForm {
     defaultTimeSchedule: TimeScheduleForm[]
@@ -13,7 +14,9 @@ export interface AttendanceForm {
 export type ReducerAction =
     | { type: 'setDefaultTimeSchedules', payload: TimeScheduleView[] }
     | { type: 'populateInstructors', payload: { instructors: InstructorSchoolYearView[], times: TimeScheduleView[] } }
-    | { type: 'populateStudents', payload: { students: StudentSchoolYearView[], times: TimeScheduleView[] } }
+    | { type: 'populateStudents', payload: { students: StudentSchoolYearView[], times: TimeScheduleView[]} }
+
+    | { type: 'populateExistingRecords', payload: { instructorAttendance, studentAttendance }}
 
 
     | { type: 'setAttendanceTime', payload: { personId: string, times: TimeScheduleForm[] } }
@@ -21,7 +24,7 @@ export type ReducerAction =
     | { type: 'addInstructor'; payload: InstructorRecord }
     | { type: 'instructorPresence'; payload: { guid: string; isPresent: boolean } }
 
-    | { type: 'addStudent'; payload: StudentSchoolYearView }
+    | { type: 'addStudent'; payload: { guid: string, firstName: string, lastName: string, matricNumber: string, grade: string } }
     | { type: 'studentPresence'; payload: { guid: string; isPresent: boolean } }
     | { type: 'allStudentPresence'; payload: boolean }
 
@@ -43,6 +46,8 @@ export function reducer(state: AttendanceForm, action: ReducerAction): Attendanc
     let substituteRecord
     let record
     let studentRecord: StudentRecord
+    let studentRecords: StudentRecord[]
+    let instructorRecords: InstructorRecord[]
 
     switch (action.type) {
 
@@ -50,7 +55,7 @@ export function reducer(state: AttendanceForm, action: ReducerAction): Attendanc
             return { ...state, defaultTimeSchedule: action.payload }
 
         case 'populateInstructors':
-            let instructorRecords = action.payload.instructors.map(i => ({
+            instructorRecords = action.payload.instructors.map(i => ({
                 id: i.guid,
                 isPresent: true,
                 isSubstitute: false,
@@ -63,7 +68,7 @@ export function reducer(state: AttendanceForm, action: ReducerAction): Attendanc
             return { ...state, instructorRecords }
 
         case 'populateStudents':
-            let studentRecords = action.payload.students.map(s => ({
+            studentRecords = action.payload.students.map(s => ({
                 id: s.guid,
                 isPresent: true,
                 isNew: false,
@@ -76,10 +81,39 @@ export function reducer(state: AttendanceForm, action: ReducerAction): Attendanc
 
             return { ...state, studentRecords }
 
+        case 'populateExistingRecords':
+            instructorRecords = action.payload.instructorAttendance.map(x => ({
+                id: x.instructorSchoolYear.guid,
+                isPresent: true,
+                isSubstitute: x.isSubstitute,
+                firstName: x.instructorSchoolYear.instructor.firstName,
+                lastName: x.instructorSchoolYear.instructor.lastName,
+                times: x.timeRecords.map(y => ({
+                    startTime: TimeOnly.toLocalTime(y.startTime),
+                    endTime: TimeOnly.toLocalTime(y.endTime)
+                }))
+            })) as InstructorRecord[] 
+
+            studentRecords = action.payload.studentAttendance.map(x => ({
+                id: x.studentSchoolYear.guid,
+                isPresent: true,
+                firstName: x.studentSchoolYear.student.firstName,
+                lastName: x.studentSchoolYear.student.lastName,
+                matricNumber: x.studentSchoolYear.student.matricNumber,
+                times: x.timeRecords.map(y => ({
+                    startTime: TimeOnly.toLocalTime(y.startTime),
+                    endTime: TimeOnly.toLocalTime(y.endTime)
+                })),
+                familyAttendance: x.familyAttendance?.slice() || []
+            })) as StudentRecord[]
+
+            return {...state, instructorRecords, studentRecords }
+
         case 'setAttendanceTime':
 
             if (getStudentRecord(state, action.payload.personId)) {
-
+                let student = getStudentRecord(state, action.payload.personId)
+                student!.times = action.payload.times
             }
             else if (getInstructorRecord(state, action.payload.personId)) {
                 let instructor = getInstructorRecord(state, action.payload.personId)
@@ -89,15 +123,15 @@ export function reducer(state: AttendanceForm, action: ReducerAction): Attendanc
             return { ...state }
 
         case 'addStudent':
-            let studentSchoolYear = action.payload
+            let student = action.payload
 
             const newStudentRecord: StudentRecord = {
-                id: studentSchoolYear.guid,
+                id: student.guid,
                 isPresent: true,
                 times: state.defaultTimeSchedule.slice(),
-                firstName: studentSchoolYear.student.firstName,
-                lastName: studentSchoolYear.student.lastName,
-                matricNumber: studentSchoolYear.student.matricNumber,
+                firstName: student.firstName,
+                lastName: student.lastName,
+                matricNumber: student.matricNumber,
                 familyAttendance: []
             }
 
@@ -138,7 +172,6 @@ export function reducer(state: AttendanceForm, action: ReducerAction): Attendanc
             }
 
         case 'addFamilyMember':
-
             studentRecord = state.studentRecords.find(record => record.id == action.payload?.studentSchoolYearGuid) as StudentRecord
 
             if (studentRecord.familyAttendance) {

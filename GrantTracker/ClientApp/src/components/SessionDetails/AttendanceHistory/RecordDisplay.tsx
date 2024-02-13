@@ -9,6 +9,8 @@ import Table, { Column } from 'components/BTable'
 import { AttendanceTimeRecordView, AttendanceView, SimpleAttendanceView } from 'Models/StudentAttendance'
 import { getAttendanceRecord } from '../api'
 import FamilyMemberOps from 'Models/FamilyMember'
+import paths from 'utils/routing/paths'
+import { Link } from 'react-router-dom'
 
 const studentColumns: Column[] = [
   {
@@ -223,6 +225,8 @@ export default ({sessionGuid, simpleRecord, onEditClick, onDeleteClick, sessionT
         </Accordion.Header>
       </Accordion.Item>
     )
+    
+  const attendanceHref: string = `${paths.Admin.Attendance.path}?session=${sessionGuid}&attendanceId=${record.guid}` 
 
   return (
     <Accordion.Item eventKey='-1'>
@@ -237,13 +241,17 @@ export default ({sessionGuid, simpleRecord, onEditClick, onDeleteClick, sessionT
       </Accordion.Header>
       <Accordion.Body className='p-0' >
         <Row className='justify-content-between'>
-          <Button 
-            className='my-3 mx-3'
+          <Link 
+            className='btn btn-primary my-3 mx-3'
+            to={attendanceHref}
             style={{width: 'fit-content'}}
-            onClick={() => onEditClick(record)}
+            onClick={(e) => {
+              e.preventDefault()
+              window.open(attendanceHref, '_blank')
+            }}
           >
-            Edit Attendance Record
-          </Button>
+            Edit Record
+          </Link>
           <RemoveAttendanceRecord 
             date={record.instanceDate} 
             onChange={() => onDeleteClick(record)}

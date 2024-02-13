@@ -30,6 +30,9 @@ export default {
       Session: { path: 'session' },
       Instructor: { path: 'instructor' },
       Student: { path: 'student' }
+    },
+    Attendance: {
+      path: '/home/admin/attendance'
     }
   },
   Configuration: {

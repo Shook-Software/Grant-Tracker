@@ -8,7 +8,7 @@ namespace GrantTracker.Dal.Repositories.InstructorRepository
 	{
 		public Task<List<EmployeeDto>> SearchSynergyStaffAsync(string name, string badgeNumber);
 
-		public Task<List<InstructorSchoolYearViewModel>> GetInstructorsAsync(Guid organizationGuid, Guid yearGuid);
+		public Task<List<InstructorSchoolYearViewModel>> GetInstructorsAsync(Guid orgYearGuid);
 
 		public Task<Guid> CreateAsync(InstructorDto person, Guid organizationYearGuid);
 

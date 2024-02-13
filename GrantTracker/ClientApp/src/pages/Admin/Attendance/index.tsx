@@ -8,16 +8,14 @@ import React, { ReactElement, useEffect, useReducer, useState } from "react"
 import { useSearchParams } from "react-router-dom";
 import { TimeInput } from "components/TimeRangeSelector";
 import { DayOfWeek } from "Models/DayOfWeek";
-import { TimeScheduleForm, TimeScheduleView } from "Models/TimeSchedule";
+import { TimeScheduleView } from "Models/TimeSchedule";
 import { AttendanceForm, AttendanceForm as AttendanceFormState, ReducerAction, reducer } from './state'
-import Table, { Column } from "components/BTable";
-import { InstructorRecord } from "Models/StudentAttendance";
 import { StudentRegistration, StudentRegistrationDomain } from "Models/StudentRegistration";
-import AddInstructorModal from "components/Modals/AddInstructorModal";
 
 import { InstructorAttendance } from './InstructorAttendance'
 import { StudentAttendance } from './StudentAttendance'
 import { AttendanceSummary } from './Summary'
+import api from "utils/api";
 
 
 enum FormState {
@@ -29,6 +27,7 @@ enum FormState {
 export default (): React.ReactElement => {
 	const [searchParams] = useSearchParams();
 	const sessionGuid = searchParams.get('session')
+	const attendanceGuid = searchParams.get('attendanceId')
 
 	const [formState, setFormState] = useState<FormState>(FormState.DateTimeSelect)
 
@@ -37,21 +36,27 @@ export default (): React.ReactElement => {
 	const [attendanceState, dispatch] = useReducer(reducer, {
 		defaultTimeSchedule: [],
 		studentRecords: [],
-		instructorRecords: [],
-		substituteRecords: []
+		instructorRecords: []
 	})
 
-	const { isFetching: fetchingSession, data: session, error: sessionError } = useQuery({
+	const { isPending: fetchingSession, data: session, error: sessionError } = useQuery({
 		queryKey: [`session/${sessionGuid}`],
 		select: (session: SessionDomain) => Session.toViewModel(session),
 		retry: false,
 		staleTime: Infinity
 	})
 
-	const { isFetching: fetchingStudentRegs, data: studentRegs, error: studentRegError } = useQuery({
+	const { isPending: fetchingStudentRegs, data: studentRegs, error: studentRegError } = useQuery({
 		queryKey: [`session/${sessionGuid}/registration?dayOfWeek=${date?.dayOfWeek().value()}`],
 		select: (regs: StudentRegistrationDomain[]) => regs.map(reg =>StudentRegistration.toViewModel(reg)),
 		enabled: !!date,
+		retry: false,
+		staleTime: Infinity
+	})
+
+	const { data: priorAttendance } = useQuery({
+		queryKey: [`session/${sessionGuid}/attendance/${attendanceGuid}`],
+		enabled: !!attendanceGuid,
 		retry: false,
 		staleTime: Infinity
 	})
@@ -68,8 +73,13 @@ export default (): React.ReactElement => {
 					}
 
 					if (session && studentRegs && timeSchedules) {
-						dispatch({ type: 'populateInstructors', payload: { instructors: session?.instructors, times: timeSchedules }})
-						dispatch({ type: 'populateStudents', payload: { students: studentRegs.map(reg => reg.studentSchoolYear), times: timeSchedules }})
+						if (!attendanceGuid) {
+							dispatch({ type: 'populateInstructors', payload: { instructors: session?.instructors, times: timeSchedules }})
+							dispatch({ type: 'populateStudents', payload: { students: studentRegs.map(reg => reg.studentSchoolYear), times: timeSchedules }})
+						}
+						else { 
+							dispatch({ type: 'populateExistingRecords', payload: { instructorAttendance: priorAttendance.instructorAttendanceRecords, studentAttendance: priorAttendance.studentAttendanceRecords }})
+						}
 					}
 				}
 
@@ -90,12 +100,15 @@ export default (): React.ReactElement => {
 						times={timeSchedules}
 						onTimeChange={setTimeSchedules}
 						progressFormState={() => handleFormStateChange(FormState.AttendanceRecords)}
+						isNewAttendance={attendanceGuid === null}
+						originalAttendDate={priorAttendance ? DateOnly.toLocalDate(priorAttendance.instanceDate) : undefined}
 					/>
 				);
 			case FormState.AttendanceRecords:
 				return (
 					<AttendanceForm 
 						session={session!}
+						attendanceGuid={attendanceGuid}
 						date={date!}
 						state={attendanceState}
 						dispatch={dispatch}
@@ -109,9 +122,14 @@ export default (): React.ReactElement => {
 	if (!session)
 		return <span>Loading...</span>
 
+	const subHeading: ReactElement | null = priorAttendance?.instanceDate 
+		? <h5 className='text-secondary'>Original attendance date - {DateOnly.toLocalDate(priorAttendance.instanceDate).format(DateTimeFormatter.ofPattern('eeee, MMMM dd').withLocale(Locale.ENGLISH))}</h5>
+		: null;
+
 	return (
 		<div className='w-100'>
 			<h3>{session.name}</h3>
+			{subHeading}
 
 			<main>
 				{renderForm()}
@@ -122,6 +140,7 @@ export default (): React.ReactElement => {
 
 interface AttendanceFormProps {
 	session: SessionView
+	attendanceGuid: string | null
 	date: LocalDate
 	state: AttendanceForm
 	dispatch: React.Dispatch<ReducerAction>
@@ -129,10 +148,7 @@ interface AttendanceFormProps {
 
 
 
-const AttendanceForm = ({session, date, state, dispatch}: AttendanceFormProps): ReactElement => {
-	console.log(state)
-
-
+const AttendanceForm = ({session, attendanceGuid, date, state, dispatch}: AttendanceFormProps): ReactElement => {
 	return (
 		<div>
 			<h5 className='text-secondary'>Attendance for {date.format(DateTimeFormatter.ofPattern('eeee, MMMM dd').withLocale(Locale.ENGLISH))}</h5>
@@ -153,13 +169,15 @@ const AttendanceForm = ({session, date, state, dispatch}: AttendanceFormProps): 
 			<section>
 				<h5>Summary</h5>
 				<hr />
-				<AttendanceSummary state={state} />
+				<AttendanceSummary sessionGuid={session.guid} sessionType={session.sessionType.label} attendanceGuid={attendanceGuid} date={date} state={state} />
 			</section>
 		</div>
 	)
 }
 
-const DateTimeSelection = ({session, date, onDateChange, times, onTimeChange, progressFormState}): ReactElement => {
+const DateTimeSelection = ({session, date, onDateChange, times, onTimeChange, progressFormState, isNewAttendance, originalAttendDate}): ReactElement => {
+	const [editDateInitialized, setEditDateInitialized] = useState<boolean>(false)
+
 
 	const { isFetching: fetchingDates, data: dates, error: dateError } = useQuery({ 
 		queryKey: [`session/${session.guid}/attendance/openDates`],
@@ -191,7 +209,7 @@ const DateTimeSelection = ({session, date, onDateChange, times, onTimeChange, pr
 	}
 
 	useEffect(() => {
-		if (dates && dates.length > 0 && !date)
+		if (dates && dates.length > 0 && !date && !originalAttendDate)
 			handleDateChange(dates[0])
 	}, [dates?.length])
 
@@ -203,17 +221,28 @@ const DateTimeSelection = ({session, date, onDateChange, times, onTimeChange, pr
 				?.timeSchedules;
 
 			if (timeScheduleForDate)
-			onTimeChange(timeScheduleForDate)
+				onTimeChange(timeScheduleForDate)
 		}
 	}, [session?.guid, date?.toString()])
 
+	useEffect(() => {
+		if (originalAttendDate && !editDateInitialized) {
+			handleDateChange(originalAttendDate)
+			setEditDateInitialized(true)
+		}
+	}, [dates?.length, originalAttendDate])
+
 	const dateFormatter = DateTimeFormatter.ofPattern('eeee, MMMM dd').withLocale(Locale.ENGLISH)
+	const continueDisabled: boolean = !dates || !date
+		|| !times || times.length <= 0
+		|| (!isNewAttendance && !originalAttendDate)
 
 	return (
 		<div className='row'>
 			<div className='col-xl-2 col-md-4 col-12'>
-				<label className='form-label' htmlFor='date-select'>Select Date</label>
+				<label className='form-label' htmlFor='date-select'>Date</label>
 				<select className='form-select' aria-label='Select attendance date' value={date?.toString()} onChange={e => handleDateChange(LocalDate.parse(e.target.value))}>
+					{originalAttendDate ? <option className='text-primary' value={originalAttendDate.toString()}>{originalAttendDate.format(dateFormatter)}</option> : null}
 					{dates?.map(date => (<option value={date.toString()}>{date.format(dateFormatter)}</option>))}
 				</select>
 			</div>
@@ -240,8 +269,8 @@ const DateTimeSelection = ({session, date, onDateChange, times, onTimeChange, pr
 				))}
 			</div>
 
-			<div className='col-xl-2'>
-				<button className='btn btn-primary' onClick={progressFormState}>Continue</button>
+			<div className='col-xl-2 d-flex align-items-end'>
+				<button className='btn btn-primary' onClick={progressFormState} disabled={continueDisabled}>Continue</button>
 			</div>	
 		</div>
 	)

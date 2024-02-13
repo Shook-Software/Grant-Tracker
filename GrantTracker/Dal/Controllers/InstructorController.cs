@@ -26,9 +26,9 @@ namespace GrantTracker.Dal.Controllers
 		}
 
 		[HttpGet("")]
-		public async Task<ActionResult<List<InstructorSchoolYearViewModel>>> GetInstructors(string name, Guid organizationGuid, Guid yearGuid)
+		public async Task<ActionResult<List<InstructorSchoolYearViewModel>>> GetInstructors(Guid orgYearGuid)
 		{
-			var instructors = await _instructorRepository.GetInstructorsAsync(organizationGuid, yearGuid);
+			var instructors = await _instructorRepository.GetInstructorsAsync(orgYearGuid);
 			return Ok(instructors);
 		}
 

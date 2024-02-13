@@ -84,13 +84,13 @@ public class AttendanceRepository : IAttendanceRepository
 		//neither of these two should ever happen
 		foreach (var record in sessionAttendance.StudentRecords)
 		{
-			if (record.StudentSchoolYearGuid == Guid.Empty)
+			if (record.Id == Guid.Empty)
 				throw new ArgumentException("One of the records contained an empty StudentSchoolYearGuid. StudentSchoolYearGuid cannot be empty.", nameof(sessionAttendance));
 		}
 
 		foreach (var record in sessionAttendance.InstructorRecords)
 		{
-			if (record.InstructorSchoolYearGuid == Guid.Empty)
+			if (record.Id == Guid.Empty)
 				throw new ArgumentException("One of the records contained an empty InstructorSchoolYearGuid. InstructorSchoolYearGuid cannot be empty.", nameof(sessionAttendance));
 		}
 
@@ -108,13 +108,11 @@ public class AttendanceRepository : IAttendanceRepository
 						{
 							Guid = Guid.NewGuid(),
 							AttendanceRecordGuid = attendanceGuid,
-							StudentSchoolYearGuid = sr.StudentSchoolYearGuid,
+							StudentSchoolYearGuid = sr.Id,
 							FamilyMember = fa.FamilyMember
 						});
 				});
 			});
-
-
 
         var newAttendanceRecord = new AttendanceRecord()
 		{
@@ -127,10 +125,10 @@ public class AttendanceRepository : IAttendanceRepository
 				return new InstructorAttendanceRecord()
 				{
 					Guid = instructorAttendanceRecordGuid,
-					InstructorSchoolYearGuid = i.InstructorSchoolYearGuid,
+					InstructorSchoolYearGuid = i.Id,
 					AttendanceRecordGuid = attendanceGuid,
 					IsSubstitute = i.IsSubstitute,
-					TimeRecords = i.Attendance
+					TimeRecords = i.Times
 					.Select(time => new InstructorAttendanceTimeRecord()
 					{
 						Guid = Guid.NewGuid(),
@@ -149,9 +147,9 @@ public class AttendanceRepository : IAttendanceRepository
                     return new StudentAttendanceRecord()
 					{
 						Guid = studentAttendanceRecordGuid,
-						StudentSchoolYearGuid = sr.StudentSchoolYearGuid,
+						StudentSchoolYearGuid = sr.Id,
 						AttendanceRecordGuid = attendanceGuid,
-						TimeRecords = sr.Attendance.Select(time => new StudentAttendanceTimeRecord()
+						TimeRecords = sr.Times.Select(time => new StudentAttendanceTimeRecord()
 						{
 							Guid = Guid.NewGuid(),
 							StudentAttendanceRecordGuid = studentAttendanceRecordGuid,
@@ -165,46 +163,33 @@ public class AttendanceRepository : IAttendanceRepository
 			FamilyAttendance = familyAttendance
         };
 
-		await _grantContext.AttendanceRecords.AddAsync(newAttendanceRecord);
-		await _grantContext.SaveChangesAsync();
+		await _grantContext.AddAsync(newAttendanceRecord);
+		_grantContext.SaveChanges();
 	}
 
-	public async Task<AttendanceRecord> DeleteAttendanceRecordAsync(Guid AttendanceGuid)
+	public async Task DeleteAttendanceRecordAsync(Guid AttendanceGuid)
 	{
-            //Remove the existing record and all of it's components
-        var existingAttendanceRecord = await _grantContext
-            .AttendanceRecords
-			.Include(ar => ar.FamilyAttendance)
-            .Include(ar => ar.StudentAttendance).ThenInclude(sa => sa.TimeRecords)
-            .Include(ar => ar.InstructorAttendance).ThenInclude(ia => ia.TimeRecords)
-            .Where(ar => ar.Guid == AttendanceGuid)
-            .FirstAsync();
-
-        _grantContext.FamilyAttendances.RemoveRange(existingAttendanceRecord.FamilyAttendance.ToList());
-        _grantContext.InstructorAttendanceTimeRecords.RemoveRange(existingAttendanceRecord.InstructorAttendance.SelectMany(ia => ia.TimeRecords).ToList());
-        _grantContext.InstructorAttendanceRecords.RemoveRange(existingAttendanceRecord.InstructorAttendance.ToList());
-        _grantContext.StudentAttendanceTimeRecords.RemoveRange(existingAttendanceRecord.StudentAttendance.SelectMany(sa => sa.TimeRecords).ToList());
-        _grantContext.StudentAttendanceRecords.RemoveRange(existingAttendanceRecord.StudentAttendance.ToList());
-        _grantContext.AttendanceRecords.Remove(existingAttendanceRecord);
-        _grantContext.SaveChanges();
-
-		return existingAttendanceRecord;
+		await _grantContext
+			 .AttendanceRecords
+			 .Where(ar => ar.Guid == AttendanceGuid)
+			 .ExecuteDeleteAsync();
     }
 
-	public async Task UpdateAttendanceAsync(Guid attendanceGuid, SessionAttendanceDto sessionAttendance)
+	public async Task UpdateAttendanceAsync(Guid attendanceGuid, Guid sessionGuid, SessionAttendanceDto sessionAttendance)
     {
 		using var transaction = await _grantContext.Database.BeginTransactionAsync();
 
 		try
 		{
-            var existingAttendanceRecord = await DeleteAttendanceRecordAsync(attendanceGuid);
-            await this.AddAttendanceAsync(sessionAttendance.SessionGuid, sessionAttendance);
+            await DeleteAttendanceRecordAsync(attendanceGuid);
+            await this.AddAttendanceAsync(sessionGuid, sessionAttendance);
 
 			await transaction.CommitAsync();
         }
 		catch (Exception ex)
 		{
 			await transaction.RollbackAsync();
+            throw;
 		}
 	}
 }

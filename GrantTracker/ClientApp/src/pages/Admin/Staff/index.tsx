@@ -71,7 +71,7 @@ export default (): JSX.Element => {
   function fetchInstructors (): void {
     setIsLoading(true)
 
-    fetchGrantTrackerInstructors(orgYear?.organization.guid, orgYear?.year.guid)
+    fetchGrantTrackerInstructors(orgYear?.guid)
       .then(res => setState(res))
       .catch(err => console.warn(err))
       .finally(() => setIsLoading(false))
@@ -134,6 +134,7 @@ export default (): JSX.Element => {
     <Container>
       <AddInstructorsModal
         show={showModal}
+        orgYearGuid={orgYear?.guid}
         handleClose={handleCloseModal}
         onInternalChange={addInternalInstructor}
         onExternalChange={addExternalInstructor}

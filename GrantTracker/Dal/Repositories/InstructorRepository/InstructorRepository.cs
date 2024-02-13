@@ -35,14 +35,14 @@ namespace GrantTracker.Dal.Repositories.InstructorRepository
 				.ToListAsync();
 		}
 
-		public async Task<List<InstructorSchoolYearViewModel>> GetInstructorsAsync(Guid organizationGuid, Guid yearGuid)
+		public async Task<List<InstructorSchoolYearViewModel>> GetInstructorsAsync(Guid orgYearGuid)
 		{
 			return await _grantContext
 				.InstructorSchoolYears
 				.AsNoTracking()
 				.Include(isy => isy.Instructor)
 				.Include(isy => isy.Status)
-				.Where(isy => isy.OrganizationYear.OrganizationGuid == organizationGuid && isy.OrganizationYear.YearGuid == yearGuid)
+				.Where(isy => isy.OrganizationYearGuid == orgYearGuid)
 				.Select(isy => InstructorSchoolYearViewModel.FromDatabase(isy, null))
 				.ToListAsync();
 		}

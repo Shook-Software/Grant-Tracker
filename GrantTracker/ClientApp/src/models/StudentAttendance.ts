@@ -5,6 +5,7 @@ import { TimeScheduleForm } from './TimeSchedule'
 import { InstructorSchoolYearView } from './Instructor'
 import { TimeOnly } from './TimeOnly'
 import { FamilyMember } from './FamilyMember'
+import { InstructorAttendanceView } from './InstructorAttendance'
 
 //change to form or something
 export interface StudentAttendanceDto {
@@ -62,7 +63,7 @@ export interface AttendanceView {
   }
   instanceDate: LocalDate
   studentAttendanceRecords: StudentAttendanceView[]
-  //arrays that can be null
+  instructorAttendanceRecords: InstructorAttendanceView[]
 }
 
 export interface StudentAttendanceDomain {
