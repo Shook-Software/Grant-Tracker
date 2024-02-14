@@ -131,77 +131,28 @@ namespace GrantTracker.Dal.Controllers
 		}
 
 		[HttpPost("year")]
-		public async Task<IActionResult> AddYear(YearProps props)
+		public async Task<IActionResult> AddYear([FromBody] Year year)
 		{
-			throw new NotImplementedException();
-			/*try
+			try
 			{
 				//Ensure no parameters are null, year is 4 digits, start date and end date do not intersect already existing Years
 				//validation
-				if (props.yearModel is null)
+				if (year is null)
 					throw new Exception("Parameter object cannot be null.");
 
-				var errors = await _yearRepository.ValidateYearAsync(props.yearModel);
+				var errors = await _yearRepository.ValidateYearAsync(year);
 				if (errors.Count > 0)
 					return BadRequest(errors);
 
 				//yearGuid in model will be entered in DB
-				await _yearRepository.AddAsync(props.yearModel);
-
-				//get the newly created year, get the organizations with it's identifier, then use those to create new organizationYears
-				var currentYear = (await _yearRepository.GetAsync()).Where(y => y.IsCurrentSchoolYear).First();
-				var currentOrganizations = await _organizationRepository.GetOrganizationsAsync(currentYear.YearGuid); //put this into OrgYear repo and just grab the org from it, better design
-				await _organizationYearRepository.CreateAsync(currentOrganizations, props.yearModel.YearGuid);
-
-				//fetch the newly created organizationYears
-				var newOrganizationYears = await _organizationYearRepository.GetAsync(props.yearModel.YearGuid);
-				//fetch instructorStatuses, then grab the identifier for Administrator
-				Guid administratorStatusGuid = (await _dropdownRepository.GetInstructorStatusesAsync()).Find(status => status.Label == "Administrator").Guid;
-
-
-				//we need a site-user repo
-				var previousCoordinators = await _yearRepository.Get(props.yearModel.YearGuid)
-					.WithOrganizationYears()
-					.WithInstructorSchoolYears()
-					.WithCoordinatorIdentities()
-					.SelectMany(x => x.Organizations)
-					.Where(x => x..Identity != null)
-					.ToListAsync();
-
-
-                var instructorSchoolYears = previousCoordinators
-                    .Select(u =>
-					{
-						var instructorSchoolYearGuid = Guid.NewGuid();
-						return new InstructorSchoolYear()
-						{
-							InstructorSchoolYearGuid = instructorSchoolYearGuid,
-							InstructorGuid = u.InstructorGuid,
-							OrganizationYearGuid = newOrganizationYears.Find(oy => oy.OrganizationGuid == u.OrganizationGuid).OrganizationYearGuid,
-							StatusGuid = administratorStatusGuid
-						};
-					})
-					.ToList();
-
-				var userIdentities = instructorSchoolYears
-					.Select(isy =>  new Identity()
-                    {
-                        Guid = isy.InstructorSchoolYearGuid,
-                        Claim = u.Claim
-                    })
-					.ToList();
-
-
-				await _instructorRepository.CreateAsync(instructorSchoolYears);
-				await _devRepository.CreateUsersAsync(userIdentities);
-
+				await _yearRepository.AddAsync(year);
 				return NoContent();
 			}
 			catch (Exception ex)
             {
                 _logger.LogError(ex, "{Function} - An unhandled error occured.", nameof(AddYear));
 				return StatusCode(500);
-            }*/
+            }
 		}
 
 		#endregion School Year Controls

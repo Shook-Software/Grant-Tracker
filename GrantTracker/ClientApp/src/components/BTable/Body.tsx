@@ -19,10 +19,12 @@ function createRow (
   index: number,
   rowProps: any
 ): JSX.Element {
+  const addlClassName: string = rowProps?.classFn ? rowProps.classFn(row) : ''
+
   return (
     <tr
       key={`${row[rowProps?.key]}-${index}`}
-      className={rowProps?.className}
+      className={rowProps?.className + ' ' + addlClassName}
       onClick={event => rowProps?.onClick? rowProps?.onClick(event, row) : null}
       style={{ cursor: rowProps?.onClick ? 'pointer' : 'auto', height: '1px', backgroundColor: index % 2 == 0 ? '#CCE2FD' : '#D5E5F8'}}
     >

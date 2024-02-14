@@ -44,7 +44,7 @@ public class YearRepository : IYearRepository
 	{
 		await _grantContext.AddAsync(new Year
 		{
-			YearGuid = yearModel.YearGuid,
+			YearGuid = Guid.NewGuid(),
 			SchoolYear = yearModel.SchoolYear,
 			Quarter = yearModel.Quarter,
 			StartDate = yearModel.StartDate,
@@ -58,6 +58,7 @@ public class YearRepository : IYearRepository
 	public async Task UpdateAsync(Year yearModel)
 	{
 		Year dbYear = await _grantContext.Years.FindAsync(yearModel.YearGuid);
+		dbYear.SchoolYear = yearModel.SchoolYear;
 		dbYear.Quarter = yearModel.Quarter;
 		dbYear.StartDate = yearModel.StartDate;
 		dbYear.EndDate = yearModel.EndDate;
