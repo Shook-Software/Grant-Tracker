@@ -8,6 +8,8 @@ public interface IReportRepository
 {
 	Task<ReportsViewModel> RunAllReportQueriesAsync(DateOnly startDate, DateOnly endDate, Guid organizationYearGuid, Guid? organizationGuid = null);
 
+	Task<List<CCLC10ViewModel>> GetCCLC10(DateOnly startDate, DateOnly endDate);
+
 	Task<List<SiteSessionViewModel>> GetSiteSessionsAsync(DateOnly startDate, DateOnly endDate, Guid? organizationGuid = null);
 
 	/*Task<List<TotalStudentAttendanceViewModel>> GetTotalStudentAttendanceAsync(DateOnly startDate, DateOnly endDate, Guid organizationGuid = default);

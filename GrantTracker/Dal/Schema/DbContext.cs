@@ -79,6 +79,7 @@ namespace GrantTracker.Dal.Schema
             builder.Entity<StaffSummaryDbModel>().HasNoKey().ToView(null);
             builder.Entity<PayrollAuditDb>().HasNoKey().ToView(null);
             builder.Entity<AttendanceCheckDbModel>().HasNoKey().ToView(null);
+			builder.Entity<CCLC10ViewModel>().HasNoKey().ToView(null);
 
 			builder.Entity<SessionAttendance>().HasNoKey().ToView(null);
 

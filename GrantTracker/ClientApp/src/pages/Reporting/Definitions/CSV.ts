@@ -448,3 +448,43 @@ export const flattenAttendanceCheck = (data) => {
 	let flattenedResults: any[] = []
 	return flattenedResults
 }
+
+
+export const cclc10Fields = [
+	{
+		label: 'School',
+		value: 'school'
+	},
+	{
+		label: 'Matric Number',
+		value: 'matricNumber'
+	},
+	{
+		label: 'Last Name',
+		value: 'lastName'
+	},
+	{
+		label: 'First Name',
+		value: 'firstName'
+	},
+	{
+		label: 'Session',
+		value: 'session'
+	},
+	{
+		label: 'Date',
+		value: 'date'
+	},
+	{
+		label: 'Start Time',
+		value: 'startTime'
+	},
+	{
+		label: 'End Time',
+		value: 'endTime'
+	},
+	{
+		label: 'Activity',
+		value: 'activity'
+	},
+]

@@ -7,7 +7,7 @@ import { saveCSVToFile } from './fileSaver'
 interface Parameters {
 	children: JSX.Element | JSX.Element[]
 	isLoading: boolean
-	displayData: any[]
+	displayData: any[] | undefined
 	displayName: string
 	fileData?: any[] | undefined
 	fileName?: string | undefined
