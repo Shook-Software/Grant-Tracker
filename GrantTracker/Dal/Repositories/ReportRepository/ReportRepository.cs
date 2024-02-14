@@ -380,6 +380,14 @@ public class ReportRepository : IReportRepository
 		};
 	}
 
+	public async Task<List<CCLC10ViewModel>> GetCCLC10(DateOnly startDate, DateOnly endDate)
+	{
+		return await _grantContextFactory.CreateDbContext().Set<CCLC10ViewModel>()
+			.FromSqlInterpolated($"EXEC [GTkr].ReportQuery_AzEDS_CCLC10 {DateOnlyToSQLString(startDate)}, {DateOnlyToSQLString(endDate)}")
+			.AsNoTracking()
+			.ToListAsync();
+	}
+
 	public async Task<List<SiteSessionViewModel>> GetSiteSessionsAsync(DateOnly startDate, DateOnly endDate, Guid? organizationGuid = null)
 	{
 
@@ -424,5 +432,4 @@ public class ReportRepository : IReportRepository
 				})
 			.ToList();
 	}
-
 }

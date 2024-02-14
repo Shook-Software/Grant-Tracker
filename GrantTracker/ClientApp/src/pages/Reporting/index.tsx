@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { ReactElement, useEffect, useMemo, useState } from 'react'
 import { Container, Row, Col, Tab, Nav, Form } from 'react-bootstrap'
 import Table, { SortDirection } from 'components/BTable'
 
@@ -27,11 +27,15 @@ import {
 	programOverviewFields,
 	staffingFields, flattenStaffing,
 	studentSurveyFields,
-	attendanceCheckFields, flattenAttendanceCheck
+	attendanceCheckFields, flattenAttendanceCheck, cclc10Fields
 } from './Definitions/CSV'
 
 import { getReportsAsync, getSiteSessions } from './api'
 import { IdentityClaim } from 'utils/authentication'
+import { useQuery } from '@tanstack/react-query'
+import { DateOnly } from 'Models/DateOnly'
+import { TimeOnly } from 'Models/TimeOnly'
+import { LocalDate, LocalTime } from '@js-joda/core'
 
 export default ({user}): JSX.Element => {
 	const [reportParameters, setReportParameters] = useState<ReportParameters>({
@@ -205,6 +209,16 @@ export default ({user}): JSX.Element => {
 											<Nav.Item>
 												<Nav.Link eventKey='payroll-audit'>
 													Payroll Audit ({reports.payrollAudit.length})
+												</Nav.Link>
+											</Nav.Item>
+										: null
+									}
+
+									{
+										user.claim == IdentityClaim.Administrator ?
+											<Nav.Item>
+												<Nav.Link eventKey='cclc10'>
+													AzEDS CCLC10
 												</Nav.Link>
 											</Nav.Item>
 										: null
@@ -459,6 +473,14 @@ export default ({user}): JSX.Element => {
 									/>
 								</Tab.Pane>
 
+								<Tab.Pane eventKey='cclc10'>
+									<CCLC10Report
+										reportParameters={reportParameters}
+										dateDisplayString={reportDateDisplayString}
+										fileName={`AzEDS_CCLC10_Grant_Tracker_${reportDateFileString}`}
+									/>
+								</Tab.Pane>
+
 							</Tab.Content>
 						</div>
 					</Row>
@@ -474,8 +496,6 @@ const FamilyEngagementReport = ({isLoading, reportParameters, fileName, reportDa
 	const [familyType, setFamilyType] = useState<string>('')
 
 	const familyTypeOptions: string[] = useMemo<string[]>(() => [...new Set<string>(records.flatMap(x => x.familyAttendance).map(attend => attend.familyMember))], [records])
-
-
 
 	const filteredRecords = records
 		.map(x => ({...x, familyAttendance: x.familyAttendance.filter(y => familyType == '' || y.familyMember === familyType).filter(z => z.totalDays >= daysAttendedFilter)}))
@@ -582,6 +602,49 @@ const PayrollAuditReport = ({isLoading, reportParameters, reportDateDisplayStrin
 					tableProps={{style: {minWidth: '1100px', borderCollapse: 'collapse', borderSpacing: '0 3px'}}}
 				/>
 			</Row>
+		</ReportComponent>
+	)
+}
+
+interface CCLC10Row {
+	school: string
+	matricNumber: string
+	lastName: string
+	firstName: string
+	session: string
+	date: LocalDate
+	startTime: LocalTime
+	endTime: LocalTime
+	activity: string
+}
+
+const CCLC10Report = ({reportParameters, dateDisplayString, fileName}): ReactElement => {
+
+	const { isPending, data, error } = useQuery<CCLC10Row[]>({
+		queryKey: [`report/CCLC10?startDateStr=${reportParameters.startDate}&endDateStr=${reportParameters.endDate}`],
+		enabled: !!reportParameters?.startDate && !!reportParameters?.endDate,
+		select: (rows: any[]) => rows.map(row => ({
+			...row,
+			date: DateOnly.toLocalDate(row.date),
+			startTime: TimeOnly.toLocalTime(row.startTime),
+			endTime: TimeOnly.toLocalTime(row.endTime)
+		})),
+		staleTime: Infinity,
+		retry: false
+	})
+
+	return (
+		<ReportComponent
+			isLoading={isPending}
+			displayData={data}
+			displayName={`AzEDS CCLC10 Report for all Organizations, ${dateDisplayString}`}
+			fileData={data}
+			fileName={fileName}
+			fileFields={cclc10Fields}
+		>
+			<div>
+				For Download Only
+			</div>
 		</ReportComponent>
 	)
 }

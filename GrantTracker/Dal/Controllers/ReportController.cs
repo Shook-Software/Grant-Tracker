@@ -101,6 +101,21 @@ public class ReportController : ControllerBase
 		}
 	}
 
+	[HttpGet("CCLC10")]
+	public async Task<ActionResult<List<CCLC10ViewModel>>> GetAzEDSCCLC10ReportAsync(string startDateStr, string endDateStr)
+	{
+		try
+        {
+			var report = await _reportRepository.GetCCLC10(DateOnly.Parse(startDateStr), DateOnly.Parse(endDateStr));
+			return Ok(report);
+        }
+		catch (Exception ex)
+		{
+            _logger.LogError(ex, "{Function} - An unhandled error occured while fetching the site session report.", nameof(GetSiteSessionsAsync));
+            return StatusCode(500);
+        }
+	}
+
 	[HttpGet("siteSessions")]
 	public async Task<ActionResult<List<SiteSessionViewModel>>> GetSiteSessionsAsync(string startDateStr, string endDateStr, Guid organizationGuid = default)
 	{
