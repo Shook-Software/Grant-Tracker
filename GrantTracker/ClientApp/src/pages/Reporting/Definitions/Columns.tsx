@@ -526,9 +526,9 @@ export const attendanceCheckColumns: Column[] = [
 		sortable: false,
 		transform: (attendanceCheck) => {
 			return (
-				<div>
+				<Link to={`/home/admin/sessions/${attendanceCheck.sessionGuid}`}>
 					{attendanceCheck.className}
-				</div>
+				</Link>
 			)
 		}
 	},

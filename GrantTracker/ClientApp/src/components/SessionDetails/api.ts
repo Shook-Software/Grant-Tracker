@@ -1,14 +1,12 @@
-import { LocalDate } from '@js-joda/core'
 import { DateOnly } from 'Models/DateOnly'
-import { AttendanceTimeRecordView, SimpleAttendanceView, AttendanceView, StudentAttendance } from 'Models/StudentAttendance'
-import api, { AxiosIdentityConfig } from 'utils/api'
+import { SimpleAttendanceView, AttendanceView, StudentAttendance } from 'Models/StudentAttendance'
+import api from 'utils/api'
 
 
 export function addStudentToSession (sessionGuid, student, schedule): Promise<void> {
   return new Promise((resolve, reject) => {
     api
       .post(`session/${sessionGuid}/registration`, {
-        yearGuid: AxiosIdentityConfig.identity.yearGuid,
         student: {
           firstName: student.student.firstName,
           lastName: student.student.lastName,

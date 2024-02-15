@@ -50,7 +50,7 @@ namespace GrantTracker.Dal.Controllers
 			try
 			{
 				var authorizedOrgYears = await _organizationYearRepository.GetAsync();
-				return Ok(authorizedOrgYears.Select(OrganizationYearView.FromDatabase));
+				return Ok(authorizedOrgYears.OrderBy(oy => oy.Organization.Name).Select(OrganizationYearView.FromDatabase));
 			}
 			catch (Exception ex)
 			{

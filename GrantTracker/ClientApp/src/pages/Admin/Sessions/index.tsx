@@ -3,7 +3,7 @@ import { Container, Spinner, Form, Button, Card, Row, Col } from 'react-bootstra
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 
 import CopyRegistrations from './CopyRegistrations'
-import { useAdminPage, Context, OrgYearContext } from 'pages/Admin'
+import { OrgYearContext } from 'pages/Admin'
 import AddButton from 'components/Input/Button'
 import Table, { Column, SortDirection } from 'components/BTable'
 
@@ -12,7 +12,7 @@ import { SimpleSessionView } from 'Models/Session'
 import { DropdownOption } from 'types/Session'
 
 import paths from 'utils/routing/paths'
-import api, { AxiosIdentityConfig } from 'utils/api'
+import api from 'utils/api'
 import SessionDetails from 'components/SessionDetails'
 import { AttendanceRecord } from 'components/SessionAttendance/AttendanceForm/TimeInput'
 
@@ -157,7 +157,7 @@ export default (): JSX.Element => {
           <div>
             <AddButton
               as={Link}
-              to={`${paths.Edit.path}/${paths.Edit.Sessions.path}/overview`}
+              to={`${paths.Edit.path}/${paths.Edit.Sessions.path}/overview?orgYearGuid=${orgYear.guid}`}
             >
               Add New Session
             </AddButton>

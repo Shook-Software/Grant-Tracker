@@ -56,14 +56,14 @@ public class AuthRepository : IAuthRepository
 			.FirstOrDefault();
 	}
 
-	public async Task<List<UserIdentity>> GetUsersAsync(Guid yearGuid)
+	public async Task<List<UserIdentity>> GetCurrentUsersAsync()
 	{
 		return await _grantContext.UserIdentities
 			.AsNoTracking()
 			.Include(user => user.SchoolYear).ThenInclude(i => i.OrganizationYear).ThenInclude(o => o.Organization)
 			.Include(user => user.SchoolYear).ThenInclude(i => i.OrganizationYear).ThenInclude(o => o.Year)
 			.Include(user => user.SchoolYear).ThenInclude(i => i.Instructor)
-			.Where(user => user.SchoolYear.OrganizationYear.YearGuid == yearGuid) //to be replaced with a filter eventually
+			.Where(user => user.SchoolYear.OrganizationYear.Year.IsCurrentSchoolYear) //to be replaced with a filter eventually
 			.Select(u => new UserIdentity
 			{
 				UserGuid = u.SchoolYear.InstructorGuid,
@@ -171,12 +171,12 @@ public class AuthRepository : IAuthRepository
 		await _grantContext.SaveChangesAsync();
 	}
 
-	public async Task<List<OrganizationYearView>> GetOrganizationYearsForYear(Guid yearGuid)
+	public async Task<List<OrganizationYearView>> GetOrganizationYearsForCurrentYear()
 	{
 		return await _grantContext
 			.OrganizationYears
 			.AsNoTracking()
-			.Where(oy => oy.YearGuid == yearGuid)
+			.Where(oy => oy.Year.IsCurrentSchoolYear)
 			.Include(oy => oy.Organization)
 			.Include(oy => oy.Year)
 			.OrderBy(oy => oy.Organization.Name)

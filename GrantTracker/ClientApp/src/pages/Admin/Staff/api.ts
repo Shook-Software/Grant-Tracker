@@ -1,16 +1,16 @@
 
 import { ApiResult } from 'components/ApiResultAlert'
 import { StaffDto } from 'types/Dto'
-import api, { AxiosIdentityConfig } from 'utils/api'
+import api from 'utils/api'
 
 
 
-export function fetchGrantTrackerInstructors (orgYearGuid): Promise<any[]> {
+export function fetchGrantTrackerInstructors(orgYearGuid): Promise<any[]> {
   return new Promise((resolve, reject) => {
     api
-      .get('instructor', { 
-          params: {
-            orgYearGuid
+      .get('instructor', {
+        params: {
+          orgYearGuid
         }
       })
       .then(res => resolve(res.data))
@@ -19,15 +19,17 @@ export function fetchGrantTrackerInstructors (orgYearGuid): Promise<any[]> {
 }
 
 
-export function addInstructor (instructor: StaffDto): Promise<ApiResult> {
+export function addInstructor(orgYearGuid: string, instructor: StaffDto): Promise<ApiResult> {
   return new Promise((resolve, reject) => {
     const fullName: string = `${instructor.firstName} ${instructor.lastName}`
     api
-      .post('instructor/add', 
-        instructor, 
-        { params: {
-          organizationYearGuid: AxiosIdentityConfig.identity.organizationYearGuid
-        }}
+      .post('instructor/add',
+        instructor,
+        {
+          params: {
+            organizationYearGuid: orgYearGuid
+          }
+        }
       )
       .then(res => {
         resolve({

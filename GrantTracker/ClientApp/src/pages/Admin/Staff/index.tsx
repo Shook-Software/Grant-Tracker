@@ -79,7 +79,7 @@ export default (): JSX.Element => {
 
   function addInternalInstructor (instructor): Promise<ApiResult> {
     return new Promise((resolve, reject) => {
-      addInstructor(instructor)
+      addInstructor(orgYear.guid, instructor)
         .then(res => {
           resolve({
             label: `${instructor.firstName} ${instructor.lastName}`,
@@ -97,7 +97,7 @@ export default (): JSX.Element => {
 
   function addExternalInstructor (instructor): Promise<ApiResult> {
     return new Promise((resolve, reject) => {
-      addInstructor(instructor)
+      addInstructor(orgYear?.guid, instructor)
       .then(res => {
         resolve({
           label: `${instructor.firstName} ${instructor.lastName}`,

@@ -1,12 +1,10 @@
 ﻿import { useParams, useNavigate } from 'react-router-dom'
-import { useEffect, useState } from 'react'
+import { useContext, useEffect, useState } from 'react'
 import { Spinner, Card, Row, Col, Button, Modal } from 'react-bootstrap'
-import { LocalDate, TemporalAdjusters, DayOfWeek as JodaDoW, DateTimeFormatter } from '@js-joda/core'
 
 import { PageContainer } from 'styles'
 import { ApiResult } from 'components/ApiResultAlert'
 import SearchStudentsModal from './SearchStudentsModal' //pull this out into a component rather than subcomponent of sessionDetails
-import SessionAttendance from 'components/SessionAttendance'
 import RegistrationsView from './RegistrationsView'
 import AttendanceHistory from './AttendanceHistory'
 
@@ -24,30 +22,8 @@ import Header from './Header'
 import Overview from './Overview'
 import Instructors from './Instructors'
 import Scheduling from './Scheduling'
-import { postSessionAttendance } from 'components/SessionAttendance/api'
-import { Locale } from '@js-joda/locale_en-us'
+import { OrgYearContext } from 'pages/Admin'
 
-
-function createDefaultStudentRecords (studentRegistrations, daySchedule): StudentRecord[] {
-  studentRegistrations = studentRegistrations.filter(reg => reg.daySchedule.dayOfWeek == daySchedule.dayOfWeek)
-
-  return studentRegistrations.map(registration => ({
-      isPresent: true,
-      attendance: registration.daySchedule.timeSchedules,
-      studentSchoolYear: registration.studentSchoolYear,
-      familyAttendance: []
-    })
-  )
-}
-
-function createDefaultInstructorRecords (instructorRegistrations, daySchedule)/*: InstructorRecord[]*/ {
-  return instructorRegistrations.map(registration => ({
-      isPresent: true,
-      attendance: daySchedule.timeSchedules.map(sch => ({...sch})),
-      instructorSchoolYear: registration
-    })
-  )
-}
 
 interface Props {
   sessionGuid: string
@@ -56,6 +32,7 @@ interface Props {
 //Nice to have - Calender visual view, but only something to *come back to*
 export default ({sessionGuid}: Props): JSX.Element => {
   const navigate = useNavigate()
+  const { orgYear } = useContext(OrgYearContext)
   //const { sessionGuid } = useParams()
   const [session, setSession] = useState<SessionView | null>(null)
   const [studentRegistrations, setStudentRegistrations] = useState<StudentRegistrationView[]>([])
@@ -93,16 +70,6 @@ export default ({sessionGuid}: Props): JSX.Element => {
     setShowDeleteModal(false)
   }
 
-  /// /Functions
-  function handleAttendanceModalClose (): void {
-    setAttendanceModalParams({
-      ...attendanceModalParams,
-      show: false,
-      schedule: null
-    })
-    getStudentRegistrationsAsync()
-  }
-
   function removeStudentRegistrationsAsync (scheduleGuids: string[], studentSchoolYearGuid: string): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       api
@@ -136,37 +103,6 @@ export default ({sessionGuid}: Props): JSX.Element => {
       .then(records => {
         setAttendanceRecords(records)
       })
-  }
-
-  function submitAttendance (
-    _: string,
-    date: LocalDate, 
-    studentRecords: StudentRecord[],
-    instructorRecords: InstructorRecord[], 
-    substituteRecords: SubstituteRecord[]
-  ): Promise<void> {
-    return new Promise((resolve, reject) => {
-     postSessionAttendance(sessionGuid!, date, studentRecords, instructorRecords, substituteRecords)
-      .then(res => {
-          handleAttendanceModalClose()
-          setAttendanceApiResult({
-            label: `Attendance for ${date.format(DateTimeFormatter.ofPattern('eeee, MMMM d').withLocale(Locale.ENGLISH))}`,
-            success: true,
-            message: []
-          })
-      }) 
-      .catch(err => {
-        handleAttendanceModalClose()
-        setAttendanceApiResult({
-          label: 'Attendance',
-          success: false,
-          message: err
-        })
-      })
-      .finally(() => {
-        getAttendance()
-      })
-    })
   }
 
   function getSessionDetails (): void {
@@ -277,29 +213,12 @@ export default ({sessionGuid}: Props): JSX.Element => {
       </Card>
       <RemoveSessionModal sessionGuid={sessionGuid} session={session} show={showSessionDeleteModal} handleClose={handleSessionDeletion} />
       <SearchStudentsModal
+        orgYearGuid={orgYear.guid}
         show={showStudentModal}
         handleClose={() => setShowStudentModal(false)}
         handleChange={({student, schedule}) => addStudent(student, schedule)}
         scheduling={session!.daySchedules}
       />
-      {attendanceModalParams.show ? (
-        <SessionAttendance
-          props={
-            {
-              sessionGuid,
-              date: null,
-              dayOfWeek: DayOfWeek.toInt(attendanceModalParams.schedule.dayOfWeek),
-              studentRecords: createDefaultStudentRecords(studentRegistrations, attendanceModalParams?.schedule),
-              instructorRecords: createDefaultInstructorRecords(session?.instructors, attendanceModalParams?.schedule),
-              substituteRecords: [],
-              defaultSchedule: attendanceModalParams.schedule?.timeSchedules || [],
-            }
-          }
-          handleClose={handleAttendanceModalClose}
-          handleSubmit={submitAttendance}
-          sessionType={session!.sessionType.label.toLowerCase()}
-        />
-      ) : null}
     </PageContainer>
   )
 }

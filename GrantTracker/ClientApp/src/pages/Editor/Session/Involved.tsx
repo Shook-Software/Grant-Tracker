@@ -5,7 +5,7 @@ import { useSession } from '../index'
 import Dropdown from 'components/Input/Dropdown'
 import { DropdownOption } from 'Models/Session'
 
-import api, { AxiosIdentityConfig } from 'utils/api'
+import api from 'utils/api'
 import Select from 'react-select'
 
 //Second Section - Instructor/Funding
@@ -16,7 +16,7 @@ import Select from 'react-select'
 ////Partnership Type -- Dropdown
 
 export default (): JSX.Element => {
-  const { reducerDispatch, dropdownData, values, user } = useSession()
+  const { reducerDispatch, dropdownData, values, orgYearGuid } = useSession()
   const [instructors, setInstructors] = useState<DropdownOption[]>([])
   document.title = `${values.guid ? 'Edit' : 'New'} Session - Involved`
 
@@ -35,8 +35,9 @@ export default (): JSX.Element => {
   }
 
   useEffect(() => {
+    console.log(orgYearGuid)
     api
-      .get('instructor', {params: {organizationGuid: AxiosIdentityConfig.identity.organizationGuid, yearGuid: AxiosIdentityConfig.identity.yearGuid}})
+      .get('instructor', {params: {orgYearGuid: orgYearGuid}})
       .then(res => {
         res.data = res.data.filter(item => !values.instructors.find(value => value.guid === item.guid))
         setInstructors(res.data.map(isy => ({
