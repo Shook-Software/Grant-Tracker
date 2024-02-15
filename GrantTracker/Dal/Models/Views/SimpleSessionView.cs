@@ -11,7 +11,6 @@ namespace GrantTracker.Dal.Models.Views
 
 	public class StudentRegistrationDto
 	{
-		public Guid YearGuid { get; set; }
 		public List<Guid> DayScheduleGuids { get; set; }
 		public StudentDto Student { get; set; }
 	}

@@ -1,7 +1,7 @@
 ﻿import { Session, SessionForm, SessionDomain } from 'Models/Session'
 import { DropdownOption } from 'types/Session'
 
-import api, { AxiosIdentityConfig } from 'utils/api'
+import api from 'utils/api'
 
 export interface DropdownOptions {
 	sessionTypes: DropdownOption[]
@@ -37,14 +37,12 @@ export function fetchSession(sessionGuid: string): Promise<SessionForm> {
 	})
 }
 
-export function submitSession(sessionState: SessionForm): Promise<SessionDomain | void> {
+export function submitSession(orgYearGuid: string, sessionState: SessionForm): Promise<SessionDomain | void> {
 	return new Promise((resolve, reject) => {
 
 		sessionState.instructors = sessionState.instructors?.map(instructor => instructor.guid)
 
 		if (sessionState.guid) {
-
-			
 			api
 				.patch('session', sessionState)
 				.then(res => {
@@ -53,10 +51,13 @@ export function submitSession(sessionState: SessionForm): Promise<SessionDomain 
 				.catch(err => { reject() })
 		}
 		else {
+
+			delete sessionState.organizationYearGuid
+
 			api
 				.post('session', {
 					...sessionState,
-					organizationYearGuid: AxiosIdentityConfig.identity.organizationYearGuid
+					organizationYearGuid: orgYearGuid
 				})
 				.then(res => { resolve(res.data.guid) })
 				.catch(err => { reject() })

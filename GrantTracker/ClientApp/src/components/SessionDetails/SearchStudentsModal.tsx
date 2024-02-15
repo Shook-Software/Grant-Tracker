@@ -15,8 +15,6 @@ import Search from './StudentSearchForm'
 
 import { DayScheduleView } from 'Models/DaySchedule'
 
-import api, { AxiosIdentityConfig } from 'utils/api'
-
 //@ts-ignore
 const StudentPopover = forwardRef(
   ({ values, handleAddStudent, ...props }, ref): JSX.Element => {
@@ -131,6 +129,7 @@ const Schedule = ({scheduling, schedule, setSchedule}): JSX.Element => {
 }
 
 interface Props {
+  orgYearGuid: string
   show: boolean
   handleClose: () => void
   handleChange: (value: any, ) => Promise<any>
@@ -139,6 +138,7 @@ interface Props {
 
 //refactor handleChange to do something, that way we can reuse this component
 export default ({
+  orgYearGuid,
   show,
   handleClose,
   handleChange,
@@ -198,7 +198,7 @@ export default ({
         <Container className='d-flex flex-column align-items-center'>
           <Row className='d-flex flex-column align-items-center w-75'>
             <Alert apiResult={apiResult} />
-            <Search handleChange={setState} />
+            <Search orgYearGuid={orgYearGuid} handleChange={setState} />
           </Row>
           <Row className='w-50'>
             <Schedule scheduling={scheduling} schedule={schedule} setSchedule={setSchedule} />

@@ -7,7 +7,7 @@ import Dropdown from 'components/Input/Dropdown'
 import { DropdownOption } from 'Models/Session'
 
 import { User } from 'utils/authentication'
-import api, { AxiosIdentityConfig } from 'utils/api'
+import api from 'utils/api'
 
 interface UserDeletionProps {
   user: User
@@ -181,9 +181,7 @@ export default (): JSX.Element => {
   function fetchUsersAsync(): Promise<User[]> {
     return new Promise((resolve, reject) => {
       api
-        .get<User[]>('developer/authentication', { params: {
-          yearGuid: AxiosIdentityConfig.identity.yearGuid
-        }})
+        .get<User[]>('developer/authentication')
         .then(res => {
           resolve(res.data)
         })
@@ -223,13 +221,11 @@ export default (): JSX.Element => {
     fetchUsersAsync().then(res => {setUsers(res)})
 
       api
-        .get('/developer/organizationYear', { params: {
-          yearGuid: AxiosIdentityConfig.identity.yearGuid, 
-        }})
+        .get('/developer/organizationYear')
         .then(res => {
           setOrganizations(res.data)
         })
-  }, [AxiosIdentityConfig.identity.yearGuid])
+  }, [])
 
   useEffect(() => {
     fetchUsersAsync()

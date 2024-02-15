@@ -1,14 +1,14 @@
 import { useContext, useEffect, useState } from "react"
 import { BlackoutDate, BlackoutDateDomain, BlackoutDateView } from 'Models/BlackoutDate'
 
-import api, { AxiosIdentityConfig } from "utils/api"
+import api from "utils/api"
 import Table, { Column } from "components/BTable"
 import { Button, Col, Form, Row, Spinner } from "react-bootstrap"
 import { DateTimeFormatter, LocalDate } from "@js-joda/core"
 import { Locale } from "@js-joda/locale_en-us"
 import { OrgYearContext } from ".."
 
-export const BlackoutDateConfig = ():JSX.Element => {
+export const BlackoutDateConfig = (): JSX.Element => {
 	const { orgYear, setOrgYear } = useContext(OrgYearContext)
 	const [blackoutFetchError, setBlackoutFetchError] = useState<string | undefined>()
 	const [blackoutDates, setBlackoutDates] = useState<BlackoutDateView[]>([])
@@ -16,9 +16,9 @@ export const BlackoutDateConfig = ():JSX.Element => {
 
 	const [blackoutDeleteError, setBlackoutDeleteError] = useState<string | undefined>()
 
-	const getAndSetBlackoutDates = () => {
+	const getAndSetBlackoutDates = (orgGuid: string) => {
 		setBlackoutDatesAreLoading(true)
-		getBlackoutDates()
+		getBlackoutDates(orgGuid)
 			.then(res => {
 				setBlackoutDates(res)
 				setBlackoutFetchError(undefined)
@@ -32,10 +32,10 @@ export const BlackoutDateConfig = ():JSX.Element => {
 	}
 
 	useEffect(() => {
-		getAndSetBlackoutDates()
+		getAndSetBlackoutDates(orgYear?.organization.guid)
 	}, [orgYear])
 
-	const blackoutColumns: Column[] = createBlackoutColumns(getAndSetBlackoutDates, setBlackoutDeleteError)
+	const blackoutColumns: Column[] = createBlackoutColumns(orgYear?.organization.guid, getAndSetBlackoutDates, setBlackoutDeleteError)
 
 	let tableElement: JSX.Element = <></>
 	if (blackoutDatesAreLoading)
@@ -52,7 +52,7 @@ export const BlackoutDateConfig = ():JSX.Element => {
 			<div className='text-danger'>{blackoutFetchError?.toString()}</div>
 			<div className='text-danger'>{blackoutDeleteError?.toString()}</div>
 
-			<BlackoutDateInput getAndSetBlackoutDates={getAndSetBlackoutDates} />
+			<BlackoutDateInput orgGuid={orgYear?.organization.guid} getAndSetBlackoutDates={getAndSetBlackoutDates} />
 
 			<Row className='mt-3'>
 				<Col className='ps-0' sm={6} xs={12}>
@@ -64,12 +64,12 @@ export const BlackoutDateConfig = ():JSX.Element => {
 	)
 }
 
-const BlackoutDateInput = ({getAndSetBlackoutDates}): JSX.Element => {
+const BlackoutDateInput = ({orgGuid, getAndSetBlackoutDates}): JSX.Element => {
 	const [blackoutDate, setBlackoutDate] = useState<LocalDate>(LocalDate.now)
 	const [blackoutAddError, setBlackoutAddError] = useState<string | undefined>()
 
 	const addDate = () => {
-		addBlackoutDate(blackoutDate)
+		addBlackoutDate(orgGuid, blackoutDate)
 			.then(res => {
 				setBlackoutAddError(undefined)
 			})
@@ -80,7 +80,7 @@ const BlackoutDateInput = ({getAndSetBlackoutDates}): JSX.Element => {
 					setBlackoutAddError(err)
 			})
 			.finally(() => {
-				getAndSetBlackoutDates()
+				getAndSetBlackoutDates(orgGuid)
 			})
 	}
 
@@ -107,7 +107,7 @@ const BlackoutDateInput = ({getAndSetBlackoutDates}): JSX.Element => {
 	)
 }
 
-const createBlackoutColumns = (getAndSetBlackoutDates, setBlackoutDeleteError): Column[] => [
+const createBlackoutColumns = (orgGuid: string, getAndSetBlackoutDates, setBlackoutDeleteError): Column[] => [
 	{
 		label: "Date",
 		attributeKey: 'date',
@@ -124,9 +124,9 @@ const createBlackoutColumns = (getAndSetBlackoutDates, setBlackoutDeleteError): 
 					<Button 
 						variant='danger' 
 						onClick={() => {
-							deleteBlackoutDate(blackoutDate.guid)
+							deleteBlackoutDate(orgGuid, blackoutDate.guid)
 								.then(res => {
-									getAndSetBlackoutDates()
+									getAndSetBlackoutDates(orgGuid)
 									setBlackoutDeleteError(undefined)
 								})
 								.catch(err => {
@@ -144,28 +144,28 @@ const createBlackoutColumns = (getAndSetBlackoutDates, setBlackoutDeleteError): 
 	}
 ]
 
-const getBlackoutDates = (): Promise<BlackoutDateView[]> => {
+const getBlackoutDates = (orgGuid: string): Promise<BlackoutDateView[]> => {
 	return new Promise<BlackoutDateView[]>((resolve, reject) => {
 		api
-			.get<BlackoutDateDomain[]>(`organization/${AxiosIdentityConfig.identity.organizationGuid}/blackout`)
+			.get<BlackoutDateDomain[]>(`organization/${orgGuid}/blackout`)
 			.then(res => resolve(res.data.map(x => BlackoutDate.toViewModel(x))))
 			.catch(err => reject(err))
 	})
 }
 
-const addBlackoutDate = (date: LocalDate): Promise<void> => {
+const addBlackoutDate = (orgGuid: string, date: LocalDate): Promise<void> => {
 	return new Promise((resolve, reject) => {
 		api
-			.post(`organization/${AxiosIdentityConfig.identity.organizationGuid}/blackout`, date)
+			.post(`organization/${orgGuid}/blackout`, date)
 			.then(res => resolve())
 			.catch(err => reject(err))
 	})
 }
 
-const deleteBlackoutDate = (guid: string): Promise<void> => {
+const deleteBlackoutDate = (orgGuid: string, blackoutGuid: string): Promise<void> => {
 	return new Promise((resolve, reject) => {
 		api
-			.delete(`organization/${AxiosIdentityConfig.identity.organizationGuid}/blackout/${guid}`)
+			.delete(`organization/${orgGuid}/blackout/${blackoutGuid}`)
 			.then(res => resolve())
 			.catch(err => reject(err))
 	})

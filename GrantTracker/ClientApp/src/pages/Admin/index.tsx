@@ -53,6 +53,10 @@ export default ({ user, breadcrumbs}: Props) => {
   const [orgYear, setOrgYear] = useState<OrganizationYearView>()
   const orgYearContextValue = { orgYear, setOrgYear }
 
+  function handleOrgYearChange(orgYear) {
+    setOrgYear(orgYear)
+  }
+
   useEffect(() => {
     if (location.pathname === paths.Admin.path) {
       navigate(paths.Admin.Tabs.Sessions.path)
@@ -61,7 +65,7 @@ export default ({ user, breadcrumbs}: Props) => {
 
   return (
     <PageContainer className='rounded-top-left-0'>
-      <OrgYearInput value={orgYear} onChange={setOrgYear} />
+      <OrgYearInput value={orgYear} onChange={handleOrgYearChange} defaultOrgYearGuid={user.organizationYearGuid} />
       <div className='w-100'>
         <TabSelector />
       </div>
@@ -71,11 +75,6 @@ export default ({ user, breadcrumbs}: Props) => {
     </PageContainer>
   )
 }
-
-
-
-
-
 
 function getOrgYear(
   orgYears: OrganizationYearView[] | undefined, 
@@ -88,7 +87,9 @@ function getOrgYear(
   return orgYears.find(oy => oy.organization.guid === orgGuid && oy.year.guid === yearGuid)
 }
 
-const OrgYearInput = ({value, onChange}): React.ReactElement => {
+const OrgYearInput = ({value, onChange, defaultOrgYearGuid}): React.ReactElement => {
+  const navigate = useNavigate()
+  const location = useLocation()
   const [searchParams, setSearchParams] = useSearchParams(); //this is an argument in favor of moving the api call up a level. We deffo should..
   //an input component should be disconnected from the business logic of an api fetch anyhow.
 
@@ -98,14 +99,18 @@ const OrgYearInput = ({value, onChange}): React.ReactElement => {
     select: (data: OrganizationYearDomain[]) => data.map(oy => OrganizationYear.toViewModel(oy))
   }, new QueryClient())
 
-
-
   function handleInputChange(
     orgYears: OrganizationYearView[] | undefined, 
     orgGuid: string | undefined, 
     yearGuid: string| undefined
   ): void {
     const selectedOrgYear: OrganizationYearView | undefined = getOrgYear(orgYears, orgGuid, yearGuid)
+
+    if (selectedOrgYear && selectedOrgYear.guid != value.guid && location.pathname.match(/\/home\/admin\/sessions\/([A-Z]?[a-z]?[0-9]?-?)+/))
+    {
+      navigate(`/home/admin/sessions?oyGuid=${selectedOrgYear.guid}`)
+    }
+
     handleOrgYearChange(selectedOrgYear)
   }
 
@@ -121,7 +126,7 @@ const OrgYearInput = ({value, onChange}): React.ReactElement => {
 
       let defaultOrgYear = searchParams.get('oyGuid') 
         ? orgYears.find(x => x.guid === searchParams.get('oyGuid')) 
-        : orgYears.find(x => x.year.isCurrentYear)
+        : orgYears.find(x => x.guid === defaultOrgYearGuid)
 
       handleOrgYearChange(defaultOrgYear)
 

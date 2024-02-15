@@ -57,16 +57,16 @@ namespace GrantTracker.Dal.Controllers
 		}
 
 		[HttpGet("authentication")]
-		public async Task<ActionResult<List<UserIdentity>>> GetUserAuthentication(Guid yearGuid)
+		public async Task<ActionResult<List<UserIdentity>>> GetUserAuthentication()
 		{
-			var users = await _authRepository.GetUsersAsync(yearGuid);
+			var users = await _authRepository.GetCurrentUsersAsync();
 			return Ok(users);
 		}
 
 		[HttpGet("organizationYear")]
-		public async Task<ActionResult<List<OrganizationYearView>>> GetOrganizations(Guid yearGuid)
+		public async Task<ActionResult<List<OrganizationYearView>>> GetOrganizations()
 		{
-			var organizationYears = await _authRepository.GetOrganizationYearsForYear(yearGuid);
+			var organizationYears = await _authRepository.GetOrganizationYearsForCurrentYear();
 			return Ok(organizationYears);
 		}
 

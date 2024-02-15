@@ -1,9 +1,10 @@
-import { useState, useReducer, useEffect } from 'react'
+import { useState, useReducer, useEffect, useContext } from 'react'
 import {
   Outlet,
   useOutletContext,
   useParams,
-  useNavigate
+  useNavigate,
+  useSearchParams
 } from 'react-router-dom'
 import { Formik } from 'formik'
 import { Form, Spinner } from 'react-bootstrap'
@@ -18,6 +19,7 @@ import validationSchema from './validation'
 import { fetchAllDropdownOptions, fetchSession, submitSession, DropdownOptions } from './api'
 import { Session, SessionForm } from 'Models/Session'
 import { User } from 'utils/authentication'
+import { OrgYearContext } from 'pages/Admin'
 
 interface TabProps {
   guid: string | undefined
@@ -56,14 +58,16 @@ const TabSelector = ({ guid }: TabProps): JSX.Element => (
 //for now..
 export default ({user}: {user: User}) => {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams();
   const { sessionGuid } = useParams()
-
+  const [orgYearGuid, setOrgYearGuid] = useState<string | null>(null)
   const [validated, setValidated] = useState<boolean>(false)
   const [state, dispatch] = useReducer(reducer, initialState)
   const [dropdownData, setDropdowns] = useState<DropdownOptions | null>(null)
 
   function submitForm (session: SessionForm): void {
-    submitSession(session)
+    
+    submitSession(orgYearGuid, session)
       .then(res => {
         navigate(
           `${paths.Admin.path}/${paths.Admin.Viewer.Session.path}s/${res}`
@@ -73,6 +77,9 @@ export default ({user}: {user: User}) => {
   }
 
   useEffect(() => {
+    const orgYearGuid: string | null = searchParams.get('orgYearGuid')
+    setOrgYearGuid(orgYearGuid)
+
     fetchAllDropdownOptions()
       .then(res => {
         setDropdowns({
@@ -83,6 +90,7 @@ export default ({user}: {user: User}) => {
         //Get session data from the database if a guid is provided to the component, then populate fields.
         if (sessionGuid) {
           fetchSession(sessionGuid).then(session => {
+            setOrgYearGuid(session.organizationYear.guid)
             dispatch({ type: 'all', payload: session })
             navigate(`overview`)
           })
@@ -140,6 +148,7 @@ export default ({user}: {user: User}) => {
             <Form onSubmit={handleSubmit}>
               <Outlet
                 context={{
+                  orgYearGuid: orgYearGuid,
                   values,
                   reducerDispatch: dispatch,
                   dropdownData,
@@ -157,6 +166,7 @@ export default ({user}: {user: User}) => {
 }
 
 export type Context = {
+  orgYearGuid: string | null
   reducerDispatch: (ReducerAction) => void
   dropdownData: DropdownOptions
   values: SessionForm

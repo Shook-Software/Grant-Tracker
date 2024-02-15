@@ -106,46 +106,9 @@ export abstract class Session {
       partnershipType: obj.partnershipType.guid,
       firstSessionDate: firstSession,
       lastSessionDate: DateOnly.toLocalDate(obj.lastSession),
-      recurring: obj.recurring,
+      recurring: true,
+      organizationYear: {...obj.organizationYear},
       scheduling: DaySchedule.DaySchedule.createWeeklySchedule().map((day, index) => {
-        if (!obj.recurring) {
-          if (
-            firstSession.dayOfWeek().value() === DayOfWeek.toInt(day.dayOfWeek)
-          ) {
-            if (!obj.daySchedules || obj.daySchedules.length === 0) {
-              return {
-                dayOfWeek: day.dayOfWeek,
-                recurs: false,
-                timeSchedules: [
-                  {
-                    startTime: LocalTime.MIDNIGHT,
-                    endTime: LocalTime.MIDNIGHT
-                  }
-                ]
-              }
-              if (
-                obj.daySchedules.length === 1 &&
-                !obj.daySchedules[0].timeSchedules
-              ) {
-                obj.daySchedules[0].timeSchedules = [
-                  {
-                    startTime: LocalTime.MIDNIGHT,
-                    endTime: LocalTime.MIDNIGHT
-                  }
-                ]
-              }
-            }
-            return {
-              dayOfWeek: day.dayOfWeek,
-              recurs: false,
-              timeSchedules: obj.daySchedules[0].timeSchedules.map(s =>
-                TimeSchedule.toFormModel(s)
-              )
-            }
-          }
-          return day
-        }
-
         const domainSchedule:
           | DaySchedule.DayScheduleDomain
           | undefined = obj.daySchedules.find(

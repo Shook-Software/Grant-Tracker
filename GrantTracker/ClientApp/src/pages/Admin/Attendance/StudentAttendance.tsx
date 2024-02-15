@@ -16,11 +16,7 @@ import api from 'utils/api'
 export const StudentAttendance = ({ orgYearGuid, state, dispatch, sessionType }): ReactElement => {
     const [showModal, setShowModal] = useState<boolean>(false);
 
-    console.log(state.studentRecords, sessionType)
-
     function addStudent(ssy): Promise<void> {
-        console.log(ssy)
-
         let student = {
             firstName: ssy.student.firstName,
             lastName: ssy.student.lastName,
@@ -48,11 +44,16 @@ export const StudentAttendance = ({ orgYearGuid, state, dispatch, sessionType })
                 <button className='btn btn-sm btn-outline-secondary' type='button' onClick={() => setShowModal(true)}>
                     Add Student
                 </button>
+
+                <button className='btn btn-sm btn-outline-secondary ms-3' type='button' onClick={() => dispatch({type: 'allStudentPresence', payload: false })}>
+                    Mark all Absent
+                </button>
             </div>
 
             <Table dataset={state.studentRecords} columns={columns} defaultSort={{ index: 1, direction: SortDirection.Ascending}} />
 
             <SearchStudentsModal
+                orgYearGuid={orgYearGuid}
                 show={showModal}
                 handleClose={() => setShowModal(false)}
                 handleChange={({ student, _ }) => addStudent(student)}

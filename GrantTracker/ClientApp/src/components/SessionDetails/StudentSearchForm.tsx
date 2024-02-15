@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useContext, useState } from 'react'
 import { Form, Container, Row, Col, Button, Spinner } from 'react-bootstrap'
 
 import GradeSelect from 'components/Input/GradeSelect'
 
-import api, { AxiosIdentityConfig } from 'utils/api'
+import api from 'utils/api'
+import { OrgYearContext } from 'pages/Admin'
 
 interface Filter {
   firstName: string
@@ -12,10 +13,12 @@ interface Filter {
 }
 
 interface Props {
+  orgYearGuid: string
   handleChange: (sessions) => void
 }
 
-export default ({ handleChange }: Props): JSX.Element => {
+export default ({ orgYearGuid, handleChange }: Props): JSX.Element => {
+  const { orgYear } = useContext(OrgYearContext)
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const [filter, setFilter] = useState<Filter>({
     firstName: '',
@@ -34,7 +37,7 @@ export default ({ handleChange }: Props): JSX.Element => {
   function filterStudents(): void {
     setIsLoading(true)
     api
-      .get('student/synergy', { params: { ...filter, organizationYearGuid: AxiosIdentityConfig.identity.organizationYearGuid } })
+      .get('student/synergy', { params: { ...filter, organizationYearGuid: orgYearGuid } })
       .then(res => handleChange(res.data))
       .catch(err => console.warn(err))
       .finally(() => setIsLoading(false))

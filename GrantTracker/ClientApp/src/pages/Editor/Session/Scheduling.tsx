@@ -194,31 +194,6 @@ export default (): JSX.Element => {
       <p style={{ textAlign: 'center' }}>Error in loading Session details...</p>
     )
 
-  if (!values.recurring) {
-    daySchedule = values.scheduling.find(s => s.timeSchedules.length !== 0)
-    if (!daySchedule) {
-      daySchedule = {
-        dayOfWeek: DayOfWeek.toString(
-          values.firstSessionDate.dayOfWeek().value()
-        ),
-        recurs: false,
-        timeSchedules: [
-          {
-            startTime: LocalTime.MIDNIGHT,
-            endTime: LocalTime.MIDNIGHT
-          }
-        ]
-      }
-      reducerDispatch({
-        type: 'scheduleDayTime',
-        payload: {
-          dayIndex: values.firstSessionDate.dayOfWeek().value(),
-          day: daySchedule
-        }
-      })
-    }
-  }
-
   return (
     <Container>
       <Row className='d-flex flex-start flex-row m-3'>
@@ -243,43 +218,26 @@ export default (): JSX.Element => {
           className='d-flex flex-column justify-content-end'
           style={{ width: 'min-content' }}
         >
-          {values.recurring ? (
-            <>
-              <Form.Label>Last Session Date</Form.Label>
-              <Form.Control
-                required
-                id='end-date'
-                type='date'
-                value={values.lastSessionDate.toString()}
-                onChange={(event: React.BaseSyntheticEvent) => {
-                  reducerDispatch({
-                    type: 'endDate',
-                    payload: event.target.value
-                  })
-                }}
-              />
-            </>
-          ) : (
-            <>
-              <Form.Label>Time(s) of day</Form.Label>
-              <TimeScheduling
-                today={{
-                  dayOfWeek: daySchedule?.dayOfWeek,
-                  recurs: false,
-                  timeSchedules: daySchedule?.timeSchedules
-                }}
-                dispatch={reducerDispatch}
-              />
-            </>
-          )}
+          <Form.Label>Last Session Date</Form.Label>
+          <Form.Control
+              required
+              id='end-date'
+              type='date'
+              value={values.lastSessionDate.toString()}
+              onChange={(event: React.BaseSyntheticEvent) => {
+                reducerDispatch({
+                  type: 'endDate',
+                  payload: event.target.value
+                })
+              }}
+            />
         </Form.Group>
       </Row>
       <Row className='m-3'>
         
       </Row>
       <Row className='m-3'>
-        {values.recurring ? (
-          <Form.Group
+        <Form.Group
             style={{ display: values.recurring || true ? 'block' : 'none' }}
             key={schedule.toString()}
           >
@@ -333,7 +291,6 @@ export default (): JSX.Element => {
               dispatch={reducerDispatch}
             />
           </Form.Group>
-        ) : null}
       </Row>
     </Container>
   )

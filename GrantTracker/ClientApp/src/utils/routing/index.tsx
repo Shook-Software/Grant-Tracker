@@ -70,11 +70,7 @@ export default (user: User, Breadcrumbs: JSX.Element): RouteObject[] => [
     children: [
       {
         path: paths.Edit.Sessions.path,
-        element: 
-        <div>
-          {Breadcrumbs}
-          <SessionEditor user={user} />
-        </div>,
+        element: <SessionEditor user={user} />,
         children: editSessionChildren
       },
       {
@@ -90,10 +86,7 @@ export default (user: User, Breadcrumbs: JSX.Element): RouteObject[] => [
   },
   {
     path: paths.Admin.path,
-    element: 
-    <>
-      <AdminPage user={user} breadcrumbs={Breadcrumbs} />
-    </>,
+    element: <AdminPage user={user} breadcrumbs={Breadcrumbs} />,
     children: [
       //Overview tab when ready for it, show site aggregates and information.
       {
