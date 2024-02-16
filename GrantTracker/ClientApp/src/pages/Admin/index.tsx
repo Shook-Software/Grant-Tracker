@@ -95,7 +95,7 @@ const OrgYearInput = ({value, onChange, defaultOrgYearGuid}): React.ReactElement
 
   const { isPending, error, data: orgYears, refetch } = useQuery({
     queryKey: ['orgYears'],
-    queryFn: () => api.get('https://localhost:44394/user/orgYear').then(res => res.data),
+    queryFn: () => api.get('user/orgYear').then(res => res.data),
     select: (data: OrganizationYearDomain[]) => data.map(oy => OrganizationYear.toViewModel(oy))
   }, new QueryClient())
 

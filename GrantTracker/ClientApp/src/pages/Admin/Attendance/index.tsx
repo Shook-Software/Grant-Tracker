@@ -15,7 +15,6 @@ import { StudentRegistration, StudentRegistrationDomain } from "Models/StudentRe
 import { InstructorAttendance } from './InstructorAttendance'
 import { StudentAttendance } from './StudentAttendance'
 import { AttendanceSummary } from './Summary'
-import api from "utils/api";
 
 
 enum FormState {
@@ -182,11 +181,12 @@ const AttendanceForm = ({session, attendanceGuid, date, state, dispatch}: Attend
 }
 
 const DateTimeSelection = ({session, date, onDateChange, times, onTimeChange, progressFormState, originalAttendDate, stateIsValidToContinue}): ReactElement => {
+	const [searchParams] = useSearchParams();
+	const dayOfWeek = searchParams.get('dow') ? Number(searchParams.get('dow')) : null
 	const [editDateInitialized, setEditDateInitialized] = useState<boolean>(false)
 
-
 	const { isFetching: fetchingDates, data: dates, error: dateError } = useQuery({ 
-		queryKey: [`session/${session.guid}/attendance/openDates`],
+		queryKey: [`session/${session.guid}/attendance/openDates?${'dayOfWeek=' + (dayOfWeek ? (dayOfWeek % 7) : null)}`],
 		select: (dates: DateOnly[]) => dates.map(date => DateOnly.toLocalDate(date)),
 		retry: false,
 		staleTime: Infinity
