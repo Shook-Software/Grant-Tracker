@@ -8,6 +8,7 @@ import { DayScheduleView } from 'Models/DaySchedule'
 import { SessionView } from 'Models/Session'
 
 import paths from 'utils/routing/paths'
+import { DayOfWeek } from 'Models/DayOfWeek'
 
 interface Props {
   session: SessionView
@@ -15,7 +16,6 @@ interface Props {
 
 export default ({ session }: Props): JSX.Element => {
   const attendanceHref: string = `${paths.Admin.Attendance.path}?session=${session.guid}` 
-
   return (
     <Card>
       <Card.Body>
@@ -23,6 +23,7 @@ export default ({ session }: Props): JSX.Element => {
           <ListGroup variant='flush'>
             {session!.daySchedules.map((item: DayScheduleView) => (
               <Item>
+                {console.log(`&dow=${DayOfWeek.toInt(item.dayOfWeek)}`)}
                 <p>{item.dayOfWeek}</p>
                 <div className='d-flex flex-column'>
                   {item.timeSchedules.map(schedule => (
@@ -34,11 +35,11 @@ export default ({ session }: Props): JSX.Element => {
                 </div>
                 <Link
                   className='btn btn-sm btn-primary'
-                  to={attendanceHref}
+                  to={attendanceHref + `&dow=${DayOfWeek.toInt(item.dayOfWeek)}`}
                   style={{ height: 'min-content', maxWidth: '30%'}}
                   onClick={(e) => {
                     e.preventDefault()
-                    window.open(attendanceHref, '_blank')
+                    window.open(attendanceHref + `&dow=${DayOfWeek.toInt(item.dayOfWeek)}`, '_blank')
                   }}
                 >
                   Attendance

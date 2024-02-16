@@ -53,11 +53,10 @@ public class SessionController : ControllerBase
 	#region Get
 
 	[HttpGet("")]
-	public async Task<ActionResult<List<SimpleSessionView>>> GetAsync(Guid organizationGuid, Guid yearGuid)
+	public async Task<ActionResult<List<SimpleSessionView>>> GetAsync(Guid orgYearGuid)
     {
         Stopwatch watch = new(); watch.Start();
-        var organizationYearGuid = await _organizationYearRepository.GetGuidAsync(organizationGuid, yearGuid);
-		var sessions = await _sessionRepository.GetAsync("", organizationYearGuid);
+		var sessions = await _sessionRepository.GetAsync("", orgYearGuid);
         Debug.WriteLine($"Returned sessionS in {watch.ElapsedMilliseconds / 1000d:#.##}");
         return Ok(sessions);
 	}
@@ -136,7 +135,7 @@ public class SessionController : ControllerBase
 			DateOnly startDate = session.FirstSession;
 			DateOnly endDate = session.LastSession;
 
-			List<DateOnly> GetWeekdaysBetween(DayOfWeek dayOfWeek, DateOnly startDate, DateOnly endDate)
+			static List<DateOnly> GetWeekdaysBetween(DayOfWeek dayOfWeek, DateOnly startDate, DateOnly endDate)
 			{
 				List<DateOnly> openDates = new();
 
@@ -172,7 +171,7 @@ public class SessionController : ControllerBase
 			{
 				List<DateOnly> openDates = new();
 
-				foreach (var doW in session.DaySchedules.Select(x => x.DayOfWeek))
+				foreach (var doW in session.DaySchedules.Where(x => x.DayOfWeek == dayOfWeek).Select(x => x.DayOfWeek))
 				{
                     var dates = GetWeekdaysBetween(doW, startDate, endDate)
 						.Except(blackoutDates)

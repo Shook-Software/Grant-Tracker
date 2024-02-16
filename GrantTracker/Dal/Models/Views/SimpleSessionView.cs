@@ -58,7 +58,8 @@ namespace GrantTracker.Dal.Models.Views
 		public OrganizationYearView OrganizationYear { get; set; }
 		public DropdownOption SessionType { get; set; }
 		public DropdownOption Activity { get; set; }
-		public bool Recurring { get; set; } = false;
+        public DateOnly FirstSessionDate { get; set; }
+        public DateOnly LastSessionDate { get; set; }
 		public List<DayScheduleView> DaySchedules { get; set; }
 		public List<GradeView> SessionGrades { get; set; }
 
@@ -69,7 +70,8 @@ namespace GrantTracker.Dal.Models.Views
 			OrganizationYear = OrganizationYearView.FromDatabase(session.OrganizationYear),
 			SessionType = DropdownOption.FromDatabase(session.SessionType),
 			Activity = DropdownOption.FromDatabase(session.Activity),
-			Recurring = session.Recurring,
+			FirstSessionDate = session.FirstSession,
+			LastSessionDate = session.LastSession,
 			DaySchedules = session.DaySchedules.Select(DayScheduleView.FromDatabase).ToList(),
 			SessionGrades = session.SessionGrades.Select(GradeView.FromDatabase).ToList()
 		};

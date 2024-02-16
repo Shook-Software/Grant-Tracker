@@ -19,7 +19,8 @@ export interface SimpleSessionView {
   name: string
   sessionType: DropdownOption
   activity: DropdownOption
-  recurring: boolean
+  firstSessionDate: LocalDate,
+  lastSessionDate: LocalDate,
   daySchedules: DaySchedule.DayScheduleView[]
   sessionGrades: GradeView[]
 }
