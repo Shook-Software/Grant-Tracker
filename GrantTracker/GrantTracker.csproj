@@ -1,10 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
-
   <PropertyGroup>
-		<IsTransformWebConfigDisabled>true</IsTransformWebConfigDisabled>
-    <TargetFramework>net6.0</TargetFramework>
-	  <TargetLatestRuntimePatch>true</TargetLatestRuntimePatch>
-	  <LangVersion>preview</LangVersion>
+    <IsTransformWebConfigDisabled>true</IsTransformWebConfigDisabled>
+    <TargetFramework>net8.0</TargetFramework>
+    <TargetLatestRuntimePatch>true</TargetLatestRuntimePatch>
+    <LangVersion>preview</LangVersion>
     <Nullable>disable</Nullable>
     <TypeScriptCompileBlocked>true</TypeScriptCompileBlocked>
     <TypeScriptToolsVersion>Latest</TypeScriptToolsVersion>
@@ -15,56 +14,47 @@
     <SpaProxyLaunchCommand>npm start</SpaProxyLaunchCommand>
     <ImplicitUsings>enable</ImplicitUsings>
     <Configurations>Debug;Release;</Configurations>
-  </PropertyGroup>  
-    
+  </PropertyGroup>
   <PropertyGroup>
-	<RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
-  </PropertyGroup>  
-    
+    <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <Optimize>False</Optimize>
   </PropertyGroup>
-
   <ItemGroup>
-	<InternalsVisibleTo Include="EntityTesting" />
+    <InternalsVisibleTo Include="EntityTesting" />
   </ItemGroup>
-
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.Certificate" Version="6.0.6" />
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.Negotiate" Version="6.0.6" />
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="6.0.6" />
-    <PackageReference Include="Microsoft.AspNetCore.SpaProxy" Version="6.0.6" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="7.0.11" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="7.0.11">
-        <PrivateAssets>all</PrivateAssets>
-        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Proxies" Version="6.0.6" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="7.0.11" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="7.0.11" />
-    <PackageReference Include="Microsoft.TypeScript.MSBuild" Version="4.7.3">
+    <PackageReference Include="Microsoft.TypeScript.MSBuild" Version="5.3.3">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="nuget.commandline" Version="6.2.1">
+    <PackageReference Include="nuget.commandline" Version="6.9.1">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Serilog" Version="3.0.1" />
-    <PackageReference Include="Serilog.AspNetCore" Version="7.0.0" />
-    <PackageReference Include="Serilog.Formatting.Compact" Version="1.1.0" />
-    <PackageReference Include="Serilog.Sinks.Console" Version="4.1.0" />
+    <PackageReference Include="Serilog" Version="3.1.1" />
+    <PackageReference Include="Serilog.AspNetCore" Version="8.0.1" />
+    <PackageReference Include="Serilog.Formatting.Compact" Version="2.0.0" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="5.0.1" />
     <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
-    <PackageReference Include="System.DirectoryServices.AccountManagement" Version="6.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.Certificate" Version="8.0.2" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.Negotiate" Version="8.0.2" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="8.0.2" />
+    <PackageReference Include="Microsoft.AspNetCore.SpaProxy" Version="8.0.2" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.2" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.2" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Proxies" Version="8.0.2" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="8.0.2" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.2" />
+    <PackageReference Include="System.DirectoryServices.AccountManagement" Version="8.0.0" />
   </ItemGroup>
-
   <ItemGroup>
     <!-- Don't publish the SPA source files, but do show them in the project files list -->
     <Content Remove="$(SpaRoot)**" />
     <None Remove="$(SpaRoot)**" />
     <None Include="$(SpaRoot)**" Exclude="$(SpaRoot)node_modules\**" />
   </ItemGroup>
-
   <ItemGroup>
     <None Remove="ClientApp\src\components\SessionDetails\index.tsx" />
     <None Remove="ClientApp\src\components\Tabset\styles.ts" />
@@ -81,16 +71,13 @@
     <None Remove="ClientApp\src\utils\React.ts" />
     <None Remove="ClientApp\tsconfig.json" />
   </ItemGroup>
-
   <ItemGroup>
     <TypeScriptCompile Remove="ClientApp\src\pages\Editor\Session\api.ts" />
     <TypeScriptCompile Remove="ClientApp\src\utils\api\index.ts" />
   </ItemGroup>
-
   <ItemGroup>
     <None Include="ClientApp\package.json" />
   </ItemGroup>
-
   <ItemGroup>
     <TypeScriptCompile Include="ClientApp\src\components\Tabset\index.tsx" />
     <TypeScriptCompile Include="ClientApp\src\components\Tabset\styles.ts" />
@@ -108,25 +95,21 @@
     <TypeScriptCompile Include="ClientApp\src\utils\Math.ts" />
     <TypeScriptCompile Include="ClientApp\src\utils\React.ts" />
   </ItemGroup>
-
   <ItemGroup>
     <Folder Include="ClientApp\dist\" />
+    <Folder Include="Dal\Models\StudentDTO\" />
     <Folder Include="Migrations\" />
     <Folder Include="Tests\" />
   </ItemGroup>
-
   <Target Name="DebugEnsureNodeEnv" BeforeTargets="Build" Condition=" '$(Configuration)' == 'Debug' And !Exists('$(SpaRoot)node_modules') ">
     <!-- Ensure Node.js is installed -->
-    
     <Message Importance="high" Text="Restoring dependencies using 'npm'. This may take several minutes..." />
     <Exec WorkingDirectory="$(SpaRoot)" Command="npm install" />
   </Target>
-
   <Target Name="PublishRunWebpack" AfterTargets="ComputeFilesToPublish">
     <!-- As part of publishing, ensure the JS resources are freshly built in production mode -->
     <Exec WorkingDirectory="$(SpaRoot)" Command="npm install" />
     <Exec WorkingDirectory="$(SpaRoot)" Command="npm run build" />
-
     <!-- Include the newly-built files in the publish output -->
     <ItemGroup>
       <DistFiles Include="$(SpaRoot)dist\**" />

@@ -29,8 +29,8 @@ namespace GrantTracker.Dal.Repositories.InstructorRepository
 			//employee db results
 			return await _staffContext
 				.Employees
-				.Where(e => name.IsNullOrEmpty() || (e.GivenName + " " + e.Sn).Contains(name))
-				.Where(e => badgeNumber.IsNullOrEmpty() || e.EmployeeId.Contains(badgeNumber))
+				.Where(e => string.IsNullOrWhiteSpace(name) || (e.GivenName + " " + e.Sn).Contains(name))
+				.Where(e => string.IsNullOrWhiteSpace(badgeNumber) || e.EmployeeId.Contains(badgeNumber))
 				.Select(e => EmployeeDto.FromDatabase(e))
 				.ToListAsync();
 		}
@@ -54,7 +54,7 @@ namespace GrantTracker.Dal.Repositories.InstructorRepository
 
 		public async Task<Guid> CreateAsync(InstructorDto instructor, Guid organizationYearGuid)
 		{
-			bool badgeNumberIsNullOrEmpty = instructor.BadgeNumber.IsNullOrEmpty();
+			bool badgeNumberIsNullOrEmpty = string.IsNullOrWhiteSpace(instructor.BadgeNumber);
 			//ensure instructor exists
 			var existingInstructor = await _grantContext
 				.Instructors

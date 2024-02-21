@@ -48,7 +48,7 @@ namespace GrantTracker.Dal.Repositories.SessionRepository
 
 			Debug.WriteLine($"Grabbed session in {watch.ElapsedMilliseconds / 1000d:#.##}");
 
-			if (!session.DaySchedules.IsNullOrEmpty())
+			if (!session.DaySchedules.Any())
 				session.DaySchedules = session.DaySchedules.OrderBy(schedule => schedule.DayOfWeek).ToList();
 
 			return session;
