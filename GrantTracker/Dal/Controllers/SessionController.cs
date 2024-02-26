@@ -127,7 +127,7 @@ public class SessionController : ControllerBase
 	{
 		try
 		{
-			var session = await _sessionRepository.GetAsync(sessionGuid);
+			SessionView session = await _sessionRepository.GetAsync(sessionGuid);
 
 			if (!User.IsAdmin() && !User.HomeOrganizationGuids().Contains(session.OrganizationYear.Organization.Guid))
 				return Unauthorized();
@@ -171,7 +171,7 @@ public class SessionController : ControllerBase
 			{
 				List<DateOnly> openDates = new();
 
-				foreach (var doW in session.DaySchedules.Where(x => x.DayOfWeek == dayOfWeek).Select(x => x.DayOfWeek))
+				foreach (var doW in session.DaySchedules.Select(x => x.DayOfWeek))
 				{
                     var dates = GetWeekdaysBetween(doW, startDate, endDate)
 						.Except(blackoutDates)
@@ -180,8 +180,7 @@ public class SessionController : ControllerBase
 
 					openDates.AddRange(dates);
                 }
-
-				return Ok(openDates);
+				return Ok(openDates.OrderBy(date => date));
 			}
 			else
 			{
@@ -190,7 +189,7 @@ public class SessionController : ControllerBase
                     .Except(attendanceDates)
                     .ToList(); //filter coordinator-defined blackout dates and already existing attendance;
 
-                return Ok(openDates);
+                return Ok(openDates.OrderBy(date => date));
             }
 		}
         catch (Exception ex)
