@@ -46,8 +46,8 @@ public class AttendanceRepository : IAttendanceRepository
 			? await query
 				.Include(ar => ar.FamilyAttendance).ThenInclude(sa => sa.StudentSchoolYear).ThenInclude(ssy => ssy.Student)
 				.SingleAsync()
-			: await query.Include(ar => ar.FamilyAttendance)
-				.Include(ar => ar.StudentAttendance).ThenInclude(sa => sa.StudentSchoolYear).ThenInclude(ssy => ssy.Student)
+			: await query.Include(ar => ar.FamilyAttendance).ThenInclude(sa => sa.StudentSchoolYear).ThenInclude(ssy => ssy.Student)
+                .Include(ar => ar.StudentAttendance).ThenInclude(sa => sa.StudentSchoolYear).ThenInclude(ssy => ssy.Student)
 				.Include(ar => ar.StudentAttendance).ThenInclude(sa => sa.TimeRecords)
 				.SingleAsync();
 
@@ -65,7 +65,8 @@ public class AttendanceRepository : IAttendanceRepository
 				AttendanceGuid = record.Guid,
 				InstanceDate = record.InstanceDate,
 				InstructorCount = record.InstructorAttendance.Count,
-				StudentCount = record.StudentAttendance.Count
+				StudentCount = record.StudentAttendance.Count,
+				FamilyCount = record.FamilyAttendance.Count
 			})
 			.OrderByDescending(x => x.InstanceDate)
 			.ToListAsync();
@@ -155,6 +156,7 @@ public class AttendanceRepository : IAttendanceRepository
 			})
 			.ToList(),
 			StudentAttendance = sessionAttendance.StudentRecords
+				.Where(sr => sr.Times.Any())
 				.Select(sr => {
 					Guid studentAttendanceRecordGuid = Guid.NewGuid();
 

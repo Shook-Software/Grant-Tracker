@@ -32,6 +32,11 @@ export const StudentAttendance = ({ orgYearGuid, state, dispatch, sessionType })
 
     let columns: Column[] = createCoreStudentColumns(dispatch)
 
+    if (sessionType === 'Family') {
+        columns[0].label = 'Anyone Present'
+        columns = [createFamilyStudentPresenceColumn(dispatch), ...columns]
+    }
+
     if (sessionType !== 'Parent')
         columns = [...columns, ...createTimeEntryColumns(dispatch)]
 
@@ -143,6 +148,25 @@ const createParentAttendanceColumn = (dispatch: React.Dispatch<ReducerAction>): 
                 </DropdownButton>
             </>
         )
+    }
+})
+
+const createFamilyStudentPresenceColumn = (dispatch: React.Dispatch<ReducerAction>): Column => ({
+    label: 'Student Present',
+    attributeKey: '',
+    sortable: false,
+    transform: (record: StudentRecord) => (
+        <div
+            role='button'
+            className='d-flex justify-content-center align-items-center'
+            onClick={() => dispatch({ type: 'familyStudentPresence', payload: { guid: record.id, isPresent: !record.isPresent } })}
+            style={{ minHeight: '100%' }}
+        >
+            <Form.Check checked={record.times.length > 0} onChange={(e) => { }} />
+        </div>
+    ),
+    cellProps: {
+        style: { height: '1px', padding: '0px' }
     }
 })
 

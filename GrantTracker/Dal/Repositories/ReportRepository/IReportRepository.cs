@@ -6,7 +6,7 @@ namespace GrantTracker.Dal.Repositories.ReportRepository;
 
 public interface IReportRepository
 {
-	Task<ReportsViewModel> RunAllReportQueriesAsync(DateOnly startDate, DateOnly endDate, Guid organizationYearGuid, Guid? organizationGuid = null);
+	Task<ReportsViewModel> RunAllReportQueriesAsync(DateOnly startDate, DateOnly endDate, Guid? yearGuid = null, Guid? organizationGuid = null);
 
 	Task<List<CCLC10ViewModel>> GetCCLC10(DateOnly startDate, DateOnly endDate);
 

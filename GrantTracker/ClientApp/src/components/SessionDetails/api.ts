@@ -36,7 +36,8 @@ export function getSimpleAttendanceRecords (sessionGuid): Promise<SimpleAttendan
           guid: viewModel.attendanceGuid,
           instanceDate: DateOnly.toLocalDate(viewModel.instanceDate),
           instructorCount: viewModel.instructorCount,
-          studentCount: viewModel.studentCount
+          studentCount: viewModel.studentCount,
+          familyCount: viewModel.familyCount
         } as SimpleAttendanceView))
 
         viewModels = viewModels.sort((first: SimpleAttendanceView, second: SimpleAttendanceView) => {
