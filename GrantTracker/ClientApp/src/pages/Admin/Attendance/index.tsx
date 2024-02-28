@@ -37,7 +37,7 @@ export default (): React.ReactElement => {
 		studentRecords: [],
 		instructorRecords: []
 	})
-
+	
 	const { isPending: fetchingSession, data: session, error: sessionError } = useQuery({
 		queryKey: [`session/${sessionGuid}`],
 		select: (session: SessionDomain) => Session.toViewModel(session),
@@ -151,8 +151,6 @@ interface AttendanceFormProps {
 	dispatch: React.Dispatch<ReducerAction>
 }
 
-
-
 const AttendanceForm = ({session, attendanceGuid, date, state, dispatch}: AttendanceFormProps): ReactElement => {
 	return (
 		<div>
@@ -186,7 +184,7 @@ const DateTimeSelection = ({session, date, onDateChange, times, onTimeChange, pr
 	const [editDateInitialized, setEditDateInitialized] = useState<boolean>(false)
 
 	const { isFetching: fetchingDates, data: dates, error: dateError } = useQuery({ 
-		queryKey: [`session/${session.guid}/attendance/openDates?${'dayOfWeek=' + (dayOfWeek ? (dayOfWeek % 7) : null)}`],
+		queryKey: [`session/${session.guid}/attendance/openDates?${'dayOfWeek=' + (dayOfWeek ? (dayOfWeek % 7) : '')}`],
 		select: (dates: DateOnly[]) => dates.map(date => DateOnly.toLocalDate(date)),
 		retry: false,
 		staleTime: Infinity
