@@ -10,6 +10,7 @@ public class AttendanceCheckViewModel
 {
     public Guid SessionGuid { get; set; }
     public DateOnly InstanceDate { get; set; }
+    public Guid OrganizationGuid { get; set; }
     public string School { get; set; }
     public string ClassName { get; set; }
     public bool AttendanceEntry { get; set; }

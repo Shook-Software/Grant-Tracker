@@ -26,7 +26,7 @@ export const AttendanceStartTimeInput = ({personId, times, dispatch}: Attendance
 					id={'start-time-' + personId + index} 
 					small={true}
 					value={schedule.startTime} 
-					onChange={(time) => dispatch({ type: 'setAttendanceTime', payload: { personId, times: modifyTimesByIndex(index, time)}})} 
+					onChange={(time) => dispatch({ type: 'setAttendanceStartTime', payload: { personId, times: modifyTimesByIndex(index, time)}})} 
 				/>
 			</div>
 		)
@@ -45,7 +45,7 @@ export const AttendanceEndTimeInput = ({personId, times, dispatch}: AttendanceTi
 					id={'end-time-' + personId + index} 
 					small={true}
 					value={schedule.endTime} 
-					onChange={(time) => dispatch({ type: 'setAttendanceTime', payload: { personId, times: modifyTimesByIndex(index, time)}})} 
+					onChange={(time) => dispatch({ type: 'setAttendanceEndTime', payload: { personId, times: modifyTimesByIndex(index, time)}})} 
 				/>
 			</div>
 		)

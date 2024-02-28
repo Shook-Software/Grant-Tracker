@@ -26,8 +26,6 @@ export default (): JSX.Element => {
     const { orgYear, setOrgYear } = useContext(OrgYearContext)
     const [searchTerm, setSearchTerm] = useState<string>('')
 
-    console.log(orgYear)
-
     const { isPending: sessionsLoading, data: sessions } = useQuery<SimpleSessionView[]>({
         queryKey: [`session?orgYearGuid=${orgYear?.guid}`],
         enabled: !!orgYear?.guid,

@@ -23,7 +23,6 @@ export default ({ session }: Props): JSX.Element => {
           <ListGroup variant='flush'>
             {session!.daySchedules.map((item: DayScheduleView) => (
               <Item>
-                {console.log(`&dow=${DayOfWeek.toInt(item.dayOfWeek)}`)}
                 <p>{item.dayOfWeek}</p>
                 <div className='d-flex flex-column'>
                   {item.timeSchedules.map(schedule => (
@@ -37,10 +36,6 @@ export default ({ session }: Props): JSX.Element => {
                   className='btn btn-sm btn-primary'
                   to={attendanceHref + `&dow=${DayOfWeek.toInt(item.dayOfWeek)}`}
                   style={{ height: 'min-content', maxWidth: '30%'}}
-                  onClick={(e) => {
-                    e.preventDefault()
-                    window.open(attendanceHref + `&dow=${DayOfWeek.toInt(item.dayOfWeek)}`, '_blank')
-                  }}
                 >
                   Attendance
                 </Link>

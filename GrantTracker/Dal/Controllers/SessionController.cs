@@ -263,6 +263,11 @@ public class SessionController : ControllerBase
                 conflicts = await _sessionRepository.ValidateStudentAttendanceAsync(sessionAttendance.Date, sessionAttendance.StudentRecords);
 				sessionAttendance.StudentRecords = sessionAttendance.StudentRecords.ExceptBy(conflicts.Select(x => x.StudentSchoolYearGuid), record => record.Id).ToList();
 			}
+			else
+			{
+				sessionAttendance.StudentRecords = sessionAttendance.StudentRecords.Where(sr => sr.FamilyAttendance.Any()).ToList();
+				sessionAttendance.StudentRecords.ForEach(sr => { sr.Times = new(); });
+			}
 
             await _attendanceRepository.AddAttendanceAsync(sessionGuid, sessionAttendance);
 

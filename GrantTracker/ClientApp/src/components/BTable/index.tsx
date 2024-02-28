@@ -30,6 +30,8 @@ interface Props {
   dataset: any[]
   rowProps?: object
   defaultSort?: { index: number, direction: SortDirection }
+  maxHeight?: string
+  maxRows?: number
   indexed?: boolean
   bordered?: boolean
   showHeader?: boolean
@@ -37,10 +39,13 @@ interface Props {
   tableProps?: object
 }
 
-export default ({ columns, dataset, rowProps, defaultSort, indexed = false, bordered = true, showHeader = true, className, tableProps }: Props): JSX.Element => {
+export default ({ columns, dataset, rowProps, defaultSort, maxHeight, maxRows = 1000, indexed = false, bordered = true, showHeader = true, className, tableProps }: Props): JSX.Element => {
   const [sortIndex, setSortIndex] = useState<number>(defaultSort?.index || 0)
   const [sortDirection, setSortDirection] = useState<SortDirection>(defaultSort?.direction || SortDirection.None)
   const [dataToRender, setDataToRender] = useState<any[]>(dataset)
+  const [pageNumber, setPageNumber] = useState<number>(0);
+
+  const maxPages: number = Math.floor((dataToRender?.length ?? 0) / maxRows) + 1
 
   useEffect(() => {
     setDataToRender(sortDataset(dataset, sortIndex, sortDirection, columns))
@@ -53,41 +58,61 @@ export default ({ columns, dataset, rowProps, defaultSort, indexed = false, bord
   })
 
   function handleSortIndexChange(value: number): void {
-
     let direction = value === sortIndex ? mod(sortDirection + 1, 3) : SortDirection.Ascending
 
     setSortIndex(value)
     setSortDirection(direction)
+    setPageNumber(1)
     setDataToRender(sortDataset(dataset, value, direction, columns))
   }
 
   return (
-    <Table
-      className={className}
-      striped
-      bordered={bordered}
-      hover
-      {...tableProps}
-      style={{border: bordered ? '2px solid black' : '', ...tableProps?.style}}
-    >
-      {
-        showHeader ? 
-        <Header
-          columns={columns}
-          indexed={indexed}
-          setSortIndex={(value: number) => handleSortIndexChange(value)}
-        />
-        : null
-      }
-      <Body
-        columns={columns}
-        dataset={dataToRender}
-        rowProps={rowProps}
-        indexed={indexed}
-        sortIndex={sortIndex}
-        sortDirection={sortDirection}
-      />
-    </Table>
+    <div>
+      <div className={'d-flex gap-1 mb-1' + (maxPages > 1 ? '' : ' d-none')}>
+        {Array.from({length: maxPages}, (_, idx) => (
+          <button 
+            className='btn btn-sm btn-outline-info' 
+            type='button' 
+            onClick={() => setPageNumber(idx)} 
+            style={idx == pageNumber ? {color: '#000', backgroundColor: '#0dcaf0', borderColor: '#0dcaf0'} : {}}
+          >
+            {idx + 1}
+          </button>
+        ))}
+      </div>
+      <div className={'mb-1' + (maxPages > 1 ? '' : ' d-none')}>
+          {maxPages > 0 ? `Showing ${pageNumber * maxRows + 1} to ${(pageNumber + 1) * maxRows > dataToRender?.length ? dataToRender?.length : (pageNumber + 1) * maxRows} of ${dataToRender?.length} rows` : ''}
+      </div>
+
+      <div style={{maxHeight: maxHeight, overflowY: (maxHeight ? 'auto' : '')}}>
+        <Table
+          className={className}
+          striped
+          bordered={bordered}
+          hover
+          {...tableProps}
+          style={{border: bordered ? '2px solid black' : '', ...tableProps?.style}}
+        >
+          {
+            showHeader ? 
+            <Header
+              columns={columns}
+              indexed={indexed}
+              setSortIndex={(value: number) => handleSortIndexChange(value)}
+            />
+            : null
+          }
+          <Body
+            columns={columns}
+            dataset={dataToRender?.slice(pageNumber  * maxRows, (pageNumber + 1) * maxRows)}
+            rowProps={rowProps}
+            indexed={indexed}
+            sortIndex={sortIndex}
+            sortDirection={sortDirection}
+          />
+        </Table>
+      </div>
+    </div>
   )
 }
 

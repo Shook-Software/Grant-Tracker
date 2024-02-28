@@ -41,7 +41,7 @@ export default ({user}): JSX.Element => {
 	const [reportParameters, setReportParameters] = useState<ReportParameters>({
 		organizationGuid: undefined,
 		organizationName: undefined,
-		organizationYearGuid: undefined,
+		organizationYear: undefined,
 		startDate: undefined,
 		endDate: undefined
 	})
@@ -83,12 +83,13 @@ export default ({user}): JSX.Element => {
 		: `${reportParameters.startDate?.toString()}-${reportParameters.endDate?.toString()}`
 
 	function handleParameterChange(form: ReportParameters): void {
-		if (form.organizationGuid && form.organizationYearGuid && form.startDate && form.endDate)
+		console.log(form)
+		if (form.organizationGuid != undefined && form.year && form.startDate && form.endDate)
 		{
 			setIsLoading(true)
 			setSiteSessionsIsLoading(true)
 
-			getReportsAsync(form.startDate, form.endDate, form.organizationYearGuid, form.organizationGuid)
+			getReportsAsync(form.startDate, form.endDate, form.year, form.organizationGuid)
 				.then(res => {
 					setReports(res)
 				})
@@ -136,7 +137,7 @@ export default ({user}): JSX.Element => {
 
 	return (
 		<Container style={{minWidth: '90vw'}}>
-			<ReportParameterInput onSubmit={handleParameterChange} />
+			<ReportParameterInput user={user} onSubmit={handleParameterChange} />
 
 			<hr />
 
@@ -258,12 +259,13 @@ export default ({user}): JSX.Element => {
 											</Col>
 										</Row>
 								
-										<Row style={{maxHeight: '45rem', overflowY: 'auto'}}>
+										<Row>
 											<Table 
 												className='m-0'
 												columns={studentAttendanceColumns} 
 												dataset={reports?.totalStudentAttendance.filter(x => x.totalDays >= studentAttendMinDays)}
 												defaultSort={{index: 0, direction: SortDirection.Ascending}}
+												maxHeight='45rem'
 											/>
 										</Row>
 									</ReportComponent>
@@ -288,12 +290,13 @@ export default ({user}): JSX.Element => {
 										fileName={`Total_Activity_${organizationFileString}_${reportDateFileString}`}
 										fileFields={activityFields}
 									>
-										<Row style={{maxHeight: '45rem', overflowY: 'auto'}}>
+										<Row>
 											<Table 
 												className='m-0'
 												columns={activityReportColumns} 
 												dataset={reports?.totalActivity} 
 												defaultSort={{index: 0, direction: SortDirection.Ascending}}
+												maxHeight='45rem'
 											/>
 										</Row>
 									</ReportComponent>
@@ -308,12 +311,13 @@ export default ({user}): JSX.Element => {
 										fileName={`Site_Sessions_${organizationFileString}_${reportDateFileString}`}
 										fileFields={siteSessionFields}
 									>
-										<Row style={{maxHeight: '45rem', overflowY: 'auto'}}>
+										<Row>
 											<Table 
 												className='m-0'
 												columns={siteSessionsColumns} 
 												dataset={siteSessions} 
 												defaultSort={{index: 1, direction: SortDirection.Ascending}}
+												maxHeight='45rem'
 												tableProps={{
 												  size: 'sm',
 												  style: {
@@ -335,12 +339,13 @@ export default ({user}): JSX.Element => {
 										fileName={`Summary_Of_Classes_${organizationFileString}_${reportDateFileString}`}
 										fileFields={summaryOfClassesFields}
 									>
-										<Row style={{maxHeight: '45rem', overflowY: 'auto'}}>
+										<Row>
 											<Table 
 												className='m-0'
 												columns={summaryOfClassesColumns} 
 												dataset={reports?.classSummaries} 
 												defaultSort={{index: 0, direction: SortDirection.Ascending}}
+												maxHeight='45rem'
 												tableProps={{
 												  size: 'sm'
 												}}
@@ -358,12 +363,13 @@ export default ({user}): JSX.Element => {
 										fileName={`Program_Overview_${organizationFileString}_${reportDateFileString}`}
 										fileFields={programOverviewFields}
 									>
-										<Row style={{maxHeight: '45rem', overflowY: 'auto'}}>
+										<Row>
 											<Table 
 												className='m-0'
 												columns={programOverviewColumns} 
 												dataset={reports?.programOverviews} 
 												defaultSort={{index: 0, direction: SortDirection.Ascending}}
+												maxHeight='45rem'
 												tableProps={{
 												  size: 'sm'
 												}}
@@ -393,12 +399,13 @@ export default ({user}): JSX.Element => {
 												</Form.Group>
 											</Row>
 							
-											<Row style={{maxHeight: '45rem', overflowY: 'auto'}}>
+											<Row>
 												<Table 
 													className='m-0'
 													columns={staffingColumns} 
 													dataset={reports?.staffSummaries.find(statusGroup => statusGroup.status === staffingStatusFilter)?.instructors} 
 													defaultSort={{index: 0, direction: SortDirection.Ascending}}
+													maxHeight='45rem'
 													tableProps={{
 														size: 'sm'
 													}}
@@ -417,12 +424,13 @@ export default ({user}): JSX.Element => {
 										fileName={`Student_Survey_${organizationFileString}_${reportDateFileString}`}
 										fileFields={studentSurveyFields}
 									>
-										<Row style={{maxHeight: '45rem', overflowY: 'auto'}}>
+										<Row >
 											<Table 
 												className='m-0'
 												columns={studentSurveyColumns} 
 												dataset={reports?.studentSurvey} 
 												defaultSort={{index: 0, direction: SortDirection.Ascending}}
+												maxHeight='45rem'
 												tableProps={{
 												  size: 'sm'
 												}}
@@ -436,6 +444,9 @@ export default ({user}): JSX.Element => {
 										isLoading={isLoading}
 										displayData={reports?.attendanceCheck}
 										displayName={`Attendance Check for ${reportParameters.organizationName}, ${reportDateDisplayString}`}
+										fileData={flattenAttendanceCheck(reports?.attendanceCheck)}
+										fileName={`Attendance_Check_${organizationFileString}_${reportDateFileString}`}
+										fileFields={attendanceCheckFields}
 									>
 										<Row>
 											<Col sm={3} className='p-0'>
@@ -449,12 +460,13 @@ export default ({user}): JSX.Element => {
 												/>
 											</Col>
 										</Row>
-										<Row style={{maxHeight: '45rem', overflowY: 'auto'}}>
+										<Row>
 											<Table 
 												className='m-0'
 												columns={attendanceCheckColumns} 
 												dataset={reports?.attendanceCheck.filter(e => e.className.toLocaleLowerCase().includes(attendanceCheckClassFilter))} 
 												defaultSort={{index: 0, direction: SortDirection.Ascending}}
+												maxHeight='45rem'
 												tableProps={{
 													size: 'sm',
 													style: {minWidth: '1100px'}
@@ -541,12 +553,13 @@ const FamilyEngagementReport = ({isLoading, reportParameters, fileName, reportDa
 				</Col>
 			</Row>
 	
-			<Row style={{maxHeight: '45rem', overflowY: 'auto'}}>
+			<Row>
 				<Table 
 					className='m-0'
 					columns={familyAttendanceColumns} 
 					dataset={filteredRecords} 
 					defaultSort={{index: 0, direction: SortDirection.Ascending}}
+					maxHeight='45rem'
 				/>
 			</Row>
 		</ReportComponent>
@@ -593,13 +606,14 @@ const PayrollAuditReport = ({isLoading, reportParameters, reportDateDisplayStrin
 				</Col>
 			</Form.Group>
 
-			<Row style={{maxHeight: '45rem', overflowY: 'auto'}}>
+			<Row>
 				<Table 
 					className='m-0'
 					columns={createPayrollAuditColumns(payrollAuditAttendingFilter, payrollAuditRegisteredFilter)} 
 					dataset={displayData} 
 					defaultSort={{index: 0, direction: SortDirection.Ascending}}
 					tableProps={{style: {minWidth: '1100px', borderCollapse: 'collapse', borderSpacing: '0 3px'}}}
+					maxHeight='45rem'
 				/>
 			</Row>
 		</ReportComponent>

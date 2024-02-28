@@ -217,8 +217,9 @@ export default ({sessionGuid, simpleRecord, onDeleteClick, sessionType}: Props):
           <div className='d-flex flex-row align-items-center'>
             <div>{simpleRecord.instanceDate.format(DateTimeFormatter.ofPattern('eeee, MMMM d').withLocale(Locale.ENGLISH))}</div>
             <ul className='m-0'>
-              <li>{simpleRecord.instructorCount} Instructor Record(s)</li>
-              <li>{simpleRecord.studentCount} Student Record(s)</li>
+              {simpleRecord.instructorCount > 0 ? <li>{simpleRecord.instructorCount} Instructor Record(s)</li> : null}
+              {simpleRecord.studentCount > 0 ? <li>{simpleRecord.studentCount} Student Record(s)</li> : null}
+              {simpleRecord.familyCount > 0 ? <li>{simpleRecord.familyCount} Family Record(s)</li> : null}
             </ul>
           </div>
         </Accordion.Header>
@@ -233,8 +234,9 @@ export default ({sessionGuid, simpleRecord, onDeleteClick, sessionType}: Props):
         <div className='d-flex flex-row align-items-center'>
           <div>{simpleRecord.instanceDate.format(DateTimeFormatter.ofPattern('eeee, MMMM d').withLocale(Locale.ENGLISH))}</div>
           <ul className='m-0'>
-            <li>{simpleRecord.instructorCount} Instructor Record(s)</li>
-            <li>{simpleRecord.studentCount} Student Record(s)</li>
+            {simpleRecord.instructorCount > 0 ? <li>{simpleRecord.instructorCount} Instructor Record(s)</li> : null}
+            {simpleRecord.studentCount > 0 ? <li>{simpleRecord.studentCount} Student Record(s)</li> : null}
+            {simpleRecord.familyCount > 0 ? <li>{simpleRecord.familyCount} Family Record(s)</li> : null}
           </ul>
         </div>
       </Accordion.Header>
@@ -244,10 +246,6 @@ export default ({sessionGuid, simpleRecord, onDeleteClick, sessionType}: Props):
             className='btn btn-primary my-3 mx-3'
             to={attendanceHref}
             style={{width: 'fit-content'}}
-            onClick={(e) => {
-              e.preventDefault()
-              window.open(attendanceHref, '_blank')
-            }}
           >
             Edit Record
           </Link>
