@@ -8,6 +8,7 @@ namespace GrantTracker.Dal.Models.Views
 		public DateOnly InstanceDate { get; set; }
 		public int InstructorCount { get; set; }
 		public int StudentCount { get; set; }
+		public int FamilyCount { get; set; }
 	}
 
 
@@ -32,20 +33,54 @@ namespace GrantTracker.Dal.Models.Views
 			if (record.FamilyAttendance.Any() && record.StudentAttendance is null) //parent session
 				studentAttendanceRecords = record.FamilyAttendance
 					.GroupBy(fa => fa.StudentSchoolYearGuid,
-						(ssyGuid, group) => new StudentAttendanceViewModel() 
-						{ 
+						(ssyGuid, group) => new StudentAttendanceViewModel()
+						{
 							StudentSchoolYear = StudentSchoolYearViewModel.FromDatabase(group.First().StudentSchoolYear),
 							TimeRecords = null,
 							FamilyAttendance = group
-                                .GroupBy(fa => fa.FamilyMember,
-                                (familyMember, group) => new FamilyAttendanceViewModel
-                                {
-                                    FamilyMember = familyMember,
-                                    Count = group.Count()
-                                })
-                                .ToList()
-                        })
+								.GroupBy(fa => fa.FamilyMember,
+								(familyMember, group) => new FamilyAttendanceViewModel
+								{
+									FamilyMember = familyMember,
+									Count = group.Count()
+								})
+								.ToList()
+						})
 					.ToList();
+			else if (record.FamilyAttendance.Any())
+			{
+				studentAttendanceRecords = record.FamilyAttendance
+					.GroupBy(fa => fa.StudentSchoolYearGuid,
+						(ssyGuid, group) => new StudentAttendanceViewModel()
+						{
+							StudentSchoolYear = StudentSchoolYearViewModel.FromDatabase(group.First().StudentSchoolYear),
+							TimeRecords = record.StudentAttendance
+								.FirstOrDefault(sa => sa.StudentSchoolYearGuid == ssyGuid)
+								?.TimeRecords
+								.Select(time => AttendanceTimeRecordViewModel.FromDatabase(time))
+								.ToList(),
+							FamilyAttendance = group
+								.GroupBy(fa => fa.FamilyMember,
+								(familyMember, group) => new FamilyAttendanceViewModel
+								{
+									FamilyMember = familyMember,
+									Count = group.Count()
+								})
+								.ToList()
+						})
+					.ToList();
+
+				studentAttendanceRecords = record.StudentAttendance //for students that somehow showed up with no parent
+					.Where(sa => !studentAttendanceRecords.Any(sar => sar.StudentSchoolYear.Guid == sa.StudentSchoolYearGuid)) //where not already in the records
+                    .Select(attend => new StudentAttendanceViewModel()
+                    {
+                        Guid = attend.Guid,
+                        StudentSchoolYear = StudentSchoolYearViewModel.FromDatabase(attend.StudentSchoolYear),
+                        TimeRecords = attend.TimeRecords.Select(time => AttendanceTimeRecordViewModel.FromDatabase(time)).ToList(),
+                    })
+                    .Concat(studentAttendanceRecords)
+					.ToList();
+            }
 			else
 				studentAttendanceRecords = record.StudentAttendance
 					.Select(attend => new StudentAttendanceViewModel()

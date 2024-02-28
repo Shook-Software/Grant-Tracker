@@ -18,7 +18,7 @@ public interface IOrganizationRepository
     Task DeleteOrganizationAsync(Guid OrganizationGuid);
 
 
-    Task<List<OrganizationBlackoutDate>> GetBlackoutDatesAsync(Guid OrganizationGuid);
+    Task<List<OrganizationBlackoutDate>> GetBlackoutDatesAsync(Guid? organizationGuid = null);
     Task AddBlackoutDateAsync(Guid OrganizationGuid, DateOnly BlackoutDate);
     Task DeleteBlackoutDateAsync(Guid BlackoutDateGuid);
 }

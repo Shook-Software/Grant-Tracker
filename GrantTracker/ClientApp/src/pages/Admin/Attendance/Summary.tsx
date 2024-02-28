@@ -49,6 +49,9 @@ export const AttendanceSummary = ({ sessionGuid, sessionType, attendanceGuid, da
 	let studentColumns: Column[] = coreColumns.slice();
 	let instructorColumns: Column[] = [...coreColumns.slice(), {...entryExitColumn}];
 
+	if (sessionType === 'Family')
+		studentColumns = [studentPresentColumn, ...studentColumns]
+
     if (sessionType !== 'Parent')
 		studentColumns = [...studentColumns, {...entryExitColumn}]
 
@@ -57,7 +60,7 @@ export const AttendanceSummary = ({ sessionGuid, sessionType, attendanceGuid, da
 
 	const instructors: InstructorRecord[] = state.instructorRecords.filter(x => x.isPresent && !x.isSubstitute)
 	const substitutes: InstructorRecord[] = state.instructorRecords.filter(x => x.isPresent && x.isSubstitute)
-	const students: StudentRecord[] = state.studentRecords.filter(x => x.isPresent)
+	const students: StudentRecord[] = state.studentRecords.filter(x => x.isPresent).filter(x => sessionType !== 'Parent' || x.familyAttendance.length > 0)
 
 	return (
 		<div className='row'>
@@ -187,7 +190,16 @@ const entryExitColumn: Column = {
 	cellProps: cellProps
 }
 
-const familyAttendColumn = {
+const studentPresentColumn: Column = {
+	label: 'Student Present',
+	attributeKey: '',
+	sortable: false,
+	headerProps: cellProps,
+	cellProps: cellProps,
+	transform: (record: StudentRecord) => record.times.length > 0 ? <span className='text-success'>Y</span> : <span className='text-danger'>N</span>
+}
+
+const familyAttendColumn: Column = {
 	label: 'Family Attendance',
 	attributeKey: 'familyAttendance',
 	key: 'familyAttendance',

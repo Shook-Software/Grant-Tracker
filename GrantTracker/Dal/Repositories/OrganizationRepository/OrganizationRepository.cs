@@ -92,9 +92,9 @@ public class OrganizationRepository : IOrganizationRepository
 		return organizations.Select(OrganizationView.FromDatabase).ToList();
     }
 
-	public async Task<List<OrganizationBlackoutDate>> GetBlackoutDatesAsync(Guid OrganizationGuid)
+	public async Task<List<OrganizationBlackoutDate>> GetBlackoutDatesAsync(Guid? organizationGuid = null)
 	{
-		return await _grantContext.BlackoutDates.AsNoTracking().Where(x => x.OrganizationGuid == OrganizationGuid).ToListAsync();
+		return await _grantContext.BlackoutDates.AsNoTracking().Where(x => organizationGuid == null || x.OrganizationGuid == organizationGuid).ToListAsync();
     }
 
     public async Task AddBlackoutDateAsync(Guid OrganizationGuid, DateOnly BlackoutDate)

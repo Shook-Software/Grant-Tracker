@@ -1,5 +1,4 @@
 ﻿import { InputAction } from 'components/TimeRangeSelector/types'
-import e from 'express'
 import { range } from 'utils/Array'
 
 function getActionFromKey (nativeEvent: KeyboardEvent): InputAction {
@@ -8,7 +7,7 @@ function getActionFromKey (nativeEvent: KeyboardEvent): InputAction {
   else if (nativeEvent.code === 'ArrowRight') return InputAction.MoveRight
   else if (nativeEvent.code === 'ArrowLeft') return InputAction.MoveLeft
   else if (nativeEvent.code === 'Enter') return InputAction.Submit
-  else if (range(48, 57).includes(nativeEvent.keyCode))
+  else if (range(0, 9).includes(Number(nativeEvent.key)))
     return InputAction.TypeDigit
   else if (range(65, 90).includes(nativeEvent.keyCode))
     return InputAction.TypeChar

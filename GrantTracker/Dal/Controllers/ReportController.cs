@@ -5,11 +5,11 @@ using GrantTracker.Dal.Models.Views;
 using GrantTracker.Dal.Models.Dto;
 using GrantTracker.Dal.Schema;
 using GrantTracker.Dal.Schema.Sprocs.Reporting;
+using GrantTracker.Utilities;
 
 namespace GrantTracker.Dal.Controllers;
 
 [ApiController]
-//this should be restricted to Admin only
 [Route("report")]
 public class ReportController : ControllerBase
 {
@@ -21,10 +21,8 @@ public class ReportController : ControllerBase
     private readonly ILogger<ReportController> _logger;
 
     private readonly IReportRepository _reportRepository;
-	//cache settings
 	private readonly IMemoryCache _memoryCache;
 	private readonly MemoryCacheEntryOptions _cacheEntryOptions = new MemoryCacheEntryOptions();
-	//TEMPORARY until a table is created.
 	private readonly List<ReportBounds> _standardReportBounds = new()
 	{
 		//Summer: 6/1/22-7/31/22
@@ -85,13 +83,13 @@ public class ReportController : ControllerBase
 
 	//except for site sessions rn
 	[HttpGet]
-	public async Task<ActionResult<ReportsViewModel>> GetAllReportsAsync(string startDateStr, string endDateStr, Guid organizationYearGuid, Guid organizationGuid = default)
+	public async Task<ActionResult<ReportsViewModel>> GetAllReportsAsync(string startDateStr, string endDateStr, Guid yearGuid, Guid? organizationGuid = null)
 	{
 		try
 		{
 			DateOnly startDate = DateOnly.Parse(startDateStr);
 			DateOnly endDate = DateOnly.Parse(endDateStr);
-			var reports = await _reportRepository.RunAllReportQueriesAsync(startDate, endDate, organizationYearGuid, organizationGuid);
+			var reports = await _reportRepository.RunAllReportQueriesAsync(startDate, endDate, yearGuid, organizationGuid);
 			return Ok(reports);
 		}
 		catch (Exception ex)
@@ -106,7 +104,7 @@ public class ReportController : ControllerBase
 	{
 		try
         {
-			var report = await _reportRepository.GetCCLC10(DateOnly.Parse(startDateStr), DateOnly.Parse(endDateStr));
+            var report = await _reportRepository.GetCCLC10(DateOnly.Parse(startDateStr), DateOnly.Parse(endDateStr));
 			return Ok(report);
         }
 		catch (Exception ex)
@@ -117,11 +115,11 @@ public class ReportController : ControllerBase
 	}
 
 	[HttpGet("siteSessions")]
-	public async Task<ActionResult<List<SiteSessionViewModel>>> GetSiteSessionsAsync(string startDateStr, string endDateStr, Guid organizationGuid = default)
+	public async Task<ActionResult<List<SiteSessionViewModel>>> GetSiteSessionsAsync(string startDateStr, string endDateStr, Guid? organizationGuid = null)
 	{
-		try 
-		{ 
-			DateOnly startDate = DateOnly.Parse(startDateStr);
+		try
+        {
+            DateOnly startDate = DateOnly.Parse(startDateStr);
 			DateOnly endDate = DateOnly.Parse(endDateStr);
 			var siteSessions = await _reportRepository.GetSiteSessionsAsync(startDate, endDate, organizationGuid);
 			return Ok(siteSessions);

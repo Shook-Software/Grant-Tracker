@@ -8,6 +8,7 @@ using GrantTracker.Dal.Repositories.OrganizationRepository;
 using GrantTracker.Dal.Schema.Sprocs.Reporting;
 using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
+using System.Xml.Serialization;
 
 namespace GrantTracker.Dal.Repositories.ReportRepository;
 
@@ -27,7 +28,7 @@ public class ReportRepository : IReportRepository
 
 	private string DateOnlyToSQLString(DateOnly date) => $"{date.Year}-{date.Month}-{date.Day}";
 
-	public async Task<ReportsViewModel> RunAllReportQueriesAsync(DateOnly startDate, DateOnly endDate, Guid organizationYearGuid, Guid? organizationGuid = null)
+	public async Task<ReportsViewModel> RunAllReportQueriesAsync(DateOnly startDate, DateOnly endDate, Guid? yearGuid = null, Guid? organizationGuid = null)
 	{
 		await _grantContextFactory.CreateDbContext().Database.ExecuteSqlInterpolatedAsync($"EXEC [GTkr].ReportQuery_Core {_processGuid}, {DateOnlyToSQLString(startDate)}, {DateOnlyToSQLString(endDate)}, {(organizationGuid == new Guid() ? null : organizationGuid)}");
 
@@ -68,13 +69,13 @@ public class ReportRepository : IReportRepository
 		weeksToDate = weeksToDate == 0 ? 1f / 7f : weeksToDate;
 		Task<List<ProgramViewModel>> programOverviewQueryTask = _grantContextFactory.CreateDbContext()
 			.Set<ProgramViewModel>()
-			.FromSqlInterpolated($"EXEC [GTkr].ReportQuery_ProgramOverview {_processGuid}, {weeksToDate}")
+			.FromSqlInterpolated($"EXEC [GTkr].ReportQuery_ProgramOverview {DateOnlyToSQLString(startDate)}, {DateOnlyToSQLString(endDate)}, {weeksToDate}, {organizationGuid}")
 			.AsNoTracking()
 			.ToListAsync();
 			
 		Task<List<StaffSummaryDbModel>> staffSurveyQueryTask = _grantContextFactory.CreateDbContext()
 			.Set<StaffSummaryDbModel>()
-			.FromSqlInterpolated($"EXEC [GTkr].ReportQuery_Staffing {(organizationYearGuid == new Guid() ? null : organizationYearGuid)}")
+			.FromSqlInterpolated($"EXEC [GTkr].ReportQuery_Staffing {yearGuid}, {organizationGuid}")
 			.AsNoTracking()
 			.ToListAsync();
 			
@@ -134,7 +135,7 @@ public class ReportRepository : IReportRepository
 	private async Task<List<AttendanceCheckViewModel>> GroupAndFillAttendanceCheckAsync(Guid? OrganizationGuid, DateOnly StartDate, DateOnly EndDate, List<AttendanceCheckDbModel> AttendanceChecks)
 	{
 		var sessions = await _grantContextFactory.CreateDbContext().Sessions
-			.Where(x => x.OrganizationYear.OrganizationGuid == OrganizationGuid)
+			.Where(x => OrganizationGuid == null || x.OrganizationYear.OrganizationGuid == OrganizationGuid)
 			.Where(x => x.FirstSession <= EndDate)
 			.Where(x => x.LastSession >= StartDate)
 			.Include(x => x.OrganizationYear).ThenInclude(x => x.Organization)
@@ -175,6 +176,7 @@ public class ReportRepository : IReportRepository
 					{
 						SessionGuid = s.SessionGuid,
 						InstanceDate = currentDate,
+						OrganizationGuid = s.OrganizationYear.OrganizationGuid,
 						School = s.OrganizationYear.Organization.Name,
 						ClassName = s.Name,
 						Instructors = s.InstructorRegistrations
@@ -202,20 +204,11 @@ public class ReportRepository : IReportRepository
 		})
 		.ToList();
 
-        if (OrganizationGuid is not null && OrganizationGuid != default)
-        {
-            var blackoutDates = (await _organizationRepository.GetBlackoutDatesAsync(OrganizationGuid.Value)).Select(x => x.Date).ToList();
-
-            return attendanceChecksBySession
-				.SelectMany(x => x)
-				.Where(x => !blackoutDates.Contains(x.InstanceDate))
-				.OrderByDescending(x => x.InstanceDate)
-				.ThenBy(x => x.TimeBounds.Min(x => x.StartTime))
-				.ToList();
-        }
+		List<OrganizationBlackoutDate> blackoutDates = await _organizationRepository.GetBlackoutDatesAsync(OrganizationGuid);
 
         return attendanceChecksBySession
 			.SelectMany(x => x)
+			.Where(x => !blackoutDates.Any(bd => bd.OrganizationGuid == x.OrganizationGuid && bd.Date == x.InstanceDate))
 			.OrderByDescending(x => x.InstanceDate)
 			.ThenBy(x => x.TimeBounds.Min(x => x.StartTime))
 			.ToList();
@@ -382,7 +375,8 @@ public class ReportRepository : IReportRepository
 
 	public async Task<List<CCLC10ViewModel>> GetCCLC10(DateOnly startDate, DateOnly endDate)
 	{
-		return await _grantContextFactory.CreateDbContext().Set<CCLC10ViewModel>()
+		return await _grantContextFactory.CreateDbContext()
+			.Set<CCLC10ViewModel>()
 			.FromSqlInterpolated($"EXEC [GTkr].ReportQuery_AzEDS_CCLC10 {DateOnlyToSQLString(startDate)}, {DateOnlyToSQLString(endDate)}")
 			.AsNoTracking()
 			.ToListAsync();

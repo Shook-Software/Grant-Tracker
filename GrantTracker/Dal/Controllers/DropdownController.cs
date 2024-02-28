@@ -60,12 +60,12 @@ namespace GrantTracker.Dal.Controllers
 		}
 
 		[HttpGet("year")]
-		public async Task<ActionResult<List<YearView>>> GetOrganizationYears(Guid? OrganizationGuid = default)
+		public async Task<ActionResult<List<YearView>>> GetYears(Guid? OrganizationGuid = default)
 		{
-			if (!HttpContext.User.IsAuthorizedToViewOrganization(OrganizationGuid))
+			if ((OrganizationGuid == default && !HttpContext.User.IsAdmin()) || !HttpContext.User.IsAuthorizedToViewOrganization(OrganizationGuid))
 				return Unauthorized();
 
-			var years = await _dropdownRepository.GetOrganizationYearsAsync(OrganizationGuid);
+			var years = await _dropdownRepository.GetYearsAsync(OrganizationGuid);
 			return Ok(years);
 		}
 

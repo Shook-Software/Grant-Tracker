@@ -1,17 +1,17 @@
 import { LocalDate } from '@js-joda/core'
 import { DateOnly } from 'Models/DateOnly'
-import { OrganizationView, OrganizationYearView } from 'Models/OrganizationYear'
+import { OrganizationView, OrganizationYearView, YearView } from 'Models/OrganizationYear'
 import { TimeOnly } from 'Models/TimeOnly'
 import api from 'utils/api'
 
-export function getReportsAsync(startDate: LocalDate, endDate: LocalDate, organizationYearGuid: string, organizationGuid: string): Promise<any[]> {
+export function getReportsAsync(startDate: LocalDate, endDate: LocalDate, year: YearView, organizationGuid: string): Promise<any[]> {
   return new Promise((resolve, reject) => {
     api
       .get('report', {
         params: {
           startDateStr: startDate.toString(),
           endDateStr: endDate.toString(),
-          organizationYearGuid,
+          yearGuid: year.guid,
           organizationGuid: organizationGuid || null
         }
       })

@@ -29,7 +29,7 @@ export enum Quarter {
 }
 
 export interface YearDomain {
-  yearGuid: string
+  guid: string
   schoolYear: string
   quarter: number
   isCurrentYear: boolean
@@ -38,7 +38,7 @@ export interface YearDomain {
 }
 
 export interface YearView {
-  yearGuid: string
+  guid: string
   schoolYear: string
   quarter: Quarter
   isCurrentYear: boolean

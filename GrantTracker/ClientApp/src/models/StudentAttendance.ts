@@ -53,6 +53,7 @@ export interface SimpleAttendanceView {
   instanceDate: LocalDate
   instructorCount: number
   studentCount: number
+  familyCount: number
 }
 
 export interface AttendanceView {
