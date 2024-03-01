@@ -62,6 +62,9 @@ export const AttendanceSummary = ({ sessionGuid, sessionType, attendanceGuid, da
 	const substitutes: InstructorRecord[] = state.instructorRecords.filter(x => x.isPresent && x.isSubstitute)
 	const students: StudentRecord[] = state.studentRecords.filter(x => x.isPresent).filter(x => sessionType !== 'Parent' || x.familyAttendance.length > 0)
 
+	const submissionIssue: string = state.studentRecords.some(x => x.conflicts.length > 0) ? 'Please correct attendance time conflicts before submission.' : ''
+
+
 	return (
 		<div className='row'>
 			<div className='col-lg-6 col-12'>
@@ -83,15 +86,14 @@ export const AttendanceSummary = ({ sessionGuid, sessionType, attendanceGuid, da
 
 			<div className='col-lg-6 col-12'>
 				<section>
-					<FinalizeDisplay submitting={submitting} errors={errors} hasCriticalError={criticalError} handleSubmission={handleAttendanceSubmission} />
+					<FinalizeDisplay submitting={submitting} submissionIssue={submissionIssue} errors={errors} hasCriticalError={criticalError} handleSubmission={handleAttendanceSubmission} />
 				</section>
 			</div>
 		</div>
 	)
 }
 
-const FinalizeDisplay = ({ submitting, errors, hasCriticalError, handleSubmission }): ReactElement => {
-
+const FinalizeDisplay = ({ submitting, submissionIssue, errors, hasCriticalError, handleSubmission }): ReactElement => {
 	if (hasCriticalError)
 		return (
 			<div className='d-flex flex-column'>
@@ -103,22 +105,30 @@ const FinalizeDisplay = ({ submitting, errors, hasCriticalError, handleSubmissio
 
 	if (errors.length !== 0)
 		return (
-		<>
-			<h6>Conflicts</h6>
+			<>
+				<h6>Conflicts</h6>
 
-			<ul className='list-group'>
-				{errors.map(error => <li className='list-group-item text-danger'>{error}</li>)}
-			</ul>
-		</>
+				<ul className='list-group'>
+					{errors.map(error => <li className='list-group-item text-danger'>{error}</li>)}
+				</ul>
+			</>
+		)
+
+	if (submissionIssue) 
+		return (
+			<>
+				<h6 className='text-danger'>{submissionIssue}</h6>
+				<button className='btn btn-secondary' type='button' onClick={() => handleSubmission()} disabled={true}>
+					{submitting ? <><Spinner /> Submitting</> : 'Submit'}
+				</button>
+			</>
 		)
 
 	return (
 		<>
 			<h6 className='text-secondary'>Everything looks good?</h6>
 			<button className='btn btn-secondary' type='button' onClick={() => handleSubmission()}>
-				{submitting
-					? <><Spinner /> Submitting</>
-					: 'Submit'}
+				{submitting ? <><Spinner /> Submitting</> : 'Submit'}
 			</button>
 		</>
 	)
@@ -174,20 +184,29 @@ const coreColumns: Column[] = [
 
 const entryExitColumn: Column = {
 	label: 'Entry/Exit',
-	attributeKey: 'times',
+	attributeKey: '',
 	sortable: false,
-	transform: (times: TimeScheduleForm[]) => (
-		<div>
-			{times.map(time => (
-				<div className='row'>
-					<div className='text-center w-50'>{time.startTime.format(DateTimeFormatter.ofPattern('hh:mm a').withLocale(Locale.ENGLISH))}</div>
-					<div className='text-center w-50'>{time.endTime.format(DateTimeFormatter.ofPattern('hh:mm a').withLocale(Locale.ENGLISH))}</div>
-				</div>
-			))}
-		</div>
-	),
+	transform: (record: StudentRecord | InstructorRecord) => {
+		const studentConflicts = record.conflicts || []
+		
+		return (
+			<div className={(studentConflicts.length > 0 ? ' border border-danger' : '')}>
+				{record.times.map(time => (
+					<div className={'d-flex justify-content-evenly'}>
+						<div className='text-center flex-1'>{time.startTime.format(DateTimeFormatter.ofPattern('hh:mm a').withLocale(Locale.ENGLISH))}</div>
+						<div className='text-center flex-1'>{time.endTime.format(DateTimeFormatter.ofPattern('hh:mm a').withLocale(Locale.ENGLISH))}</div>
+					</div>
+				))}
+				{studentConflicts.map(conflict => (
+					<div className='text-danger text-break text-center'>
+						Conflict from {conflict.startTime.format(DateTimeFormatter.ofPattern('hh:mm a').withLocale(Locale.ENGLISH))} to {conflict.exitTime.format(DateTimeFormatter.ofPattern('hh:mm a').withLocale(Locale.ENGLISH))}
+					</div>
+				))}
+			</div>
+		)
+	},
 	headerProps: { ...cellProps, className: 'text-center' },
-	cellProps: cellProps
+	cellProps:  { ...cellProps, style: {...cellProps.style, padding: 0} }
 }
 
 const studentPresentColumn: Column = {

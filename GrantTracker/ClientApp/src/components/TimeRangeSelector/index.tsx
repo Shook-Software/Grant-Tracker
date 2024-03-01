@@ -7,11 +7,9 @@ import { HourInput } from './Input/Hour'
 import { MinuteInput } from './Input/Minute'
 import { PeriodInput } from './Input/Period'
 
-import { Row, Col } from 'react-bootstrap'
 import {
   Container,
   TextInputButton,
-  VisualInputContainer,
   SelectionGrid
 } from './styles'
 import { mod } from 'utils/Math'

@@ -14,7 +14,7 @@ function recursiveObjectSearch (object: any) {
   }
 }
 
-const siteURL: string = 'https://granttracker2022.tusd1.org'
+const siteURL: string = 'https://localhost:44394'
   //https://granttracker2022.tusd1.org
   //https://localhost:44394
 
@@ -66,17 +66,4 @@ export abstract class AxiosIdentityConfig {
 export default axios.create({
   withCredentials: true,
   baseURL: siteURL
-
-  //http://localhost:44394
-  /*transformResponse: [
-		(data, headers) => {
-			try {
-				let result: any = JSON.parse(data)
-				recursiveObjectSearch(result)
-				return result
-			} catch (err) {
-				return null
-			}
-		}
-	]*/
 })

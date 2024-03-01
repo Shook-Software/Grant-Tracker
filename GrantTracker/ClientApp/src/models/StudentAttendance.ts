@@ -27,6 +27,7 @@ export interface StudentRecord {
   matricNumber: string
   times: TimeScheduleForm[]
   familyAttendance: FamilyRecord[]
+  conflicts: {studentSchoolYearGuid: string, error: string}[]
 }
 
 export interface InstructorRecord {

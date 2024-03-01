@@ -1,15 +1,14 @@
-
 import { LocalTime } from "@js-joda/core";
 import { TimeInput } from "components/TimeRangeSelector";
 import { TimeScheduleForm } from "Models/TimeSchedule";
 import { ReducerAction } from './state'
+import { ReactElement } from "react";
 
 
 
 interface AttendanceTimeInputProps {
 	personId: string
 	times: TimeScheduleForm[]
-	dispatchAction: string
 	dispatch: React.Dispatch<ReducerAction>
 }
 
