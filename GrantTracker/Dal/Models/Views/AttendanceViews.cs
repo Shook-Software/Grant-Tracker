@@ -52,8 +52,9 @@ namespace GrantTracker.Dal.Models.Views
 				studentAttendanceRecords = record.FamilyAttendance
 					.GroupBy(fa => fa.StudentSchoolYearGuid,
 						(ssyGuid, group) => new StudentAttendanceViewModel()
-						{
-							StudentSchoolYear = StudentSchoolYearViewModel.FromDatabase(group.First().StudentSchoolYear),
+                        {
+                            Guid = group.First().AttendanceRecordGuid,
+                            StudentSchoolYear = StudentSchoolYearViewModel.FromDatabase(group.First().StudentSchoolYear),
 							TimeRecords = record.StudentAttendance
 								.FirstOrDefault(sa => sa.StudentSchoolYearGuid == ssyGuid)
 								?.TimeRecords
@@ -77,6 +78,15 @@ namespace GrantTracker.Dal.Models.Views
                         Guid = attend.Guid,
                         StudentSchoolYear = StudentSchoolYearViewModel.FromDatabase(attend.StudentSchoolYear),
                         TimeRecords = attend.TimeRecords.Select(time => AttendanceTimeRecordViewModel.FromDatabase(time)).ToList(),
+						FamilyAttendance = record.FamilyAttendance
+							.Where(fa => fa.StudentSchoolYearGuid == attend.StudentSchoolYearGuid)
+                            .GroupBy(fa => fa.FamilyMember,
+                            (familyMember, group) => new FamilyAttendanceViewModel
+                            {
+                                FamilyMember = familyMember,
+                                Count = group.Count()
+                            })
+                            .ToList()
                     })
                     .Concat(studentAttendanceRecords)
 					.ToList();

@@ -562,7 +562,7 @@ export const attendanceCheckColumns: Column[] = [
 		cellProps: { className: 'text-center'},
 		transform: (attendanceEntry: boolean) => attendanceEntry ? <span className='text-success fw-bold'>Y</span> : <span className='text-danger fw-bold'>N</span>,
 		sortable: true,
-		sortTransform: (attendanceEntry: boolean) => attendanceEntry ? 1 : 0
+		sortTransform: (attendanceEntry: boolean) => attendanceEntry ? "1" : "0"
 	}
 ]
 

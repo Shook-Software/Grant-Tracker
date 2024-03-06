@@ -62,9 +62,11 @@ export default ({ columns, dataset, rowProps, defaultSort, maxHeight, maxRows = 
 
     setSortIndex(value)
     setSortDirection(direction)
-    setPageNumber(1)
+    setPageNumber(0)
     setDataToRender(sortDataset(dataset, value, direction, columns))
   }
+
+  const paginatedData = dataToRender?.slice(pageNumber * maxRows, (pageNumber + 1) * maxRows)
 
   return (
     <div>
@@ -104,7 +106,7 @@ export default ({ columns, dataset, rowProps, defaultSort, maxHeight, maxRows = 
           }
           <Body
             columns={columns}
-            dataset={dataToRender?.slice(pageNumber  * maxRows, (pageNumber + 1) * maxRows)}
+            dataset={paginatedData}
             rowProps={rowProps}
             indexed={indexed}
             sortIndex={sortIndex}

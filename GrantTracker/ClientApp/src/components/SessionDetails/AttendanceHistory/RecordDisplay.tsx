@@ -104,7 +104,7 @@ function addFamilyColumn (columns: Column[]): Column[] {
       transform: (familyAttendanceRecord) => 
         <div className='d-flex align-items-center flex-wrap h-100'>
           {
-            familyAttendanceRecord.map(fa => (
+            familyAttendanceRecord?.map(fa => (
               <>
                 <span className='w-50 text-center'>{FamilyMemberOps.toString(fa.familyMember)}</span>
                 <span className='w-50 text-center'>{fa.count}</span>
