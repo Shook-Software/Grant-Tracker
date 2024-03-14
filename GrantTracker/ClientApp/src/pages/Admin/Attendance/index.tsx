@@ -182,11 +182,11 @@ const AttendanceForm = ({session, attendanceGuid, date, state, dispatch}: Attend
 
 const DateTimeSelection = ({session, date, onDateChange, times, onTimeChange, progressFormState, originalAttendDate, stateIsValidToContinue}): ReactElement => {
 	const [searchParams] = useSearchParams();
-	const dayOfWeek = searchParams.get('dow') ? Number(searchParams.get('dow')) : null
+	const dayOfWeek = searchParams.get('dow') ? Number(searchParams.get('dow')) : ''
 	const [editDateInitialized, setEditDateInitialized] = useState<boolean>(false)
 
 	const { isFetching: fetchingDates, data: dates, error: dateError } = useQuery({ 
-		queryKey: [`session/${session.guid}/attendance/openDates?${'dayOfWeek=' + (dayOfWeek ? (dayOfWeek % 7) : null)}`],
+		queryKey: [`session/${session.guid}/attendance/openDates?${'dayOfWeek=' + (dayOfWeek ? (dayOfWeek % 7) : '')}`],
 		select: (dates: DateOnly[]) => dates.map(date => DateOnly.toLocalDate(date)),
 		retry: false,
 		staleTime: Infinity

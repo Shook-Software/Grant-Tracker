@@ -132,9 +132,9 @@ namespace GrantTracker.Dal.Repositories.SessionRepository
 			return false;
 		}
 
-		public async Task<List<AttendanceConflict>> ValidateStudentAttendanceAsync(DateOnly instanceDate, List<StudentAttendanceDto> studentAttendance, Guid? ignoredAttendanceGuid = default)
+		public async Task<List<AttendanceInputConflict>> ValidateStudentAttendanceAsync(DateOnly instanceDate, List<StudentAttendanceDto> studentAttendance, Guid? ignoredAttendanceGuid = default)
 		{
-			List<AttendanceConflict> validationErrors = new();
+			List<AttendanceInputConflict> validationErrors = new();
 
 			var existingAttendanceOnDay = await _grantContext
 				.AttendanceRecords
@@ -162,8 +162,8 @@ namespace GrantTracker.Dal.Repositories.SessionRepository
 					foreach (SessionTimeSchedule newTime in newAttendance.Times)
 						if (HasTimeConflict(existingTime, newTime))
 						{
-							//check how the ui looks if someone conflicts every student registration on an attempted copy
-							AttendanceConflict conflict = new()
+                            //check how the ui looks if someone conflicts every student registration on an attempted copy
+                            AttendanceInputConflict conflict = new()
 							{
 								StudentSchoolYearGuid = newAttendance.Id,
 								Error = $"{newAttendance.FirstName} {newAttendance.LastName} has a conflict with an existing attendance record from {existingTime.EntryTime.ToShortTimeString()} to {existingTime.ExitTime.ToShortTimeString()}"

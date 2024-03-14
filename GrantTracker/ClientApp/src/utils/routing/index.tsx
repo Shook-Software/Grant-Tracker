@@ -13,6 +13,8 @@ import SessionScheduling from 'pages/Editor/Session/Scheduling'
 import SessionSubmit from 'pages/Editor/Session/Submit'
 
 import AttendancePage from 'pages/Admin/Attendance'
+
+import AdminOverview from 'pages/Admin/ActionCenter'
 import AdminSessionsView from 'pages/Admin/Sessions'
 import AdminStaffView from 'pages/Admin/Staff'
 import AdminStudentView from 'pages/Admin/Students'
@@ -89,6 +91,10 @@ export default (user: User, Breadcrumbs: JSX.Element): RouteObject[] => [
     element: <AdminPage user={user} breadcrumbs={Breadcrumbs} />,
     children: [
       //Overview tab when ready for it, show site aggregates and information.
+      {
+        path: '/home/admin/overview',
+        element: <AdminOverview />
+      },
       {
         path: paths.Admin.Tabs.Sessions.path,
         children: [

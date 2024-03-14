@@ -14,7 +14,7 @@ function recursiveObjectSearch (object: any) {
   }
 }
 
-const siteURL: string = 'https://granttracker2022.tusd1.org'
+const siteURL: string = 'https://localhost:44394'
   //https://granttracker2022.tusd1.org
   //https://localhost:44394
 

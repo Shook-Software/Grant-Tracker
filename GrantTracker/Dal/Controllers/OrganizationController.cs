@@ -6,6 +6,8 @@ using GrantTracker.Dal.Models.Views;
 using GrantTracker.Dal.Repositories.OrganizationYearRepository;
 using GrantTracker.Utilities;
 using Microsoft.EntityFrameworkCore;
+using GrantTracker.Dal.Models.Dto.Attendance;
+using GrantTracker.Dal.Repositories.AttendanceRepository;
 
 namespace GrantTracker.Dal.Controllers
 {
@@ -16,12 +18,14 @@ namespace GrantTracker.Dal.Controllers
 	{
 		private readonly IOrganizationRepository _organizationRepository;
         private readonly IOrganizationYearRepository _organizationYearRepository;
+        private readonly IAttendanceRepository _attendanceRepository;
         private readonly ILogger<OrganizationController> _logger;
 
-        public OrganizationController(IOrganizationRepository OrganizationRepository, IOrganizationYearRepository OrganizationYearRepository, ILogger<OrganizationController> logger)
+        public OrganizationController(IOrganizationRepository OrganizationRepository, IOrganizationYearRepository OrganizationYearRepository, IAttendanceRepository attendRepo, ILogger<OrganizationController> logger)
 		{
 			_organizationRepository = OrganizationRepository;
 			_organizationYearRepository = OrganizationYearRepository;
+            _attendanceRepository = attendRepo;
             _logger = logger;
 		}
 
@@ -85,6 +89,24 @@ namespace GrantTracker.Dal.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, "An unknown error occured while fetching missing attendance.");
+            }
+        }
+
+        [HttpGet("organization/{organizationGuid:guid}/attendance/issues")]
+        public async Task<ActionResult<List<AttendanceIssueDTO>>> GetAttendanceIssuesAsync(Guid organizationGuid)
+        {
+            try
+            {
+                if (!User.IsAdmin() && !User.HomeOrganizationGuids().Contains(organizationGuid))
+                    return Unauthorized();
+
+                var issues = await _attendanceRepository.GetConflictsAsync(organizationGuid);
+
+                return Ok(issues);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An unknown error occured while fetching attendance issues.");
             }
         }
 

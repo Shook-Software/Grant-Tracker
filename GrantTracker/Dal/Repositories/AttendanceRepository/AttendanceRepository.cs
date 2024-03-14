@@ -1,4 +1,5 @@
 ﻿using GrantTracker.Dal.Models.Dto;
+using GrantTracker.Dal.Models.Dto.Attendance;
 using GrantTracker.Dal.Models.Views;
 using GrantTracker.Dal.Repositories.DevRepository;
 using GrantTracker.Dal.Schema;
@@ -208,4 +209,24 @@ public class AttendanceRepository : IAttendanceRepository
             throw;
 		}
 	}
+
+	public async Task<List<AttendanceIssueDTO>> GetConflictsAsync(Guid organizationGuid) => [.. (await _grantContext
+		.AttendanceRecords
+		.Include(ar => ar.Session)
+		.Include(ar => ar.StudentAttendance).ThenInclude(sar => sar.StudentSchoolYear)
+		.Where(ar => ar.Session.OrganizationYear.OrganizationGuid == organizationGuid)
+		.Where(ar => ar.StudentAttendance.Any(sa => sa.TimeRecords.Any(tr => tr.EntryTime == tr.ExitTime)))
+		.SelectMany(ar => ar.StudentAttendance, (ar, sar) => new AttendanceIssueDTO
+		{
+			StudentGuid = sar.StudentSchoolYear.StudentGuid,
+			StudentSchoolYearGuid = sar.StudentSchoolYearGuid,
+			SessionGuid = ar.SessionGuid,
+			AttendanceGuid = ar.Guid,
+			InstanceDate = ar.InstanceDate,
+			SessionName = ar.Session.Name
+		})
+		.ToListAsync())
+        .DistinctBy(x => x.AttendanceGuid)
+        .OrderBy(x => x.SessionName).ThenBy(x => x.InstanceDate)];
+
 }

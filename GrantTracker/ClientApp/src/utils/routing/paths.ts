@@ -21,6 +21,7 @@ export default {
   Admin: {
     path: '/home/admin',
     Tabs: {
+      Overview: { path: 'overview' },
       Sessions: { path: 'sessions' },
       Staff: { path: 'staff' },
       Students: { path: 'students' },

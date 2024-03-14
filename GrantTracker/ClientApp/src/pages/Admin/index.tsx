@@ -15,6 +15,10 @@ import api from 'utils/api'
 const TabSelector = (): JSX.Element => (
   <Tabset basePath={paths.Admin.path}>
     <Tab
+      path={paths.Admin.Tabs.Overview.path}
+      text='Overview'
+    />
+      <Tab
       path={paths.Admin.Tabs.Sessions.path}
       text='Sessions'
     />
