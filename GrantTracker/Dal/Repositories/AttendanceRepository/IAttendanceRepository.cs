@@ -7,16 +7,15 @@ namespace GrantTracker.Dal.Repositories.AttendanceRepository;
 
 public interface IAttendanceRepository
 {
-	Task<List<DateOnly>> GetAttendanceDatesAsync(Guid sessionGuid);
-	Task<List<SimpleAttendanceViewModel>> GetAttendanceOverviewAsync(Guid sessionGuid);
-	Task<AttendanceViewModel> GetAttendanceRecordAsync(Guid attendanceGuid);
-	Task AddAttendanceAsync(AttendanceRecord Record);
-    Task AddAttendanceAsync(Guid sessionGuid, SessionAttendanceDto sessionAttendance);
-	Task DeleteAttendanceRecordAsync(Guid AttendanceGuid);
-    Task UpdateAttendanceAsync(Guid attendanceGuid, Guid sessionGuid, SessionAttendanceDto sessionAttendance);
-	Task<List<AttendanceIssueDTO>> GetConflictsAsync(Guid organizationGuid);
+	Task<List<DateOnly>> GetDatesAsync(Guid sessionGuid);
+	Task<List<SimpleAttendanceViewModel>> GetOverviewAsync(Guid sessionGuid);
+	Task<AttendanceViewModel> GetAsync(Guid attendanceGuid);
+	Task AddAsync(AttendanceRecord Record);
+    Task AddAsync(Guid sessionGuid, SessionAttendanceDto sessionAttendance);
+	Task DeleteAsync(Guid AttendanceGuid);
+    Task UpdateAsync(Guid attendanceGuid, Guid sessionGuid, SessionAttendanceDto sessionAttendance);
+	Task<List<AttendanceIssueDTO>> GetIssuesAsync(Guid organizationGuid);
 
-        //public Task<List<StudentAttendance>> GetSessionAttendance(Guid sessionGuid, DateOnly date);
 
-        //edit and delete attendance
-    }
+    Task<List<AttendanceInputConflict>> ValidateStudentAttendanceAsync(DateOnly instanceDate, List<StudentAttendanceDto> studentAttendance, Guid? ignoredAttendanceGuid = default);
+}

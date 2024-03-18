@@ -4,17 +4,18 @@ export function useOutsideClickListener(
   ref: React.RefObject<HTMLElement>,
   callback: () => void
 ) {
+
   const [containerRef, _] = useState(ref)
 
-  useEffect(() => {
-    function handleDocumentClick(event: MouseEvent) {
-      if (ref?.current && !containerRef.current.contains(event.target as Node) && typeof(callback) == 'function')
-        callback()
-    }
+  function handleDocumentClick(event: MouseEvent) {
+    if (!containerRef?.current?.contains(event.target as Node))
+      callback()
+  }
 
-    document.addEventListener('mousedown', handleDocumentClick)
+  useEffect(() => {
+    document.addEventListener('click', handleDocumentClick, true)
     return (() => {
-      document.removeEventListener('mousedown', handleDocumentClick)
+      document.removeEventListener('click', handleDocumentClick, true)
     })
-  }, [ref])
+  }, [])
 }

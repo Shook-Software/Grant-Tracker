@@ -63,7 +63,7 @@ export default ({ user, breadcrumbs}: Props) => {
 
   useEffect(() => {
     if (location.pathname === paths.Admin.path) {
-      navigate(paths.Admin.Tabs.Sessions.path)
+      navigate(paths.Admin.Tabs.Overview.path)
     }
   }, [location.pathname])
 

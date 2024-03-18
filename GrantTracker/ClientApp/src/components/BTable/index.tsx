@@ -37,13 +37,26 @@ interface Props {
   showHeader?: boolean
   className?: string
   tableProps?: object
+  size?: 'sm' | 'md' | 'lg'
 }
 
-export default ({ columns, dataset, rowProps, defaultSort, maxHeight, maxRows = 1000, indexed = false, bordered = true, showHeader = true, className, tableProps }: Props): JSX.Element => {
+const smallCellStyle = {
+  fontSize: '0.75rem',
+  padding: '0.25rem 0.25rem'
+}
+
+export default ({ columns, dataset, rowProps, defaultSort, maxHeight, maxRows = 1000, size = 'md', indexed = false, bordered = true, showHeader = true, className, tableProps }: Props): JSX.Element => {
   const [sortIndex, setSortIndex] = useState<number>(defaultSort?.index || 0)
   const [sortDirection, setSortDirection] = useState<SortDirection>(defaultSort?.direction || SortDirection.None)
   const [dataToRender, setDataToRender] = useState<any[]>(dataset)
   const [pageNumber, setPageNumber] = useState<number>(0);
+
+  if (size === 'sm')
+    columns = columns.map(col => ({
+      ...col, 
+      cellProps: { ...col.cellProps, style: {...smallCellStyle, ...col.cellProps?.style }},
+      headerProps: { ...col.headerProps, style: {...smallCellStyle, ...col.headerProps?.style }}
+    }))
 
   const maxPages: number = Math.floor((dataToRender?.length ?? 0) / maxRows) + 1
 

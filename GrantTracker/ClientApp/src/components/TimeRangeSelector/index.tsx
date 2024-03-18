@@ -7,11 +7,9 @@ import { HourInput } from './Input/Hour'
 import { MinuteInput } from './Input/Minute'
 import { PeriodInput } from './Input/Period'
 
-import { Row, Col } from 'react-bootstrap'
 import {
   Container,
   TextInputButton,
-  VisualInputContainer,
   SelectionGrid
 } from './styles'
 import { mod } from 'utils/Math'
@@ -61,27 +59,33 @@ export const TimeInput = ({
   function handleHourChange(hourInt: number): void {
     hourInt = mod(hourInt, 24)
     setTime(time.withHour(hourInt))
+    onChange(time.withHour(hourInt))
   }
 
   //could change both of these to .setValue then combine them
   function handleMinuteChange(minuteInt: number): void {
     minuteInt = mod(minuteInt, 60)
     setTime(time.withMinute(minuteInt))
+    onChange(time.withMinute(minuteInt))
   }
 
   function handlePeriodChange(input: Period): void {
     if (simplifiedTime.hour >= 12) {
-      if (input == Period.AM)
+      if (input == Period.AM) {
         setTime(time.withHour(simplifiedTime.hour - 12))
+        onChange(time.withHour(simplifiedTime.hour - 12))
+      }
     }
     else {
-      if (input == Period.PM)
+      if (input == Period.PM) {
         setTime(time.withHour(simplifiedTime.hour + 12))
+        onChange(time.withHour(simplifiedTime.hour + 12))
+      }
     }
   }
 
   //I promise that all of this is entirely mandatory to rerender at appropriate times to update other components but also not collapse the menu after a single click.
-  //Onchange is only passed when a user clicks off of the element.
+  //Onchange is only passed when a user clicks off of the element. - lmao, says future ethan. Stupid design.
   useEffect(() => {
 
     const setContainerFocusState = (value: boolean) => {
@@ -130,7 +134,7 @@ export const TimeInput = ({
       {...props}
     >
       <div className='d-inline-flex w-100' onClick={() => setFocus(Input.Hour)}>
-        <div >
+        <div>
           <HourInput.Text
             key={`hour - ${simplifiedTime.hour}`}
             value={simplifiedTime.hour}

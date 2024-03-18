@@ -84,6 +84,11 @@ const Text = ({ value, onChange, focus, setFocus }: TextProps) => {
       onChange(nearestStep)
       setStatus(Status.Idle)
     }
+    else if (status === Status.Await) {
+      setTimeout(() => {
+        setStatus(Status.Resolve)
+      }, 500);
+    }
   }, [status])
 
   useEffect(() => {

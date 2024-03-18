@@ -1,34 +1,35 @@
 ﻿using GrantTracker.Dal.Models;
 using GrantTracker.Dal.Models.Dto;
 using GrantTracker.Dal.Models.Dto.Attendance;
+using GrantTracker.Dal.Models.Dto.SessionDTO;
 using GrantTracker.Dal.Models.Views;
 using GrantTracker.Dal.Schema;
 
-namespace GrantTracker.Dal.Repositories.SessionRepository
+namespace GrantTracker.Dal.Repositories.SessionRepository;
+
+public interface ISessionRepository
 {
-	public interface ISessionRepository
-	{
-		public Task<SessionView> GetAsync(Guid sessionGuid);
+	Task<SessionView> GetAsync(Guid sessionGuid);
 
-		public Task<List<SimpleSessionView>> GetAsync(string sessionName, Guid organizationYearGuid);
+	Task<List<SimpleSessionView>> GetAsync(string sessionName, Guid organizationYearGuid);
 
-		public Task AddAsync(FormSessionDto sessionDetails);
+	Task AddAsync(FormSessionDto sessionDetails);
 
-		public Task UpdateAsync(FormSessionDto sessionDetails);
+	Task UpdateAsync(FormSessionDto sessionDetails);
 
-		public Task DeleteAsync(Guid sessionGuid);
+	Task DeleteAsync(Guid sessionGuid);
 
-		public Task<bool> GetStatusAsync(Guid sessionGuid);
+	Task<bool> GetStatusAsync(Guid sessionGuid);
 
-		public Task<List<StudentRegistrationView>> GetStudentRegistrationsAsync(Guid sessionGuid, int dayOfWeek = -1);
+	Task<List<StudentRegistrationView>> GetStudentRegistrationsAsync(Guid sessionGuid, int dayOfWeek = -1);
 
-		public Task RegisterStudentAsync(Guid sessionGuid, List<Guid> scheduleGuids, Guid studentGuid);
-		public Task<List<AttendanceConflict>> ValidateStudentAttendanceAsync(DateOnly instanceDate, List<StudentAttendanceDto> studentAttendance, Guid? ignoredAttendanceGuid = default);
+	Task RegisterStudentAsync(Guid sessionGuid, List<Guid> scheduleGuids, Guid studentGuid);
 
-		//public Task CopyStudentRegistrationsAsync(Guid sourceSessionGuid, Guid destinationSessionGuid); 
-		//public Task CopyStudentRegistrationsAsync(Guid sessionGuid, List<Guid> studentSchoolYearGuids);
+	//Task CopyStudentRegistrationsAsync(Guid sourceSessionGuid, Guid destinationSessionGuid); 
+	//Task CopyStudentRegistrationsAsync(Guid sessionGuid, List<Guid> studentSchoolYearGuids);
 
-		public Task RemoveStudentAsync(Guid studentSchoolYearGuid, List<Guid> dayScheduleGuids);
-		public Task RemoveAttendanceRecordAsync(Guid attendanceGuid);
-	}
+	Task RemoveStudentAsync(Guid studentSchoolYearGuid, List<Guid> dayScheduleGuids);
+	Task RemoveAttendanceRecordAsync(Guid attendanceGuid);
+
+	Task<List<SessionIssuesDTO>> GetIssues(Guid organizationYearGuid);
 }

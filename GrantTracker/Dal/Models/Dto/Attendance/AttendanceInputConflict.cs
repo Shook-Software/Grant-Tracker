@@ -3,5 +3,6 @@
 public class AttendanceInputConflict
 {
     public Guid StudentSchoolYearGuid { get; set; }
-    public string Error { get; set; }
+    public TimeOnly StartTime { get; set; }
+    public TimeOnly ExitTime { get; set; }
 }
