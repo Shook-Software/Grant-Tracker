@@ -27,6 +27,7 @@ export type ReducerAction =
     | { type: 'addStudent'; payload: { guid: string, firstName: string, lastName: string, matricNumber: string, grade: string } }
     | { type: 'studentPresence'; payload: { guid: string; isPresent: boolean } }
     | { type: 'allStudentPresence'; payload: boolean }
+    | { type: 'applyStudentConflicts'; payload: {studentSchoolYearGuid: string, error: string}[] }
 
     | { type: 'familyStudentPresence', payload: { guid: string, isPresent: boolean } }
     | { type: 'addFamilyMember', payload: { studentSchoolYearGuid: string, familyMember: FamilyMember } }
@@ -78,7 +79,8 @@ export function reducer(state: AttendanceForm, action: ReducerAction): Attendanc
                 lastName: s.student.lastName,
                 matricNumber: s.student.matricNumber,
                 times: action.payload.times.slice(),
-                familyAttendance: []
+                familyAttendance: [],
+                conflicts: []
             }) as StudentRecord)
 
             return { ...state, studentRecords }
@@ -106,7 +108,8 @@ export function reducer(state: AttendanceForm, action: ReducerAction): Attendanc
                     startTime: TimeOnly.toLocalTime(y.startTime),
                     endTime: TimeOnly.toLocalTime(y.endTime)
                 })),
-                familyAttendance: x.familyAttendance?.slice() || []
+                familyAttendance: x.familyAttendance?.slice() || [],
+                conflicts: []
             })) as StudentRecord[]
 
             return {...state, instructorRecords, studentRecords }
@@ -126,11 +129,11 @@ export function reducer(state: AttendanceForm, action: ReducerAction): Attendanc
         case 'setAttendanceEndTime':
             if (getStudentRecord(state, action.payload.personId)) {
                 let student = getStudentRecord(state, action.payload.personId)
-                student!.times = student!.times.map((t, idx) => ({...t, endTime: action.payload.times.at(idx)?.endTime}))
+                student!.times = student!.times.map((t, idx) => ({...t, endTime: action.payload.times.at(idx).endTime}))
             }
             else if (getInstructorRecord(state, action.payload.personId)) {
                 let instructor = getInstructorRecord(state, action.payload.personId)
-                instructor!.times = instructor!.times.map((t, idx) => ({...t, endTime: action.payload.times.at(idx)?.endTime}))
+                instructor!.times = instructor!.times.map((t, idx) => ({...t, endTime: action.payload.times.at(idx).endTime}))
             }
 
             return { ...state }
@@ -145,10 +148,18 @@ export function reducer(state: AttendanceForm, action: ReducerAction): Attendanc
                 firstName: student.firstName,
                 lastName: student.lastName,
                 matricNumber: student.matricNumber,
-                familyAttendance: []
+                familyAttendance: [],
+                conflicts: []
             }
 
             return { ...state, studentRecords: [...state.studentRecords, newStudentRecord] }
+
+        case 'applyStudentConflicts':
+            state.studentRecords.forEach(sr => {
+                sr.conflicts = action.payload.filter(conflict => conflict.studentSchoolYearGuid === sr.id);
+            })
+
+            return {...state}
     
         case 'addInstructor':
             if (getInstructorRecord(state, action.payload.id))
@@ -196,9 +207,8 @@ export function reducer(state: AttendanceForm, action: ReducerAction): Attendanc
 
                 if (familyMemberIndex === -1)
                     studentRecord.familyAttendance = [...studentRecord.familyAttendance, { familyMember: action.payload.familyMember, count: 1 }]
-                else {
+                else 
                     studentRecord.familyAttendance[familyMemberIndex].count++
-                }
             }
             else {
                 studentRecord.familyAttendance = [{ familyMember: action.payload.familyMember, count: 1 }]

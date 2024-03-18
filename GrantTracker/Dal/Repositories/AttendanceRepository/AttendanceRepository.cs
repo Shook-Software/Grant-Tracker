@@ -1,4 +1,5 @@
 ﻿using GrantTracker.Dal.Models.Dto;
+using GrantTracker.Dal.Models.Dto.Attendance;
 using GrantTracker.Dal.Models.Views;
 using GrantTracker.Dal.Repositories.DevRepository;
 using GrantTracker.Dal.Schema;
@@ -14,16 +15,14 @@ public class AttendanceRepository : IAttendanceRepository
     protected readonly GrantTrackerContext _grantContext;
     protected readonly ClaimsPrincipal _user;
 
-
     public AttendanceRepository(GrantTrackerContext grantContext, IDevRepository devRepository, IHttpContextAccessor httpContextAccessor)
 	{
-
         _grantContext = grantContext;
         _user = httpContextAccessor.HttpContext.User;
     }
 
 	//needs auth fix
-	public async Task<AttendanceViewModel> GetAttendanceRecordAsync(Guid attendanceGuid)
+	public async Task<AttendanceViewModel> GetAsync(Guid attendanceGuid)
 	{
 		var session = await _grantContext
 			.AttendanceRecords
@@ -41,7 +40,6 @@ public class AttendanceRepository : IAttendanceRepository
 			.Include(ar => ar.InstructorAttendance).ThenInclude(ia => ia.InstructorSchoolYear).ThenInclude(isy => isy.Status)
 			.Include(ar => ar.InstructorAttendance).ThenInclude(ia => ia.TimeRecords);
 
-
 		AttendanceRecord record = session.SessionType.Label == "Parent"
 			? await query
 				.Include(ar => ar.FamilyAttendance).ThenInclude(sa => sa.StudentSchoolYear).ThenInclude(ssy => ssy.Student)
@@ -54,7 +52,7 @@ public class AttendanceRepository : IAttendanceRepository
         return AttendanceViewModel.FromDatabase(record);
 	}
 
-	public async Task<List<SimpleAttendanceViewModel>> GetAttendanceOverviewAsync(Guid sessionGuid)
+	public async Task<List<SimpleAttendanceViewModel>> GetOverviewAsync(Guid sessionGuid) //consider deleting this and just aggregating the above on front end tbh
 	{
 		return await _grantContext
 			.AttendanceRecords
@@ -72,7 +70,7 @@ public class AttendanceRepository : IAttendanceRepository
 			.ToListAsync();
 	}
 
-	public async Task<List<DateOnly>> GetAttendanceDatesAsync(Guid sessionGuid)
+	public async Task<List<DateOnly>> GetDatesAsync(Guid sessionGuid)
 	{
 		var attendance = await _grantContext
 			.AttendanceRecords
@@ -86,15 +84,13 @@ public class AttendanceRepository : IAttendanceRepository
 			.ToList();
 	}
 
-
-    public async Task AddAttendanceAsync(AttendanceRecord Record)
+    public async Task AddAsync(AttendanceRecord Record)
 	{
 		_grantContext.AttendanceRecords.Add(Record);
 		await _grantContext.SaveChangesAsync();
 	}
 
-
-    public async Task AddAttendanceAsync(Guid sessionGuid, SessionAttendanceDto sessionAttendance)
+    public async Task AddAsync(Guid sessionGuid, SessionAttendanceDto sessionAttendance)
 	{
 		//neither of these two should ever happen
 		foreach (var record in sessionAttendance.StudentRecords)
@@ -183,7 +179,7 @@ public class AttendanceRepository : IAttendanceRepository
 		_grantContext.SaveChanges();
 	}
 
-	public async Task DeleteAttendanceRecordAsync(Guid AttendanceGuid)
+	public async Task DeleteAsync(Guid AttendanceGuid)
 	{
 		await _grantContext
 			 .AttendanceRecords
@@ -191,14 +187,14 @@ public class AttendanceRepository : IAttendanceRepository
 			 .ExecuteDeleteAsync();
     }
 
-	public async Task UpdateAttendanceAsync(Guid attendanceGuid, Guid sessionGuid, SessionAttendanceDto sessionAttendance)
+	public async Task UpdateAsync(Guid attendanceGuid, Guid sessionGuid, SessionAttendanceDto sessionAttendance)
     {
 		using var transaction = await _grantContext.Database.BeginTransactionAsync();
 
 		try
 		{
-            await DeleteAttendanceRecordAsync(attendanceGuid);
-            await this.AddAttendanceAsync(sessionGuid, sessionAttendance);
+            await DeleteAsync(attendanceGuid);
+            await this.AddAsync(sessionGuid, sessionAttendance);
 
 			await transaction.CommitAsync();
         }
@@ -208,4 +204,79 @@ public class AttendanceRepository : IAttendanceRepository
             throw;
 		}
 	}
+
+	public async Task<List<AttendanceIssueDTO>> GetIssuesAsync(Guid organizationGuid) => [.. (await _grantContext
+		.AttendanceRecords
+		.Include(ar => ar.Session)
+		.Include(ar => ar.StudentAttendance).ThenInclude(sar => sar.StudentSchoolYear)
+		.Where(ar => ar.Session.OrganizationYear.OrganizationGuid == organizationGuid)
+		.Where(ar => ar.StudentAttendance.Any(sa => sa.TimeRecords.Any(tr => tr.EntryTime == tr.ExitTime || tr.EntryTime > tr.ExitTime)))
+		.SelectMany(ar => ar.StudentAttendance, (ar, sar) => new AttendanceIssueDTO
+		{
+			SessionGuid = ar.SessionGuid,
+			AttendanceGuid = ar.Guid,
+			InstanceDate = ar.InstanceDate,
+			SessionName = ar.Session.Name,
+			Type = AttendanceIssue.Malformed,
+			Message = $"{(sar.TimeRecords.Any(tr => tr.EntryTime == tr.ExitTime) ? "Some student time records have equivalent start and end times.\n" : "")}" +
+			$"{(sar.TimeRecords.Any(tr => tr.EntryTime > tr.ExitTime) ? "Some student time records have a start time later than their end time.\n" : "")}"
+		})
+		.ToListAsync())
+        .DistinctBy(x => x.AttendanceGuid)
+        .OrderBy(x => x.SessionName).ThenBy(x => x.InstanceDate)];
+
+    public async Task<List<AttendanceInputConflict>> ValidateStudentAttendanceAsync(DateOnly instanceDate, List<StudentAttendanceDto> studentAttendance, Guid? ignoredAttendanceGuid = default)
+    {
+        List<AttendanceInputConflict> validationErrors = new();
+
+        var existingAttendanceOnDay = await _grantContext
+            .AttendanceRecords
+            .Where(ar => ar.InstanceDate == instanceDate)
+            .Where(ar => ar.Guid != ignoredAttendanceGuid)
+            .Include(ar => ar.StudentAttendance).ThenInclude(sa => sa.TimeRecords)
+            .Include(ar => ar.StudentAttendance).ThenInclude(sa => sa.StudentSchoolYear)
+            .ToListAsync();
+
+        var existingStudentAttendance = existingAttendanceOnDay
+            .Where(ar => ar.StudentAttendance.Any(sa => studentAttendance.Any(record => sa.StudentSchoolYearGuid == record.Id)))
+            .Where(ar => ar.Guid != ignoredAttendanceGuid)
+            .SelectMany(ar => ar.StudentAttendance)
+            .Where(sa => studentAttendance.Any(record => sa.StudentSchoolYearGuid == record.Id))
+            .ToList();
+
+        foreach (StudentAttendanceDto newAttendance in studentAttendance)
+        {
+            List<StudentAttendanceTimeRecord> existingAttendance = existingStudentAttendance
+                .Where(sa => sa.StudentSchoolYearGuid == newAttendance.Id)
+                .SelectMany(sa => sa.TimeRecords)
+                .ToList();
+
+            foreach (StudentAttendanceTimeRecord existingTime in existingAttendance)
+            {
+                foreach (SessionTimeSchedule newTime in newAttendance.Times)
+                    if (HasTimeConflict(existingTime, newTime))
+                    {
+                        //check how the ui looks if someone conflicts every student registration on an attempted copy
+                        AttendanceInputConflict conflict = new()
+                        {
+                            StudentSchoolYearGuid = newAttendance.Id,
+							StartTime = existingTime.EntryTime,
+							ExitTime = existingTime.ExitTime
+                        };
+                        validationErrors.Add(conflict);
+                    }
+            }
+        }
+
+        return validationErrors;
+    }
+
+    private static bool HasTimeConflict(StudentAttendanceTimeRecord existingTimeSchedule, SessionTimeSchedule newTimeSchedule)
+    {
+
+		bool timesPartiallyOverlap = existingTimeSchedule.EntryTime < newTimeSchedule.EndTime && existingTimeSchedule.ExitTime > newTimeSchedule.StartTime;
+		bool timesFullyOverlap = existingTimeSchedule.EntryTime == newTimeSchedule.StartTime && existingTimeSchedule.ExitTime == newTimeSchedule.EndTime;
+
+		return timesPartiallyOverlap || timesFullyOverlap || newTimeSchedule.StartTime == newTimeSchedule.EndTime;
+    }
 }

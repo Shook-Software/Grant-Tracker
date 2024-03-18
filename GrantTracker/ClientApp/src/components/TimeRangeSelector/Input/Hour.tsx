@@ -77,12 +77,18 @@ const Text = ({ value, onChange, focus, setFocus }: TextProps): JSX.Element => {
   const [hour, setHour] = useState<number>(value)
   const [status, setStatus] = useState<Status>(Status.Idle)
 
-  useOutsideClickListener(ref, () => setStatus(Status.Resolve))
+  useOutsideClickListener(ref, () => status !== Status.Idle ? setStatus(Status.Resolve) : null)
 
   useEffect(() => {
     if (status === Status.Resolve) {
-      onChange(hour)
       setStatus(Status.Idle)
+      onChange(hour)
+    }
+    else if (status === Status.Await) {
+      setTimeout(() => {
+        if (status === Status.Await)
+          setStatus(Status.Resolve)
+      }, 500);
     }
   }, [status])
 

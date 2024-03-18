@@ -15,6 +15,10 @@ import api from 'utils/api'
 const TabSelector = (): JSX.Element => (
   <Tabset basePath={paths.Admin.path}>
     <Tab
+      path={paths.Admin.Tabs.Overview.path}
+      text='Overview'
+    />
+      <Tab
       path={paths.Admin.Tabs.Sessions.path}
       text='Sessions'
     />
@@ -59,7 +63,7 @@ export default ({ user, breadcrumbs}: Props) => {
 
   useEffect(() => {
     if (location.pathname === paths.Admin.path) {
-      navigate(paths.Admin.Tabs.Sessions.path)
+      navigate(paths.Admin.Tabs.Overview.path)
     }
   }, [location.pathname])
 

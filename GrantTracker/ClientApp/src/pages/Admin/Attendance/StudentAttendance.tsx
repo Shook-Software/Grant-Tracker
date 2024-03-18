@@ -1,7 +1,7 @@
 import React, { ReactElement, useState } from 'react'
-import { Row, Form, Button, InputGroup, DropdownButton, Dropdown } from 'react-bootstrap'
+import { Form, Button, InputGroup, DropdownButton, Dropdown } from 'react-bootstrap'
 
-import { ReducerAction } from './state'
+import { AttendanceForm, ReducerAction } from './state'
 import { AttendanceStartTimeInput, AttendanceEndTimeInput } from './TimeComponents'
 
 import Table, { Column, SortDirection } from 'components/BTable'
@@ -11,9 +11,17 @@ import type { FamilyRecord, StudentRecord } from 'Models/StudentAttendance'
 import FamilyMemberOps, { FamilyMember } from 'Models/FamilyMember'
 
 import api from 'utils/api'
+import { DateTimeFormatter } from '@js-joda/core'
+import { Locale } from '@js-joda/locale_en-us'
 
+interface StudentAttendProps {
+    orgYearGuid: string
+	sessionType: string
+	state: AttendanceForm
+	dispatch: React.Dispatch<ReducerAction>
+}
 
-export const StudentAttendance = ({ orgYearGuid, state, dispatch, sessionType }): ReactElement => {
+export const StudentAttendance = ({ orgYearGuid, state, dispatch, sessionType }: StudentAttendProps): ReactElement => {
     const [showModal, setShowModal] = useState<boolean>(false);
 
     function addStudent(ssy): Promise<void> {
@@ -100,16 +108,14 @@ const createTimeEntryColumns = (dispatch: React.Dispatch<ReducerAction>): Column
         label: 'Started at',
         attributeKey: '',
         sortable: false,
-        transform: (record: StudentRecord) =>
-            <AttendanceStartTimeInput personId={record.id} times={record.times} dispatch={dispatch} />
+        transform: (record: StudentRecord) => <AttendanceStartTimeInput personId={record.id} times={record.times} dispatch={dispatch} />
     },
     {
         key: 'end',
         label: 'Ended at',
         attributeKey: '',
         sortable: false,
-        transform: (record: StudentRecord) =>
-            <AttendanceEndTimeInput personId={record.id} times={record.times} dispatch={dispatch} />
+        transform: (record: StudentRecord) => <AttendanceEndTimeInput personId={record.id} times={record.times} dispatch={dispatch} />
     }
 ]
 
@@ -175,16 +181,40 @@ const createCoreStudentColumns = (dispatch: React.Dispatch<ReducerAction>): Colu
         label: 'Present',
         attributeKey: '',
         sortable: false,
-        transform: (record: StudentRecord) => (
-            <div
-                role='button'
-                className='d-flex justify-content-center align-items-center'
-                onClick={() => dispatch({ type: 'studentPresence', payload: { guid: record.id, isPresent: !record.isPresent } })}
-                style={{ minHeight: '100%' }}
-            >
-                <Form.Check checked={record.isPresent} onChange={(e) => { }} />
-            </div>
-        ),
+        transform: (record: StudentRecord) => {
+            const conflictClass: string = record.conflicts.length > 0 ? 'border border-danger' : '';
+
+            const equalTimes = record.times.filter(x => x.startTime.equals(x.endTime))
+            const endBeforeStartTimes = record.times.filter(x => x.endTime.isBefore(x.startTime))
+            
+            return (
+                <>
+                    <div
+                        role='button'
+                        className={`d-flex flex-column justify-content-center align-items-center ${conflictClass}`}
+                        onClick={() => dispatch({ type: 'studentPresence', payload: { guid: record.id, isPresent: !record.isPresent } })}
+                        style={{ minHeight: '100%' }}
+                    >
+                        <Form.Check checked={record.isPresent} onChange={(e) => { }} />
+                        {record.conflicts.map(conflict => (
+                            <div className='text-danger text-break' style={{maxWidth: "250px"}}>
+                                Conflict from {conflict.startTime.format(DateTimeFormatter.ofPattern('hh:mm a').withLocale(Locale.ENGLISH))} to {conflict.exitTime.format(DateTimeFormatter.ofPattern('hh:mm a').withLocale(Locale.ENGLISH))}
+                            </div>
+                        ))}
+                        {equalTimes.map(time => (
+                            <div className='text-danger text-break' style={{maxWidth: "250px"}}>
+                                Start and end times cannot be equal. {time.startTime.format(DateTimeFormatter.ofPattern('hh:mm a').withLocale(Locale.ENGLISH))} to {time.endTime.format(DateTimeFormatter.ofPattern('hh:mm a').withLocale(Locale.ENGLISH))}
+                            </div>
+                        ))}
+                        {endBeforeStartTimes.map(time => (
+                            <div className='text-danger text-break' style={{maxWidth: "250px"}}>
+                                End time cannot be before start. {time.startTime.format(DateTimeFormatter.ofPattern('hh:mm a').withLocale(Locale.ENGLISH))} to {time.endTime.format(DateTimeFormatter.ofPattern('hh:mm a').withLocale(Locale.ENGLISH))}
+                            </div>
+                        ))}
+                    </div>
+                </>
+            )
+        },
         cellProps: {
             style: { height: '1px', padding: '0px' }
         }

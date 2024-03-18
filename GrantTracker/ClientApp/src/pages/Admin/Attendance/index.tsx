@@ -15,6 +15,8 @@ import { StudentRegistration, StudentRegistrationDomain } from "Models/StudentRe
 import { InstructorAttendance } from './InstructorAttendance'
 import { StudentAttendance } from './StudentAttendance'
 import { AttendanceSummary } from './Summary'
+import api from "utils/api";
+import { TimeOnly } from "Models/TimeOnly";
 
 
 enum FormState {
@@ -147,11 +149,38 @@ interface AttendanceFormProps {
 	session: SessionView
 	attendanceGuid: string | null
 	date: LocalDate
-	state: AttendanceForm
+	state: AttendanceFormState
 	dispatch: React.Dispatch<ReducerAction>
 }
 
 const AttendanceForm = ({session, attendanceGuid, date, state, dispatch}: AttendanceFormProps): ReactElement => {
+	useEffect(() => {
+		if (session.sessionType.label != 'Parent') {
+			const studentRecords = state.studentRecords.filter(sr => sr.isPresent).map(sr => ({
+				id: sr.id,
+				firstName: sr.firstName,
+				lastName: sr.lastName,
+				times: sr.times?.slice()
+			}))
+	
+			api.post(`session/${session.guid}/attendance/verify?instanceDate=${date}&attendanceGuid=${attendanceGuid}`, studentRecords)
+				.then(() => {
+					dispatch({type: 'applyStudentConflicts', payload: []})
+				})
+				.catch(err => {
+					if (err.response.status == '409')
+						dispatch({
+							type: 'applyStudentConflicts', 
+							payload: err.response.data.map(x => ({ 
+								studentSchoolYearGuid: x.studentSchoolYearGuid,
+								startTime: TimeOnly.toLocalTime(x.startTime),
+								exitTime: TimeOnly.toLocalTime(x.exitTime)
+							}))
+						})
+				})
+		}
+	}, [JSON.stringify(state.studentRecords.map(sr => ({ times: sr.times, present: sr.isPresent })))]) //inefficient but we shouldn't need to worry about that here
+
 	return (
 		<div>
 			<h5 className='text-secondary'>Attendance for {date.format(DateTimeFormatter.ofPattern('eeee, MMMM dd').withLocale(Locale.ENGLISH))}</h5>
@@ -180,7 +209,7 @@ const AttendanceForm = ({session, attendanceGuid, date, state, dispatch}: Attend
 
 const DateTimeSelection = ({session, date, onDateChange, times, onTimeChange, progressFormState, originalAttendDate, stateIsValidToContinue}): ReactElement => {
 	const [searchParams] = useSearchParams();
-	const dayOfWeek = searchParams.get('dow') ? Number(searchParams.get('dow')) : null
+	const dayOfWeek = searchParams.get('dow') ? Number(searchParams.get('dow')) : ''
 	const [editDateInitialized, setEditDateInitialized] = useState<boolean>(false)
 
 	const { isFetching: fetchingDates, data: dates, error: dateError } = useQuery({ 

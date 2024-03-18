@@ -16,6 +16,7 @@ using GrantTracker.Utilities;
 using GrantTracker.Dal.Schema.Sprocs;
 using GrantTracker.Dal.Models.Dto.Attendance;
 using System.Diagnostics;
+using GrantTracker.Dal.Models.Dto.SessionDTO;
 
 namespace GrantTracker.Dal.Controllers;
 
@@ -106,7 +107,7 @@ public class SessionController : ControllerBase
 	[HttpGet("{sessionGuid}/attendance")]
 	public async Task<ActionResult<SimpleAttendanceViewModel>> GetAttendanceOverview(Guid sessionGuid)
 	{
-		var simpleAttendanceViews = await _attendanceRepository.GetAttendanceOverviewAsync(sessionGuid);
+		var simpleAttendanceViews = await _attendanceRepository.GetOverviewAsync(sessionGuid);
 		return Ok(simpleAttendanceViews);
 	}
 
@@ -117,7 +118,7 @@ public class SessionController : ControllerBase
 	[HttpGet("{sessionGuid:guid}/attendance/{attendanceGuid:guid}")]
 	public async Task<ActionResult<AttendanceViewModel>> GetAttendanceRecords(Guid sessionGuid, Guid attendanceGuid)
 	{
-		var attendanceRecord = await _attendanceRepository.GetAttendanceRecordAsync(attendanceGuid);
+		var attendanceRecord = await _attendanceRepository.GetAsync(attendanceGuid);
 
 		return Ok(attendanceRecord);
 	}
@@ -164,7 +165,7 @@ public class SessionController : ControllerBase
 				return openDates;
 			}
 
-			IEnumerable<DateOnly> attendanceDates = await _attendanceRepository.GetAttendanceDatesAsync(sessionGuid);
+			IEnumerable<DateOnly> attendanceDates = await _attendanceRepository.GetDatesAsync(sessionGuid);
 			IEnumerable<DateOnly> blackoutDates = (await _organizationRepository.GetBlackoutDatesAsync(session.OrganizationYear.Organization.Guid)).Select(x => x.Date);
 
 			if (dayOfWeek is null)
@@ -244,34 +245,58 @@ public class SessionController : ControllerBase
 		}
 
 		return Created($"{destinationSessionGuid}/registration/copy", studentSchoolYearGuids);
-	}
-	
-	[HttpPost("{sessionGuid:guid}/attendance")]
+    }
+
+    [HttpPost("{sessionGuid:guid}/attendance/verify")]
+    public async Task<ActionResult<List<AttendanceInputConflict>>> VerifyAttendance(Guid sessionGuid, string instanceDate, Guid? attendanceGuid, [FromBody] List<StudentAttendanceDto> studentRecords)
+    {
+        try
+        {
+            List<AttendanceInputConflict> conflicts = [];
+            var session = await _sessionRepository.GetAsync(sessionGuid);
+
+            if (session.SessionType.Label != "Parent")
+                conflicts = await _attendanceRepository.ValidateStudentAttendanceAsync(DateOnly.Parse(instanceDate), studentRecords, attendanceGuid);
+
+            if (conflicts.Any())
+                return Conflict(conflicts);
+
+            return Ok();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "{Function} - An unhandled error occured.", nameof(VerifyAttendance));
+            return StatusCode(500);
+        }
+    }
+
+    [HttpPost("{sessionGuid:guid}/attendance")]
 	public async Task<IActionResult> SubmitAttendance(Guid sessionGuid, [FromBody] SessionAttendanceDto sessionAttendance)
 	{
 		try
 		{
-			List<AttendanceConflict> conflicts = new();
+			List<AttendanceInputConflict> conflicts = [];
 			var session = await _sessionRepository.GetAsync(sessionGuid);
-
-            if (sessionGuid == Guid.Empty)
-                throw new ArgumentException("SessionGuid cannot be empty.", nameof(sessionAttendance));
 
 			if (session.SessionType.Label != "Parent")
 			{
-                conflicts = await _sessionRepository.ValidateStudentAttendanceAsync(sessionAttendance.Date, sessionAttendance.StudentRecords);
+                conflicts = await _attendanceRepository.ValidateStudentAttendanceAsync(sessionAttendance.Date, sessionAttendance.StudentRecords);
 				sessionAttendance.StudentRecords = sessionAttendance.StudentRecords.ExceptBy(conflicts.Select(x => x.StudentSchoolYearGuid), record => record.Id).ToList();
 			}
 			else
 			{
 				sessionAttendance.StudentRecords = sessionAttendance.StudentRecords.Where(sr => sr.FamilyAttendance.Any()).ToList();
-				sessionAttendance.StudentRecords.ForEach(sr => { sr.Times = new(); });
+				sessionAttendance.StudentRecords.ForEach(sr => { sr.Times = []; });
 			}
 
-            await _attendanceRepository.AddAttendanceAsync(sessionGuid, sessionAttendance);
+            await _attendanceRepository.AddAsync(sessionGuid, sessionAttendance);
 
             if (conflicts.Count > 0)
-                return Conflict(conflicts.Select(x => x.Error));
+                return Conflict(conflicts.Select(conflict =>
+				{
+					var student = sessionAttendance.StudentRecords.First(stu => conflict.StudentSchoolYearGuid == stu.Id);
+					return $"{student.FirstName} {student.LastName} has a conflict with an existing attendance record from {conflict.StartTime.ToShortTimeString()} to {conflict.ExitTime.ToShortTimeString()}";
+                }));
 
             return NoContent();
         }
@@ -307,13 +332,17 @@ public class SessionController : ControllerBase
 	{
 		try
 		{
-            var errorList = await _sessionRepository.ValidateStudentAttendanceAsync(sessionAttendance.Date, sessionAttendance.StudentRecords, attendanceGuid);
-            sessionAttendance.StudentRecords = sessionAttendance.StudentRecords.ExceptBy(errorList.Select(x => x.StudentSchoolYearGuid), record => record.Id).ToList();
+            var conflicts = await _attendanceRepository.ValidateStudentAttendanceAsync(sessionAttendance.Date, sessionAttendance.StudentRecords, attendanceGuid);
+            sessionAttendance.StudentRecords = sessionAttendance.StudentRecords.ExceptBy(conflicts.Select(x => x.StudentSchoolYearGuid), record => record.Id).ToList();
 
-            await _attendanceRepository.UpdateAttendanceAsync(attendanceGuid, sessionGuid, sessionAttendance);
+            await _attendanceRepository.UpdateAsync(attendanceGuid, sessionGuid, sessionAttendance);
 
-            if (errorList.Count > 0)
-                return Conflict(errorList.Select(x => x.Error));
+            if (conflicts.Count > 0)
+                return Conflict(conflicts.Select(conflict =>
+                {
+                    var student = sessionAttendance.StudentRecords.First(stu => conflict.StudentSchoolYearGuid == stu.Id);
+                    return $"{student.FirstName} {student.LastName} has a conflict with an existing attendance record from {conflict.StartTime.ToShortTimeString()} to {conflict.ExitTime.ToShortTimeString()}";
+                }));
 
             return Ok();
         }

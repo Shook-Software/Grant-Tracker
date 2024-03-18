@@ -9,6 +9,8 @@ import { Form } from "react-bootstrap";
 import AddInstructorModal from "components/Modals/AddInstructorModal";
 
 import api from 'utils/api'
+import { DateTimeFormatter } from "@js-joda/core";
+import { Locale } from "@js-joda/locale_en-us";
 
 
 interface IAttendProps {
@@ -95,16 +97,31 @@ const createInstructorColumns = (dispatch: React.Dispatch<ReducerAction>): Colum
         label: 'Present',
         attributeKey: '',
         sortable: false,
-        transform: (record: InstructorRecord) => (
-            <div
-                role='button'
-                className='d-flex justify-content-center align-items-center'
-                onClick={() => dispatch({ type: 'instructorPresence', payload: { guid: record.id, isPresent: !record.isPresent } })}
-                style={{ minHeight: '100%' }}
-            >
-                <Form.Check checked={record.isPresent} onChange={(e) => { }} />
-            </div>
-        ),
+        transform: (record: InstructorRecord) => {
+            const equalTimes = record.times.filter(x => x.startTime.equals(x.endTime))
+            const endBeforeStartTimes = record.times.filter(x => x.endTime.isBefore(x.startTime))
+			
+			return (
+				<div
+					role='button'
+					className='d-flex flex-column justify-content-center align-items-center'
+					onClick={() => dispatch({ type: 'instructorPresence', payload: { guid: record.id, isPresent: !record.isPresent } })}
+					style={{ minHeight: '100%' }}
+				>
+					<Form.Check checked={record.isPresent} onChange={(e) => { }} />
+					{equalTimes.map(time => (
+						<div className='text-danger text-break' style={{maxWidth: "250px"}}>
+							Start and end times cannot be equal. {time.startTime.format(DateTimeFormatter.ofPattern('hh:mm a').withLocale(Locale.ENGLISH))} to {time.endTime.format(DateTimeFormatter.ofPattern('hh:mm a').withLocale(Locale.ENGLISH))}
+						</div>
+					))}
+					{endBeforeStartTimes.map(time => (
+						<div className='text-danger text-break' style={{maxWidth: "250px"}}>
+							End time cannot be before start. {time.startTime.format(DateTimeFormatter.ofPattern('hh:mm a').withLocale(Locale.ENGLISH))} to {time.endTime.format(DateTimeFormatter.ofPattern('hh:mm a').withLocale(Locale.ENGLISH))}
+						</div>
+					))}
+				</div>
+        	)
+		},
         cellProps: {
             style: { height: '1px', padding: '0px' }
         }

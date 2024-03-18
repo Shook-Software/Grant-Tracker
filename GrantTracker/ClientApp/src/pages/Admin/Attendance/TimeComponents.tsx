@@ -1,23 +1,26 @@
-
 import { LocalTime } from "@js-joda/core";
 import { TimeInput } from "components/TimeRangeSelector";
 import { TimeScheduleForm } from "Models/TimeSchedule";
 import { ReducerAction } from './state'
+import { ReactElement } from "react";
 
 
 
 interface AttendanceTimeInputProps {
 	personId: string
 	times: TimeScheduleForm[]
-	dispatchAction: string
 	dispatch: React.Dispatch<ReducerAction>
 }
 
-
+//the better thing to do would to be to provide the onchange method rather than have two
 export const AttendanceStartTimeInput = ({personId, times, dispatch}: AttendanceTimeInputProps): ReactElement[] => {
 
 	function modifyTimesByIndex(index: number, newTime: LocalTime): TimeScheduleForm[] {
 		return times.map((x, idx) => index === idx ? {...x, startTime: newTime } : x)
+	}
+
+	function handleTimeChange(time, index) {
+		dispatch({ type: 'setAttendanceStartTime', payload: { personId, times: modifyTimesByIndex(index, time)}})
 	}
 
 	return times.map((schedule, index) => (
@@ -26,7 +29,7 @@ export const AttendanceStartTimeInput = ({personId, times, dispatch}: Attendance
 					id={'start-time-' + personId + index} 
 					small={true}
 					value={schedule.startTime} 
-					onChange={(time) => dispatch({ type: 'setAttendanceStartTime', payload: { personId, times: modifyTimesByIndex(index, time)}})} 
+					onChange={(time) => handleTimeChange(time, index)} 
 				/>
 			</div>
 		)
@@ -39,13 +42,17 @@ export const AttendanceEndTimeInput = ({personId, times, dispatch}: AttendanceTi
 		return times.map((x, idx) => index === idx ? {...x, endTime: newTime } : x)
 	}
 
+	function handleTimeChange(time, index) {
+		dispatch({ type: 'setAttendanceEndTime', payload: { personId, times: modifyTimesByIndex(index, time)}})
+	}
+
 	return times.map((schedule, index) => (
 			<div key={'end-time-' + personId + index}>
 				<TimeInput 
 					id={'end-time-' + personId + index} 
 					small={true}
 					value={schedule.endTime} 
-					onChange={(time) => dispatch({ type: 'setAttendanceEndTime', payload: { personId, times: modifyTimesByIndex(index, time)}})} 
+					onChange={(time) => handleTimeChange(time, index)} 
 				/>
 			</div>
 		)

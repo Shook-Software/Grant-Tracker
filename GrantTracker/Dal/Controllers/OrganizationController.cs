@@ -6,6 +6,10 @@ using GrantTracker.Dal.Models.Views;
 using GrantTracker.Dal.Repositories.OrganizationYearRepository;
 using GrantTracker.Utilities;
 using Microsoft.EntityFrameworkCore;
+using GrantTracker.Dal.Models.Dto.Attendance;
+using GrantTracker.Dal.Repositories.AttendanceRepository;
+using GrantTracker.Dal.Models.Dto.SessionDTO;
+using GrantTracker.Dal.Repositories.SessionRepository;
 
 namespace GrantTracker.Dal.Controllers
 {
@@ -16,12 +20,16 @@ namespace GrantTracker.Dal.Controllers
 	{
 		private readonly IOrganizationRepository _organizationRepository;
         private readonly IOrganizationYearRepository _organizationYearRepository;
+        private readonly IAttendanceRepository _attendanceRepository;
+        private readonly ISessionRepository _sessionRepository;
         private readonly ILogger<OrganizationController> _logger;
 
-        public OrganizationController(IOrganizationRepository OrganizationRepository, IOrganizationYearRepository OrganizationYearRepository, ILogger<OrganizationController> logger)
+        public OrganizationController(IOrganizationRepository OrganizationRepository, IOrganizationYearRepository OrganizationYearRepository, IAttendanceRepository attendRepo, ISessionRepository sessionRepo, ILogger<OrganizationController> logger)
 		{
 			_organizationRepository = OrganizationRepository;
 			_organizationYearRepository = OrganizationYearRepository;
+            _attendanceRepository = attendRepo;
+            _sessionRepository = sessionRepo;
             _logger = logger;
 		}
 
@@ -85,6 +93,40 @@ namespace GrantTracker.Dal.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, "An unknown error occured while fetching missing attendance.");
+            }
+        }
+
+        [HttpGet("organization/{organizationGuid:guid}/attendance/issues")]
+        public async Task<ActionResult<List<AttendanceIssueDTO>>> GetAttendanceIssuesAsync(Guid organizationGuid)
+        {
+            try
+            {
+                if (!User.IsAdmin() && !User.HomeOrganizationGuids().Contains(organizationGuid))
+                    return Unauthorized();
+
+                return Ok(await _attendanceRepository.GetIssuesAsync(organizationGuid));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An unknown error occured while fetching attendance issues.");
+            }
+        }
+
+        [HttpGet("organizationYear/{organizationYearGuid:Guid}/session/issues")]
+        public async Task<ActionResult<List<SessionIssuesDTO>>> GetSessionIssues(Guid organizationYearGuid)
+        {
+            try
+            {
+                Guid orgGuid = (await _organizationRepository.GetOrganizationYearAsync(organizationYearGuid)).Organization.Guid;
+
+                if (!User.IsAdmin() && !User.HomeOrganizationGuids().Contains(orgGuid))
+                    return Unauthorized();
+
+                return Ok(await _sessionRepository.GetIssues(organizationYearGuid));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An unknown error occured while fetching session issues.");
             }
         }
 
