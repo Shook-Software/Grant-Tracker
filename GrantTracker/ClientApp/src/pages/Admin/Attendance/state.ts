@@ -30,8 +30,7 @@ export type ReducerAction =
     | { type: 'applyStudentConflicts'; payload: {studentSchoolYearGuid: string, error: string}[] }
 
     | { type: 'familyStudentPresence', payload: { guid: string, isPresent: boolean } }
-    | { type: 'addFamilyMember', payload: { studentSchoolYearGuid: string, familyMember: FamilyMember } }
-    | { type: 'removeFamilyMember', payload: { studentSchoolYearGuid: string, familyMember: FamilyMember } }
+    | { type: 'setFamilyMemberCount', payload: { studentSchoolYearGuid: string, familyMember: FamilyMember, count: number } }
 
 
 
@@ -199,38 +198,23 @@ export function reducer(state: AttendanceForm, action: ReducerAction): Attendanc
             record.times = action.payload.isPresent ? [...state.defaultTimeSchedule] : []
             return {...state}
 
-        case 'addFamilyMember':
+        case 'setFamilyMemberCount':
+            console.debug(action)
             studentRecord = state.studentRecords.find(record => record.id == action.payload?.studentSchoolYearGuid) as StudentRecord
 
             if (studentRecord.familyAttendance) {
                 let familyMemberIndex = studentRecord.familyAttendance.findIndex(x => x.familyMember == action.payload.familyMember)
 
                 if (familyMemberIndex === -1)
-                    studentRecord.familyAttendance = [...studentRecord.familyAttendance, { familyMember: action.payload.familyMember, count: 1 }]
+                    studentRecord.familyAttendance = [...studentRecord.familyAttendance, { familyMember: action.payload.familyMember, count: action.payload.count }]
                 else 
-                    studentRecord.familyAttendance[familyMemberIndex].count++
+                    studentRecord.familyAttendance[familyMemberIndex].count = action.payload.count 
+
+                if (action.payload.count <= 0)
+                    studentRecord.familyAttendance = studentRecord.familyAttendance.filter(x => x.familyMember != action.payload.familyMember)
             }
             else {
-                studentRecord.familyAttendance = [{ familyMember: action.payload.familyMember, count: 1 }]
-            }
-
-            return { ...state, studentRecords: [...state.studentRecords] }
-
-        case 'removeFamilyMember':
-
-            studentRecord = state.studentRecords.find(record => record.id === action.payload.studentSchoolYearGuid) as StudentRecord
-
-            if (studentRecord.familyAttendance) {
-                let familyMemberIndex = studentRecord.familyAttendance.findIndex(x => x.familyMember == action.payload.familyMember)
-
-                if (familyMemberIndex === -1)
-                    return { ...state }
-                else { //could we do else if count-- === 0 and remove? Should decrease the count, then remove it only if it's 0
-                    studentRecord.familyAttendance[familyMemberIndex].count--
-
-                    if (studentRecord.familyAttendance[familyMemberIndex].count == 0)
-                        studentRecord.familyAttendance = studentRecord.familyAttendance.filter(x => x.familyMember != action.payload.familyMember)
-                }
+                studentRecord.familyAttendance = [{ familyMember: action.payload.familyMember, count: action.payload.count }]
             }
 
             return { ...state, studentRecords: [...state.studentRecords] }

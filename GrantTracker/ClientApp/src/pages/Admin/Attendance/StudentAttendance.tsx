@@ -85,7 +85,8 @@ const FamilyInput = ({ familyRecord, studentSchoolYearGuid, dispatch }: { family
             <Button
                 onClick={(e) => {
                     e.stopPropagation()
-                    dispatch({ type: 'removeFamilyMember', payload: { studentSchoolYearGuid, familyMember: familyRecord.familyMember } })
+                    e.preventDefault()
+                    dispatch({ type: 'setFamilyMemberCount', payload: { studentSchoolYearGuid, familyMember: familyRecord.familyMember, count: familyRecord.count - 1 } })
                 }}
             >
                 -
@@ -93,7 +94,9 @@ const FamilyInput = ({ familyRecord, studentSchoolYearGuid, dispatch }: { family
             <Button
                 onClick={(e) => {
                     e.stopPropagation()
-                    dispatch({ type: 'addFamilyMember', payload: { studentSchoolYearGuid, familyMember: familyRecord.familyMember } })
+                    e.preventDefault()
+                    console.log('Fired')
+                    dispatch({ type: 'setFamilyMemberCount', payload: { studentSchoolYearGuid, familyMember: familyRecord.familyMember, count: familyRecord.count + 1 } })
                 }}
             >
                 +
@@ -125,7 +128,10 @@ const createParentAttendanceColumn = (dispatch: React.Dispatch<ReducerAction>): 
     key: 'family',
     sortable: false,
     transform: (record: StudentRecord) => {
-        const addFamilyMember = (familyMember: FamilyMember) => dispatch({ type: 'addFamilyMember', payload: { studentSchoolYearGuid: record.id, familyMember } })
+        const addFamilyMember = (familyMember: FamilyMember) =>  {
+            console.log('fired elsewhere')
+            dispatch({ type: 'setFamilyMemberCount', payload: { studentSchoolYearGuid: record.id, familyMember, count: 1 } })
+        }
 
         return (
             <>
@@ -141,6 +147,7 @@ const createParentAttendanceColumn = (dispatch: React.Dispatch<ReducerAction>): 
                     size='sm'
                     className='align-self-center'
                     onClick={(e) => {
+                        console.log('this?')
                         e.stopPropagation()
                         e.preventDefault()
                     }}
