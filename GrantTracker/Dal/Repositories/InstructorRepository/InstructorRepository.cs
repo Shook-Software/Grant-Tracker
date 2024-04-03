@@ -29,7 +29,8 @@ namespace GrantTracker.Dal.Repositories.InstructorRepository
 			//employee db results
 			return await _staffContext
 				.Employees
-				.Where(e => name.IsNullOrEmpty() || (e.GivenName + " " + e.Sn).Contains(name))
+                .AsNoTracking()
+                .Where(e => name.IsNullOrEmpty() || (e.GivenName + " " + e.Sn).Contains(name))
 				.Where(e => badgeNumber.IsNullOrEmpty() || e.EmployeeId.Contains(badgeNumber))
 				.Select(e => EmployeeDto.FromDatabase(e))
 				.ToListAsync();
@@ -44,13 +45,9 @@ namespace GrantTracker.Dal.Repositories.InstructorRepository
 				.Include(isy => isy.Status)
 				.Where(isy => isy.OrganizationYearGuid == orgYearGuid)
 				.Select(isy => InstructorSchoolYearViewModel.FromDatabase(isy, null))
+				.Take(100)
 				.ToListAsync();
 		}
-
-		//differences between coordinator request and admin request?
-		//think on it
-		//have a way to see duplicated instructors for deletion around this process
-		
 
 		public async Task<Guid> CreateAsync(InstructorDto instructor, Guid organizationYearGuid)
 		{
