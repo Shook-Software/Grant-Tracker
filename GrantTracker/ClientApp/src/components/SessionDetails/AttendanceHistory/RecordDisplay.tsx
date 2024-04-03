@@ -196,7 +196,6 @@ export default ({sessionGuid, simpleRecord, onDeleteClick, sessionType}: Props):
 
       if (sessionType === 'parent')
         studentTableColumns = removeStudentTimeRecords(studentTableColumns)
-
   }
 
   useEffect(() => {
