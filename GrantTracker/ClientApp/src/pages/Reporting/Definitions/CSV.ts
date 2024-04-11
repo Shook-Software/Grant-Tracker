@@ -418,6 +418,10 @@ export const studentSurveyFields = [
 		value: 'activity'
 	},
 	{
+		label: 'Objective',
+		value: 'objective'
+	},
+	{
 		label: 'Total Days',
 		value: 'totalDays'
 	},

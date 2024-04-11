@@ -468,6 +468,11 @@ export const staffingColumns: Column[] = [
 	  sortable: true
 	},
 	{
+	  label: 'Objective',
+	  attributeKey: 'objective',
+	  sortable: true
+	},
+	{
 	  label: 'Total Days',
 	  attributeKey: 'totalDays',
 	  sortable: true,
