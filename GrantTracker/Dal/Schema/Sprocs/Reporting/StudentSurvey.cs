@@ -8,6 +8,7 @@ public class StudentSurveyViewModel
     public string MatricNumber { get; set; }
     public string Grade { get; set; }
     public string Activity { get; set; }
+    public string Objective { get; set; }
     public int TotalDays { get; set; }
     public double TotalHours { get; set; }
 }
