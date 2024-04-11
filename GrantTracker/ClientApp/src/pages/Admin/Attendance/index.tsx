@@ -163,7 +163,7 @@ const AttendanceForm = ({session, attendanceGuid, date, state, dispatch}: Attend
 				times: sr.times?.slice()
 			}))
 	
-			api.post(`session/${session.guid}/attendance/verify?instanceDate=${date}&attendanceGuid=${attendanceGuid}`, studentRecords)
+			api.post(`session/${session.guid}/attendance/verify?instanceDate=${date}&attendanceGuid=${attendanceGuid ? attendanceGuid : ''}`, studentRecords)
 				.then(() => {
 					dispatch({type: 'applyStudentConflicts', payload: []})
 				})
@@ -271,10 +271,18 @@ const DateTimeSelection = ({session, date, onDateChange, times, onTimeChange, pr
 		<div className='row'>
 			<div className='col-xl-2 col-md-4 col-12'>
 				<label className='form-label' htmlFor='date-select'>Date</label>
-				<select className='form-select' aria-label='Select attendance date' value={date?.toString()} onChange={e => handleDateChange(LocalDate.parse(e.target.value))}>
-					{originalAttendDate ? <option className='text-primary' value={originalAttendDate.toString()}>{originalAttendDate.format(dateFormatter)}</option> : null}
-					{dates?.map(date => (<option value={date.toString()}>{date.format(dateFormatter)}</option>))}
-				</select>
+				{
+					!dates || dates.length != 0 
+						? 	<select className='form-select' aria-label='Select attendance date' value={date?.toString()} onChange={e => handleDateChange(LocalDate.parse(e.target.value))}>
+								{originalAttendDate ? <option className='text-primary' value={originalAttendDate.toString()}>{originalAttendDate.format(dateFormatter)}</option> : null}
+								{dates?.map(date => (<option value={date.toString()}>{date.format(dateFormatter)}</option>))}
+							</select>
+						:	<input className='form-control' type='date' aria-label='Select attendance date' value={date?.toString()} onChange={e => handleDateChange(LocalDate.parse(e.target.value))} />
+				}
+
+				{
+					date && !times ? <div className='text-danger'>No schedule found for this day of week, are you sure this is the correct date?</div> : null
+				}
 			</div>
 
 			<div className='col-xl-2 col-md-4 col-12'>
