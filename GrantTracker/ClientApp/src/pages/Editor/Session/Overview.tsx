@@ -69,7 +69,7 @@ export default () => {
           <Form.Group>
             <Form.Label>Objective</Form.Label>
             <Dropdown
-              width='60px'
+              width='80px'
               value={values.objective}
               options={dropdownData.objectives}
               onChange={(value: string) => {

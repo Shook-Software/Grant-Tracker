@@ -46,29 +46,32 @@ const smallCellStyle = {
 }
 
 export default ({ columns, dataset, rowProps, defaultSort, maxHeight, maxRows = 1000, size = 'md', indexed = false, bordered = true, showHeader = true, className, tableProps }: Props): JSX.Element => {
+  const [columnset, setColumns] = useState<Column[]>(columns.map(col => ({...col, key: col.key || col.attributeKey})))
   const [sortIndex, setSortIndex] = useState<number>(defaultSort?.index || 0)
   const [sortDirection, setSortDirection] = useState<SortDirection>(defaultSort?.direction || SortDirection.None)
   const [dataToRender, setDataToRender] = useState<any[]>(dataset)
   const [pageNumber, setPageNumber] = useState<number>(0);
 
-  if (size === 'sm')
-    columns = columns.map(col => ({
-      ...col, 
-      cellProps: { ...col.cellProps, style: {...smallCellStyle, ...col.cellProps?.style }},
-      headerProps: { ...col.headerProps, style: {...smallCellStyle, ...col.headerProps?.style }}
-    }))
-
   const maxPages: number = Math.floor((dataToRender?.length ?? 0) / maxRows) + 1
 
   useEffect(() => {
-    setDataToRender(sortDataset(dataset, sortIndex, sortDirection, columns))
+    setDataToRender(sortDataset(dataset, sortIndex, sortDirection, columnset))
   }, [dataset])
- 
-  //default method of ensuring mapped elements have unique keys, not foolproof
-  columns.forEach(col => {
-    if (!col.key)
-      col.key = col.attributeKey
-  })
+
+  useEffect(() => {
+    setColumns(columns.map(col => ({...col, key: col.key || col.attributeKey})))
+  }, [columns])
+
+  useEffect(() => { 
+    if (size === 'sm')
+      setColumns(columnset.map(col => ({
+        ...col, 
+        cellProps: { ...col.cellProps, style: {...smallCellStyle, ...col.cellProps?.style }},
+        headerProps: { ...col.headerProps, style: {...smallCellStyle, ...col.headerProps?.style }}
+      })))
+
+  }, [size])
+  
 
   function handleSortIndexChange(value: number): void {
     let direction = value === sortIndex ? mod(sortDirection + 1, 3) : SortDirection.Ascending
@@ -76,7 +79,7 @@ export default ({ columns, dataset, rowProps, defaultSort, maxHeight, maxRows = 
     setSortIndex(value)
     setSortDirection(direction)
     setPageNumber(0)
-    setDataToRender(sortDataset(dataset, value, direction, columns))
+    setDataToRender(sortDataset(dataset, value, direction, columnset))
   }
 
   const paginatedData = dataToRender?.slice(pageNumber * maxRows, (pageNumber + 1) * maxRows)
@@ -111,14 +114,14 @@ export default ({ columns, dataset, rowProps, defaultSort, maxHeight, maxRows = 
           {
             showHeader ? 
             <Header
-              columns={columns}
+              columns={columnset}
               indexed={indexed}
               setSortIndex={(value: number) => handleSortIndexChange(value)}
             />
             : null
           }
           <Body
-            columns={columns}
+            columns={columnset}
             dataset={paginatedData}
             rowProps={rowProps}
             indexed={indexed}
