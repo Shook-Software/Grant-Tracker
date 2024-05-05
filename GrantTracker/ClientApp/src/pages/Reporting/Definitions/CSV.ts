@@ -414,10 +414,6 @@ export const studentSurveyFields = [
 		value: 'grade',
 	},
 	{
-		label: 'Activity',
-		value: 'activity'
-	},
-	{
 		label: 'Objective',
 		value: 'objective'
 	},
