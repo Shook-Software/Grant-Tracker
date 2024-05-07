@@ -5,11 +5,6 @@ namespace GrantTracker.Dal.Schema
 {
 	public class Objective : IDropdown
 	{
-		public Guid Guid { get; set; }
-		public string Abbreviation { get; set; }
-		public string Label { get; set; }
-		public string Description { get; set; }
-
 		public virtual ICollection<Session> Sessions { get; set; }
 
 		public static void Setup(ModelBuilder builder)
@@ -28,7 +23,7 @@ namespace GrantTracker.Dal.Schema
 
 			/// /Relations
 
-			entity.HasMany(e => e.Sessions)
+			entity.HasMany(e => e.SessionObjectives)
 				.WithOne(e => e.Objective)
 				.HasForeignKey(e => e.ObjectiveGuid);
 

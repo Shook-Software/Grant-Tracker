@@ -20,6 +20,7 @@ namespace GrantTracker.Dal.Models.Views
 		public List<DayScheduleView> DaySchedules { get; set; }
 		public List<InstructorSchoolYearViewModel> Instructors { get; set; }
 		public List<GradeView> SessionGrades { get; set; }
+		public List<DropdownOption> Objectives { get; set; }
 
 		public static SessionView FromDatabase(Session session) => new()
 		{
@@ -30,14 +31,16 @@ namespace GrantTracker.Dal.Models.Views
 			OrganizationYear = OrganizationYearView.FromDatabase(session.OrganizationYear),
 			SessionType = DropdownOption.FromDatabase(session.SessionType),
 			Activity = DropdownOption.FromDatabase(session.Activity),
-			Objective = DropdownOption.FromDatabase(session.Objective),
 			FundingSource = DropdownOption.FromDatabase(session.FundingSource),
 			OrganizationType = DropdownOption.FromDatabase(session.OrganizationType),
 			PartnershipType = DropdownOption.FromDatabase(session.PartnershipType),
 			DaySchedules = session.DaySchedules.Select(d => DayScheduleView.FromDatabase(d)).ToList(),
 			Instructors = session.InstructorRegistrations.Select(reg => InstructorSchoolYearViewModel.FromDatabase(reg.InstructorSchoolYear)).ToList(),
-			SessionGrades = session.SessionGrades.Select(GradeView.FromDatabase).ToList()
-		};
+			SessionGrades = session.SessionGrades.Select(GradeView.FromDatabase).ToList(),
+            Objectives = session.SessionObjectives
+				.Select(x => DropdownOption.FromDatabase(x.Objective))
+				.ToList(),
+        };
 	}
 
 	public class StudentRegistrationView

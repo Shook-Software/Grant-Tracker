@@ -34,7 +34,7 @@ export interface SessionDomain {
   organization: DropdownOption
   sessionType: DropdownOption
   activity: DropdownOption
-  objective: DropdownOption
+  objectives: DropdownOption[]
   fundingSource: DropdownOption
   organizationType: DropdownOption
   partnershipType: DropdownOption
@@ -52,7 +52,7 @@ export interface SessionView {
   organization: DropdownOption
   sessionType: DropdownOption
   activity: DropdownOption
-  objective: DropdownOption
+  objectives: DropdownOption[]
   fundingSource: DropdownOption
   organizationType: DropdownOption
   partnershipType: DropdownOption
@@ -66,7 +66,7 @@ export interface SessionForm {
   name: string
   type: string
   activity: string
-  objective: string
+  objectives: string[]
   fundingSource: string
   organizationType: string
   partnershipType: string
@@ -96,7 +96,7 @@ export abstract class Session {
       guid: obj.guid,
       name: obj.name,
       activity: obj.activity.guid,
-      objective: obj.objective.guid,
+      objectives: obj.objectives.map(obj => obj.guid),
       type: obj.sessionType.guid,
       instructors: obj.instructors.map(reg => ({
         guid: reg.guid,
@@ -145,7 +145,7 @@ export abstract class Session {
       name: '',
       type: '',
       activity: '',
-      objective: '',
+      objectives: [],
       instructors: [],
       fundingSource: '',
       organizationType: '',

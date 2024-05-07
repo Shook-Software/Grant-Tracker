@@ -19,14 +19,20 @@ namespace GrantTracker.Dal.Models.Dto
 				Name = Name,
 				SessionTypeGuid = Type,
 				ActivityGuid = Activity,
-				ObjectiveGuid = Objective,
 				FundingSourceGuid = FundingSource,
 				OrganizationTypeGuid = OrganizationType,
 				PartnershipTypeGuid = PartnershipType,
 				FirstSession = FirstSessionDate,
 				LastSession = LastSessionDate,
-				Recurring = Recurring
-			};
+				Recurring = Recurring,
+                SessionObjectives = Objectives
+                    .Select(objGuid => new SessionObjective
+                    {
+                        SessionGuid = Guid,
+                        ObjectiveGuid = objGuid
+                    })
+                    .ToList(),
+            };
 		}
 
 		public List<TempDaySchedule> GetDaySchedule()
@@ -108,7 +114,7 @@ namespace GrantTracker.Dal.Models.Dto
 		public Guid OrganizationYearGuid { get; set; }
 		public Guid Type { get; set; }
 		public Guid Activity { get; set; }
-		public Guid Objective { get; set; }
+		public List<Guid> Objectives { get; set; }
 		public Guid FundingSource { get; set; }
 		public Guid OrganizationType { get; set; }
 		public Guid PartnershipType { get; set; }

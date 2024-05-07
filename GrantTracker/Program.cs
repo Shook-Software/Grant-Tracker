@@ -3,6 +3,7 @@ using System.Diagnostics;
 using Serilog;
 using Serilog.Events;
 using Serilog.Formatting.Compact;
+using GrantTracker.Dal.Repositories.DropdownRepository;
 
 //remember that we had to install something for IIS to make it all work.. maybe
 var builder = WebApplication.CreateBuilder(args);
