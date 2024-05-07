@@ -3,6 +3,7 @@ using System.Diagnostics;
 using Serilog;
 using Serilog.Events;
 using Serilog.Formatting.Compact;
+using Microsoft.AspNetCore.Hosting;
 
 //remember that we had to install something for IIS to make it all work.. maybe
 var builder = WebApplication.CreateBuilder(args);
@@ -15,11 +16,17 @@ Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
     .CreateBootstrapLogger();
 
-builder.Host.UseSerilog((context, services, configuration) => configuration
-    .ReadFrom.Configuration(context.Configuration)
-    .ReadFrom.Services(services)
-    .Enrich.FromLogContext()
-    .WriteTo.Console(new RenderedCompactJsonFormatter()));
+Host.CreateDefaultBuilder(args)
+       .ConfigureLogging(logging =>
+       {
+           logging.ClearProviders();
+           logging.AddConsole();
+           logging.SetMinimumLevel(LogLevel.Information);
+       })
+       .ConfigureWebHostDefaults(webBuilder =>
+       {
+           webBuilder.UseStartup<Program>();
+       });
 
 // Add services to the container.
 // Any issues with listener URL is likely set in the project file itself.
