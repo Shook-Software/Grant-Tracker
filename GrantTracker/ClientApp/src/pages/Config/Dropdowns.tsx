@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react'
-import { Tab, Nav, Row, Col, Form } from 'react-bootstrap'
+import { Tab, Nav, Row, Col, Form, Button, Spinner } from 'react-bootstrap'
+import { DateTimeFormatter, LocalDateTime } from '@js-joda/core'
 
 import Table, { Column } from 'components/BTable'
 
 import { DropdownOption } from 'Models/Session'
+import { DateTime } from  'Models/DateTime'
 
 import api from 'utils/api'
-import { patchDropdownOptions } from './api'
 import isDeepEqual from 'deep-equal'
 
 const displayColumns: Column[] = [
@@ -24,6 +25,12 @@ const displayColumns: Column[] = [
     label: 'Description',
     attributeKey: 'description',
     sortable: false
+  },
+  {
+    label: 'Deactivated Date',
+    attributeKey: 'deactivatedAt',
+    sortable: true,
+    transform: (date) => date ? DateTime.toLocalTime(date).format(DateTimeFormatter.ofPattern("yyyy-MM-dd")) : ''
   }
 ]
 
@@ -76,29 +83,46 @@ const createEditColumns = (onChange: (DropdownOption) => void): Column[] => [
         />
       )
     }
+  },
+  {
+    label: 'Active',
+    attributeKey: '',
+    key: 'edit-description',
+    sortable: false,
+    transform: (dropdownOption: DropdownOption) => {
+      return ( 
+        <Form.Check 
+          type="checkbox" 
+          label="Active" 
+          checked={!dropdownOption.deactivatedAt} 
+          onChange={(e) => onChange({...dropdownOption, deactivatedAt: e.target.checked ? null : LocalDateTime.now()})}
+        />
+      )
+    }
   }
 ]
 
-
   //assumes both arrays stay in the same order
-  const filterUneditedOptions = (originalOptions: DropdownOption[], editedOptions: DropdownOption[]): DropdownOption[] => {
-    let filteredOptions: DropdownOption[] = []
+const filterUneditedOptions = (originalOptions: DropdownOption[], editedOptions: DropdownOption[]): DropdownOption[] => {
+  let filteredOptions: DropdownOption[] = []
 
-    //only return those with changes
-    for (let index = 0; index < originalOptions.length; index++) {
-      const originalOption: DropdownOption = originalOptions[index]
-      const editedOption: DropdownOption = editedOptions[index]
-      if (!isDeepEqual(originalOption, editedOption))
-        filteredOptions = [...filteredOptions, editedOption]
-    }
-
-    return filteredOptions
+  //only return those with changes
+  for (let index = 0; index < originalOptions.length; index++) {
+    const originalOption: DropdownOption = originalOptions[index]
+    const editedOption: DropdownOption = editedOptions[index]
+    if (!isDeepEqual(originalOption, editedOption))
+      filteredOptions = [...filteredOptions, editedOption]
   }
 
+  return filteredOptions
+}
+
 //we need an isActive field so that dropdown options can be retired.
-const Dropdown = ({ state }): JSX.Element => {
-  const [dropdownOptions, setDropdownOptions] = useState<DropdownOption[]>(state || [])
-  const [editable, setEditable] = useState<boolean>(false)
+const Dropdown = ({ type, state, reloadOptions }): JSX.Element => {  
+  const [dropdownOptions, setDropdownOptions] = useState<DropdownOption[]>(state?.map(x => ({...x})) || [])
+  const [edit, setEdit] = useState<boolean>(false)
+  const [changesHaveError, setChangesHaveError] = useState<boolean>(false)
+  const [changesPending, setChangesPending] = useState<boolean>(false)
 
   const handleChange = (editedOption: DropdownOption): void => {
     const editedOptions: DropdownOption[] = dropdownOptions.map(option => {
@@ -110,28 +134,74 @@ const Dropdown = ({ state }): JSX.Element => {
     setDropdownOptions(editedOptions)
   }
 
-  const submitChanges = (): void => {
+  const submitChanges = async (): Promise<any> => {
     const edits = filterUneditedOptions(state, dropdownOptions)
-    console.log(state, edits)
+    const additions = dropdownOptions.slice(state.length).filter(x => x.label.trim() != '' || x.abbreviation?.trim() != '')
+    setChangesHaveError(false)
+    setChangesPending(true)
+
+    console.log(edits, additions)
+
+    const promises: Promise<any>[] = [
+        ...edits.map(x => api.patch(`developer/dropdown?type=${type}`, x)),
+        ...additions.map(x => api.post(`developer/dropdown?type=${type}`, x))
+    ]
+
+    return Promise.all(promises)
+        .then(res => setEdit(false))
+        .catch(err => setChangesHaveError(true))
+        .finally(() => {
+            setChangesPending(false)
+            reloadOptions()
+        })
   }
 
-
-  const columns: Column[] = editable ? createEditColumns(handleChange) : displayColumns
+  const columns: Column[] = edit ? createEditColumns(handleChange) : displayColumns
 
   useEffect(() => {
     setDropdownOptions(state)
   }, [state])
 
-  if (!state) return <></>
+  useEffect(() => {
+    if (!edit)
+        setDropdownOptions(state)
+  }, [edit])
 
-  /*<button onClick={() => submitChanges()}>Submit Changes</button>*/
+  if (!state || type === undefined) return <></>
+
+  if (changesPending)
+    <Spinner />
 
   return (
     <>
-      <button onClick={() => setEditable(true)}>Edit</button>
-      <button onClick={() => setEditable(false)}>Unedit</button>
+        <div className='mb-3'>
+            {
+                edit
+                ?
+                <>
+                    <Button className="me-3" onClick={() => submitChanges()}>Submit</Button>
+                    <Button onClick={() => setEdit(false)}>Cancel</Button>
+                </>
+                :  <Button onClick={() => setEdit(true)}>Edit</Button>
+            }
+        </div>
+
+        <div className='text-danger'>
+            {
+                changesHaveError ? 'An unhandled error occured.' : ''
+            }
+        </div>
       
-      <Table dataset={dropdownOptions} columns={columns} />
+        <Table dataset={dropdownOptions} columns={columns} />
+
+        <div className='mt-3'>
+            {
+                edit
+                ?
+                    <Button onClick={() => setDropdownOptions([...dropdownOptions, {guid: null, label: '', abbreviation: '', description: '', deactivatedAt: null}])}>Add</Button>
+                : null
+            }
+        </div>
     </>
   )
 }
@@ -141,12 +211,16 @@ export default (): JSX.Element => {
   const [state, setState] = useState([])
   const style = { cursor: 'pointer' }
 
-  useEffect(() => {
+  const loadOptions = () => {
     api
       .get('developer/dropdowns')
       .then(res => {
         setState(res.data)
       })
+  }
+
+  useEffect(() => {
+    loadOptions()
   }, [])
 
   return (
@@ -167,16 +241,6 @@ export default (): JSX.Element => {
                 eventKey='fundingSources'
               >
                 Funding Sources
-              </Nav.Link>
-            </Nav.Item>
-
-            <Nav.Item>
-              <Nav.Link
-                className='user-select-none'
-                style={style}
-                eventKey='grades'
-              >
-                Grades
               </Nav.Link>
             </Nav.Item>
 
@@ -235,35 +299,31 @@ export default (): JSX.Element => {
         <Col lg={9}>
           <Tab.Content>
             <Tab.Pane eventKey='activities'>
-              <Dropdown state={state.activities} />
-            </Tab.Pane>
-
-            <Tab.Pane eventKey='fundingSources'>
-              <Dropdown state={state.fundingSources} />
-            </Tab.Pane>
-
-            <Tab.Pane eventKey='grades'>
-              <Dropdown state={state.grades} />
-            </Tab.Pane>
-
-            <Tab.Pane eventKey='instructorStatus'>
-              <Dropdown state={state.instructorStatuses} />
+              <Dropdown type={0} state={state.activities} reloadOptions={loadOptions} />
             </Tab.Pane>
 
             <Tab.Pane eventKey='objectives'>
-              <Dropdown state={state.objectives} />
+              <Dropdown type={1} state={state.objectives} reloadOptions={loadOptions} />
+            </Tab.Pane>
+
+            <Tab.Pane eventKey='fundingSources'>
+              <Dropdown type={2} state={state.fundingSources}  reloadOptions={loadOptions}/>
+            </Tab.Pane>
+
+            <Tab.Pane eventKey='instructorStatus'>
+              <Dropdown type={3} state={state.instructorStatuses}  reloadOptions={loadOptions}/>
             </Tab.Pane>
 
             <Tab.Pane eventKey='organizationTypes'>
-              <Dropdown state={state.organizationTypes} />
+              <Dropdown type={4} state={state.organizationTypes} reloadOptions={loadOptions} />
             </Tab.Pane>
 
             <Tab.Pane eventKey='partnershipTypes'>
-              <Dropdown state={state.partnershipTypes} />
+              <Dropdown type={5} state={state.partnershipTypes} reloadOptions={loadOptions} />
             </Tab.Pane>
 
             <Tab.Pane eventKey='sessionTypes'>
-              <Dropdown state={state.sessionTypes} />
+              <Dropdown type={6} state={state.sessionTypes} reloadOptions={loadOptions} />
             </Tab.Pane>
           </Tab.Content>
         </Col>

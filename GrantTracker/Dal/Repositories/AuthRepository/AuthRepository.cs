@@ -112,7 +112,7 @@ public class AuthRepository : IAuthRepository
 				{
 					InstructorGuid = newInstructorGuid,
 					OrganizationYearGuid = newUser.OrganizationYearGuid,
-					StatusGuid = adminStatus.Guid,
+					StatusGuid = adminStatus.Guid.Value,
 					Identity = new Identity()
 					{
 						Guid = newInstructorGuid,
@@ -139,8 +139,8 @@ public class AuthRepository : IAuthRepository
 					Guid = instructorSchoolYearGuid,
 					Claim = newUser.Claim
 				},
-				StatusGuid = _grantContext.InstructorStatuses.Where(stat => stat.Label == "Administrator").First().Guid
-			};
+				StatusGuid = _grantContext.InstructorStatuses.Where(stat => stat.Label == "Administrator").First().Guid.Value
+            };
 
 			await _grantContext.InstructorSchoolYears.AddAsync(newSchoolYear);
 			await _grantContext.SaveChangesAsync();
