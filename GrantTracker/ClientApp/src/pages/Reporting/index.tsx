@@ -504,7 +504,7 @@ export default ({user}): JSX.Element => {
 }
 
 const FamilyEngagementReport = ({isLoading, reportParameters, fileName, reportDateDisplayString, records}): React.ReactElement => { 
-	const [daysAttendedFilter, setDaysAttendedFilter] = useState<string>('')
+	const [daysAttendedFilter, setDaysAttendedFilter] = useState<string>('0')
 	const [familyType, setFamilyType] = useState<string>('')
 
 	const familyTypeOptions: string[] = useMemo<string[]>(() => [...new Set<string>(records.flatMap(x => x.familyAttendance).map(attend => attend.familyMember))], [records])
@@ -549,7 +549,7 @@ const FamilyEngagementReport = ({isLoading, reportParameters, fileName, reportDa
 				</Col>
 
 				<Col md={6}>
-					<span className='ms-1'># of students over {daysAttendedFilter} days: <b>{filteredRecords.length}</b> </span>
+					<span className='ms-1'># of family members over {daysAttendedFilter} days: <b>{filteredRecords.length}</b> </span>
 				</Col>
 			</Row>
 	

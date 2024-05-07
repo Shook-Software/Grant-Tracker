@@ -463,11 +463,6 @@ export const staffingColumns: Column[] = [
 	  }
 	},
 	{
-	  label: 'Activity',
-	  attributeKey: 'activity',
-	  sortable: true
-	},
-	{
 	  label: 'Objective',
 	  attributeKey: 'objective',
 	  sortable: true
