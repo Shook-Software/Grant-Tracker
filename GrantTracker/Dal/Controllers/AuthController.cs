@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using GrantTracker.Dal.Schema;
 using GrantTracker.Dal.Models.Views;
-using Serilog;
 
 
 namespace GrantTracker.Dal.Controllers
@@ -19,9 +18,9 @@ namespace GrantTracker.Dal.Controllers
 		private readonly IAuthRepository _authRepository;
 		private readonly IInstructorRepository _staffRepository;
 		private readonly IOrganizationYearRepository _organizationYearRepository;
-		private readonly Serilog.ILogger _logger;
+		private readonly ILogger<AuthController> _logger;
 
-		public AuthController(IAuthRepository repository, IInstructorRepository staffRepository, IOrganizationYearRepository organizationYearRepository, Serilog.ILogger logger)
+		public AuthController(IAuthRepository repository, IInstructorRepository staffRepository, IOrganizationYearRepository organizationYearRepository, ILogger<AuthController> logger)
 		{
 			_authRepository = repository;
 			_staffRepository = staffRepository;
@@ -39,7 +38,7 @@ namespace GrantTracker.Dal.Controllers
             }
 			catch (Exception ex)
             {
-                _logger.Error("Unhandled exception.", ex);
+                _logger.LogError("Unhandled exception.", ex);
                 return StatusCode(500);
 			}
 		}
@@ -54,7 +53,7 @@ namespace GrantTracker.Dal.Controllers
 			}
 			catch (Exception ex)
 			{
-				_logger.Error("Unhandled exception.", ex);
+				_logger.LogError("Unhandled exception.", ex);
                 return StatusCode(500);
             }
 		}
