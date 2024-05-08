@@ -67,7 +67,6 @@ app.UseResponseCompression();
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-app.UseSerilogRequestLogging();
 app.UseRouting();
 app.UseCors(origins);
 Auth.Configure(app);
