@@ -42,23 +42,23 @@ function getActionFromKey(event, menuIsCollapsed: boolean): Action {
     else if (key === 'PageUp') return Action.PageUp
     else if (key === 'PageDown') return Action.PageDown
     else if (key === 'Escape') return Action.Close
-    else if (key === 'Enter' || key === ' ') return Action.CloseDropdown
+    else if (key === 'Enter' || key === ' ') return Action.Select
   }
   return Action.None
 }
 
-function setActiveIndex(currentIndex, maxIndex, action, setIndex): void {
-  const pageSize: number = 5
+function getActiveIndex(currentIndex, maxIndex, action): number {
+    const pageSize: number = 5
 
-  if (action === Action.First) setIndex(0)
-  else if (action === Action.Last) setIndex(maxIndex)
-  else if (action === Action.Previous) setIndex(Math.max(0, currentIndex - 1))
-  else if (action === Action.Next)
-    setIndex(Math.min(maxIndex, currentIndex + 1))
-  else if (action === Action.PageUp)
-    setIndex(Math.max(0, currentIndex - pageSize))
-  else if (action === Action.PageDown)
-    setIndex(Math.min(maxIndex, currentIndex + pageSize))
+    if (action === Action.First) return 0
+    else if (action === Action.Last) return maxIndex
+    else if (action === Action.Previous) return Math.max(0, currentIndex - 1)
+    else if (action === Action.Next) return Math.min(maxIndex, currentIndex + 1)
+    else if (action === Action.PageUp) return Math.max(0, currentIndex - pageSize)
+    else if (action === Action.PageDown) return Math.min(maxIndex, currentIndex + pageSize)
+    else if (action === Action.Select) return currentIndex
+
+    return currentIndex;
 }
 
 //////////
@@ -68,20 +68,25 @@ function setActiveIndex(currentIndex, maxIndex, action, setIndex): void {
 
 interface Props extends Omit<Omit<React.SelectHTMLAttributes<HTMLSelectElement>, 'value'>, 'onChange'> {
   options: DropdownOption[]
-  value: string
-  onChange: (value: string) => void
+  value: string | string[]
+  onChange: ((value: string) => void) | ((value: string[]) => void)
+  multipleSelect?: boolean
   show?: boolean
   disableOverlay?: boolean
   width?: string
 }
 
-export default ({ options, value, onChange, width, show = false, disableOverlay = false, ...props }: Props): JSX.Element => {
+//find out what the fuck activeIndex does and change to multiSelect input to be supported
 
-  const [activeIndex, setIndex] = useState<number>(options.findIndex(o => o.guid == value))
+export default ({ options, value, onChange, width, multipleSelect = false,  show = false, disableOverlay = false, ...props }: Props): JSX.Element => {
+  if (!Array.isArray(value))
+    value = [ value ]
+
+  const [activeIndex, setIndex] = useState<number>(options.findIndex(o => o.guid == value[0]))
   const [isCollapsed, setCollapsed] = useState<boolean>(true)
   const [isListOverflowing, setListOverflow] = useState<boolean>(false)
   const [filterString, setFilter] = useState<string>('')
-  const activeOption: DropdownOption | undefined = options.at(activeIndex)
+  const activeOptions: DropdownOption[] | undefined = options.filter((o, idx) => value.find(val => val == o.guid))
 
   const dropdownRef: React.RefObject<HTMLDivElement> = useRef(null)
   const listRef: React.RefObject<HTMLDivElement> = useRef(null)
@@ -90,7 +95,6 @@ export default ({ options, value, onChange, width, show = false, disableOverlay 
     setCollapsed(!isCollapsed)
   }
 
-  //This is so ugly to read, blame the auto-formatter. Vaguely rewrite sometime, though the functionality works fine.
   function onKeyDown(event, action: Action): void {
     event.preventDefault()
 
@@ -103,24 +107,54 @@ export default ({ options, value, onChange, width, show = false, disableOverlay 
       Action.Next,
       Action.Previous,
       Action.PageDown,
-      Action.PageUp
+      Action.PageUp,
+      Action.Select
     ].includes(action)) {
-      setActiveIndex(activeIndex, maxIndex, action, setIndex)
-      if ([Action.First, Action.Last].includes(action)) toggleVisibility()
-    } else if (
-      [Action.Close, Action.Open, Action.CloseDropdown].includes(action)
-    ) {
+      const newActiveIndex = getActiveIndex(activeIndex, maxIndex, action)
+      setIndex(newActiveIndex)
+
+      if ([Action.First, Action.Last].includes(action)) {
+        toggleVisibility()
+      }
+      else if (action === Action.Select) {
+        const selectedOption = options[newActiveIndex]
+        handleOptionChange(selectedOption.guid)
+      }
+    } 
+    else if ([Action.Close, Action.Open, Action.CloseDropdown].includes(action)) {
       toggleVisibility()
-    } else if (action === Action.Type) {
-      if (key === 'Backspace') setFilter(filterString.slice(0, -1))
-      else setFilter(filterString + key.toLowerCase())
+    } 
+    else if (action === Action.Type) {
+      if (key === 'Backspace') 
+        setFilter(filterString.slice(0, -1))
+      else 
+        setFilter(filterString + key.toLowerCase())
+      
       setCollapsed(false)
     }
   }
 
   function handleOptionChange(newValue: string): void {
-    toggleVisibility()
-    onChange(newValue)
+    if (!multipleSelect) {
+      toggleVisibility()
+    }
+
+    let selections = [...value].filter(val => val && val != '')
+
+    if (selections.find(s => s == newValue) && multipleSelect) {
+      selections = selections.filter(s => s != newValue)
+    }
+    else if (multipleSelect) {
+      selections = [...selections, newValue]
+    }
+    else {
+      selections = [ newValue ]
+    }
+
+    console.log(selections)
+
+    if (multipleSelect) onChange(selections)
+    else onChange(selections.length > 0 ? selections[0] : '')
   }
 
   function createOption(input: DropdownOption): JSX.Element {
@@ -148,7 +182,7 @@ export default ({ options, value, onChange, width, show = false, disableOverlay 
           role='option'
           tabIndex={0}
           onClick={() => handleOptionChange(input.guid)}
-          isActive={input.guid === value}
+          isActive={value.find(val => val == input.guid) != undefined}
         >
           <p>{input.abbreviation || input.label}</p>
         </Option>
@@ -181,7 +215,7 @@ export default ({ options, value, onChange, width, show = false, disableOverlay 
   }, [isCollapsed])
 
   useEffect(() => {
-    setIndex(options.findIndex(o => o.guid === value))
+    setIndex(options.findIndex(o => o.guid === value[0]))
   }, [value, options])
 
   useEffect(() => {
@@ -220,7 +254,10 @@ export default ({ options, value, onChange, width, show = false, disableOverlay 
         }}
         props={props}
       >
-        <div>{activeIndex !== -1 ? activeOption?.abbreviation || activeOption?.label : value}</div>
+        {value.length > 1 
+          ? 'Multiple'
+          : <div>{activeOptions[0]?.abbreviation || activeOptions[0]?.label}</div>
+        }
       </DropdownController>
       <OptionList
         data-testid='dropdown-option-list'

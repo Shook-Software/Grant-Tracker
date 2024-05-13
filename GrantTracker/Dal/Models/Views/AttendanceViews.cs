@@ -49,7 +49,7 @@ namespace GrantTracker.Dal.Models.Views
 					.ToList();
 			else if (record.FamilyAttendance.Any())
 			{
-				studentAttendanceRecords = record.FamilyAttendance
+				studentAttendanceRecords = record.FamilyAttendance?
 					.GroupBy(fa => fa.StudentSchoolYearGuid,
 						(ssyGuid, group) => new StudentAttendanceViewModel()
                         {
@@ -69,9 +69,9 @@ namespace GrantTracker.Dal.Models.Views
 								})
 								.ToList()
 						})
-					.ToList();
+					.ToList() ?? new();
 
-				studentAttendanceRecords = record.StudentAttendance //for students that somehow showed up with no parent
+				studentAttendanceRecords = record.StudentAttendance? //for students that somehow showed up with no parent
 					.Where(sa => !studentAttendanceRecords.Any(sar => sar.StudentSchoolYear.Guid == sa.StudentSchoolYearGuid)) //where not already in the records
                     .Select(attend => new StudentAttendanceViewModel()
                     {
@@ -89,10 +89,10 @@ namespace GrantTracker.Dal.Models.Views
                             .ToList()
                     })
                     .Concat(studentAttendanceRecords)
-					.ToList();
+					.ToList() ?? studentAttendanceRecords;
             }
 			else
-				studentAttendanceRecords = record.StudentAttendance
+				studentAttendanceRecords = record.StudentAttendance?
 					.Select(attend => new StudentAttendanceViewModel()
 					{
 						Guid = attend.Guid,
@@ -108,7 +108,7 @@ namespace GrantTracker.Dal.Models.Views
 								})
 								.ToList()
 					})
-					.ToList();
+					.ToList() ?? new();
 
 
 

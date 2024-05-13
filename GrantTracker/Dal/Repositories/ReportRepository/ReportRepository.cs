@@ -302,13 +302,13 @@ public class ReportRepository : IReportRepository
 						SessionName = key.SessionName,
 						ActivityType = firstRow.ActivityType,
 						FundingSource = firstRow.FundingSource,
-						Objective = firstRow.Objective,
 						FirstSession = firstRow.FirstSession,
 						LastSession = firstRow.LastSession,
 						DaysOfWeek = firstRow.DaysOfWeek,
 						WeeksToDate = firstRow.WeeksToDate,
 						AvgDailyAttendance = firstRow.AvgDailyAttendance,
 						AvgHoursPerDay = firstRow.AvgHoursPerDay,
+						Objectives = s.Select(x => x.Objective).Distinct().ToList(),
 						Instructors = s.Select(s => new ClassSummaryViewModel.InstructorViewModel()
 						{
 							FirstName = s.InstructorFirstName,
@@ -407,7 +407,6 @@ public class ReportRepository : IReportRepository
 						OrganizationName = key.OrganizationName,
 						SessionName = key.SessionName,
 						ActivityType = firstRow.ActivityType,
-						Objective = firstRow.Objective,
 						SessionType = firstRow.SessionType,
 						FundingSource = firstRow.FundingSource,
 						PartnershipType = firstRow.PartnershipType,
@@ -415,7 +414,8 @@ public class ReportRepository : IReportRepository
 						Grades = firstRow.Grades,
 						InstanceDate = key.InstanceDate,
 						AttendeeCount = firstRow.AttendeeCount,
-						Instructors = s.Select(s => new SiteSessionViewModel.InstructorViewModel()
+                        Objectives = s.Select(x => x.Objective).Distinct().ToList(),
+                        Instructors = s.Select(s => new SiteSessionViewModel.InstructorViewModel()
 						{
 							FirstName = s.InstructorFirstName,
 							LastName = s.InstructorLastName,

@@ -36,7 +36,7 @@ export default ({ label, value, editable = false, style = null }): JSX.Element =
     return <p>Not Implemented</p>
 
   const valueComponent = (typeof value === 'object' || typeof value === 'function')
-    ? value
+    ? <div>{value}</div>
     : <p>{value}</p>
 
   return (

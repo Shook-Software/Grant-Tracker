@@ -16,7 +16,7 @@ import { initialState, reducer, ReducerAction } from './Session/state'
 
 import paths from 'utils/routing/paths'
 import validationSchema from './validation'
-import { fetchAllDropdownOptions, fetchSession, submitSession, DropdownOptions } from './api'
+import { fetchAllDropdownOptions, fetchGradeOptions, fetchSession, submitSession, DropdownOptions } from './api'
 import { Session, SessionForm } from 'Models/Session'
 import { User } from 'utils/authentication'
 import { OrgYearContext } from 'pages/Admin'
@@ -81,37 +81,31 @@ export default ({user}: {user: User}) => {
     setOrgYearGuid(orgYearGuid)
 
     fetchAllDropdownOptions()
-      .then(res => {
-        setDropdowns({
-          ...res,
-          instructors: []
-        })
+      .then(res =>
+        fetchGradeOptions()
+        .then(res2 => {
+          console.log(res, res2)
+          //Get session data from the database if a guid is provided to the component, then populate fields.
+          setDropdowns({...res, grades: res2})
+          
+          dispatch({ type: 'activity', payload: res.activities[0].guid })
+          dispatch({ type: 'funding', payload: res.fundingSources[0].guid })
+          dispatch({ type: 'partnership', payload: res.partnershipTypes[0].guid })
+          dispatch({ type: 'type', payload: res.sessionTypes.find(s => s.label === 'Student').guid })
+          dispatch({ type: 'organization', payload: res.organizationTypes.find(o => o.abbreviation?.includes('N/A')).guid })
 
-        //Get session data from the database if a guid is provided to the component, then populate fields.
-        if (sessionGuid) {
-          fetchSession(sessionGuid).then(session => {
-            setOrgYearGuid(session.organizationYear.guid)
-            dispatch({ type: 'all', payload: session })
-            navigate(`overview`)
-          })
-        }
-      })
-      .catch(exception => console.warn(exception))
-
-      dispatch({type: 'all', payload: Session.createDefaultForm()})
+          if (sessionGuid) {
+            fetchSession(sessionGuid).then(session => {
+              setOrgYearGuid(session.organizationYear.guid)
+              dispatch({ type: 'all', payload: session })
+              navigate(`overview`)
+            })
+          }
+        }))
+        .catch(exception => console.warn(exception))
+  
+        dispatch({type: 'all', payload: Session.createDefaultForm()})
   }, [])
-
-  useEffect(() => {
-    const data: DropdownOptions | null = dropdownData
-    if (!data) return
-    //don't forget to add to this
-    dispatch({ type: 'activity', payload: data.activities[0].guid })
-    dispatch({ type: 'funding', payload: data.fundingSources[0].guid })
-    dispatch({ type: 'objective', payload: data.objectives[0].guid })
-    dispatch({ type: 'partnership', payload: data.partnershipTypes[0].guid })
-    dispatch({ type: 'type', payload: data.sessionTypes.find(s => s.label === 'Student').guid })
-    dispatch({ type: 'organization', payload: data.organizationTypes.find(o => o.abbreviation?.includes('N/A')).guid })
-  }, [dropdownData])
 
   useEffect(() => {
     if (validated === true) {

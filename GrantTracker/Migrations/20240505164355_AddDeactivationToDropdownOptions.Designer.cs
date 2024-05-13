@@ -4,6 +4,7 @@ using GrantTracker.Dal.Schema;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace GrantTracker.Migrations
 {
     [DbContext(typeof(GrantTrackerContext))]
-    partial class GrantTrackerContextModelSnapshot : ModelSnapshot
+    [Migration("20240505164355_AddDeactivationToDropdownOptions")]
+    partial class AddDeactivationToDropdownOptions
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -25,7 +28,7 @@ namespace GrantTracker.Migrations
 
             modelBuilder.Entity("GrantTracker.Dal.Schema.Activity", b =>
                 {
-                    b.Property<Guid?>("Guid")
+                    b.Property<Guid>("Guid")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("ActivityGuid")
@@ -194,7 +197,7 @@ namespace GrantTracker.Migrations
 
             modelBuilder.Entity("GrantTracker.Dal.Schema.FundingSource", b =>
                 {
-                    b.Property<Guid?>("Guid")
+                    b.Property<Guid>("Guid")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("FundingGuid")
@@ -355,7 +358,7 @@ namespace GrantTracker.Migrations
 
             modelBuilder.Entity("GrantTracker.Dal.Schema.InstructorStatus", b =>
                 {
-                    b.Property<Guid?>("Guid")
+                    b.Property<Guid>("Guid")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("StatusGuid")
@@ -457,7 +460,7 @@ namespace GrantTracker.Migrations
 
             modelBuilder.Entity("GrantTracker.Dal.Schema.Objective", b =>
                 {
-                    b.Property<Guid?>("Guid")
+                    b.Property<Guid>("Guid")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("ObjectiveGuid")
@@ -493,7 +496,7 @@ namespace GrantTracker.Migrations
 
                     b.ToTable("Objective", "GTkr", t =>
                         {
-                            t.HasComment("Lookup table for session objective option definitions.");
+                            t.HasComment("Lookup table for session objectives.");
                         });
                 });
 
@@ -544,7 +547,7 @@ namespace GrantTracker.Migrations
 
             modelBuilder.Entity("GrantTracker.Dal.Schema.OrganizationType", b =>
                 {
-                    b.Property<Guid?>("Guid")
+                    b.Property<Guid>("Guid")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("OrganizationGuid")
@@ -611,7 +614,7 @@ namespace GrantTracker.Migrations
 
             modelBuilder.Entity("GrantTracker.Dal.Schema.PartnershipType", b =>
                 {
-                    b.Property<Guid?>("Guid")
+                    b.Property<Guid>("Guid")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("PartnershipGuid")
@@ -711,6 +714,9 @@ namespace GrantTracker.Migrations
                         .HasColumnType("nvarchar")
                         .HasComment("Name of the session, set by a responsible party.");
 
+                    b.Property<Guid>("ObjectiveGuid")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<Guid>("OrganizationTypeGuid")
                         .HasColumnType("uniqueidentifier");
 
@@ -733,6 +739,8 @@ namespace GrantTracker.Migrations
                     b.HasIndex("ActivityGuid");
 
                     b.HasIndex("FundingSourceGuid");
+
+                    b.HasIndex("ObjectiveGuid");
 
                     b.HasIndex("OrganizationTypeGuid");
 
@@ -798,24 +806,6 @@ namespace GrantTracker.Migrations
                         });
                 });
 
-            modelBuilder.Entity("GrantTracker.Dal.Schema.SessionObjective", b =>
-                {
-                    b.Property<Guid>("SessionGuid")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("ObjectiveGuid")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("SessionGuid", "ObjectiveGuid");
-
-                    b.HasIndex("ObjectiveGuid");
-
-                    b.ToTable("SessionObjective", "GTkr", t =>
-                        {
-                            t.HasComment("Many to many mapping for session objectives.");
-                        });
-                });
-
             modelBuilder.Entity("GrantTracker.Dal.Schema.SessionTimeSchedule", b =>
                 {
                     b.Property<Guid>("SessionTimeGuid")
@@ -846,7 +836,7 @@ namespace GrantTracker.Migrations
 
             modelBuilder.Entity("GrantTracker.Dal.Schema.SessionType", b =>
                 {
-                    b.Property<Guid?>("Guid")
+                    b.Property<Guid>("Guid")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("SessionTypeGuid")
@@ -1126,6 +1116,9 @@ namespace GrantTracker.Migrations
 
             modelBuilder.Entity("GrantTracker.Dal.Schema.Sprocs.Reporting.StudentSurveyViewModel", b =>
                 {
+                    b.Property<string>("Activity")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("FirstName")
                         .HasColumnType("nvarchar(max)");
 
@@ -1588,6 +1581,12 @@ namespace GrantTracker.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("GrantTracker.Dal.Schema.Objective", "Objective")
+                        .WithMany("Sessions")
+                        .HasForeignKey("ObjectiveGuid")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("GrantTracker.Dal.Schema.OrganizationType", "OrganizationType")
                         .WithMany("Sessions")
                         .HasForeignKey("OrganizationTypeGuid")
@@ -1615,6 +1614,8 @@ namespace GrantTracker.Migrations
                     b.Navigation("Activity");
 
                     b.Navigation("FundingSource");
+
+                    b.Navigation("Objective");
 
                     b.Navigation("OrganizationType");
 
@@ -1651,25 +1652,6 @@ namespace GrantTracker.Migrations
                         .IsRequired();
 
                     b.Navigation("Grade");
-
-                    b.Navigation("Session");
-                });
-
-            modelBuilder.Entity("GrantTracker.Dal.Schema.SessionObjective", b =>
-                {
-                    b.HasOne("GrantTracker.Dal.Schema.Objective", "Objective")
-                        .WithMany("SessionObjectives")
-                        .HasForeignKey("ObjectiveGuid")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("GrantTracker.Dal.Schema.Session", "Session")
-                        .WithMany("SessionObjectives")
-                        .HasForeignKey("SessionGuid")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Objective");
 
                     b.Navigation("Session");
                 });
@@ -1799,7 +1781,7 @@ namespace GrantTracker.Migrations
 
             modelBuilder.Entity("GrantTracker.Dal.Schema.Objective", b =>
                 {
-                    b.Navigation("SessionObjectives");
+                    b.Navigation("Sessions");
                 });
 
             modelBuilder.Entity("GrantTracker.Dal.Schema.Organization", b =>
@@ -1837,8 +1819,6 @@ namespace GrantTracker.Migrations
                     b.Navigation("InstructorRegistrations");
 
                     b.Navigation("SessionGrades");
-
-                    b.Navigation("SessionObjectives");
                 });
 
             modelBuilder.Entity("GrantTracker.Dal.Schema.SessionDaySchedule", b =>

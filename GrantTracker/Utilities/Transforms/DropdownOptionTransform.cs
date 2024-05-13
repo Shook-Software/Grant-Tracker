@@ -4,7 +4,7 @@ namespace GrantTracker.Utilities.Transforms
 {
 	public static class DropdownOptionTransform
 	{
-		public static DropdownOption FromDatabase<T>(T dropdownModel) where T : class, IDropdown
+		public static DropdownOption FromDatabase<T>(T dropdownModel) where T : class, IDropdownOption
 		{
 			return new DropdownOption()
 			{

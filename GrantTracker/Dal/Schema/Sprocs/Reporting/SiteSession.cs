@@ -30,12 +30,12 @@ public class SiteSessionViewModel
     public string OrganizationName { get; set; }
     public string SessionName { get; set; }
     public string ActivityType { get; set; }
-    public string Objective { get; set; }
     public string SessionType { get; set; }
     public string FundingSource { get; set; }
     public string PartnershipType { get; set; }
     public string OrganizationType { get; set; }
     public string Grades { get; set; }
+    public List<string> Objectives { get; set; }
     public List<InstructorViewModel> Instructors { get; set; }
     public DateOnly InstanceDate { get; set; }
     public int AttendeeCount { get; set; }

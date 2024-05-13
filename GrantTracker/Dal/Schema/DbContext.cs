@@ -50,7 +50,8 @@ namespace GrantTracker.Dal.Schema
 		public DbSet<LookupDefinition> LookupDefinitions { get; set; }
 		public DbSet<LookupValue> LookupValues { get; set; }
 		public DbSet<SessionGrade> SessionGrades { get; set; }
-		public DbSet<SessionDaySchedule> SessionDaySchedules { get; set; }
+        public DbSet<SessionObjective> SessionObjectives { get; set; }
+        public DbSet<SessionDaySchedule> SessionDaySchedules { get; set; }
 		public DbSet<SessionTimeSchedule> SessionTimeSchedules { get; set; }
 		public DbSet<StudentRegistration> StudentRegistrations { get; set; }
 		public DbSet<InstructorRegistration> InstructorRegistrations { get; set; }
@@ -101,7 +102,8 @@ namespace GrantTracker.Dal.Schema
 			StudentAttendanceRecord.Setup(builder);
 			LookupDefinition.Setup(builder);
 			LookupValue.Setup(builder);
-			SessionGrade.Setup(builder);
+            SessionObjective.Setup(builder);
+            SessionGrade.Setup(builder);
 			SessionDaySchedule.Setup(builder);
 			SessionTimeSchedule.Setup(builder);
 			StudentRegistration.Setup(builder);

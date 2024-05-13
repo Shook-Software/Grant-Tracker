@@ -504,12 +504,12 @@ export default ({user}): JSX.Element => {
 }
 
 const FamilyEngagementReport = ({isLoading, reportParameters, fileName, reportDateDisplayString, records}): React.ReactElement => { 
-	const [daysAttendedFilter, setDaysAttendedFilter] = useState<string>('')
+	const [daysAttendedFilter, setDaysAttendedFilter] = useState<string>('0')
 	const [familyType, setFamilyType] = useState<string>('')
 
 	const familyTypeOptions: string[] = useMemo<string[]>(() => [...new Set<string>(records.flatMap(x => x.familyAttendance).map(attend => attend.familyMember))], [records])
 
-	const filteredRecords = records
+	const filteredRecords: any[] = records
 		.map(x => ({...x, familyAttendance: x.familyAttendance.filter(y => familyType == '' || y.familyMember === familyType).filter(z => z.totalDays >= daysAttendedFilter)}))
 		.filter(x => familyType == '' || x.familyAttendance.some(y => y.familyMember === familyType)) //filter those that don't have the specified family member
 		.filter(x => x.familyAttendance.some(y => y.totalDays >= daysAttendedFilter))
@@ -549,7 +549,7 @@ const FamilyEngagementReport = ({isLoading, reportParameters, fileName, reportDa
 				</Col>
 
 				<Col md={6}>
-					<span className='ms-1'># of students over {daysAttendedFilter} days: <b>{filteredRecords.length}</b> </span>
+					<span className='ms-1'># of family members over {daysAttendedFilter || 0} days: <b>{filteredRecords.reduce((prev, curr, idx) => prev + curr.familyAttendance.length, 0)}</b> </span>
 				</Col>
 			</Row>
 	

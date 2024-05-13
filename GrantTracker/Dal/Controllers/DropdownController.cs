@@ -6,77 +6,66 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
-namespace GrantTracker.Dal.Controllers
+namespace GrantTracker.Dal.Controllers;
+
+[ApiController]
+[Route("dropdown")]
+[Authorize]
+public class DropdownController : ControllerBase
 {
-	[ApiController]
-	[Route("dropdown")]
-	[Authorize]
-	public class DropdownController : ControllerBase
-	{
-		private readonly IDropdownRepository _dropdownRepository;
-        private readonly ILogger<IDropdownRepository> _logger;
+    private readonly IDropdownRepository _dropdownRepository;
+    private readonly ILogger<IDropdownRepository> _logger;
 
-        public DropdownController(IDropdownRepository repository, ILogger<IDropdownRepository> logger)
-		{
-			_dropdownRepository = repository;
-			_logger = logger;
-		}
+    public DropdownController(IDropdownRepository repository, ILogger<IDropdownRepository> logger)
+    {
+        _dropdownRepository = repository;
+        _logger = logger;
+    }
 
-        [HttpGet("view/all")]
-		public async Task<ActionResult<SessionDropdownOptions>> GetAllAsync()
-		{
-			try
-			{
-				var allOptions = await _dropdownRepository.GetAllSessionDropdownOptionsAsync();
-				return Ok(allOptions);
-			}
-			catch (Exception ex)
-			{
-				//log
-				return StatusCode(500, ex.Message);
-			}
-		}
+    [HttpGet("view/all")]
+    public async Task<ActionResult<SessionDropdownOptions>> GetAllAsync()
+    {
+        try
+        {
+            var allOptions = await _dropdownRepository.GetAllSessionDropdownOptionsAsync();
+            return Ok(allOptions);
+        }
+        catch (Exception ex)
+        {
+            //log
+            return StatusCode(500, ex.Message);
+        }
+    }
 
-		[HttpGet("view/instructorStatus")]
-		public async Task<ActionResult<List<DropdownOption>>> GetStatuses()
-		{
-			var instructorStatuses = await _dropdownRepository.GetInstructorStatusesAsync();
-			return Ok(instructorStatuses);
-		}
+    [HttpGet("view/instructorStatus")]
+    public async Task<ActionResult<List<DropdownOption>>> GetStatuses()
+    {
+        var instructorStatuses = await _dropdownRepository.GetInstructorStatusesAsync();
+        return Ok(instructorStatuses);
+    }
 
-		[HttpGet("view/grades")]
-		public async Task<ActionResult<List<DropdownOption>>> GetGrades()
-		{
-			var grades = await _dropdownRepository.GetGradesAsync();
-			return Ok(grades);
-		}
+    [HttpGet("view/grades")]
+    public async Task<ActionResult<List<DropdownOption>>> GetGrades()
+    {
+        var grades = await _dropdownRepository.GetGradesAsync();
+        return Ok(grades);
+    }
 
-		[HttpGet("organization")]
-		public async Task<ActionResult<List<OrganizationView>>> GetOrganizations()
-		{
-			var user = HttpContext.User;
-			var organizations = await _dropdownRepository.GetOrganizationsAsync(user.IsAdmin(), User.HomeOrganizationGuids());
-			return Ok(organizations);
-		}
+    [HttpGet("organization")]
+    public async Task<ActionResult<List<OrganizationView>>> GetOrganizations()
+    {
+        var user = HttpContext.User;
+        var organizations = await _dropdownRepository.GetOrganizationsAsync(user.IsAdmin(), User.HomeOrganizationGuids());
+        return Ok(organizations);
+    }
 
-		[HttpGet("year")]
-		public async Task<ActionResult<List<YearView>>> GetYears(Guid? OrganizationGuid = default)
-		{
-			if ((OrganizationGuid == default && !HttpContext.User.IsAdmin()) || !HttpContext.User.IsAuthorizedToViewOrganization(OrganizationGuid))
-				return Unauthorized();
+    [HttpGet("year")]
+    public async Task<ActionResult<List<YearView>>> GetYears(Guid? OrganizationGuid = default)
+    {
+        if ((OrganizationGuid == default && !HttpContext.User.IsAdmin()) || !HttpContext.User.IsAuthorizedToViewOrganization(OrganizationGuid))
+            return Unauthorized();
 
-			var years = await _dropdownRepository.GetYearsAsync(OrganizationGuid);
-			return Ok(years);
-		}
-
-		[HttpPost("")]
-		public async Task<IActionResult> AddDropdownValue()
-		{
-
-			return NoContent();
-		}
-
-		//[HttpPatch("{")] //how do we uniquely identify between dropdown options in an extensible way? Should we allow for new options to be added? This would've been easier if we didn't use separate tables for the options
-		//fuck, do I need to do an entire overhaul??
-	}
+        var years = await _dropdownRepository.GetYearsAsync(OrganizationGuid);
+        return Ok(years);
+    }
 }

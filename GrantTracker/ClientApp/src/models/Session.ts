@@ -1,4 +1,4 @@
-import { LocalDate, LocalTime } from '@js-joda/core'
+import { LocalDate, LocalDateTime, LocalTime } from '@js-joda/core'
 
 import { DateOnly } from './DateOnly'
 import { DayOfWeek, DayOfWeekNumeric } from './DayOfWeek'
@@ -8,10 +8,11 @@ import * as DaySchedule from './DaySchedule'
 import { TimeSchedule } from './TimeSchedule'
 
 export interface DropdownOption {
-  guid: string
+  guid: string | null
   abbreviation?: string
   label: string
   description?: string
+  deactivatedAt?: LocalDateTime | null
 }
 
 export interface SimpleSessionView {

@@ -212,7 +212,6 @@ public class SessionController : ControllerBase
 		return Created("session", session);
 	}
 
-
 	[HttpPost("{sessionGuid:guid}/registration")]
 	public async Task<ActionResult<List<SessionErrorMessage>>> RegisterStudent(Guid sessionGuid, [FromBody] StudentRegistrationDto newRegistration)
 	{
@@ -229,8 +228,6 @@ public class SessionController : ControllerBase
 
 		return Created($"{sessionGuid}/registration", targetStudentSchoolYear.Guid);
 	}
-
-
 
 	[HttpPost("{destinationSessionGuid:guid}/registration/copy")]
 	public async Task<ActionResult<List<string>>> CopyStudentRegistrations(Guid destinationSessionGuid, [FromBody] List<Guid> studentSchoolYearGuids)

@@ -12,7 +12,7 @@ namespace GrantTracker.Dal.Models.Views
 
 		public static StatusView FromDatabase(InstructorStatus status) => new()
 		{
-			Guid = status.Guid,
+			Guid = status.Guid.Value,
 			Abbreviation = status.Abbreviation,
 			Label = status.Label,
 			Description = status.Description
