@@ -10,7 +10,7 @@ public class InstructorSchoolYearStudentGroupMap
     public Guid StudentGroupGuid { get; set; }
     public virtual StudentGroup Group { get; set; }
     
-    public static void Setup(ModelBuilder builder, ClaimsPrincipal user)
+    public static void Setup(ModelBuilder builder)
     {
         var entity = builder.Entity<InstructorSchoolYearStudentGroupMap>();
 

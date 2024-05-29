@@ -17,7 +17,7 @@ namespace GrantTracker.Dal.Schema
 		public virtual ICollection<Session> Sessions { get; set; }
         public virtual ICollection<StudentGroup> StudentGroups { get; set; }
 
-        public static void Setup(ModelBuilder builder, ClaimsPrincipal user)
+        public static void Setup(ModelBuilder builder)
 		{
 			var entity = builder.Entity<OrganizationYear>();
 

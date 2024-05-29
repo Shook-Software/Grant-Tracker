@@ -12,7 +12,7 @@ public class StudentGroup
     public virtual ICollection<StudentGroupItem> Items { get; set; }
     public virtual ICollection<InstructorSchoolYear> InstructorSchoolYears { get; set; }
 
-    public static void Setup(ModelBuilder builder, ClaimsPrincipal user)
+    public static void Setup(ModelBuilder builder)
     {
         var entity = builder.Entity<StudentGroup>();
 

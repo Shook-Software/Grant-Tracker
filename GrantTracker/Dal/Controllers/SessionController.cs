@@ -56,8 +56,16 @@ public class SessionController : ControllerBase
 	[HttpGet("")]
     public async Task<ActionResult<List<SimpleSessionView>>> GetAsync(Guid orgYearGuid)
     {
-		var sessions = await _sessionRepository.GetAsync("", orgYearGuid);
-        return Ok(sessions);
+		try
+        {
+            var sessions = await _sessionRepository.GetAsync("", orgYearGuid);
+            return Ok(sessions);
+
+        }
+		catch (Exception ex)
+		{
+			return StatusCode(500);
+		}
 	}
 
 	//Users must be able to receive single sessions to view, edit, fill out attendance, and add students.

@@ -10,7 +10,7 @@ public class StudentGroupItem
     public Guid StudentSchoolYearGuid { get; set; }
     public StudentSchoolYear StudentSchoolYear { get; set; }
 
-    public static void Setup(ModelBuilder builder, ClaimsPrincipal user)
+    public static void Setup(ModelBuilder builder)
     {
         var entity = builder.Entity<StudentGroupItem>();
 

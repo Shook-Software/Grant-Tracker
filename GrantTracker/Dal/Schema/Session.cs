@@ -32,22 +32,16 @@ namespace GrantTracker.Dal.Schema
 		public virtual ICollection<InstructorRegistration> InstructorRegistrations { get; set; }
         public virtual ICollection<SessionGrade> SessionGrades { get; set; }
 
-		public static void Setup(ModelBuilder builder, ClaimsPrincipal user)
+		public static void Setup(ModelBuilder builder, IHttpContextAccessor httpAccessor)
 		{
 			var entity = builder.Entity<Session>();
 
 			entity.ToTable("Session", "GTkr", t => t.HasComment("Base table for sessions in the database. Contains the universal attributes any session contains."))
 				.HasKey(e => e.SessionGuid);
 
-			bool userIsAdmin = user.IsAdmin();
-			bool userIsCoordinator = user.IsCoordinator();
-			bool userIsTeacher = user.IsTeacher();
-			var homeOrgGuids = user.HomeOrganizationGuids();
-			var id = user.Id();
-
-            entity.HasQueryFilter(s => userIsAdmin
-                || (userIsCoordinator && homeOrgGuids.Contains(s.OrganizationYear.OrganizationGuid))
-				|| (userIsTeacher && s.InstructorRegistrations.Any(ir => ir.InstructorSchoolYear.Instructor.BadgeNumber.Trim() == id)));
+            entity.HasQueryFilter(s => httpAccessor.HttpContext.User.IsAdmin()
+                || (httpAccessor.HttpContext.User.IsCoordinator() && httpAccessor.HttpContext.User.HomeOrganizationGuids().Contains(s.OrganizationYear.OrganizationGuid))
+				|| (httpAccessor.HttpContext.User.IsTeacher() && s.InstructorRegistrations.Any(ir => ir.InstructorSchoolYear.Instructor.BadgeNumber.Trim() == httpAccessor.HttpContext.User.Id())));
 
 			/// /Relations
 

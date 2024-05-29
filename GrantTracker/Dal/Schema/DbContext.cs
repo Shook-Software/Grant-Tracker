@@ -2,6 +2,7 @@
 using GrantTracker.Dal.Models.Views;
 using GrantTracker.Dal.Schema.Sprocs.Reporting;
 using GrantTracker.Dal.Schema.Sprocs;
+using Microsoft.AspNetCore.Http;
 
 namespace GrantTracker.Dal.Schema
 {
@@ -87,10 +88,7 @@ namespace GrantTracker.Dal.Schema
             builder.Entity<PayrollAuditDb>().HasNoKey().ToView(null);
             builder.Entity<AttendanceCheckDbModel>().HasNoKey().ToView(null);
 			builder.Entity<CCLC10ViewModel>().HasNoKey().ToView(null);
-
 			builder.Entity<SessionAttendance>().HasNoKey().ToView(null);
-
-			var user = _httpContextAccessor.HttpContext?.User;
 
             AuditLog.Setup(builder);
 			Activity.Setup(builder);
@@ -101,8 +99,8 @@ namespace GrantTracker.Dal.Schema
 			OrganizationType.Setup(builder);
 			Person.Setup(builder);
 			Identity.Setup(builder);
-			PartnershipType.Setup(builder);
-			Session.Setup(builder, user);
+            PartnershipType.Setup(builder);
+			Session.Setup(builder, _httpContextAccessor);
 			SessionType.Setup(builder);
 			Student.Setup(builder);
 			StudentRegistration.Setup(builder);
@@ -119,16 +117,16 @@ namespace GrantTracker.Dal.Schema
 			InstructorAttendanceRecord.Setup(builder);
 			InstructorSchoolYear.Setup(builder);
 			Organization.Setup(builder);
-			OrganizationYear.Setup(builder, user);
+			OrganizationYear.Setup(builder);
 			StudentSchoolYear.Setup(builder);
 			Year.Setup(builder);
 			AttendanceRecord.Setup(builder);
 			StudentAttendanceTimeRecord.Setup(builder);
 			InstructorAttendanceTimeRecord.Setup(builder);
 			OrganizationBlackoutDate.Setup(builder);
-			InstructorSchoolYearStudentGroupMap.Setup(builder, user);
-            StudentGroup.Setup(builder, user);
-            StudentGroupItem.Setup(builder, user);
+			InstructorSchoolYearStudentGroupMap.Setup(builder);
+            StudentGroup.Setup(builder);
+            StudentGroupItem.Setup(builder);
         }
 	}
 }

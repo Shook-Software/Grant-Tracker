@@ -34,7 +34,7 @@ public static class DatabaseContext
 		builder.Services.AddDbContext<GrantTrackerContext>(options =>
         {
             options.EnableDetailedErrors(true);
-            options.UseSqlServer(config.GetConnectionString("GrantTracker"));
+            options.UseSqlServer(config.GetConnectionString("GrantTracker")).EnableSensitiveDataLogging();
 		});
 
 		builder.Services.AddDbContext<InterfaceDbContext>(options =>
