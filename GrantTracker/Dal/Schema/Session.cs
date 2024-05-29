@@ -43,11 +43,11 @@ namespace GrantTracker.Dal.Schema
 			bool userIsCoordinator = user.IsCoordinator();
 			bool userIsTeacher = user.IsTeacher();
 			var homeOrgGuids = user.HomeOrganizationGuids();
-
+			var id = user.Id();
 
             entity.HasQueryFilter(s => userIsAdmin
                 || (userIsCoordinator && homeOrgGuids.Contains(s.OrganizationYear.OrganizationGuid))
-				|| (userIsTeacher && s.InstructorRegistrations.Any(ir => ir.InstructorSchoolYear.Instructor.BadgeNumber.Trim() == user.Id())));
+				|| (userIsTeacher && s.InstructorRegistrations.Any(ir => ir.InstructorSchoolYear.Instructor.BadgeNumber.Trim() == id)));
 
 			/// /Relations
 
