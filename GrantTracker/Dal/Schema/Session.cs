@@ -39,9 +39,15 @@ namespace GrantTracker.Dal.Schema
 			entity.ToTable("Session", "GTkr", t => t.HasComment("Base table for sessions in the database. Contains the universal attributes any session contains."))
 				.HasKey(e => e.SessionGuid);
 
-			entity.HasQueryFilter(s => user.IsAdmin()
-				|| (user.IsCoordinator() && user.HomeOrganizationGuids().Contains(s.OrganizationYear.OrganizationGuid))
-				|| (user.IsTeacher() && s.InstructorRegistrations.Any(ir => ir.InstructorSchoolYear.Instructor.BadgeNumber.Trim() == user.Id())));
+			bool userIsAdmin = user.IsAdmin();
+			bool userIsCoordinator = user.IsCoordinator();
+			bool userIsTeacher = user.IsTeacher();
+			var homeOrgGuids = user.HomeOrganizationGuids();
+
+
+            entity.HasQueryFilter(s => userIsAdmin
+                || (userIsCoordinator && homeOrgGuids.Contains(s.OrganizationYear.OrganizationGuid))
+				|| (userIsTeacher && s.InstructorRegistrations.Any(ir => ir.InstructorSchoolYear.Instructor.BadgeNumber.Trim() == user.Id())));
 
 			/// /Relations
 
