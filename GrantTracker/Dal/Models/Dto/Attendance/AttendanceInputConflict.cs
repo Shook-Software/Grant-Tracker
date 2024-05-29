@@ -1,4 +1,4 @@
-﻿namespace GrantTracker.Dal.Models.Dto.Attendance;
+﻿namespace GrantTracker.Dal.Models.DTO.Attendance;
 
 public class AttendanceInputConflict
 {

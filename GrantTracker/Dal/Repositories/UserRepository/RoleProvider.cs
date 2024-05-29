@@ -14,22 +14,20 @@ namespace GrantTracker.Dal.Repositories.UserRepository
 
 		public async Task<string> GetUserRoleAsync(string BadgeNumber)
 		{
-			Identity userIdentity = await _db.UserIdentities.Where(e => e.SchoolYear.Instructor.BadgeNumber == BadgeNumber).FirstOrDefaultAsync();
+			IdentityClaim? claim = (await _db.UserIdentities.Where(e => e.SchoolYear.Instructor.BadgeNumber == BadgeNumber).FirstOrDefaultAsync())?.Claim;
 
-			if (userIdentity == null)
+			claim ??= await _db.Instructors.AnyAsync(p => p.BadgeNumber == BadgeNumber) ? IdentityClaim.Teacher : null;
+
+			if (claim == null)
 				return "Unauthorized";
 
-			switch (userIdentity.Claim)
-			{
-				case IdentityClaim.Administrator:
-					return "Administrator";
-
-				case IdentityClaim.Coordinator:
-					return "Coordinator";
-
-				default:
-					return "Unauthorized";
-			}
+			return claim switch
+            {
+                IdentityClaim.Administrator => "Administrator",
+                IdentityClaim.Coordinator => "Coordinator",
+                IdentityClaim.Teacher => "Teacher",
+                _ => "Unauthorized"
+            };
 		}
 
 		public async Task<Guid?> GetCurrentUserOrganizationGuidAsync(string BadgeNumber)
@@ -43,9 +41,18 @@ namespace GrantTracker.Dal.Repositories.UserRepository
 			return instructorSchoolYear?.OrganizationYear?.OrganizationGuid;
         }
 
-        public async Task<List<Guid>> GetCurrentUserOrganizationGuidsAsync(string BadgeNumber)
+        public async Task<List<Guid>> GetCurrentUserOrganizationGuidsAsync(string BadgeNumber, string role)
         {
-			return await _db.UserIdentities
+			if (role == "Teacher")
+				return await _db.InstructorSchoolYears
+					.Include(isy => isy.Instructor)
+					.Include(isy => isy.OrganizationYear)
+					.Where(isy => isy.Instructor.BadgeNumber == BadgeNumber)
+					.Where(isy => isy.OrganizationYear.Year.IsCurrentSchoolYear == true)
+					.Select(isy => isy.OrganizationYear.OrganizationGuid)
+					.ToListAsync();
+
+            return await _db.UserIdentities
 				.Include(id => id.SchoolYear).ThenInclude(isy => isy.OrganizationYear)
 				.Where(id => id.SchoolYear.Instructor.BadgeNumber == BadgeNumber)
 				.Where(id => id.SchoolYear.OrganizationYear.Year.IsCurrentSchoolYear == true)

@@ -20,11 +20,6 @@ const Navbar = (): JSX.Element => (
         Site Controls
       </Nav.Link>
     </Nav.Item>
-    <Nav.Item>
-      <Nav.Link as={NavLink} to='dev/logs'>
-        Developer Logs
-      </Nav.Link>
-    </Nav.Item>
   </Nav>
 )
 

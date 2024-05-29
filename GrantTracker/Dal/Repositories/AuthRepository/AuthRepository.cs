@@ -1,4 +1,4 @@
-﻿using GrantTracker.Dal.Models.Dto;
+﻿using GrantTracker.Dal.Models.DTO;
 using GrantTracker.Dal.Models.Views;
 using GrantTracker.Dal.Repositories.DevRepository;
 using GrantTracker.Dal.Schema;
@@ -26,11 +26,37 @@ public class AuthRepository : IAuthRepository
 
 	public UserIdentity GetIdentity()
 	{
-		var badgeNumber = Auth.GetBadgeNumber(_user.Identity as ClaimsIdentity);
+		var badgeNumber = _user.Id();
 
 		var currentYearGuid = _grantContext.Years.Where(sy => sy.IsCurrentSchoolYear).Select(sy => sy.YearGuid).FirstOrDefault();
 
-		return _grantContext.UserIdentities
+		if (_user.IsTeacher())
+			return _grantContext.InstructorSchoolYears
+				.Include(isy => isy.OrganizationYear).ThenInclude(oy => oy.Year)
+                .Include(isy => isy.OrganizationYear).ThenInclude(oy => oy.Organization)
+				.Include(isy => isy.Instructor)
+				.Where(isy => isy.Instructor.BadgeNumber == badgeNumber && isy.OrganizationYear.YearGuid == currentYearGuid)
+				.Select(isy => new UserIdentity
+                {
+                    UserGuid = isy.InstructorGuid,
+                    UserOrganizationYearGuid = isy.OrganizationYearGuid, //why do we have these both
+                    OrganizationYearGuid = isy.OrganizationYearGuid,
+
+                    FirstName = isy.Instructor.FirstName,
+                    LastName = isy.Instructor.LastName,
+                    BadgeNumber = isy.Instructor.BadgeNumber,
+                    Claim = IdentityClaim.Teacher,
+
+                    Organization = new OrganizationView
+                    {
+                        Guid = isy.OrganizationYear.OrganizationGuid,
+                        Name = isy.OrganizationYear.Organization.Name
+                    },
+                    OrganizationYear = OrganizationYearView.FromDatabase(isy.OrganizationYear)
+                })
+            .FirstOrDefault();
+
+        return _grantContext.UserIdentities
 			.Include(u => u.SchoolYear).ThenInclude(i => i.Instructor)
 			.Include(u => u.SchoolYear).ThenInclude(i => i.OrganizationYear).ThenInclude(o => o.Organization)
 			.Include(u => u.SchoolYear).ThenInclude(i => i.OrganizationYear).ThenInclude(o => o.Year)

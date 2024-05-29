@@ -12,12 +12,23 @@ export interface DropdownOptions {
 	fundingSources: DropdownOption[]
 	organizationTypes: DropdownOption[]
 	partnershipTypes: DropdownOption[]
+	grades: DropdownOption[]
+}
+
+export function fetchGradeOptions(): Promise<DropdownOption[]> {
+  return new Promise((resolve, reject) => {
+	api.get<DropdownOption[]>('dropdown/view/grades')
+		.then(res => { resolve(res.data) })
+		.catch(err => {
+			console.warn(err)
+			reject([])
+		})
+  })
 }
 
 export function fetchAllDropdownOptions(): Promise<DropdownOptions> {
 	return new Promise((resolve, reject) => {
-		api
-			.get('dropdown/view/all')
+		api.get('dropdown/view/all')
 			.then(res => resolve({ ...res.data, instructors: [] }))
 			.catch(exception => {
 				reject(exception)

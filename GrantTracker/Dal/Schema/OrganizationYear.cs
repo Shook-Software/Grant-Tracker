@@ -1,4 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
+using GrantTracker.Utilities;
 
 namespace GrantTracker.Dal.Schema
 {
@@ -13,8 +15,9 @@ namespace GrantTracker.Dal.Schema
 		public virtual ICollection<StudentSchoolYear> StudentSchoolYears { get; set; }
 		public virtual ICollection<InstructorSchoolYear> InstructorSchoolYears { get; set; }
 		public virtual ICollection<Session> Sessions { get; set; }
+        public virtual ICollection<StudentGroup> StudentGroups { get; set; }
 
-		public static void Setup(ModelBuilder builder)
+        public static void Setup(ModelBuilder builder, ClaimsPrincipal user)
 		{
 			var entity = builder.Entity<OrganizationYear>();
 
@@ -25,7 +28,7 @@ namespace GrantTracker.Dal.Schema
 			entity.HasIndex(e => new { e.OrganizationGuid, e.YearGuid })
 				.IsUnique();
 
-			entity.HasMany(e => e.InstructorSchoolYears)
+            entity.HasMany(e => e.InstructorSchoolYears)
 				.WithOne(e => e.OrganizationYear)
 				.HasForeignKey(e => e.OrganizationYearGuid)
                 .OnDelete(DeleteBehavior.Cascade);

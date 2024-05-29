@@ -11,7 +11,7 @@ using System.Security.Claims;
 
 namespace GrantTracker.Dal.Repositories.InstructorSchoolYearRepository;
 
-public class InstructorSchoolYearRepository :IInstructorSchoolYearRepository
+public class InstructorSchoolYearRepository : IInstructorSchoolYearRepository
 {
     protected readonly GrantTrackerContext _grantContext;
     protected readonly ClaimsPrincipal _user;
@@ -22,7 +22,44 @@ public class InstructorSchoolYearRepository :IInstructorSchoolYearRepository
         _user = httpContextAccessor.HttpContext.User;
     }
 
-	public async Task<InstructorSchoolYearViewModel> CreateIfNotExistsAsync(Guid instructorGuid, Guid organizationYearGuid, Guid statusGuid)
+    //we need to remove the latter part of this tbh, and query it separately
+    public async Task<InstructorSchoolYearViewModel?> GetAsync(Guid instructorSchoolYearGuid)
+    {
+        //we could probably put these in two different functions and connect them from there
+        //all info for the given schoolYear
+        var instructorSchoolYear = await _grantContext
+            .InstructorSchoolYears
+            .AsNoTracking()
+            .Include(isy => isy.OrganizationYear).ThenInclude(oy => oy.Organization)
+            .Include(isy => isy.OrganizationYear).ThenInclude(oy => oy.Year)
+            .Include(isy => isy.Instructor)
+            .Include(isy => isy.Status)
+            .Include(isy => isy.Identity)
+            .Include(isy => isy.SessionRegistrations).ThenInclude(sr => sr.Session).ThenInclude(s => s.DaySchedules).ThenInclude(day => day.TimeSchedules)
+            .Include(isy => isy.AttendanceRecords).ThenInclude(ar => ar.TimeRecords)
+            .Include(isy => isy.AttendanceRecords).ThenInclude(sa => sa.AttendanceRecord).ThenInclude(ar => ar.Session)
+                .Where(isy => isy.InstructorSchoolYearGuid == instructorSchoolYearGuid)
+                .FirstOrDefaultAsync();
+
+        if (instructorSchoolYear is null)
+            return null;
+
+        //A list of other school years
+        var organizationYears = await _grantContext
+            .Instructors
+            .Include(i => i.InstructorSchoolYears).ThenInclude(isy => isy.OrganizationYear).ThenInclude(oy => oy.Organization)
+            .Include(i => i.InstructorSchoolYears).ThenInclude(isy => isy.OrganizationYear).ThenInclude(oy => oy.Year)
+            .Where(i => i.PersonGuid == instructorSchoolYear.InstructorGuid)
+            .Select(i => i.InstructorSchoolYears.Select(isy => isy.OrganizationYear).ToList())
+            .FirstOrDefaultAsync();
+
+        if (organizationYears is null)
+            return null;
+
+        return InstructorSchoolYearViewModel.FromDatabase(instructorSchoolYear, organizationYears);
+    }
+
+    public async Task<InstructorSchoolYearViewModel> CreateIfNotExistsAsync(Guid instructorGuid, Guid organizationYearGuid, Guid statusGuid)
 	{
 		var instructorSchoolYear = await _grantContext
 			.InstructorSchoolYears
@@ -54,89 +91,30 @@ public class InstructorSchoolYearRepository :IInstructorSchoolYearRepository
 		await _grantContext.SaveChangesAsync();
 
 		return await this.GetAsync(instructorSchoolYearGuid);
-	}
+    }
 
-	//we need to remove the latter part of this tbh, and query it separately
-	public async Task<InstructorSchoolYearViewModel?> GetInstructorSchoolYearAsync(Guid instructorSchoolYearGuid)
-	{
-		//we could probably put these in two different functions and connect them from there
-		//all info for the given schoolYear
-		var instructorSchoolYear = await _grantContext
-			.InstructorSchoolYears
-			.AsNoTracking()
-			.Include(isy => isy.OrganizationYear).ThenInclude(oy => oy.Organization)
-			.Include(isy => isy.OrganizationYear).ThenInclude(oy => oy.Year)
-			.Include(isy => isy.Instructor)
-			.Include(isy => isy.Status)
-			.Include(isy => isy.Identity)
-			.Include(isy => isy.SessionRegistrations).ThenInclude(sr => sr.Session).ThenInclude(s => s.DaySchedules).ThenInclude(day => day.TimeSchedules)
-			.Include(isy => isy.AttendanceRecords).ThenInclude(ar => ar.TimeRecords)
-			.Include(isy => isy.AttendanceRecords).ThenInclude(sa => sa.AttendanceRecord).ThenInclude(ar => ar.Session)
-                .Where(isy => isy.InstructorSchoolYearGuid == instructorSchoolYearGuid)
-                .FirstOrDefaultAsync();
+    public async Task<InstructorSchoolYearStudentGroupMap> AttachStudentGroupAsync(Guid instructorSchoolYearGuid, Guid studentGroupGuid)
+    {
+        var studentGroupMap = _grantContext.InstructorStudentGroups.Add(new()
+        {
+            InstructorSchoolYearGuid = instructorSchoolYearGuid,
+            StudentGroupGuid = studentGroupGuid
+        });
 
-		if (instructorSchoolYear is null)
-			return null;
+        await _grantContext.SaveChangesAsync();
 
-		//A list of other school years
-		var organizationYears = await _grantContext
-			.Instructors
-			.Include(i => i.InstructorSchoolYears).ThenInclude(isy => isy.OrganizationYear).ThenInclude(oy => oy.Organization)
-			.Include(i => i.InstructorSchoolYears).ThenInclude(isy => isy.OrganizationYear).ThenInclude(oy => oy.Year)
-			.Where(i => i.PersonGuid == instructorSchoolYear.InstructorGuid)
-			.Select(i => i.InstructorSchoolYears.Select(isy => isy.OrganizationYear).ToList())
-			.FirstOrDefaultAsync();
+        return studentGroupMap.Entity;
+    }
 
-		if (organizationYears is null)
-			return null;
+    public async Task DetachStudentGroupAsync(Guid instructorSchoolYearGuid, Guid studentGroupGuid)
+    {
+        var studentGroupMap = await _grantContext.InstructorStudentGroups.FindAsync(instructorSchoolYearGuid, studentGroupGuid);
 
-		return InstructorSchoolYearViewModel.FromDatabase(instructorSchoolYear, organizationYears);
-	}
+        if (studentGroupMap is null)
+                throw new Exception("Entity to delete does not exist.");
 
-	public async Task<InstructorSchoolYearViewModel?> GetInstructorSchoolYearAsync(string badgeNumber, Guid organizationYearGuid)
-	{
-		var instructorSchoolYear = await _grantContext
-			.InstructorSchoolYears
-			.AsNoTracking()
-			.Include(isy => isy.OrganizationYear).ThenInclude(oy => oy.Organization)
-			.Include(isy => isy.OrganizationYear).ThenInclude(oy => oy.Year)
-			.Include(isy => isy.Instructor)
-			.Include(isy => isy.Status)
-			.Include(isy => isy.Identity)
-			.Include(isy => isy.SessionRegistrations).ThenInclude(sr => sr.Session).ThenInclude(s => s.DaySchedules).ThenInclude(day => day.TimeSchedules)
-			.Include(isy => isy.AttendanceRecords)
-			.Where(isy => isy.Instructor.BadgeNumber == badgeNumber && isy.OrganizationYearGuid == organizationYearGuid)
-			.FirstOrDefaultAsync();
+        _grantContext.InstructorStudentGroups.Remove(studentGroupMap);
 
-            if (instructorSchoolYear is null)
-                return null;
-
-            //A list of other school years
-            var organizationYears = await _grantContext
-			.Instructors
-			.Include(i => i.InstructorSchoolYears).ThenInclude(isy => isy.OrganizationYear).ThenInclude(oy => oy.Organization)
-			.Include(i => i.InstructorSchoolYears).ThenInclude(isy => isy.OrganizationYear).ThenInclude(oy => oy.Year)
-			.Where(i => i.PersonGuid == instructorSchoolYear.InstructorGuid)
-			.Select(i => i.InstructorSchoolYears.Select(isy => isy.OrganizationYear).ToList())
-			.FirstOrDefaultAsync();
-
-            if (organizationYears is null)
-                return null;
-
-            return InstructorSchoolYearViewModel.FromDatabase(instructorSchoolYear, organizationYears);
-	}
-
-	public async Task<InstructorSchoolYearViewModel?> GetAsync(Guid instructorSchoolYearGuid)
-	{
-		var instructorSchoolYear = await _grantContext
-			.InstructorSchoolYears
-			.Include(isy => isy.Instructor)
-			.Include(isy => isy.Status)
-			.FirstOrDefaultAsync(isy => isy.InstructorSchoolYearGuid == instructorSchoolYearGuid);
-
-            if (instructorSchoolYear is null)
-                return null;
-
-            return InstructorSchoolYearViewModel.FromDatabase(instructorSchoolYear);
-	}
+        await _grantContext.SaveChangesAsync();
+    }
 }

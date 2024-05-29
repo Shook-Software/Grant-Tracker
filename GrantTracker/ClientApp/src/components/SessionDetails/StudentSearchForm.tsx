@@ -1,10 +1,11 @@
-import { useContext, useState } from 'react'
+import { useContext, useEffect, useState } from 'react'
 import { Form, Container, Row, Col, Button, Spinner } from 'react-bootstrap'
 
-import GradeSelect from 'components/Input/GradeSelect'
 
 import api from 'utils/api'
 import { OrgYearContext } from 'pages/Admin'
+import { DropdownOption } from 'types/Session'
+import Dropdown from 'components/Input/Dropdown'
 
 interface Filter {
   firstName: string
@@ -20,6 +21,7 @@ interface Props {
 export default ({ orgYearGuid, handleChange }: Props): JSX.Element => {
   const { orgYear } = useContext(OrgYearContext)
   const [isLoading, setIsLoading] = useState<boolean>(false)
+  const [grades, setGrades] = useState<DropdownOption[]>([])
   const [filter, setFilter] = useState<Filter>({
     firstName: '',
     lastName: '',
@@ -42,6 +44,13 @@ export default ({ orgYearGuid, handleChange }: Props): JSX.Element => {
       .catch(err => console.warn(err))
       .finally(() => setIsLoading(false))
   }
+
+  useEffect(() => {
+    fetchGradeOptions()
+      .then(res => {
+        setGrades(res)
+      })
+  }, [])
 
   return (
     <Container>
@@ -91,10 +100,15 @@ export default ({ orgYearGuid, handleChange }: Props): JSX.Element => {
           <Row lg={1} className='mb-3'>
             <Col>
               <Form.Group>
-                <GradeSelect
+                <Form.Label>Grades</Form.Label>
+                <Dropdown
+                  width='80px'
                   value={filter.grades}
-                  addGradeLevel={addGradeLevel}
-                  removeGradeLevel={removeGradeLevel}
+                  options={grades}
+                  onChange={(value: string[]) => {
+                    setFilter({...filter, grades: value})
+                  }}
+                  multipleSelect
                 />
                 <Form.Text className='text-muted'>(optional)</Form.Text>
               </Form.Group>
@@ -104,4 +118,15 @@ export default ({ orgYearGuid, handleChange }: Props): JSX.Element => {
       </Form>
     </Container>
   )
+}
+
+function fetchGradeOptions(): Promise<DropdownOption[]> {
+  return new Promise((resolve, reject) => {
+	api.get<DropdownOption[]>('dropdown/view/grades')
+		.then(res => { resolve(res.data) })
+		.catch(err => {
+			console.warn(err)
+			reject([])
+		})
+  })
 }

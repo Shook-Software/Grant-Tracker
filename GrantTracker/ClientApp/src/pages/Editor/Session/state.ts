@@ -45,8 +45,8 @@ export type ReducerAction =
   | { type: 'name'; payload: string }
   | { type: 'type'; payload: string }
   | { type: 'activity'; payload: string }
-  | { type: 'objective'; payload: string }
-  | { type: 'gradeLevels'; payload: { action: 'Add' | 'Remove'; guid: string } }
+  | { type: 'objective'; payload: string[] }
+  | { type: 'grades'; payload: string[] }
   | { type: 'addInstructor'; payload: { guid: string; label: string } }
   | { type: 'removeInstructor'; payload: string }
   | { type: 'funding'; payload: string }
@@ -66,7 +66,9 @@ export function reducer (
   state: SessionForm,
   action: ReducerAction
 ): SessionForm {
+  console.log(action)
   switch (action.type) {
+
     case 'all':
       return { ...action.payload }
 
@@ -80,20 +82,10 @@ export function reducer (
       return { ...state, activity: action.payload }
 
     case 'objective':
-      return { ...state, objective: action.payload }
+      return { ...state, objectives: action.payload }
 
-    case 'gradeLevels':
-      switch (action.payload.action) {
-        case 'Add':
-          return { ...state, grades: [...state.grades, action.payload.guid] }
-        case 'Remove':
-          return {
-            ...state,
-            grades: state.grades.filter(guid => guid !== action.payload.guid)
-          }
-        default:
-          return state
-      }
+    case 'grades':
+      return { ...state, grades: action.payload }
 
     case 'addInstructor':
       return { ...state, instructors: [...state.instructors, action.payload] }

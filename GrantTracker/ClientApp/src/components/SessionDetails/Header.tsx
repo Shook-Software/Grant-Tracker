@@ -3,15 +3,17 @@ import { Link } from 'react-router-dom'
 
 import Alert, { ApiResult } from 'components/ApiResultAlert'
 import { SessionView } from 'Models/Session'
+import { IdentityClaim, User } from 'utils/authentication'
 
 import paths from 'utils/routing/paths'
 
 interface Props {
   session: SessionView
   attendanceApiResult: ApiResult
+  user: User
 }
 
-export default ({ session, attendanceApiResult }: Props): JSX.Element => {
+export default ({ session, attendanceApiResult, user }: Props): JSX.Element => {
   return (
     <>
       <Card.Title>
@@ -24,7 +26,7 @@ export default ({ session, attendanceApiResult }: Props): JSX.Element => {
           as={Link}
           className='px-2 py-1'
           to={`${paths.Edit.path}/${paths.Edit.Sessions.path}/${session.guid}`}
-          style={{ width: 'auto' }}
+          style={{ width: 'auto', display: user.claim != IdentityClaim.Teacher ? 'auto' : 'none' }}
         >
           Edit
         </Button>

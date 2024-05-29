@@ -1,4 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
+using GrantTracker.Utilities;
 
 namespace GrantTracker.Dal.Schema
 {
@@ -13,8 +15,6 @@ namespace GrantTracker.Dal.Schema
 		public virtual SessionType SessionType { get; set; }
 		public Guid ActivityGuid { get; set; }
 		public virtual Activity Activity { get; set; }
-		public Guid ObjectiveGuid { get; set; }
-		public virtual Objective Objective { get; set; }
 		public Guid FundingSourceGuid { get; set; }
 		public virtual FundingSource FundingSource { get; set; }
 		public Guid OrganizationTypeGuid { get; set; }
@@ -24,22 +24,24 @@ namespace GrantTracker.Dal.Schema
 		public string Name { get; set; }
 		public DateOnly FirstSession { get; set; }
 		public DateOnly LastSession { get; set; }
-		/*public TimeOnly StartTime { get; set; } = TimeOnly.MinValue;
-		public TimeOnly EndTime { get; set; } = TimeOnly.MinValue;*/
 		public bool Recurring { get; set; } = false;
 
+		public virtual ICollection<SessionObjective> SessionObjectives { get; set; }
 		public virtual ICollection<SessionDaySchedule> DaySchedules { get; set; }
 		public virtual ICollection<AttendanceRecord> AttendanceRecords { get; set; }
 		public virtual ICollection<InstructorRegistration> InstructorRegistrations { get; set; }
         public virtual ICollection<SessionGrade> SessionGrades { get; set; }
 
-		public static void Setup(ModelBuilder builder)
+		public static void Setup(ModelBuilder builder, ClaimsPrincipal user)
 		{
 			var entity = builder.Entity<Session>();
 
-			entity.ToTable("Session", "GTkr")
-				.HasComment("Base table for sessions in the database. Contains the universal attributes any session contains.")
+			entity.ToTable("Session", "GTkr", t => t.HasComment("Base table for sessions in the database. Contains the universal attributes any session contains."))
 				.HasKey(e => e.SessionGuid);
+
+			entity.HasQueryFilter(s => user.IsAdmin()
+				|| (user.IsCoordinator() && user.HomeOrganizationGuids().Contains(s.OrganizationYear.OrganizationGuid))
+				|| (user.IsTeacher() && s.InstructorRegistrations.Any(ir => ir.InstructorSchoolYear.Instructor.BadgeNumber.Trim() == user.Id())));
 
 			/// /Relations
 
@@ -57,9 +59,9 @@ namespace GrantTracker.Dal.Schema
 				.HasForeignKey(e => e.ActivityGuid)
 				.IsRequired();
 
-			entity.HasOne(e => e.Objective)
-				.WithMany(o => o.Sessions)
-				.HasForeignKey(e => e.ObjectiveGuid)
+			entity.HasMany(e => e.SessionObjectives)
+				.WithOne(o => o.Session)
+				.HasForeignKey(e => e.SessionGuid)
 				.IsRequired();
 
 			entity.HasOne(e => e.FundingSource)
@@ -107,10 +109,6 @@ namespace GrantTracker.Dal.Schema
 				.HasComment("");
 
 			entity.Property(e => e.ActivityGuid)
-				.IsRequired()
-				.HasColumnType("uniqueidentifier");
-
-			entity.Property(e => e.ObjectiveGuid)
 				.IsRequired()
 				.HasColumnType("uniqueidentifier");
 

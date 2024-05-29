@@ -1,4 +1,4 @@
-﻿using GrantTracker.Dal.Models.Dto;
+﻿using GrantTracker.Dal.Models.DTO;
 using GrantTracker.Dal.Schema;
 
 namespace GrantTracker.Dal.Models.Views
@@ -9,10 +9,10 @@ namespace GrantTracker.Dal.Models.Views
 		public Guid SessionGuid { get; set; }
 	}
 
-	public class StudentRegistrationDto
+	public class StudentRegistrationDTO
 	{
 		public List<Guid> DayScheduleGuids { get; set; }
-		public StudentDto Student { get; set; }
+		public Guid StudentSchoolYearGuid { get; set; }
 	}
 
 	public class TimeScheduleView

@@ -206,8 +206,11 @@ export const siteSessionsColumns = [
 	},
 	{
 		label: 'Objective',
-		attributeKey: 'objective',
-		sortable: true
+		attributeKey: 'objectives',
+		sortable: false,
+		  transform: (objectives) => <div className='d-flex flex-column align-items-center'>
+			  {objectives.map(objective => (<div>{objective}</div>))}
+		  </div>
 	},
 	{
 		label: 'Session\nType',
@@ -282,8 +285,11 @@ export const summaryOfClassesColumns: Column[] = [
 	},
 	{
 	  label: 'Objective',
-	  attributeKey: 'objective',
-	  sortable: true
+	  attributeKey: 'objectives',
+	  sortable: false,
+		transform: (objectives) => <div className='d-flex flex-column align-items-center'>
+			{objectives.map(objective => (<div>{objective}</div>))}
+		</div>
 	},
 	{
 	  label: 'Start Date',

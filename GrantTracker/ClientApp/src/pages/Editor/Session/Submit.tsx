@@ -70,7 +70,10 @@ const SessionDisplay = ({
       />
       <ListItem
         label='Objective:'
-        value={`(${dropdownData.objectives.find(e => e.guid === values.objective)?.abbreviation}) ${dropdownData.objectives.find(e => e.guid === values.objective)?.label}`}
+        value={values.objectives.map(objGuid => <div>
+          {`(${dropdownData.objectives.find(e => e.guid === objGuid)?.abbreviation}) ${dropdownData.objectives.find(e => e.guid === objGuid)?.label}`}
+          </div>
+        )}
       />
       <ListItem
         label='Grade Levels:'

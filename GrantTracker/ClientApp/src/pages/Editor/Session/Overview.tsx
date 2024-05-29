@@ -3,7 +3,6 @@ import { useSession, Context } from '../index'
 import { Form, Container, Row, Col } from 'react-bootstrap'
 
 import Dropdown from 'components/Input/Dropdown'
-import GradeSelect from 'components/Input/GradeSelect'
 
 //First section - Overview
 ////Location - auto filled
@@ -70,12 +69,12 @@ export default () => {
             <Form.Label>Objective</Form.Label>
             <Dropdown
               width='80px'
-              value={values.objective}
+              value={values.objectives}
               options={dropdownData.objectives}
-              onChange={(value: string) => {
-                //handleChange(value)
+              onChange={(value: string[]) => {
                 reducerDispatch({ type: 'objective', payload: value })
               }}
+              multipleSelect
             />
           </Form.Group>
         </Col>
@@ -94,11 +93,18 @@ export default () => {
       </Row>
       <Row lg={1} className='m-3'>
         <Col>
-          <GradeSelect
-            value={values.grades}
-            addGradeLevel={(value: string) => { reducerDispatch({ type: 'gradeLevels', payload: { action: 'Add', guid: value } }) }}
-            removeGradeLevel={(value: string) => { reducerDispatch({ type: 'gradeLevels', payload: { action: 'Remove', guid: value } }) }}
-          />
+          <Form.Group>
+            <Form.Label>Grades</Form.Label>
+            <Dropdown
+              width='80px'
+              value={values.grades}
+              options={dropdownData.grades}
+              onChange={(value: string[]) => {
+                reducerDispatch({ type: 'grades', payload: value })
+              }}
+              multipleSelect
+            />
+          </Form.Group>
         </Col>
       </Row>
     </Container>

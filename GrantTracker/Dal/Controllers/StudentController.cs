@@ -1,4 +1,4 @@
-﻿using GrantTracker.Dal.Models.Dto;
+﻿using GrantTracker.Dal.Models.DTO;
 using GrantTracker.Dal.Models.Views;
 using GrantTracker.Dal.Repositories.LookupRepository;
 using GrantTracker.Dal.Repositories.StudentRepository;
@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace GrantTracker.Dal.Controllers
 {
 	[ApiController]
-	[Authorize(Policy = "AnyAuthorizedUser")]
+	[Authorize(Policy = "Teacher")]
 	[Route("student")]
 	public class StudentController : ControllerBase
 	{
@@ -28,14 +28,14 @@ namespace GrantTracker.Dal.Controllers
 		}
 
 		[HttpGet("")]
-		public async Task<ActionResult<List<StudentSchoolYearViewModel>>> GetAll(string name, Guid organizationGuid, Guid yearGuid)
+		public async Task<ActionResult<List<StudentSchoolYearViewModel>>> GetAll(Guid organizationGuid, Guid yearGuid)
 		{
-			var students = await _studentRepository.GetAsync(name, organizationGuid, yearGuid);
+			var students = await _studentRepository.GetAsync("", organizationGuid, yearGuid);
 			return Ok(students);
 		}
 
 		[HttpGet("synergy")]
-		public async Task<ActionResult<List<StudentSchoolYearViewModel>>> SearchSynergy(string firstName, string lastName, string matricNumber, [FromQuery(Name = "grades[]")] Guid[] grades, Guid organizationYearGuid)
+		public async Task<ActionResult<List<StudentSchoolYearViewModel>>> SearchSynergy(Guid organizationYearGuid, string? firstName = "", string? lastName = "", string? matricNumber = "", [FromQuery(Name = "grades[]")] Guid[]? grades = null)
 		{
 			List<string> synergyGrades = new();
 			List<string> grantTrackerGrades = new();
@@ -73,7 +73,6 @@ namespace GrantTracker.Dal.Controllers
 			return Ok(student);
 		}
 
-		//not sure 
 		[HttpGet("{studentYearGuid:guid}/attendance")]
 		public async Task<ActionResult<List<StudentAttendanceViewModel>>> GetSingle(Guid studentYearGuid)
 		{
@@ -82,7 +81,7 @@ namespace GrantTracker.Dal.Controllers
 		}
 
 		[HttpPost("")]
-		public async Task<ActionResult<Guid>> CreateNewStudentAsync([FromBody] StudentDto studentDto, Guid orgYearGuid)
+		public async Task<ActionResult<Guid>> CreateNewStudentAsync([FromBody] StudentDTO studentDto, Guid orgYearGuid)
 		{
 			try
 			{
@@ -93,9 +92,39 @@ namespace GrantTracker.Dal.Controllers
             }
 			catch (Exception ex)
 			{
-				_logger.LogError("Unhandled", ex);
+				_logger.LogError(ex, "");
 				return StatusCode(500);
 			}
-		}
-	}
+        }
+
+        [HttpPost("/studentSchoolYear/{studentSchoolYearGuid:guid}/studentGroup/{studentGroupGuid:guid}")]
+        public async Task<IActionResult> AddStudentToGroupAsync(Guid studentGroupGuid, Guid studentSchoolYearGuid)
+        {
+            try
+            {
+                await _studentSchoolYearRepository.AddStudentGroupItem(studentGroupGuid, studentSchoolYearGuid);
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "");
+                return StatusCode(500);
+            }
+        }
+
+        [HttpDelete("/studentSchoolYear/{studentSchoolYearGuid:guid}/studentGroup/{studentGroupGuid:guid}")]
+        public async Task<IActionResult> DeleteStudentGroupItemAsync(Guid studentGroupGuid, Guid studentSchoolYearGuid)
+        {
+            try
+            {
+                await _studentSchoolYearRepository.DeleteStudentGroupItem(studentGroupGuid, studentSchoolYearGuid);
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "");
+                return StatusCode(500);
+            }
+        }
+    }
 }

@@ -8,23 +8,25 @@ import { PageContainer } from 'styles'
 
 import { OrganizationYear, OrganizationYearDomain, OrganizationYearView, Quarter, YearView } from 'Models/OrganizationYear'
 
-import { User } from 'utils/authentication'
+import { IdentityClaim, User } from 'utils/authentication'
 import paths from 'utils/routing/paths'
 import api from 'utils/api'
 
-const TabSelector = (): JSX.Element => (
+const TabSelector = ({user}: {user: User}): JSX.Element => (
   <Tabset basePath={paths.Admin.path}>
     <Tab
       path={paths.Admin.Tabs.Overview.path}
       text='Overview'
+      disabled={user.claim == IdentityClaim.Teacher}
     />
-      <Tab
+    <Tab
       path={paths.Admin.Tabs.Sessions.path}
       text='Sessions'
     />
     <Tab
       path={paths.Admin.Tabs.Staff.path}
       text='Staff'
+      disabled={user.claim == IdentityClaim.Teacher}
     />
     <Tab
       path={paths.Admin.Tabs.Students.path}
@@ -33,6 +35,7 @@ const TabSelector = (): JSX.Element => (
     <Tab
       path={paths.Admin.Tabs.Config.path}
       text='Config'
+      disabled={user.claim == IdentityClaim.Teacher}
     />
   </Tabset>
 )
@@ -71,7 +74,7 @@ export default ({ user, breadcrumbs}: Props) => {
     <PageContainer className='rounded-top-left-0'>
       <OrgYearInput value={orgYear} onChange={handleOrgYearChange} defaultOrgYearGuid={user.organizationYearGuid} />
       <div className='w-100'>
-        <TabSelector />
+        <TabSelector user={user} />
       </div>
       <OrgYearContext.Provider value={orgYearContextValue}>
         {orgYear ? <Outlet /> : 'Loading organizations...'}
@@ -151,7 +154,14 @@ const OrgYearInput = ({value, onChange, defaultOrgYearGuid}): React.ReactElement
 
   const orgGuids: string[] = [...(new Set(orgYears.map(x => x.organization.guid)))]
   const orgs: any[] = orgGuids.map(guid => orgYears.find(oy => oy.organization.guid === guid)?.organization)
-  const years: YearView[] = orgYears.filter(oy => oy.organization.guid === value?.organization.guid).map(oy => oy.year)
+  const years: YearView[] = orgYears.filter(oy => oy.organization.guid === value?.organization.guid)
+    .map(oy => oy.year)
+    .sort((current, next) => {
+      if (current.schoolYear == next.schoolYear && current.quarter == next.quarter) return 0;
+      else if (current.schoolYear > next.schoolYear) return -1;
+      else if (current.quarter > next.quarter) return -1;
+      return 1; 
+  })
 
   return (
     <div className='row mb-3'>
@@ -162,6 +172,7 @@ const OrgYearInput = ({value, onChange, defaultOrgYearGuid}): React.ReactElement
           value={{value: value?.organization.guid, label: value?.organization.name}}
           options={orgs.map(o => ({ value: o.guid, label: o.name }))}
           onChange={(option => handleInputChange(orgYears, option?.value, value?.year.guid))}
+          isDisabled={orgs.length <= 1}
         />
       </div>
 

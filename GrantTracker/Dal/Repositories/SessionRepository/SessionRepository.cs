@@ -1,7 +1,7 @@
 ﻿using Castle.Core.Internal;
-using GrantTracker.Dal.Models.Dto;
-using GrantTracker.Dal.Models.Dto.Attendance;
-using GrantTracker.Dal.Models.Dto.SessionDTO;
+using GrantTracker.Dal.Models.DTO;
+using GrantTracker.Dal.Models.DTO.Attendance;
+using GrantTracker.Dal.Models.DTO.SessionDTO;
 using GrantTracker.Dal.Models.Views;
 using GrantTracker.Dal.Repositories.DevRepository;
 using GrantTracker.Dal.Schema;
@@ -24,10 +24,8 @@ public class SessionRepository : ISessionRepository
         _user = httpContextAccessor.HttpContext.User;
     }
 
-	//come back to this and fix the identity thing
 	public async Task<SessionView> GetAsync(Guid sessionGuid)
 	{
-		Stopwatch watch = new(); watch.Start();
 		var session = await _grantContext
 			.Sessions
 			.AsNoTracking()
@@ -37,17 +35,16 @@ public class SessionRepository : ISessionRepository
 			.Include(s => s.SessionGrades).ThenInclude(g => g.Grade)
 			.Include(s => s.SessionType)
 			.Include(s => s.Activity)
-			.Include(s => s.Objective)
-			.Include(s => s.FundingSource)
+            .Include(s => s.SessionObjectives).ThenInclude(x => x.Objective)
+            .Include(s => s.FundingSource)
 			.Include(s => s.OrganizationType)
 			.Include(s => s.PartnershipType)
-			.Include(s => s.InstructorRegistrations).ThenInclude(i => i.InstructorSchoolYear).ThenInclude(i => i.Status)
+            .Include(s => s.InstructorRegistrations).ThenInclude(i => i.InstructorSchoolYear).ThenInclude(i => i.StudentGroups).ThenInclude(g => g.Items).ThenInclude(i => i.StudentSchoolYear).ThenInclude(ssy => ssy.Student)
+            .Include(s => s.InstructorRegistrations).ThenInclude(i => i.InstructorSchoolYear).ThenInclude(i => i.Status)
 			.Include(s => s.InstructorRegistrations).ThenInclude(i => i.InstructorSchoolYear).ThenInclude(i => i.Instructor)
 			.Include(s => s.DaySchedules).ThenInclude(w => w.TimeSchedules)
 			.Select(s => SessionView.FromDatabase(s))
 			.SingleAsync();
-
-		Debug.WriteLine($"Grabbed session in {watch.ElapsedMilliseconds / 1000d:#.##}");
 
 		if (!session.DaySchedules.IsNullOrEmpty())
 			session.DaySchedules = session.DaySchedules.OrderBy(schedule => schedule.DayOfWeek).ToList();
@@ -69,8 +66,8 @@ public class SessionRepository : ISessionRepository
 			.Include(s => s.SessionGrades).ThenInclude(g => g.Grade)
 			.Include(s => s.SessionType)
 			.Include(s => s.Activity)
-			.Include(s => s.Objective)
-			.Include(s => s.FundingSource)
+            .Include(s => s.SessionObjectives).ThenInclude(x => x.Objective)
+            .Include(s => s.FundingSource)
 			.Include(s => s.OrganizationType)
 			.Include(s => s.PartnershipType)
 			.Include(s => s.DaySchedules)
@@ -100,6 +97,7 @@ public class SessionRepository : ISessionRepository
 		var timeSchedule = sessionDetails.GetTimeSchedule();
 		var grades = sessionDetails.GetGrades();
 		var instructorRegistrations = sessionDetails.GetInstructors();
+		var sessionObjectives = sessionDetails.Objectives.Select(objective => new SessionObjective { SessionGuid = sessionDetails.Guid, ObjectiveGuid = objective });
 		await _grantContext.Sessions.AddAsync(session);
 		await _grantContext.SaveChangesAsync();
 		await _grantContext.SessionDaySchedules.AddRangeAsync(daySchedule);
@@ -149,22 +147,24 @@ public class SessionRepository : ISessionRepository
 		await _grantContext.SaveChangesAsync();
 	}
 
-	public async Task UpdateAsync(FormSessionDto formSession)
+	public async Task UpdateAsync(FormSessionDto form)
 	{
-		var newSession = formSession.ToDbSession();
-		var newGrades = formSession.GetGrades();
-		var newInstructors = formSession.GetInstructors();
+		var newSession = form.ToDbSession();
+		var newGrades = form.GetGrades();
+		var newInstructors = form.GetInstructors();
+        var sessionObjectives = form.Objectives.Select(objective => new SessionObjective { SessionGuid = form.Guid, ObjectiveGuid = objective }).OrderBy(x => x.ObjectiveGuid);
 
-		var currentSession = await _grantContext
+        var currentSession = await _grantContext
 			.Sessions
 			.Where(s => s.SessionGuid == newSession.SessionGuid)
 			.Include(s => s.SessionGrades)
+			.Include(s => s.SessionObjectives)
 			.Include(s => s.InstructorRegistrations)
 			.FirstOrDefaultAsync();
 
 		var organizationYearGuid = currentSession.OrganizationYearGuid;
 
-		var newDaySchedule = formSession.GetDaySchedule();
+		var newDaySchedule = form.GetDaySchedule();
 		var currentSchedule = await _grantContext
 			.SessionDaySchedules
 			.Include(sds => sds.TimeSchedules)
@@ -172,10 +172,17 @@ public class SessionRepository : ISessionRepository
 			.Where(sds => sds.SessionGuid == newSession.SessionGuid)
 			.ToListAsync();
 
-		//go ahead and handle these seperately from all else
-		if (formSession.RegistrationShift.Count > 0)
+		if (!currentSession.SessionObjectives.OrderBy(x => x.ObjectiveGuid).SequenceEqual(sessionObjectives, new SessionObjectiveComparer()))
 		{
-			foreach (var regShift in formSession.RegistrationShift)
+			_grantContext.SessionObjectives.RemoveRange(currentSession.SessionObjectives);
+			_grantContext.SessionObjectives.AddRange(sessionObjectives);
+			await _grantContext.SaveChangesAsync();
+		}
+
+		//go ahead and handle these seperately from all else
+		if (form.RegistrationShift.Count > 0)
+		{
+			foreach (var regShift in form.RegistrationShift)
 			{
 				var registrations = currentSession.DaySchedules.First(ds => ds.DayOfWeek == regShift.FromDay).StudentRegistrations.ToList();
 				var targetDayScheduleIndex = newDaySchedule.FindIndex(ds => ds.DayOfWeek == regShift.ToDay);
@@ -347,7 +354,7 @@ public class SessionRepository : ISessionRepository
             .Include(s => s.SessionGrades).ThenInclude(g => g.Grade)
             .Include(s => s.SessionType)
             .Include(s => s.Activity)
-            .Include(s => s.Objective)
+            .Include(s => s.SessionObjectives).ThenInclude(x => x.Objective)
             .Include(s => s.FundingSource)
             .Include(s => s.OrganizationType)
             .Include(s => s.PartnershipType)

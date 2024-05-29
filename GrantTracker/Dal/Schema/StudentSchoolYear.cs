@@ -14,8 +14,9 @@ namespace GrantTracker.Dal.Schema
 		public virtual ICollection<StudentRegistration> SessionRegistrations { get; set; }
 		public virtual ICollection<StudentAttendanceRecord> AttendanceRecords { get; set; }
 		public virtual ICollection<FamilyAttendanceRecord> FamilyAttendance { get; set; }
+        public virtual ICollection<StudentGroupItem> StudentGroups { get; set; }
 
-		public static void Setup(ModelBuilder builder)
+        public static void Setup(ModelBuilder builder)
 		{
 			var entity = builder.Entity<StudentSchoolYear>();
 
@@ -23,7 +24,9 @@ namespace GrantTracker.Dal.Schema
 			.HasComment("A student at a school during a given school year.")
 			.HasKey(e => e.StudentSchoolYearGuid);
 
-			entity.HasOne(e => e.OrganizationYear)
+            entity.Navigation(e => e.Student).AutoInclude();
+
+            entity.HasOne(e => e.OrganizationYear)
 				.WithMany(e => e.StudentSchoolYears)
 				.HasForeignKey(e => e.OrganizationYearGuid);
 

@@ -14,7 +14,8 @@ export default Yup.object().shape({
   activity: Yup.string()
     .required(),
 
-  objective: Yup.string()
+  objectives: Yup.array().of(Yup.string().required())
+    .defined()
     .required(),
 
   fundingSource: Yup.string()

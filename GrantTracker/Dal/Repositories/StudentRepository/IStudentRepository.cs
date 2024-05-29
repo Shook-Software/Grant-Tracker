@@ -1,12 +1,12 @@
-﻿using GrantTracker.Dal.Models.Dto;
+﻿using GrantTracker.Dal.Models.DTO;
 using GrantTracker.Dal.Models.Views;
 
 namespace GrantTracker.Dal.Repositories.StudentRepository
 {
 	public interface IStudentRepository
 	{
-		public Task<StudentViewModel> CreateIfNotExistsAsync(StudentDto student);
-		public Task<StudentViewModel> CreateAsync(StudentDto newStudent);
+		public Task<StudentViewModel> CreateIfNotExistsAsync(StudentDTO student);
+		public Task<StudentViewModel> CreateAsync(StudentDTO newStudent);
 
 		public Task<List<StudentSchoolYearViewModel>> GetAsync(string name, Guid organizationGuid, Guid yearGuid);
 

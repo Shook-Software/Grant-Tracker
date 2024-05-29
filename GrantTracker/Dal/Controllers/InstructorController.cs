@@ -1,4 +1,4 @@
-﻿using GrantTracker.Dal.Models.Dto;
+﻿using GrantTracker.Dal.Models.DTO;
 using GrantTracker.Dal.Repositories.InstructorRepository;
 using GrantTracker.Dal.Repositories.InstructorSchoolYearRepository;
 using Microsoft.AspNetCore.Authorization;
@@ -10,7 +10,7 @@ using GrantTracker.Dal.Schema;
 namespace GrantTracker.Dal.Controllers;
 
 [ApiController]
-[Authorize(Policy = "AnyAuthorizedUser")]
+[Authorize(Policy = "Teacher")]
 [Route("instructor")]
 public class InstructorController : ControllerBase
 {
@@ -36,7 +36,7 @@ public class InstructorController : ControllerBase
 	[HttpGet("{instructorSchoolYearGuid:guid}")]
 	public async Task<ActionResult<InstructorSchoolYearViewModel>> GetInstructorSchoolYear(Guid instructorSchoolYearGuid)
 	{
-		var instructorSchoolYear = await _instructorSchoolYearRepository.GetInstructorSchoolYearAsync(instructorSchoolYearGuid);
+		var instructorSchoolYear = await _instructorSchoolYearRepository.GetAsync(instructorSchoolYearGuid);
 		return Ok(instructorSchoolYear);
 	}
 
@@ -46,22 +46,52 @@ public class InstructorController : ControllerBase
 		return await _instructorRepository.SearchSynergyStaffAsync(name, badgeNumber);
 	}
 
-	[HttpPost("add")] //change this to new or something...
+	[HttpPost("add")] 
 	public async Task<ActionResult> AddInstructor(InstructorDto instructor, Guid organizationYearGuid)
 	{
 		try
-            {
-                Guid instructorSchoolYearGuid = await _instructorRepository.CreateAsync(instructor, organizationYearGuid);
-                return Ok(instructorSchoolYearGuid);
-            }
+        {
+            Guid instructorSchoolYearGuid = await _instructorRepository.CreateAsync(instructor, organizationYearGuid);
+            return Ok(instructorSchoolYearGuid);
+        }
 		catch (Exception ex)
 		{
-			_logger.LogError("Unhandled", ex);
+			_logger.LogError(ex, "");
 			return StatusCode(500);
 		}
 	}
 
-	public class PatchStatusProps
+	[HttpPost("/instructorSchoolYear/{instructorSchoolYearGuid:guid}/studentGroup/{studentGroupGuid:guid}")]
+	public async Task<IActionResult> AttachStudentGroup(Guid instructorSchoolYearGuid, Guid studentGroupGuid)
+	{
+		try
+		{
+			await _instructorSchoolYearRepository.AttachStudentGroupAsync(instructorSchoolYearGuid, studentGroupGuid);
+			return NoContent();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "");
+            return StatusCode(500);
+        }
+    }
+
+    [HttpDelete("/instructorSchoolYear/{instructorSchoolYearGuid:guid}/studentGroup/{studentGroupGuid:guid}")]
+    public async Task<IActionResult> DetachStudentGroup(Guid instructorSchoolYearGuid, Guid studentGroupGuid)
+    {
+        try
+        {
+            await _instructorSchoolYearRepository.DetachStudentGroupAsync(instructorSchoolYearGuid, studentGroupGuid);
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "");
+            return StatusCode(500);
+        }
+    }
+
+    public class PatchStatusProps
 	{
 		public Guid InstructorSchoolYearGuid { get; set; }
 		public Guid StatusGuid { get; set; }

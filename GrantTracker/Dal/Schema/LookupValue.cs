@@ -8,7 +8,7 @@ namespace GrantTracker.Dal.Schema
 		public Guid DefinitionGuid { get; set; }
 		public LookupDefinition Definition { get; set; }
 		public string Value { get; set; }
-		public string Description { get; set; }
+		public string? Description { get; set; }
 
 		public static void Setup(ModelBuilder builder)
 		{

@@ -4,7 +4,7 @@ using GrantTracker.Dal.Repositories.DevRepository;
 using GrantTracker.Dal.SynergySchema;
 using GrantTracker.Dal.Models.Views;
 using Microsoft.EntityFrameworkCore;
-using GrantTracker.Dal.Models.Dto;
+using GrantTracker.Dal.Models.DTO;
 using System.Runtime.Intrinsics.X86;
 using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
@@ -83,5 +83,29 @@ public class StudentSchoolYearRepository : IStudentSchoolYearRepository
 			.FindAsync(studentSchoolYearGuid);
 
 		return StudentSchoolYearViewModel.FromDatabase(studentSchoolYear);
-	}
+    }
+
+    public async Task<StudentGroupItem> AddStudentGroupItem(Guid groupGuid, Guid studentSchoolYearGuid)
+    {
+        var studentGroupItem = _grantContext.StudentGroupItems.Add(new StudentGroupItem()
+        {
+            GroupGuid = groupGuid,
+            StudentSchoolYearGuid = studentSchoolYearGuid
+        });
+
+        await _grantContext.SaveChangesAsync();
+
+        return studentGroupItem.Entity;
+    }
+
+    public async Task DeleteStudentGroupItem(Guid groupGuid, Guid studentSchoolYearGuid)
+    {
+        StudentGroupItem? studentGroupItem = await _grantContext.StudentGroupItems.FindAsync(groupGuid, studentSchoolYearGuid);
+
+        if (studentGroupItem is null)
+            throw new Exception("Entity to delete does not exist.");
+
+        _grantContext.Remove(studentGroupItem);
+        await _grantContext.SaveChangesAsync();
+    }
 }

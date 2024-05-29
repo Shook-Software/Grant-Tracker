@@ -6,15 +6,15 @@ using GrantTracker.Dal.Models.Views;
 using GrantTracker.Dal.Repositories.OrganizationYearRepository;
 using GrantTracker.Utilities;
 using Microsoft.EntityFrameworkCore;
-using GrantTracker.Dal.Models.Dto.Attendance;
+using GrantTracker.Dal.Models.DTO.Attendance;
 using GrantTracker.Dal.Repositories.AttendanceRepository;
-using GrantTracker.Dal.Models.Dto.SessionDTO;
+using GrantTracker.Dal.Models.DTO.SessionDTO;
 using GrantTracker.Dal.Repositories.SessionRepository;
 
 namespace GrantTracker.Dal.Controllers
 {
 	[ApiController]
-	[Authorize(Policy = "AnyAuthorizedUser")]
+	[Authorize(Policy = "Teacher")]
 	[Route("")]
 	public class OrganizationController : ControllerBase
 	{
@@ -213,7 +213,68 @@ namespace GrantTracker.Dal.Controllers
             }
             catch (Exception ex)
             {
-				return StatusCode(500);
+                _logger.LogError(ex, "");
+                return StatusCode(500);
+            }
+        }
+
+        [HttpGet("organizationYear/{OrganizationYearGuid:Guid}/studentGroup")]
+        public async Task<ActionResult<List<StudentGroupView>>> GetStudentGroupsAsync(Guid organizationYearGuid, [FromQuery] string? fields = null)
+        {
+            try
+            {
+                var groups = await _organizationYearRepository.GetStudentGroupsAsync(organizationYearGuid, fields);
+                return Ok(groups);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "");
+                return StatusCode(500);
+            }
+        }
+
+        [HttpGet("organizationYear/{OrganizationYearGuid:Guid}/studentGroup/{studentGroupGuid:guid?}")]
+        public async Task<ActionResult<StudentGroupView>> GetStudentGroupAsync(Guid studentGroupGuid, [FromQuery] string? fields = null)
+        {
+            try
+            {
+                var group = await _organizationYearRepository.GetStudentGroupAsync(studentGroupGuid, fields);
+                return Ok(group);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "");
+                return StatusCode(500);
+            }
+        }
+
+        [HttpPost("organizationYear/{OrganizationYearGuid:Guid}/studentGroup")]
+        public async Task<IActionResult> CreateStudentGroupAsync(Guid organizationYearGuid, string name)
+        {
+            try
+            {
+                await _organizationYearRepository.CreateStudentGrouping(organizationYearGuid, name);
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "");
+                return StatusCode(500);
+            }
+        }
+
+        [HttpDelete("organizationYear/studentGroup/{studentGroupGuid:guid}")]
+        public async Task<IActionResult> DeleteStudentGroupAsync(Guid studentGroupGuid)
+        {
+            try
+            {
+                await _organizationYearRepository.DeleteStudentGroup(studentGroupGuid);
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "");
+                return StatusCode(500);
             }
         }
     }

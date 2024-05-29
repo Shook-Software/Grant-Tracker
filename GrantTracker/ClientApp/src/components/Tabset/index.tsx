@@ -8,6 +8,7 @@ interface TabProps {
   path: string
   text: string
   basePath?: string
+  disabled?: boolean
   currentPath?: string
 }
 
@@ -15,8 +16,12 @@ export const Tab = ({
   path,
   text,
   basePath,
+  disabled = false,
   ...props
 }: TabProps): JSX.Element => {
+  if (disabled)
+    return <></>
+
   const destination: string = `${basePath ? basePath + '/' : ''}${path}`
   return (
     <li>

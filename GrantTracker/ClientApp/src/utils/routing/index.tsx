@@ -24,7 +24,6 @@ import Config from 'pages/Config'
 import Authentication from 'pages/Config/Authentication'
 import Dropdowns from 'pages/Config/Dropdowns'
 import Controls from 'pages/Config/Controls/index'
-import DeveloperLogs from 'pages/Config/Logs'
 
 import Help from 'pages/Help'
 
@@ -100,11 +99,11 @@ export default (user: User, Breadcrumbs: JSX.Element): RouteObject[] => [
         children: [
           {
             index: true,
-            element: <AdminSessionsView />
+            element: <AdminSessionsView user={user} />
           },
           {
             path: '/home/admin/sessions/:sessionGuid',
-            element: <AdminSessionsView />
+            element: <AdminSessionsView user={user} />
           }
         ]
       },
@@ -160,10 +159,6 @@ export default (user: User, Breadcrumbs: JSX.Element): RouteObject[] => [
       {
         path: '/home/config/controls',
         element: <Controls />
-      },
-      {
-        path: '/home/config/dev/logs',
-        element: <DeveloperLogs />
       }
     ]
   },

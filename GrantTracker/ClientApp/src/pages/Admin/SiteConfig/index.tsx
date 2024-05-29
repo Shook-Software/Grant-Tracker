@@ -1,5 +1,6 @@
 import { Col, Nav, Row, Tab } from 'react-bootstrap'
 import { BlackoutDateConfig } from './BlackoutDates'
+import { StudentGroupsConfig } from './StudentGroups'
 import { PageContainer } from 'styles'
 
 export default (): JSX.Element => {
@@ -15,6 +16,12 @@ export default (): JSX.Element => {
 										Blackout Dates
 									</Nav.Link>
 								</Nav.Item>
+
+								<Nav.Item>
+									<Nav.Link eventKey='student-groups'>
+										Student Groups
+									</Nav.Link>
+								</Nav.Item>
 							</Nav>
 						</Row>
 					</Col>
@@ -23,6 +30,10 @@ export default (): JSX.Element => {
 						<Tab.Content>
 							<Tab.Pane eventKey='blackout'>
 								<BlackoutDateConfig />
+							</Tab.Pane>
+							
+							<Tab.Pane eventKey='student-groups'>
+								<StudentGroupsConfig />
 							</Tab.Pane>
 						</Tab.Content>
 					</Col>
