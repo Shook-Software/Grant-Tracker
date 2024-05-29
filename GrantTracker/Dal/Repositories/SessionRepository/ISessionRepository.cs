@@ -1,7 +1,7 @@
 ﻿using GrantTracker.Dal.Models;
-using GrantTracker.Dal.Models.Dto;
-using GrantTracker.Dal.Models.Dto.Attendance;
-using GrantTracker.Dal.Models.Dto.SessionDTO;
+using GrantTracker.Dal.Models.DTO;
+using GrantTracker.Dal.Models.DTO.Attendance;
+using GrantTracker.Dal.Models.DTO.SessionDTO;
 using GrantTracker.Dal.Models.Views;
 using GrantTracker.Dal.Schema;
 

@@ -6,7 +6,7 @@ namespace GrantTracker.Dal.Schema
 	{
 		public Guid Guid { get; set; }
 		public string Name { get; set; }
-		public string Description { get; set; }
+		public string? Description { get; set; }
 
 		public ICollection<LookupValue> Values { get; set; }
 

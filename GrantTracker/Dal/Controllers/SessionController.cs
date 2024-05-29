@@ -1,5 +1,5 @@
 ﻿using Castle.Core.Internal;
-using GrantTracker.Dal.Models.Dto;
+using GrantTracker.Dal.Models.DTO;
 using GrantTracker.Dal.Models.Views;
 using GrantTracker.Dal.Repositories.AttendanceRepository;
 using GrantTracker.Dal.Repositories.SessionRepository;
@@ -14,14 +14,14 @@ using Microsoft.AspNetCore.Mvc;
 using GrantTracker.Dal.Repositories.OrganizationRepository;
 using GrantTracker.Utilities;
 using GrantTracker.Dal.Schema.Sprocs;
-using GrantTracker.Dal.Models.Dto.Attendance;
+using GrantTracker.Dal.Models.DTO.Attendance;
 using System.Diagnostics;
-using GrantTracker.Dal.Models.Dto.SessionDTO;
+using GrantTracker.Dal.Models.DTO.SessionDTO;
 
 namespace GrantTracker.Dal.Controllers;
 
 [ApiController]
-[Authorize(Policy = "AnyAuthorizedUser")]
+[Authorize(Policy = "Teacher")]
 [Route("session")]
 public class SessionController : ControllerBase
 {
@@ -54,11 +54,9 @@ public class SessionController : ControllerBase
 	#region Get
 
 	[HttpGet("")]
-	public async Task<ActionResult<List<SimpleSessionView>>> GetAsync(Guid orgYearGuid)
+    public async Task<ActionResult<List<SimpleSessionView>>> GetAsync(Guid orgYearGuid)
     {
-        Stopwatch watch = new(); watch.Start();
 		var sessions = await _sessionRepository.GetAsync("", orgYearGuid);
-        Debug.WriteLine($"Returned sessionS in {watch.ElapsedMilliseconds / 1000d:#.##}");
         return Ok(sessions);
 	}
 
@@ -66,10 +64,16 @@ public class SessionController : ControllerBase
 	[HttpGet("{sessionGuid:guid}")]
 	public async Task<ActionResult<SessionView>> Get(Guid sessionGuid)
     {
-        Stopwatch watch = new(); watch.Start();
-        var session = await _sessionRepository.GetAsync(sessionGuid);
-        Debug.WriteLine($"Returned session in {watch.ElapsedMilliseconds / 1000d:#.##}");
-        return Ok(session);
+		try
+        {
+            var session = await _sessionRepository.GetAsync(sessionGuid);
+            return Ok(session);
+        }
+		catch (Exception ex)
+        {
+            _logger.LogError(ex, "");
+            return StatusCode(500);
+        }
 	}
 
 	[HttpGet("{sessionGuid:guid}/orgYear")]
@@ -82,7 +86,7 @@ public class SessionController : ControllerBase
 		}
 		catch (Exception ex)
 		{
-			_logger.LogError("", ex);
+			_logger.LogError(ex, "");
 			return StatusCode(500);
 		}
 	}
@@ -213,7 +217,7 @@ public class SessionController : ControllerBase
 	}
 
 	[HttpPost("{sessionGuid:guid}/registration")]
-	public async Task<ActionResult<List<SessionErrorMessage>>> RegisterStudent(Guid sessionGuid, [FromBody] StudentRegistrationDto newRegistration)
+	public async Task<ActionResult<List<SessionErrorMessage>>> RegisterStudent(Guid sessionGuid, [FromBody] StudentRegistrationDTO newRegistration)
 	{
 		//Fetch basic session details
 		var targetSession = await _sessionRepository.GetAsync(sessionGuid);
@@ -221,12 +225,9 @@ public class SessionController : ControllerBase
 		if (targetSession == null) 
 			return BadRequest("SessionGuid is invalid: " + sessionGuid);
 
-		var targetStudent = await _studentRepository.CreateIfNotExistsAsync(newRegistration.Student);
-		var targetStudentSchoolYear = await _studentSchoolYearRepository.CreateIfNotExistsAsync(targetStudent.Guid, targetSession.OrganizationYear.Guid);
+		await _sessionRepository.RegisterStudentAsync(sessionGuid, newRegistration.DayScheduleGuids, newRegistration.StudentSchoolYearGuid);
 
-		await _sessionRepository.RegisterStudentAsync(sessionGuid, newRegistration.DayScheduleGuids, targetStudentSchoolYear.Guid);
-
-		return Created($"{sessionGuid}/registration", targetStudentSchoolYear.Guid);
+		return Created($"{sessionGuid}/registration", newRegistration.StudentSchoolYearGuid);
 	}
 
 	[HttpPost("{destinationSessionGuid:guid}/registration/copy")]

@@ -13,15 +13,16 @@ export default ({ paths, user, orgYearChange }): JSX.Element => (
       Grant Tracker
     </Link>
 
-    <Link
+    <ProtectedLink
       to={`${paths.Reports.path}`}
+      requiredType={IdentityClaim.Coordinator}
     >
       Reporting
-    </Link>
+    </ProtectedLink>
 
     <ProtectedLink
-      to={paths.Admin.path}
-      requiredType={IdentityClaim.Coordinator}
+      to={user.claim == IdentityClaim.Teacher ? paths.Admin.path + '/' + paths.Admin.Tabs.Sessions.path : paths.Admin.path}
+      requiredType={IdentityClaim.Teacher}
     >
       Admin
     </ProtectedLink>

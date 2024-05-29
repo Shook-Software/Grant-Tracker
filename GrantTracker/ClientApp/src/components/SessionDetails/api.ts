@@ -3,28 +3,11 @@ import { SimpleAttendanceView, AttendanceView, StudentAttendance } from 'Models/
 import api from 'utils/api'
 
 
-export function addStudentToSession (sessionGuid, student, schedule): Promise<void> {
-  return new Promise((resolve, reject) => {
-    api
-      .post(`session/${sessionGuid}/registration`, {
-        student: {
-          firstName: student.student.firstName,
-          lastName: student.student.lastName,
-          matricNumber: student.student.matricNumber,
-          grade: student.grade
-        },
+export function addStudentToSession (sessionGuid, studentSchoolYearGuid, schedule): Promise<void> {
+  return api.post(`session/${sessionGuid}/registration`, {
+        studentSchoolYearGuid,
         dayScheduleGuids: schedule
       })
-      .then(res => {
-       resolve()
-      })
-      .catch(err => {
-        if (err.response.statusText === 'Conflict') {
-          //const conflicts: DayScheduleView[] = [] //err.response.data.map(item => DaySchedule.toViewModel(item))
-          reject(err)
-        }
-      })
-  })
 }
 
 export function getSimpleAttendanceRecords (sessionGuid): Promise<SimpleAttendanceView[]> {

@@ -17,9 +17,10 @@ import { DropdownOption } from 'types/Session'
 
 import paths from 'utils/routing/paths'
 import api from 'utils/api'
+import { IdentityClaim, User } from 'utils/authentication'
 
 
-export default (): JSX.Element => {
+export default ({user}: { user: User}): JSX.Element => {
     document.title = 'GT - Admin / Sessions'
     const navigate = useNavigate()
     const { sessionGuid } = useParams()
@@ -70,7 +71,7 @@ export default (): JSX.Element => {
                         <h4 className='m-0 me-3 text-align-center'>Sessions for {orgYear?.organization.name}</h4>
                         <small className='text-danger'>* Red sessions are missing attendance records</small>
                     </div>
-                    <div>
+                    <div style={{display: user.claim == IdentityClaim.Teacher ? 'none' : 'auto'}}>
                         <AddButton
                             as={Link}
                             to={`${paths.Edit.path}/${paths.Edit.Sessions.path}/overview?orgYearGuid=${orgYear?.guid}`}
@@ -146,7 +147,7 @@ export default (): JSX.Element => {
                                 </Row>
                             </Col>
                             <Col md={!sessionGuid ? 0 : 9}>
-                                {sessionGuid && <SessionDetails sessionGuid={sessionGuid} />}
+                                {sessionGuid && <SessionDetails sessionGuid={sessionGuid} user={user} />}
                             </Col>
                         </Row>
                     </div>

@@ -5,18 +5,14 @@ namespace GrantTracker.Dal.Schema
 	public enum IdentityClaim
 	{
 		Administrator = 0,
-		Coordinator = 1
+		Coordinator = 1,
+		Teacher = 2
 	}
 
 	public class Identity
 	{
 		public Guid Guid { get; set; }
 		public virtual InstructorSchoolYear SchoolYear { get; set; }
-
-		//for setting which year they want to currently look at
-		//public Guid ActiveSchoolYearGuid { get; set; } //for coordinators, only settable to years of their current organization.
-																									 //for admin, allowed to view any organization during any year
-		//public virtual InstructorSchoolYear ActiveSchoolYear { get; set; }
 		public IdentityClaim Claim { get; set; }
 
 		public static void Setup(ModelBuilder builder)

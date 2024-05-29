@@ -1,6 +1,6 @@
 ﻿using GrantTracker.Dal.EmployeeDb;
 
-namespace GrantTracker.Dal.Models.Dto
+namespace GrantTracker.Dal.Models.DTO
 {
 	//from employee database
 	public class EmployeeDto

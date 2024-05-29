@@ -1,5 +1,6 @@
 import { DropdownOption } from './Session'
 import { YearView, Quarter } from './OrganizationYear'
+import { StudentGroup } from './StudentGroup'
 
 export interface InstructorView {
   guid: string
@@ -18,6 +19,7 @@ export interface InstructorSchoolYearView {
   organizations: any[]
   enrollmentRecords: any[]
   attendanceRecords: any[]
+  studentGroups: StudentGroup[]
 }
 
 export abstract class Instructor {}

@@ -1,4 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
+using GrantTracker.Utilities;
 
 namespace GrantTracker.Dal.Schema
 {
@@ -30,13 +32,16 @@ namespace GrantTracker.Dal.Schema
 		public virtual ICollection<InstructorRegistration> InstructorRegistrations { get; set; }
         public virtual ICollection<SessionGrade> SessionGrades { get; set; }
 
-		public static void Setup(ModelBuilder builder)
+		public static void Setup(ModelBuilder builder, ClaimsPrincipal user)
 		{
 			var entity = builder.Entity<Session>();
 
-			entity.ToTable("Session", "GTkr")
-				.HasComment("Base table for sessions in the database. Contains the universal attributes any session contains.")
+			entity.ToTable("Session", "GTkr", t => t.HasComment("Base table for sessions in the database. Contains the universal attributes any session contains."))
 				.HasKey(e => e.SessionGuid);
+
+			entity.HasQueryFilter(s => user.IsAdmin()
+				|| (user.IsCoordinator() && user.HomeOrganizationGuids().Contains(s.OrganizationYear.OrganizationGuid))
+				|| (user.IsTeacher() && s.InstructorRegistrations.Any(ir => ir.InstructorSchoolYear.Instructor.BadgeNumber.Trim() == user.Id())));
 
 			/// /Relations
 

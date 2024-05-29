@@ -1,4 +1,4 @@
-﻿namespace GrantTracker.Dal.Models.Dto.SessionDTO;
+﻿namespace GrantTracker.Dal.Models.DTO.SessionDTO;
 
 public enum SessionIssue
 {

@@ -1,4 +1,4 @@
-﻿using GrantTracker.Dal.Models.Dto;
+﻿using GrantTracker.Dal.Models.DTO;
 using GrantTracker.Dal.Repositories.AuthRepository;
 using GrantTracker.Dal.Repositories.InstructorRepository;
 using GrantTracker.Dal.Repositories.OrganizationYearRepository;
@@ -6,12 +6,14 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using GrantTracker.Dal.Schema;
 using GrantTracker.Dal.Models.Views;
+using Microsoft.EntityFrameworkCore;
+using GrantTracker.Utilities;
 
 
 namespace GrantTracker.Dal.Controllers
 {
 	[ApiController]
-	[Authorize(Policy = "AnyAuthorizedUser")]
+	[Authorize(Policy = "Teacher")]
 	[Route("user")]
 	public class AuthController : ControllerBase
 	{
@@ -19,13 +21,15 @@ namespace GrantTracker.Dal.Controllers
 		private readonly IInstructorRepository _staffRepository;
 		private readonly IOrganizationYearRepository _organizationYearRepository;
 		private readonly ILogger<AuthController> _logger;
+		private GrantTrackerContext _context;
 
-		public AuthController(IAuthRepository repository, IInstructorRepository staffRepository, IOrganizationYearRepository organizationYearRepository, ILogger<AuthController> logger)
+		public AuthController(IAuthRepository repository, IInstructorRepository staffRepository, IOrganizationYearRepository organizationYearRepository, ILogger<AuthController> logger, GrantTrackerContext context)
 		{
 			_authRepository = repository;
 			_staffRepository = staffRepository;
 			_organizationYearRepository = organizationYearRepository; 
 			_logger = logger;
+            _context = context;
         }
 
 		[HttpGet("")]

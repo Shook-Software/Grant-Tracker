@@ -1,4 +1,4 @@
-﻿using GrantTracker.Dal.Models.Dto;
+﻿using GrantTracker.Dal.Models.DTO;
 using GrantTracker.Dal.Models.Views;
 using GrantTracker.Dal.Repositories.AuthRepository;
 using GrantTracker.Dal.Repositories.DevRepository;
@@ -17,7 +17,6 @@ namespace GrantTracker.Dal.Controllers;
 [ApiController]
 //this should be restricted to Admin only
 [Route("developer")]
-[Authorize("Administrator")]
 public class DevController(
     IDevRepository devRepository, 
     IDropdownRepository dropdownRepository,
@@ -37,13 +36,6 @@ public class DevController(
     private readonly IOrganizationRepository _organizationRepository = organizationRepository;
     private readonly IOrganizationYearRepository _organizationYearRepository = organizationYearRepository;
     private readonly ILogger<DevController> _logger = logger;
-
-    [HttpGet("exceptions")]
-    public async Task<ActionResult<List<ExceptionLogView>>> GetExceptions()
-    {
-        var logs = await _devRepository.GetExceptionLogsAsync();
-        return Ok(logs);
-    }
 
     [HttpGet("dropdowns")]
     public async Task<ActionResult<DropdownOptions>> GetDropdownOptions()

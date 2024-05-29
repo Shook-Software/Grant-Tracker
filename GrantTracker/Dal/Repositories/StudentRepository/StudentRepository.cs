@@ -1,4 +1,4 @@
-﻿using GrantTracker.Dal.Models.Dto;
+﻿using GrantTracker.Dal.Models.DTO;
 using GrantTracker.Dal.Models.Views;
 using GrantTracker.Dal.Repositories.DevRepository;
 using GrantTracker.Dal.Schema;
@@ -34,7 +34,7 @@ public class StudentRepository : IStudentRepository
         _user = httpContextAccessor.HttpContext.User;
     }
 
-	public async Task<StudentViewModel> CreateIfNotExistsAsync(StudentDto newStudent)
+	public async Task<StudentViewModel> CreateIfNotExistsAsync(StudentDTO newStudent)
 	{
 		var student = await _grantContext
 			.Students
@@ -43,14 +43,12 @@ public class StudentRepository : IStudentRepository
 			.FirstOrDefaultAsync();
 
 		if (student == null)
-		{
 			return await this.CreateAsync(newStudent);
-		}
 
 		return StudentViewModel.FromDatabase(student);
 	}
 
-	public async Task<StudentViewModel> CreateAsync(StudentDto newStudent)
+	public async Task<StudentViewModel> CreateAsync(StudentDTO newStudent)
 	{
 		Guid PersonGuid = Guid.NewGuid();
 
@@ -176,10 +174,10 @@ public class StudentRepository : IStudentRepository
             .Include(ssy => ssy.OrganizationYear)
             .Where(x => x.OrganizationYearGuid == filter.OrganizationYearGuid)
             .Where(ssy => (
-                (filter.FirstName == null || ssy.Student.FirstName.Contains(filter.FirstName))
-                && (filter.LastName == null || ssy.Student.LastName.Contains(filter.LastName))
-                && (filter.MatricNumber == null || ssy.Student.MatricNumber.Contains(filter.MatricNumber))
-                && (filter.GrantTrackerGrades.Count == 0 || filter.GrantTrackerGrades.Contains(ssy.Grade))))
+                (string.IsNullOrWhiteSpace(filter.FirstName) || ssy.Student.FirstName.Contains(filter.FirstName))
+                && (string.IsNullOrWhiteSpace(filter.LastName) || ssy.Student.LastName.Contains(filter.LastName))
+                && (string.IsNullOrWhiteSpace(filter.MatricNumber) || ssy.Student.MatricNumber.Contains(filter.MatricNumber))
+                && (filter.GrantTrackerGrades != null || filter.GrantTrackerGrades.Count == 0 || filter.GrantTrackerGrades.Contains(ssy.Grade))))
             .Take(100)
             .ToListAsync();
 

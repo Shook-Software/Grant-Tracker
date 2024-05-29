@@ -1,5 +1,5 @@
-﻿using GrantTracker.Dal.Models.Dto;
-using GrantTracker.Dal.Models.Dto.Attendance;
+﻿using GrantTracker.Dal.Models.DTO;
+using GrantTracker.Dal.Models.DTO.Attendance;
 using GrantTracker.Dal.Models.Views;
 using GrantTracker.Dal.Repositories.DevRepository;
 using GrantTracker.Dal.Schema;
@@ -253,7 +253,7 @@ public class AttendanceRepository : IAttendanceRepository
 
             foreach (StudentAttendanceTimeRecord existingTime in existingAttendance)
             {
-                foreach (SessionTimeSchedule newTime in newAttendance.Times)
+                foreach (AttendTimeSchedule newTime in newAttendance.Times)
                     if (HasTimeConflict(existingTime, newTime))
                     {
                         //check how the ui looks if someone conflicts every student registration on an attempted copy
@@ -271,7 +271,7 @@ public class AttendanceRepository : IAttendanceRepository
         return validationErrors;
     }
 
-    private static bool HasTimeConflict(StudentAttendanceTimeRecord existingTimeSchedule, SessionTimeSchedule newTimeSchedule)
+    private static bool HasTimeConflict(StudentAttendanceTimeRecord existingTimeSchedule, AttendTimeSchedule newTimeSchedule)
     {
 
 		bool timesPartiallyOverlap = existingTimeSchedule.EntryTime < newTimeSchedule.EndTime && existingTimeSchedule.ExitTime > newTimeSchedule.StartTime;

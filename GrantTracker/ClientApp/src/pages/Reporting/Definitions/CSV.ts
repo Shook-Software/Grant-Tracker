@@ -70,6 +70,9 @@ export const familyAttendanceFields = [
 ]
 
 export const flattenFamilyAttendance = (data) => {
+	if (!data)
+		return []
+	
 	let flattenedData: any[] = []
 
 	data.forEach(x => {
@@ -163,6 +166,9 @@ export const siteSessionFields = [
 
 
 export const flattenSiteSessions = (data) => {
+	if (!data)
+		return []
+
 	let flattenedData: any[] = []
 
 	data.forEach(session => {
@@ -270,6 +276,9 @@ export const summaryOfClassesFields = [
 ]
 
 export const flattenSummaryOfClasses = (data) => {
+	if (!data)
+		return []
+
 	let flattenedData: any[] = []
 
 	data.forEach(session => {
@@ -374,6 +383,9 @@ export const staffingFields = [
 ]
 
 export const flattenStaffing = (data) => {
+	if (!data)
+		return []
+	
 	let flattenedData: any[] = []
 
 	data.forEach(statusGroup => {
@@ -464,6 +476,9 @@ export const attendanceCheckFields = [
 ]
 
 export const flattenAttendanceCheck = (data) => {
+	if (!data)
+		return []
+	
 	let flattenedResults: any[] = data.map(x => {
 
 		const timeBounds = x.timeBounds

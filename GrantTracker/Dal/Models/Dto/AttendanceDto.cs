@@ -1,6 +1,6 @@
 ﻿using GrantTracker.Dal.Schema;
 
-namespace GrantTracker.Dal.Models.Dto
+namespace GrantTracker.Dal.Models.DTO
 {
 	//Used in [Post] body
 	public class SessionAttendanceDto
@@ -14,8 +14,15 @@ namespace GrantTracker.Dal.Models.Dto
 	{
 		public Guid Id { get; set; }
 		public bool IsSubstitute { get; set; } = false;
-		public List<SessionTimeSchedule> Times { get; set; } = new();
+		public List<AttendTimeSchedule> Times { get; set; } = new();
 	}
+
+	public record AttendTimeSchedule
+	{
+		public Guid Guid { get; init; }
+        public TimeOnly StartTime { get; init; }
+		public TimeOnly EndTime { get; init; }
+    }
 
 	public class FamilyAttendanceDto
 	{
@@ -28,7 +35,7 @@ namespace GrantTracker.Dal.Models.Dto
 		public Guid Id { get; set; }
 		public string FirstName { get; set; }
 		public string LastName { get; set; }
-		public List<SessionTimeSchedule> Times { get; set; } = new();
+		public List<AttendTimeSchedule> Times { get; set; } = new();
 		public List<FamilyAttendanceDto> FamilyAttendance { get; set; } = new();
 	}
 }

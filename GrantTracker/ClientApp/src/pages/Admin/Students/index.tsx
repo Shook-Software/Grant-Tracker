@@ -100,7 +100,6 @@ export default (): JSX.Element => {
   }
   
   function handleMatricFilterChange(term: string) {
-    console.log(term, term[term.length - 1])
     if (Number.isNaN(term[term.length - 1]))
       return
 

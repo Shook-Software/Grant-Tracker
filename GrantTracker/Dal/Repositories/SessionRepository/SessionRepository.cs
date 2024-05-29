@@ -1,7 +1,7 @@
 ﻿using Castle.Core.Internal;
-using GrantTracker.Dal.Models.Dto;
-using GrantTracker.Dal.Models.Dto.Attendance;
-using GrantTracker.Dal.Models.Dto.SessionDTO;
+using GrantTracker.Dal.Models.DTO;
+using GrantTracker.Dal.Models.DTO.Attendance;
+using GrantTracker.Dal.Models.DTO.SessionDTO;
 using GrantTracker.Dal.Models.Views;
 using GrantTracker.Dal.Repositories.DevRepository;
 using GrantTracker.Dal.Schema;
@@ -24,10 +24,8 @@ public class SessionRepository : ISessionRepository
         _user = httpContextAccessor.HttpContext.User;
     }
 
-	//come back to this and fix the identity thing
 	public async Task<SessionView> GetAsync(Guid sessionGuid)
 	{
-		Stopwatch watch = new(); watch.Start();
 		var session = await _grantContext
 			.Sessions
 			.AsNoTracking()
@@ -41,13 +39,12 @@ public class SessionRepository : ISessionRepository
             .Include(s => s.FundingSource)
 			.Include(s => s.OrganizationType)
 			.Include(s => s.PartnershipType)
-			.Include(s => s.InstructorRegistrations).ThenInclude(i => i.InstructorSchoolYear).ThenInclude(i => i.Status)
+            .Include(s => s.InstructorRegistrations).ThenInclude(i => i.InstructorSchoolYear).ThenInclude(i => i.StudentGroups).ThenInclude(g => g.Items).ThenInclude(i => i.StudentSchoolYear).ThenInclude(ssy => ssy.Student)
+            .Include(s => s.InstructorRegistrations).ThenInclude(i => i.InstructorSchoolYear).ThenInclude(i => i.Status)
 			.Include(s => s.InstructorRegistrations).ThenInclude(i => i.InstructorSchoolYear).ThenInclude(i => i.Instructor)
 			.Include(s => s.DaySchedules).ThenInclude(w => w.TimeSchedules)
 			.Select(s => SessionView.FromDatabase(s))
 			.SingleAsync();
-
-		Debug.WriteLine($"Grabbed session in {watch.ElapsedMilliseconds / 1000d:#.##}");
 
 		if (!session.DaySchedules.IsNullOrEmpty())
 			session.DaySchedules = session.DaySchedules.OrderBy(schedule => schedule.DayOfWeek).ToList();

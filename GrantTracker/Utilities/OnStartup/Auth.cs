@@ -22,7 +22,8 @@ namespace GrantTracker.Utilities.OnStartup
 
 			string badgeNumber = Regex.Replace(identity.Name, "[^0-9]", ""); //Remove string "TUSD\\" from "TUSD\\######"
 
-			if (!int.TryParse(badgeNumber, out int _))
+
+            if (!int.TryParse(badgeNumber, out int _))
 			{
 				var tusdContext = new PrincipalContext(ContextType.Domain, "10.11.0.74");
 				var user = UserPrincipal.FindByIdentity(tusdContext, IdentityType.SamAccountName, identity.Name);
@@ -38,8 +39,9 @@ namespace GrantTracker.Utilities.OnStartup
 			builder.Services.AddAuthorization(options =>
 			{
 				options.AddPolicy("Administrator", policy => policy.RequireClaim("UserRole", "Administrator"));
-				options.AddPolicy("AnyAuthorizedUser", policy => policy.RequireAuthenticatedUser());
-			});
+                options.AddPolicy("Coordinator", policy => policy.RequireAssertion(ctx => ctx.User.HasClaim(c => c.Type == "UserRole" && (c.Value == "Administrator" || c.Value == "Coordinator"))));
+                options.AddPolicy("Teacher", policy => policy.RequireAuthenticatedUser());
+            });
 
 			builder.Services.AddTransient<IClaimsTransformation, RoleAuthorizationTransform>();
 			builder.Services.AddScoped<IAuthorizationHandler, AuthorizationHandler>();
@@ -81,15 +83,17 @@ namespace GrantTracker.Utilities.OnStartup
             string badgeNumber = Auth.GetBadgeNumber((ClaimsIdentity)principal.Identity);
 
 			var userRole = await _roleProvider.GetUserRoleAsync(badgeNumber);
-			var userOrgs = await _roleProvider.GetCurrentUserOrganizationGuidsAsync(badgeNumber);
+			var userOrgs = await _roleProvider.GetCurrentUserOrganizationGuidsAsync(badgeNumber, userRole);
 
             Claim roleClaim = new("UserRole", userRole);
 			Claim orgClaim = new("HomeOrg", JsonSerializer.Serialize(userOrgs));
+			Claim badgeNumberClaim = new Claim("Id", badgeNumber);
 
 			identity.AddClaim(roleClaim);
 			identity.AddClaim(orgClaim);
+            identity.AddClaim(badgeNumberClaim);
 
-			principal.AddIdentity(identity);
+            principal.AddIdentity(identity);
 			return principal;
 		}
 	}

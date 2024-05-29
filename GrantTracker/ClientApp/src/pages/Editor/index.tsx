@@ -66,7 +66,6 @@ export default ({user}: {user: User}) => {
   const [dropdownData, setDropdowns] = useState<DropdownOptions | null>(null)
 
   function submitForm (session: SessionForm): void {
-    
     submitSession(orgYearGuid, session)
       .then(res => {
         navigate(

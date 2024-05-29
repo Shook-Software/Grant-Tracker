@@ -5,7 +5,7 @@
     <TargetFramework>net6.0</TargetFramework>
 	  <TargetLatestRuntimePatch>true</TargetLatestRuntimePatch>
 	  <LangVersion>preview</LangVersion>
-    <Nullable>disable</Nullable>
+    <Nullable>enable</Nullable>
     <TypeScriptCompileBlocked>true</TypeScriptCompileBlocked>
     <TypeScriptToolsVersion>Latest</TypeScriptToolsVersion>
     <IsPackable>false</IsPackable>

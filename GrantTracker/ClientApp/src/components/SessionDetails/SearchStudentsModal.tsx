@@ -14,6 +14,7 @@ import Alert, { ApiResult } from 'components/ApiResultAlert'
 import Search from './StudentSearchForm'
 
 import { DayScheduleView } from 'Models/DaySchedule'
+import api from 'utils/api'
 
 //@ts-ignore
 const StudentPopover = forwardRef(
@@ -102,7 +103,7 @@ const Schedule = ({scheduling, schedule, setSchedule}): JSX.Element => {
 
   return (
     <>
-    <Form.Text>Add student to the following weekday(s)</Form.Text>
+      <Form.Text>Add student to the following weekday(s)</Form.Text>
       {scheduling?.map(day => (
         <Form.Group
           controlId={day.dayOfWeek}
@@ -149,17 +150,27 @@ export default ({
   const [apiResult, setApiResult] = useState<ApiResult>()
   const tableRef: React.Ref<HTMLDivElement | null> = useRef(null)
 
-  function addStudent (student): void {
+  async function addStudent (student): Promise<void> {
     const fullName: string = `${student.student.firstName} ${student.student.lastName}`
 
+    if (student.guid.replaceAll('-', '').replaceAll('0', '') == '') {
+      var result = await api.post(`student?orgYearGuid=${orgYearGuid}`, {
+        firstName: student.student.firstName,
+        lastName: student.student.lastName,
+        matricNumber: student.student.matricNumber,
+        grade: student.grade
+      })
+      student.guid = result.data
+    }
+
     handleChange({student, schedule})
-      .then(res => {
+      ?.then(res => {
         setApiResult({
           label: fullName,
           success: true
         })
       })
-      .catch(err => {
+      ?.catch(err => {
         console.error(err)
         setApiResult({
           label: fullName,

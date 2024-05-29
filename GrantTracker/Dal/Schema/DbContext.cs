@@ -7,8 +7,12 @@ namespace GrantTracker.Dal.Schema
 {
     public class GrantTrackerContext : DbContext
 	{
-		public GrantTrackerContext(DbContextOptions<GrantTrackerContext> options) : base(options)
-		{ }
+		private readonly IHttpContextAccessor _httpContextAccessor;
+
+		public GrantTrackerContext(DbContextOptions<GrantTrackerContext> options, IHttpContextAccessor httpContextAccessor) : base(options)
+		{
+			_httpContextAccessor = httpContextAccessor;
+		}
 
 		protected override void ConfigureConventions(ModelConfigurationBuilder builder)
 		{
@@ -58,13 +62,15 @@ namespace GrantTracker.Dal.Schema
 		public DbSet<InstructorAttendanceRecord> InstructorAttendanceRecords { get; set; }
 		public DbSet<Organization> Organizations { get; set; }
 		public DbSet<OrganizationYear> OrganizationYears { get; set; }
-		public DbSet<ExceptionLog> ExceptionLogs { get; set; }
 		public DbSet<Year> Years { get; set; }
 		public DbSet<StudentSchoolYear> StudentSchoolYears { get; set; }
 		public DbSet<AttendanceRecord> AttendanceRecords { get; set; }
 		public DbSet<StudentAttendanceTimeRecord> StudentAttendanceTimeRecords { get; set; }
 		public DbSet<InstructorAttendanceTimeRecord> InstructorAttendanceTimeRecords { get; set; }
         public DbSet<OrganizationBlackoutDate> BlackoutDates { get; set; }
+		public DbSet<InstructorSchoolYearStudentGroupMap> InstructorStudentGroups { get; set; }
+        public DbSet<StudentGroup> StudentGroups { get; set; }
+        public DbSet<StudentGroupItem> StudentGroupItems { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
 		{
@@ -84,6 +90,8 @@ namespace GrantTracker.Dal.Schema
 
 			builder.Entity<SessionAttendance>().HasNoKey().ToView(null);
 
+			var user = _httpContextAccessor.HttpContext?.User;
+
             AuditLog.Setup(builder);
 			Activity.Setup(builder);
 			FundingSource.Setup(builder);
@@ -94,7 +102,7 @@ namespace GrantTracker.Dal.Schema
 			Person.Setup(builder);
 			Identity.Setup(builder);
 			PartnershipType.Setup(builder);
-			Session.Setup(builder);
+			Session.Setup(builder, user);
 			SessionType.Setup(builder);
 			Student.Setup(builder);
 			StudentRegistration.Setup(builder);
@@ -110,15 +118,17 @@ namespace GrantTracker.Dal.Schema
 			InstructorRegistration.Setup(builder);
 			InstructorAttendanceRecord.Setup(builder);
 			InstructorSchoolYear.Setup(builder);
-			ExceptionLog.Setup(builder);
 			Organization.Setup(builder);
-			OrganizationYear.Setup(builder);
+			OrganizationYear.Setup(builder, user);
 			StudentSchoolYear.Setup(builder);
 			Year.Setup(builder);
 			AttendanceRecord.Setup(builder);
 			StudentAttendanceTimeRecord.Setup(builder);
 			InstructorAttendanceTimeRecord.Setup(builder);
 			OrganizationBlackoutDate.Setup(builder);
+			InstructorSchoolYearStudentGroupMap.Setup(builder, user);
+            StudentGroup.Setup(builder, user);
+            StudentGroupItem.Setup(builder, user);
         }
 	}
 }

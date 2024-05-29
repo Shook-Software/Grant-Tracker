@@ -1,7 +1,7 @@
 ﻿using GrantTracker.Dal.Models.Views;
 using GrantTracker.Dal.Schema;
 
-namespace GrantTracker.Dal.Models.Dto
+namespace GrantTracker.Dal.Models.DTO
 {
 	public class UserIdentity
 	{

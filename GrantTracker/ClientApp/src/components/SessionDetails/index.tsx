@@ -1,20 +1,17 @@
-﻿import { useParams, useNavigate } from 'react-router-dom'
-import { useContext, useEffect, useState } from 'react'
+﻿import { useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
 import { Spinner, Card, Row, Col, Button, Modal } from 'react-bootstrap'
 
 import { PageContainer } from 'styles'
 import { ApiResult } from 'components/ApiResultAlert'
-import SearchStudentsModal from './SearchStudentsModal' //pull this out into a component rather than subcomponent of sessionDetails
 import RegistrationsView from './RegistrationsView'
 import AttendanceHistory from './AttendanceHistory'
 
-import { DayOfWeek } from 'Models/DayOfWeek'
 import { Session, SessionDomain, SessionView } from 'Models/Session'
-import { StudentRegistration, StudentRegistrationDomain, StudentRegistrationView } from 'Models/StudentRegistration'
-import { AttendanceView, InstructorRecord, SimpleAttendanceView, StudentAttendanceDto, StudentRecord, SubstituteRecord } from 'Models/StudentAttendance'
+import { SimpleAttendanceView } from 'Models/StudentAttendance'
 
 import api from 'utils/api'
-import { addStudentToSession, getSimpleAttendanceRecords, getAttendanceRecord } from './api'
+import { getSimpleAttendanceRecords } from './api'
 
 ////
 //Refactoring imports, temporary location
@@ -22,22 +19,19 @@ import Header from './Header'
 import Overview from './Overview'
 import Instructors from './Instructors'
 import Scheduling from './Scheduling'
-import { OrgYearContext } from 'pages/Admin'
-
+import { User } from 'utils/authentication'
+import { StudentGroup } from 'Models/StudentGroup'
 
 interface Props {
   sessionGuid: string
+  user: User
 }
 
 //Nice to have - Calender visual view, but only something to *come back to*
-export default ({sessionGuid}: Props): JSX.Element => {
+export default ({ sessionGuid, user }: Props): JSX.Element => {
   const navigate = useNavigate()
-  const { orgYear } = useContext(OrgYearContext)
-  //const { sessionGuid } = useParams()
   const [session, setSession] = useState<SessionView | null>(null)
-  const [studentRegistrations, setStudentRegistrations] = useState<StudentRegistrationView[]>([])
   const [attendanceRecords, setAttendanceRecords] = useState<SimpleAttendanceView[]>([])
-  const [showStudentModal, setShowStudentModal] = useState<boolean>(false)
   const [attendanceApiResult, setAttendanceApiResult] = useState<ApiResult | undefined>(undefined)
   const [attendanceModalParams, setAttendanceModalParams] = useState({
     show: false,
@@ -48,18 +42,6 @@ export default ({sessionGuid}: Props): JSX.Element => {
   /// /Temp stuff
   const [showSessionDeleteModal, setShowDeleteModal] = useState<boolean>(false)
 
-  function addStudent(student, schedule): Promise<void> {
-    return new Promise((resolve, reject) => {
-      addStudentToSession(sessionGuid, student, schedule)
-        .then(res => {
-          resolve()
-        })
-        .catch(err => {
-          reject(err)
-        })
-    })
-  }
-
   function handleSessionDeletion (deleteSession: boolean): void {
     if (deleteSession) {
       api
@@ -68,34 +50,6 @@ export default ({sessionGuid}: Props): JSX.Element => {
         .catch()
     }
     setShowDeleteModal(false)
-  }
-
-  function removeStudentRegistrationsAsync (scheduleGuids: string[], studentSchoolYearGuid: string): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-      api
-        .delete('session/registration', {
-          params: {
-            studentSchoolYearGuid,
-            dayScheduleGuid: scheduleGuids
-          }
-        })
-        .then(res => {resolve()})
-        .catch(err => {reject()})
-        .finally(() => getStudentRegistrationsAsync())
-    })
-  }
-
-  function getStudentRegistrationsAsync (): void {
-    api
-      .get<StudentRegistrationDomain[]>(`session/${sessionGuid}/registration`)
-      .then(res => {
-        //sorted for ease of display
-        const registrations: StudentRegistrationView[] = res.data.map(item => StudentRegistration.toViewModel(item))
-        setStudentRegistrations(registrations)
-      })
-      .catch(err => {
-        console.warn(err)
-      })
   }
 
   function getAttendance() {
@@ -124,15 +78,8 @@ export default ({sessionGuid}: Props): JSX.Element => {
   useEffect(() => {
     setAttendanceApiResult(undefined)
     getSessionDetails()
-    getStudentRegistrationsAsync()
     getAttendance()
   }, [sessionGuid])
-
-  useEffect(() => {
-    if (!showStudentModal) {
-      getStudentRegistrationsAsync()
-    }
-  }, [showStudentModal])
 
   //Spin while no data exists and no error is thrown in loading.
   //Display error if loading fails
@@ -150,7 +97,7 @@ export default ({sessionGuid}: Props): JSX.Element => {
       <Card className='border-0 p-0'>
         <Card.Body className='p-0'>
           <Row>
-            <Header session={session} attendanceApiResult={attendanceApiResult} />
+            <Header session={session} attendanceApiResult={attendanceApiResult} user={user} />
           </Row>
           <Row>
             <Col className='w-50'>
@@ -163,29 +110,11 @@ export default ({sessionGuid}: Props): JSX.Element => {
           </Row>
           <Row className='pt-3'>
             <Col>
-              <Card>
-                <Card.Body>
-                  <Card.Title>
-                    Registrations&nbsp;
-                    <Button
-                      variant='primary'
-                      className='px-2 py-1'
-                      style={{ width: 'auto' }}
-                      onClick={() => {
-                        setShowStudentModal(true)
-                      }}
-                    >
-                      Add
-                    </Button>
-                  </Card.Title>
-                  <Card.Text>
-                    <RegistrationsView
-                      registrations={studentRegistrations}
-                      onChange={removeStudentRegistrationsAsync}
-                    />
-                  </Card.Text>
-                </Card.Body>
-              </Card>
+              <RegistrationsView
+                sessionGuid={sessionGuid}
+                daySchedules={session?.daySchedules || []}
+                studentGroups={session?.instructors.reduce((list, isy) => [...list, ...isy.studentGroups], [] as StudentGroup[]) || []}
+              />
             </Col>
           </Row>
           <Row className='pt-3'>
@@ -212,13 +141,6 @@ export default ({sessionGuid}: Props): JSX.Element => {
         </Card.Body>
       </Card>
       <RemoveSessionModal sessionGuid={sessionGuid} session={session} show={showSessionDeleteModal} handleClose={handleSessionDeletion} />
-      <SearchStudentsModal
-        orgYearGuid={orgYear.guid}
-        show={showStudentModal}
-        handleClose={() => setShowStudentModal(false)}
-        handleChange={({student, schedule}) => addStudent(student, schedule)}
-        scheduling={session!.daySchedules}
-      />
     </PageContainer>
   )
 }

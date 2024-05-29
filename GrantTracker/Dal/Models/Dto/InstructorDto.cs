@@ -1,4 +1,4 @@
-﻿namespace GrantTracker.Dal.Models.Dto
+﻿namespace GrantTracker.Dal.Models.DTO
 {
 	public class InstructorDto
 	{

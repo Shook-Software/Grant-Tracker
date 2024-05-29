@@ -4,10 +4,11 @@ using GrantTracker.Dal.Repositories.DevRepository;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query;
 using GrantTracker.Dal.Schema.Sprocs;
-using GrantTracker.Dal.Models.Dto;
+using GrantTracker.Dal.Models.DTO;
 using GrantTracker.Dal.Schema.Sprocs.Reporting;
 using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
+using GrantTracker.Dal.Models.Views;
 
 namespace GrantTracker.Dal.Repositories.OrganizationYearRepository;
 
@@ -91,7 +92,95 @@ public class OrganizationYearRepository : IOrganizationYearRepository
 		var orgYearToDelete = await _grantContext.OrganizationYears.FindAsync(OrganizationYearGuid);
 		_grantContext.Remove(orgYearToDelete);
 		await _grantContext.SaveChangesAsync();
-	}
+    }
+
+    public async Task<StudentGroupView> GetStudentGroupAsync(Guid groupGuid, string? fields = null)
+    {
+        string[]? fieldSplit = fields?.ToLower()?.Split(",");
+
+        return await _grantContext.StudentGroups
+            .Include(sg => sg.InstructorSchoolYears).ThenInclude(isy => isy.Instructor)
+            .Include(sg => sg.Items).ThenInclude(i => i.StudentSchoolYear).ThenInclude(ssy => ssy.Student)
+            .Where(sg => _user.IsAdmin() || _user.HomeOrganizationGuids().Contains(sg.OrganizationYear.OrganizationGuid))
+            .Select(sg => new StudentGroupView()
+            {
+                GroupGuid = sg.GroupGuid,
+                Name = !(fieldSplit == null || fieldSplit.Contains("name")) ? "" : sg.DisplayName,
+                Students = !(fieldSplit == null || fieldSplit.Contains("students")) ? null : sg.Items.Select(i => new StudentGroupItemView()
+                {
+                    StudentSchoolYearGuid = i.StudentSchoolYearGuid,
+                    FirstName = i.StudentSchoolYear.Student.FirstName,
+                    LastName = i.StudentSchoolYear.Student.LastName,
+                    MatricNumber = i.StudentSchoolYear.Student.MatricNumber
+                })
+                .ToList(),
+                Instructors = !(fieldSplit == null || fieldSplit.Contains("instructors")) ? null : sg.InstructorSchoolYears.Select(isy => new StudentGroupViewInstructorView
+                {
+                    InstructorSchoolYearGuid = isy.InstructorSchoolYearGuid,
+                    FirstName = isy.Instructor.FirstName,
+                    LastName = isy.Instructor.LastName,
+                    BadgeNumber = isy.Instructor.BadgeNumber
+                })
+                .ToList()
+            })
+            .FirstAsync(sg => sg.GroupGuid == groupGuid);
+    }
+
+    public async Task<List<StudentGroupView>> GetStudentGroupsAsync(Guid organizationYearGuid, string? fields = null)
+    {
+        string[]? fieldSplit = fields?.ToLower()?.Split(",");
+
+        return await _grantContext.StudentGroups
+            .Include(sg => sg.InstructorSchoolYears).ThenInclude(isy => isy.Instructor)
+            .Include(sg => sg.Items).ThenInclude(i => i.StudentSchoolYear).ThenInclude(ssy => ssy.Student)
+            .Where(sg => sg.OrganizationYearGuid == organizationYearGuid)
+            .Select(sg => new StudentGroupView()
+            {
+                GroupGuid = sg.GroupGuid,
+                Name = !(fieldSplit == null || fieldSplit.Contains("name")) ? "" : sg.DisplayName,
+                Students = !(fieldSplit == null || fieldSplit.Contains("students")) ? null : sg.Items.Select(i => new StudentGroupItemView()
+                {
+                    StudentSchoolYearGuid = i.StudentSchoolYearGuid,
+                    FirstName = i.StudentSchoolYear.Student.FirstName,
+                    LastName = i.StudentSchoolYear.Student.LastName,
+                    MatricNumber = i.StudentSchoolYear.Student.MatricNumber
+                })
+                .ToList(),
+                Instructors = !(fieldSplit == null || fieldSplit.Contains("instructors")) ? null : sg.InstructorSchoolYears.Select(isy => new StudentGroupViewInstructorView
+                {
+                    InstructorSchoolYearGuid = isy.InstructorSchoolYearGuid,
+                    FirstName = isy.Instructor.FirstName,
+                    LastName = isy.Instructor.LastName,
+                    BadgeNumber = isy.Instructor.BadgeNumber
+                })
+                .ToList()
+            })
+            .OrderBy(sg => sg.Name)
+            .ToListAsync();
+    }
+
+    public async Task<StudentGroup> CreateStudentGrouping(Guid organizationYearGuid, string name)
+    {
+        var group = _grantContext.StudentGroups.Add(new StudentGroup()
+        {
+            OrganizationYearGuid = organizationYearGuid,
+            DisplayName = name
+        });
+
+        await _grantContext.SaveChangesAsync();
+        return group.Entity;
+    }
+
+    public async Task DeleteStudentGroup(Guid groupGuid)
+    {
+        StudentGroup? studentGroup = await _grantContext.StudentGroups.FindAsync(groupGuid);
+
+        if (studentGroup is null)
+            throw new Exception("Entity to delete does not exist.");
+
+        _grantContext.Remove(studentGroup);
+        await _grantContext.SaveChangesAsync();
+    }
 
     public IQueryable<OrganizationYear> GetOrganizationYear(Guid OrganizationYearGuid)
     {
