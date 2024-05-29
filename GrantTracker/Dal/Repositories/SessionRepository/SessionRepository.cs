@@ -30,6 +30,9 @@ public class SessionRepository : ISessionRepository
 			.Sessions
 			.AsNoTracking()
 			.Where(s => s.SessionGuid == sessionGuid)
+			.Where(s => _user.IsAdmin()
+                || (_user.IsCoordinator() && _user.HomeOrganizationGuids().Contains(s.OrganizationYear.OrganizationGuid))
+                || (_user.IsTeacher() && s.InstructorRegistrations.Any(ir => ir.InstructorSchoolYear.Instructor.BadgeNumber.Trim() == _user.Id())))
 			.Include(s => s.OrganizationYear).ThenInclude(oy => oy.Organization)
 			.Include(s => s.OrganizationYear).ThenInclude(oy => oy.Year)
 			.Include(s => s.SessionGrades).ThenInclude(g => g.Grade)
@@ -60,8 +63,11 @@ public class SessionRepository : ISessionRepository
 		//fetch sessions that match the given Organization and Year
 		return await _grantContext.Sessions
 			.AsNoTracking()
-			.Where(s => s.OrganizationYearGuid == organizationYearGuid) 
-			.Include(s => s.OrganizationYear)
+			.Where(s => s.OrganizationYearGuid == organizationYearGuid)
+            .Where(s => _user.IsAdmin()
+                || (_user.IsCoordinator() && _user.HomeOrganizationGuids().Contains(s.OrganizationYear.OrganizationGuid))
+                || (_user.IsTeacher() && s.InstructorRegistrations.Any(ir => ir.InstructorSchoolYear.Instructor.BadgeNumber.Trim() == _user.Id())))
+            .Include(s => s.OrganizationYear)
 			.Include(s => s.OrganizationYear)
 			.Include(s => s.SessionGrades).ThenInclude(g => g.Grade)
 			.Include(s => s.SessionType)
@@ -309,8 +315,10 @@ public class SessionRepository : ISessionRepository
 
 		var registrations = await _grantContext.Sessions
 			.AsNoTracking()
-			.Where(s => _user.IsAdmin() || homeOrgIds.Contains(s.OrganizationYear.Organization.OrganizationGuid))
-			.Where(s => s.SessionGuid.Equals(sessionGuid))
+            .Where(s => _user.IsAdmin()
+                || (_user.IsCoordinator() && _user.HomeOrganizationGuids().Contains(s.OrganizationYear.OrganizationGuid))
+                || (_user.IsTeacher() && s.InstructorRegistrations.Any(ir => ir.InstructorSchoolYear.Instructor.BadgeNumber.Trim() == _user.Id())))
+            .Where(s => s.SessionGuid.Equals(sessionGuid))
 			.Include(s => s.DaySchedules).ThenInclude(w => w.StudentRegistrations).ThenInclude(reg => reg.StudentSchoolYear).ThenInclude(s => s.Student)
 			.SelectMany(s => s.DaySchedules)
 			.Where(w => dayOfWeek.Equals(-1) || w.DayOfWeek.Equals((DayOfWeek)dayOfWeek))
@@ -350,6 +358,9 @@ public class SessionRepository : ISessionRepository
         var sessionsWithIssues = (await _grantContext.Sessions
             .AsNoTracking()
             .Where(s => s.OrganizationYearGuid == organizationYearGuid)
+            .Where(s => _user.IsAdmin()
+                || (_user.IsCoordinator() && _user.HomeOrganizationGuids().Contains(s.OrganizationYear.OrganizationGuid))
+                || (_user.IsTeacher() && s.InstructorRegistrations.Any(ir => ir.InstructorSchoolYear.Instructor.BadgeNumber.Trim() == _user.Id())))
             .Include(s => s.OrganizationYear)
             .Include(s => s.SessionGrades).ThenInclude(g => g.Grade)
             .Include(s => s.SessionType)
