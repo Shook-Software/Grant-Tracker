@@ -4,7 +4,8 @@ import { OrganizationYearView, OrganizationView, Quarter, YearView } from 'Model
 export enum IdentityClaim {
   Administrator = 0,
   Coordinator = 1,
-  Unauthenticated = 2
+  Teacher = 2,
+  Unauthenticated = 3
 }
 
 export interface IUser {
