@@ -1,5 +1,5 @@
 import { useContext, useEffect, useState } from "react"
-import { BlackoutDate, BlackoutDateDomain, BlackoutDateView } from 'Models/BlackoutDate'
+import { BlackoutDate, OrganizationBlackoutDateDomain, OrganizationBlackoutDateView } from 'Models/BlackoutDate'
 
 import api from "utils/api"
 import Table, { Column } from "components/BTable"
@@ -11,7 +11,7 @@ import { OrgYearContext } from ".."
 export const BlackoutDateConfig = (): JSX.Element => {
 	const { orgYear, setOrgYear } = useContext(OrgYearContext)
 	const [blackoutFetchError, setBlackoutFetchError] = useState<string | undefined>()
-	const [blackoutDates, setBlackoutDates] = useState<BlackoutDateView[]>([])
+	const [blackoutDates, setBlackoutDates] = useState<OrganizationBlackoutDateView[]>([])
 	const [blackoutDatesAreLoading, setBlackoutDatesAreLoading] = useState<boolean>(false)
 
 	const [blackoutDeleteError, setBlackoutDeleteError] = useState<string | undefined>()
@@ -118,7 +118,7 @@ const createBlackoutColumns = (orgGuid: string, getAndSetBlackoutDates, setBlack
 		label: '',
 		attributeKey: '',
 		sortable: false,
-		transform: (blackoutDate: BlackoutDateView) => {
+		transform: (blackoutDate: OrganizationBlackoutDateView) => {
 			return (
 				<div className='d-flex justify-content-center'>
 					<Button 
@@ -144,10 +144,10 @@ const createBlackoutColumns = (orgGuid: string, getAndSetBlackoutDates, setBlack
 	}
 ]
 
-const getBlackoutDates = (orgGuid: string): Promise<BlackoutDateView[]> => {
-	return new Promise<BlackoutDateView[]>((resolve, reject) => {
+const getBlackoutDates = (orgGuid: string): Promise<OrganizationBlackoutDateView[]> => {
+	return new Promise<OrganizationBlackoutDateView[]>((resolve, reject) => {
 		api
-			.get<BlackoutDateDomain[]>(`organization/${orgGuid}/blackout`)
+			.get<OrganizationBlackoutDateDomain[]>(`organization/${orgGuid}/blackout`)
 			.then(res => resolve(res.data.map(x => BlackoutDate.toViewModel(x))))
 			.catch(err => reject(err))
 	})

@@ -8,6 +8,7 @@ import {
 } from 'Models/DaySchedule'
 import { TimeScheduleForm } from 'Models/TimeSchedule'
 import { SessionForm, Session } from 'Models/Session'
+import { SessionBlackoutDateView } from 'Models/BlackoutDate'
 
 export const initialState: SessionForm = Session.createDefaultForm()
 
@@ -60,6 +61,7 @@ export type ReducerAction =
       payload: { dayIndex: number; day: DayScheduleForm }
     }
   | { type: 'singleSessionTimeSchedule'; payload: TimeScheduleForm[] }
+  | { type: 'setBlackoutDates'; payload: SessionBlackoutDateView[] }
 
 //add in validation
 export function reducer (
@@ -177,6 +179,10 @@ export function reducer (
         return s
       })
       return { ...state, scheduling: newScheduling }
+
+    case 'setBlackoutDates': 
+      console.log(action.payload)
+      return { ...state, blackoutDates: action.payload }
 
     default:
       return state

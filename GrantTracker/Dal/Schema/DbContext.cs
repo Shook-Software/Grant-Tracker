@@ -72,6 +72,7 @@ namespace GrantTracker.Dal.Schema
 		public DbSet<InstructorSchoolYearStudentGroupMap> InstructorStudentGroups { get; set; }
         public DbSet<StudentGroup> StudentGroups { get; set; }
         public DbSet<StudentGroupItem> StudentGroupItems { get; set; }
+		public DbSet<SessionBlackoutDate> SessionBlackoutDates { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
 		{
@@ -127,6 +128,7 @@ namespace GrantTracker.Dal.Schema
 			InstructorSchoolYearStudentGroupMap.Setup(builder);
             StudentGroup.Setup(builder);
             StudentGroupItem.Setup(builder);
+			SessionBlackoutDate.Setup(builder);
         }
 	}
 }

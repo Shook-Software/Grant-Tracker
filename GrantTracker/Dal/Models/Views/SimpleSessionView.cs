@@ -73,7 +73,7 @@ namespace GrantTracker.Dal.Models.Views
 			FirstSessionDate = session.FirstSession,
 			LastSessionDate = session.LastSession,
 			DaySchedules = session.DaySchedules.Select(DayScheduleView.FromDatabase).ToList(),
-			SessionGrades = session.SessionGrades.Select(GradeView.FromDatabase).ToList()
+			SessionGrades = session.Grades.Select(GradeView.FromDatabase).ToList()
 		};
 	}
 }

@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react'
 import { useSession, Context } from '../index'
-import { LocalTime } from '@js-joda/core'
+import { DateTimeFormatter, LocalDate, LocalTime } from '@js-joda/core'
 
 import { TimeInput } from 'components/TimeRangeSelector'
-import { Form, Container, Row, Col, InputGroup, Button } from 'react-bootstrap'
+import { Form, Container, Row, Col, InputGroup, Button, Tab } from 'react-bootstrap'
 
 import { DayOfWeek, DayOfWeekString } from 'Models/DayOfWeek'
 import { WeeklySchedule, DayScheduleForm } from 'Models/DaySchedule'
-
-import Dropdown from 'components/Input/Dropdown'
+import Table, { Column } from 'components/BTable'
+import { Locale } from '@js-joda/locale_en-us'
 
 //Second Section - Date/Time
 
@@ -197,41 +197,46 @@ export default (): JSX.Element => {
   return (
     <Container>
       <Row className='d-flex flex-start flex-row m-3'>
-        <Form.Group style={{ width: 'min-content' }}>
-          <Form.Label>
-            {values.recurring ? 'First Session Date' : 'Session Date'}
-          </Form.Label>
-          <Form.Control
-            required
-            id='start-date'
-            type='date'
-            value={values.firstSessionDate.toString()}
-            onChange={(event: React.BaseSyntheticEvent) => {
-              reducerDispatch({
-                type: 'startDate',
-                payload: event.target.value
-              })
-            }}
-          />
-        </Form.Group>
-        <Form.Group
-          className='d-flex flex-column justify-content-end'
-          style={{ width: 'min-content' }}
-        >
-          <Form.Label>Last Session Date</Form.Label>
-          <Form.Control
+        <Col sm={3}>
+          <Form.Group style={{ width: 'min-content' }}>
+            <Form.Label>
+              {values.recurring ? 'First Session Date' : 'Session Date'}
+            </Form.Label>
+            <Form.Control
               required
-              id='end-date'
+              id='start-date'
               type='date'
-              value={values.lastSessionDate.toString()}
+              value={values.firstSessionDate.toString()}
               onChange={(event: React.BaseSyntheticEvent) => {
                 reducerDispatch({
-                  type: 'endDate',
+                  type: 'startDate',
                   payload: event.target.value
                 })
               }}
             />
-        </Form.Group>
+          </Form.Group>
+        </Col>
+
+        <Col sm={3}>
+          <Form.Group
+            className='d-flex flex-column justify-content-end'
+            style={{ width: 'min-content' }}
+          >
+            <Form.Label>Last Session Date</Form.Label>
+            <Form.Control
+                required
+                id='end-date'
+                type='date'
+                value={values.lastSessionDate.toString()}
+                onChange={(event: React.BaseSyntheticEvent) => {
+                  reducerDispatch({
+                    type: 'endDate',
+                    payload: event.target.value
+                  })
+                }}
+              />
+          </Form.Group>
+        </Col>
       </Row>
       <Row className='m-3'>
         
@@ -292,22 +297,51 @@ export default (): JSX.Element => {
             />
           </Form.Group>
       </Row>
+
+      <Row className='mt-3 ms-3'>
+        <h6>Blackout Dates</h6>
+        <Col sm={3} className='mb-1'>
+          <BlackoutDateForm dates={values.blackoutDates} dispatch={reducerDispatch} />
+        </Col>
+        <Col sm={9} />
+        <Col sm={6}>
+          <Table
+            columns={createBlackoutColumns((date) => reducerDispatch({type: 'setBlackoutDates', payload: values.blackoutDates.filter(blackout => blackout.date.toString() != date.toString())}))}
+            dataset={values.blackoutDates}
+          />
+        </Col>
+      </Row>
     </Container>
   )
 }
 
-/*
-<Col>
-          <Form.Check
-            label='Recurring?'
-            id='is-recurring'
-            defaultChecked={values.recurring}
-            onChange={event =>
-              reducerDispatch({
-                type: 'recurring',
-                payload: event.target.checked
-              })
-            }
-          />
-        </Col>
-*/
+function BlackoutDateForm({dates, dispatch}): JSX.Element {
+  const [date, setDate] = useState(LocalDate.now)
+
+  function addDate(blackoutDate: LocalDate) {
+    if (!dates.some(blackout => blackoutDate.isEqual(blackout.date)))
+      dispatch({type: 'setBlackoutDates', payload: [...dates, { guid: undefined, sessionGuid: undefined, date}]})
+  }
+
+  return (
+      <InputGroup>
+        <Form.Control type='date' value={date.toString()} onChange={(e) => setDate(LocalDate.parse(e.target?.value))} />
+        <button className='btn btn-primary' type='button' onClick={() => addDate(date)}>Add</button>
+      </InputGroup>
+  )
+}
+
+const createBlackoutColumns = (onDelete): Column[] => [
+  {
+    label: 'Date',
+    attributeKey: 'date',
+		sortable: true,
+		transform: (date: LocalDate) => <div className='text-end'>{date.format(DateTimeFormatter.ofPattern('eeee, MMMM d, y').withLocale(Locale.ENGLISH))}</div>
+  },
+  {
+    label: '',
+    attributeKey: 'date',
+    sortable: false,
+    transform: (date: LocalDate) => <button type='button' className='btn btn-danger' onClick={() => onDelete(date)}>Delete</button>
+  }
+]

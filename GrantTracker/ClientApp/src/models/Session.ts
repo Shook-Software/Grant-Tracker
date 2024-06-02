@@ -6,6 +6,7 @@ import { Grade, GradeDomain, GradeView } from './Grade'
 import { Instructor, InstructorSchoolYearView } from './Instructor'
 import * as DaySchedule from './DaySchedule'
 import { TimeSchedule } from './TimeSchedule'
+import { BlackoutDate, SessionBlackoutDateDomain, SessionBlackoutDateView } from './BlackoutDate'
 
 export interface DropdownOption {
   guid: string | null
@@ -42,6 +43,7 @@ export interface SessionDomain {
   daySchedules: DaySchedule.DayScheduleDomain[]
   instructors: InstructorSchoolYearView[]
   sessionGrades: GradeDomain[]
+  blackoutDates: SessionBlackoutDateDomain[]
 }
 
 export interface SessionView {
@@ -60,6 +62,7 @@ export interface SessionView {
   daySchedules: DaySchedule.DayScheduleView[]
   instructors: InstructorSchoolYearView[]
   grades: GradeView[]
+  blackoutDates: SessionBlackoutDateView[]
 }
 
 export interface SessionForm {
@@ -77,6 +80,7 @@ export interface SessionForm {
   scheduling: DaySchedule.WeeklySchedule
   grades: string[]
   instructors: { guid: string; label: string }[]
+  blackoutDates: SessionBlackoutDateView[]
 }
 
 export abstract class Session {
@@ -86,7 +90,8 @@ export abstract class Session {
       firstSession: DateOnly.toLocalDate(obj.firstSession),
       lastSession: DateOnly.toLocalDate(obj.lastSession),
       daySchedules: obj.daySchedules.map(day => DaySchedule.DaySchedule.toViewModel(day)),
-      grades: obj.sessionGrades.map(grade => Grade.toViewModel(grade))
+      grades: obj.sessionGrades.map(grade => Grade.toViewModel(grade)),
+      blackoutDates: obj.blackoutDates.map(date => BlackoutDate.toViewModel(date))
     }
   }
 
@@ -124,7 +129,8 @@ export abstract class Session {
         }
         return day
       }) as DaySchedule.WeeklySchedule,
-      grades: obj.sessionGrades?.map(grade => grade.gradeGuid) || []
+      grades: obj.sessionGrades?.map(grade => grade.gradeGuid) || [],
+      blackoutDates: obj.blackoutDates.map(date => BlackoutDate.toViewModel(date))
     }
   }
 
@@ -155,7 +161,8 @@ export abstract class Session {
       lastSessionDate: today,
       recurring: true,
       scheduling: baseSchedule,
-      grades: []
+      grades: [],
+      blackoutDates: []
     }
   }
 }

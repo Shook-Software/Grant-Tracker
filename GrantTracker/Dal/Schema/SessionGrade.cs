@@ -24,7 +24,7 @@ namespace GrantTracker.Dal.Schema
 			/// /Relations
 
 			entity.HasOne(e => e.Session)
-				.WithMany(e => e.SessionGrades)
+				.WithMany(e => e.Grades)
 				.HasForeignKey(e => e.SessionGuid);
 
 			/// /Properties
