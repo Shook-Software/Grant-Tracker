@@ -66,7 +66,6 @@ export function reducer (
   state: SessionForm,
   action: ReducerAction
 ): SessionForm {
-  console.log(action)
   switch (action.type) {
 
     case 'all':

@@ -187,8 +187,6 @@ export default (): JSX.Element => {
   const schedule: WeeklySchedule = values.scheduling
   let daySchedule: DayScheduleForm | undefined
 
-  console.log(errors)
-
   if (!values)
     return (
       <p style={{ textAlign: 'center' }}>Error in loading Session details...</p>
