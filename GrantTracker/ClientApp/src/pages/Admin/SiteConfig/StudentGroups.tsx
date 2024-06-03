@@ -97,6 +97,10 @@ const StudentGroupConfig = ({ groupGuid, instructors }: { groupGuid: string, ins
 		hasError: false,
 		action: APIAction.None
 	})
+	const [studentAPIState, setStudentAPIState] = useState({
+		studentSchoolYearGuid: '',
+		hasError: false
+	})
 
 	const { isPending, data: group, refetch: fetchGroup, isError } = useQuery<StudentGroup>({
         queryKey: [`organizationYear/${orgYear?.guid}/studentGroup/${groupGuid}`],
@@ -130,11 +134,21 @@ const StudentGroupConfig = ({ groupGuid, instructors }: { groupGuid: string, ins
 	}
 
 	function addStudentAsync(studentSchoolYearGuid: string): Promise<any> {
+		setStudentAPIState({ studentSchoolYearGuid: '', hasError: false })
 		return api.post(`studentSchoolYear/${studentSchoolYearGuid}/studentGroup/${groupGuid}`)
+			.catch(err => {
+				setStudentAPIState({ studentSchoolYearGuid, hasError: true })})
+			.finally(() => {
+				fetchGroup()
+			})
 	}
 
 	function removeStudentAsync(studentSchoolYearGuid: string): void {
 		api.delete(`studentSchoolYear/${studentSchoolYearGuid}/studentGroup/${groupGuid}`)
+			.catch(err => {})
+			.finally(() => {
+				fetchGroup()
+			})
 	}
 
 	if (isError)
@@ -143,11 +157,14 @@ const StudentGroupConfig = ({ groupGuid, instructors }: { groupGuid: string, ins
 	const studentColumns: Column[] = createStudentColumns(removeStudentAsync)
 	const instructorColums: Column[] = createInstructorColumns(removeInstructorAsync)
 
+	const errorStudent: StudentGroupStudent | undefined = group?.students.find(stu => stu.studentSchoolYearGuid == studentAPIState.studentSchoolYearGuid)
+
 	return (
 		<div>
 			<Row>
 				<Col sm={3}>
 					<button type='button' className='btn btn-primary' onClick={() => setShowStudentModal(true)}>Add Students</button>
+					{ errorStudent ? <small className='text-danger'>Unable to add {errorStudent.firstName} {errorStudent.lastName}.</small> : null}
 				</Col>
 			</Row>
 
