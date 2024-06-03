@@ -30,7 +30,8 @@ namespace GrantTracker.Dal.Schema
 		public virtual ICollection<SessionDaySchedule> DaySchedules { get; set; }
 		public virtual ICollection<AttendanceRecord> AttendanceRecords { get; set; }
 		public virtual ICollection<InstructorRegistration> InstructorRegistrations { get; set; }
-        public virtual ICollection<SessionGrade> SessionGrades { get; set; }
+        public virtual ICollection<SessionGrade> Grades { get; set; }
+		public virtual ICollection<SessionBlackoutDate> BlackoutDates { get; set; }
 
 		public static void Setup(ModelBuilder builder, IHttpContextAccessor httpAccessor)
 		{
@@ -75,7 +76,7 @@ namespace GrantTracker.Dal.Schema
 				.HasForeignKey(e => e.PartnershipTypeGuid)
 				.IsRequired();
 
-			entity.HasMany(e => e.SessionGrades)
+			entity.HasMany(e => e.Grades)
 				.WithOne(e => e.Session)
 				.HasForeignKey(e => e.SessionGuid);
 

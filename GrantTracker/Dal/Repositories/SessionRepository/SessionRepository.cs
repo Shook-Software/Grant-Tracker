@@ -35,7 +35,7 @@ public class SessionRepository : ISessionRepository
                 || (_user.IsTeacher() && s.InstructorRegistrations.Any(ir => ir.InstructorSchoolYear.Instructor.BadgeNumber.Trim() == _user.Id())))
 			.Include(s => s.OrganizationYear).ThenInclude(oy => oy.Organization)
 			.Include(s => s.OrganizationYear).ThenInclude(oy => oy.Year)
-			.Include(s => s.SessionGrades).ThenInclude(g => g.Grade)
+			.Include(s => s.Grades).ThenInclude(g => g.Grade)
 			.Include(s => s.SessionType)
 			.Include(s => s.Activity)
             .Include(s => s.SessionObjectives).ThenInclude(x => x.Objective)
@@ -46,6 +46,7 @@ public class SessionRepository : ISessionRepository
             .Include(s => s.InstructorRegistrations).ThenInclude(i => i.InstructorSchoolYear).ThenInclude(i => i.Status)
 			.Include(s => s.InstructorRegistrations).ThenInclude(i => i.InstructorSchoolYear).ThenInclude(i => i.Instructor)
 			.Include(s => s.DaySchedules).ThenInclude(w => w.TimeSchedules)
+			.Include(s => s.BlackoutDates)
 			.Select(s => SessionView.FromDatabase(s))
 			.SingleAsync();
 
@@ -69,7 +70,7 @@ public class SessionRepository : ISessionRepository
                 || (_user.IsTeacher() && s.InstructorRegistrations.Any(ir => ir.InstructorSchoolYear.Instructor.BadgeNumber.Trim() == _user.Id())))
             .Include(s => s.OrganizationYear)
 			.Include(s => s.OrganizationYear)
-			.Include(s => s.SessionGrades).ThenInclude(g => g.Grade)
+			.Include(s => s.Grades).ThenInclude(g => g.Grade)
 			.Include(s => s.SessionType)
 			.Include(s => s.Activity)
             .Include(s => s.SessionObjectives).ThenInclude(x => x.Objective)
@@ -163,12 +164,27 @@ public class SessionRepository : ISessionRepository
         var currentSession = await _grantContext
 			.Sessions
 			.Where(s => s.SessionGuid == newSession.SessionGuid)
-			.Include(s => s.SessionGrades)
+			.Include(s => s.Grades)
 			.Include(s => s.SessionObjectives)
 			.Include(s => s.InstructorRegistrations)
+			.Include(s => s.BlackoutDates)
 			.FirstOrDefaultAsync();
 
-		var organizationYearGuid = currentSession.OrganizationYearGuid;
+		_grantContext.SessionBlackoutDates.RemoveRange(currentSession.BlackoutDates);
+
+		currentSession.BlackoutDates = newSession.BlackoutDates.Select(bd => new SessionBlackoutDate()
+		{
+			Guid = bd.Guid == Guid.Empty ? Guid.NewGuid() : bd.Guid,
+			SessionGuid = currentSession.SessionGuid,
+			Date = bd.Date
+		})
+		.ToList();
+
+        _grantContext.SessionBlackoutDates.AddRange(currentSession.BlackoutDates);
+		await _grantContext.SaveChangesAsync();
+
+
+        var organizationYearGuid = currentSession.OrganizationYearGuid;
 
 		var newDaySchedule = form.GetDaySchedule();
 		var currentSchedule = await _grantContext
@@ -275,7 +291,7 @@ public class SessionRepository : ISessionRepository
 			await _grantContext.SaveChangesAsync();
 		}
 
-		await UpdateGradeLevels(newGrades, currentSession.SessionGrades.ToList());
+		await UpdateGradeLevels(newGrades, currentSession.Grades.ToList());
 		await UpdateInstructors(newInstructors, currentSession.InstructorRegistrations.ToList());
 
 		//throw not found exception if the resource is null, possibly add the session to the db?
@@ -362,7 +378,7 @@ public class SessionRepository : ISessionRepository
                 || (_user.IsCoordinator() && _user.HomeOrganizationGuids().Contains(s.OrganizationYear.OrganizationGuid))
                 || (_user.IsTeacher() && s.InstructorRegistrations.Any(ir => ir.InstructorSchoolYear.Instructor.BadgeNumber.Trim() == _user.Id())))
             .Include(s => s.OrganizationYear)
-            .Include(s => s.SessionGrades).ThenInclude(g => g.Grade)
+            .Include(s => s.Grades).ThenInclude(g => g.Grade)
             .Include(s => s.SessionType)
             .Include(s => s.Activity)
             .Include(s => s.SessionObjectives).ThenInclude(x => x.Objective)

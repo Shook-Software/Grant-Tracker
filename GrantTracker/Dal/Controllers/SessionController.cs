@@ -177,17 +177,19 @@ public class SessionController : ControllerBase
 				return openDates;
 			}
 
-			IEnumerable<DateOnly> attendanceDates = await _attendanceRepository.GetDatesAsync(sessionGuid);
-			IEnumerable<DateOnly> blackoutDates = (await _organizationRepository.GetBlackoutDatesAsync(session.OrganizationYear.Organization.Guid)).Select(x => x.Date);
+			List<DateOnly> attendanceDates = await _attendanceRepository.GetDatesAsync(sessionGuid);
+			List<DateOnly> orgYearBlackoutDates = (await _organizationRepository.GetBlackoutDatesAsync(session.OrganizationYear.Organization.Guid)).Select(x => x.Date).ToList();
+            List<DateOnly> sessionBlackoutDates = session.BlackoutDates.Select(x => x.Date).ToList();
 
-			if (dayOfWeek is null)
+            if (dayOfWeek is null)
 			{
 				List<DateOnly> openDates = new();
 
 				foreach (var doW in session.DaySchedules.Select(x => x.DayOfWeek))
 				{
                     var dates = GetWeekdaysBetween(doW, startDate, endDate)
-						.Except(blackoutDates)
+						.Except(orgYearBlackoutDates)
+						.Except(sessionBlackoutDates)
 						.Except(attendanceDates)
 						.ToList(); //filter coordinator-defined blackout dates and already existing attendance;
 
@@ -198,7 +200,8 @@ public class SessionController : ControllerBase
 			else
 			{
                 var openDates = GetWeekdaysBetween(dayOfWeek.Value, startDate, endDate)
-                    .Except(blackoutDates)
+                    .Except(orgYearBlackoutDates)
+                    .Except(sessionBlackoutDates)
                     .Except(attendanceDates)
                     .ToList(); //filter coordinator-defined blackout dates and already existing attendance;
 

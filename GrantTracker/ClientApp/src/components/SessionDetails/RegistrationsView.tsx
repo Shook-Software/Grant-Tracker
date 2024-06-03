@@ -198,11 +198,10 @@ export default ({
                   </button>
                 </div>
 
-                <div>
+                <div className='d-flex'>
                   {daySchedules?.map(day => (
                     <Form.Group
                       controlId={day.dayOfWeek}
-                      style={{ width: 'fit-content' }}
                     >
                       <Form.Label className='fw-normal'><small>{day.dayOfWeek}</small></Form.Label>&nbsp;
                       <Form.Check

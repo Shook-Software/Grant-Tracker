@@ -83,7 +83,6 @@ export default ({user}: {user: User}) => {
       .then(res =>
         fetchGradeOptions()
         .then(res2 => {
-          console.log(res, res2)
           //Get session data from the database if a guid is provided to the component, then populate fields.
           setDropdowns({...res, grades: res2})
           

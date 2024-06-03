@@ -21,6 +21,7 @@ namespace GrantTracker.Dal.Models.Views
 		public List<InstructorSchoolYearViewModel> Instructors { get; set; }
 		public List<GradeView> SessionGrades { get; set; }
 		public List<DropdownOption> Objectives { get; set; }
+		public List<SessionBlackoutDate> BlackoutDates { get; set; }
 
 		public static SessionView FromDatabase(Session session) => new()
 		{
@@ -36,10 +37,16 @@ namespace GrantTracker.Dal.Models.Views
 			PartnershipType = DropdownOption.FromDatabase(session.PartnershipType),
 			DaySchedules = session.DaySchedules.Select(d => DayScheduleView.FromDatabase(d)).ToList(),
 			Instructors = session.InstructorRegistrations.Select(reg => InstructorSchoolYearViewModel.FromDatabase(reg.InstructorSchoolYear)).ToList(),
-			SessionGrades = session.SessionGrades.Select(GradeView.FromDatabase).ToList(),
+			SessionGrades = session.Grades.Select(GradeView.FromDatabase).ToList(),
             Objectives = session.SessionObjectives
 				.Select(x => DropdownOption.FromDatabase(x.Objective))
 				.ToList(),
+			BlackoutDates = session.BlackoutDates.Select(blackout => new SessionBlackoutDate()
+				{
+					Date = blackout.Date,
+				})
+				.OrderBy(blackout => blackout.Date)
+				.ToList()
         };
 	}
 

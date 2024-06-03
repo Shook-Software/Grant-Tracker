@@ -104,6 +104,7 @@ public class ReportRepository : IReportRepository
             .Include(x => x.DaySchedules).ThenInclude(ds => ds.TimeSchedules)
             .Include(x => x.InstructorRegistrations).ThenInclude(ir => ir.InstructorSchoolYear).ThenInclude(isy => isy.Instructor)
             .Include(x => x.AttendanceRecords)
+			.Include(s => s.BlackoutDates)
             .ToListAsync();
 
         var attendanceChecksBySession = sessions.Select(s =>
@@ -133,6 +134,10 @@ public class ReportRepository : IReportRepository
                         currentDate = currentDate.AddDays(7);
                         continue;
                     }
+					else if (s.BlackoutDates.Any(blackout => blackout.Date == currentDate)) 
+					{
+						continue;
+					}
 
                     attendances.Add(new()
                     {
@@ -166,11 +171,11 @@ public class ReportRepository : IReportRepository
         })
         .ToList();
 
-        List<OrganizationBlackoutDate> blackoutDates = await _organizationRepository.GetBlackoutDatesAsync(OrganizationGuid);
+        List<OrganizationBlackoutDate> orgBlackoutDates = await _organizationRepository.GetBlackoutDatesAsync(OrganizationGuid);
 
         return attendanceChecksBySession
             .SelectMany(x => x)
-            .Where(x => !blackoutDates.Any(bd => bd.OrganizationGuid == x.OrganizationGuid && bd.Date == x.InstanceDate))
+            .Where(x => !orgBlackoutDates.Any(bd => bd.OrganizationGuid == x.OrganizationGuid && bd.Date == x.InstanceDate))
             .OrderByDescending(x => x.InstanceDate)
             .ThenBy(x => x.TimeBounds.Min(x => x.StartTime))
             .ToList();

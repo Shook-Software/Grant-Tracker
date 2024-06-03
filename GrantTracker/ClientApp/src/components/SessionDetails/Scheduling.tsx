@@ -1,4 +1,4 @@
-import { Card, Button, ListGroup } from 'react-bootstrap'
+import { Card, Button, ListGroup, Row, Col } from 'react-bootstrap'
 import { Link, useNavigate } from 'react-router-dom'
 import { DateTimeFormatter } from '@js-joda/core'
 import { Locale } from '@js-joda/locale_en-us'
@@ -17,6 +17,7 @@ interface Props {
 export default ({ session }: Props): JSX.Element => {
   const attendanceHref: string = `${paths.Admin.Attendance.path}?session=${session.guid}` 
   return (
+    <>
     <Card>
       <Card.Body>
           <Card.Title>Weekly Schedule</Card.Title>
@@ -44,5 +45,16 @@ export default ({ session }: Props): JSX.Element => {
           </ListGroup>
       </Card.Body>
     </Card>
+    <Card className='mt-3' style={session.blackoutDates.length > 0 ? {} : { display: 'none'}}>
+      <Card.Body>
+          <Card.Title>Session Blackout Dates</Card.Title>
+          <Row>
+            {session.blackoutDates.map(blackout => (
+              <Col sm={6}>{blackout.date.format(DateTimeFormatter.ofPattern('eeee, MMMM d, y').withLocale(Locale.ENGLISH))}</Col>
+            ))}
+          </Row>
+      </Card.Body>
+    </Card>
+    </>
   )
 }
