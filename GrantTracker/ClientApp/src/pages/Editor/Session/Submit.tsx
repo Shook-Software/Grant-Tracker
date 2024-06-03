@@ -11,8 +11,19 @@ import { DropdownOption } from 'types/Session'
 import { useSession, Context } from '../index'
 import api from 'utils/api'
 
+function timesMoreThanTwoHoursApart(timeSchedules: any[]): boolean {
+  return timeSchedules.some((current, idx) => {
+    if (idx == 0)
+      return false;
+
+    const previous = timeSchedules[idx - 1];
+    return previous.endTime.plusHours(2).isBefore(current.startTime);
+  })
+}
+
 function formatScheduling (scheduling: WeeklySchedule): JSX.Element[] {
-  return scheduling.map(weekday => {
+
+  return scheduling.map(weekday => { 
     if (weekday.recurs)
       return (
         <div>
@@ -31,7 +42,9 @@ function formatScheduling (scheduling: WeeklySchedule): JSX.Element[] {
                   )
                 )}`}
             </p>
+            
           ))}
+          {timesMoreThanTwoHoursApart(weekday.timeSchedules) ? <div className='text-warning'>Please consider creating two sessions, given times more than two hours apart.</div> : null}
         </div>
       )
 
@@ -123,7 +136,7 @@ const SchedulingDisplay = ({
           values.recurring 
           ?
           <ListItem
-            label={'Series End Date:'}
+            label={'Last Session Date:'}
             value={convert(values.lastSessionDate)
               .toDate()
               .toLocaleDateString('en-US', {
@@ -160,6 +173,7 @@ const SchedulingDisplay = ({
                     )}
                   </div>
                 ))}
+              {timesMoreThanTwoHoursApart(schedule?.timeSchedules || []) ? <div className='text-warning'>Please consider creating two sessions, given times more than two hours apart.</div> : null}
               </div>
             )
           }
@@ -234,8 +248,6 @@ export default (): JSX.Element => {
     )
 
   document.title = `${props.values.guid ? 'Edit' : 'New'} Session - Submit`
-
-  console.log(props.errors)
 
   useEffect(() => {
     api
