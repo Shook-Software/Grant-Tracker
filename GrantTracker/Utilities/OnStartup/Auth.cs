@@ -17,20 +17,26 @@ namespace GrantTracker.Utilities.OnStartup
 	{
 		public static string GetBadgeNumber(ClaimsIdentity identity)
 		{
-			if (identity.Name == null)
-				return "";
-
-			string badgeNumber = Regex.Replace(identity.Name, "[^0-9]", ""); //Remove string "TUSD\\" from "TUSD\\######"
-
-
-            if (!int.TryParse(badgeNumber, out int _))
+			try
 			{
-				var tusdContext = new PrincipalContext(ContextType.Domain, "10.11.0.74");
-				var user = UserPrincipal.FindByIdentity(tusdContext, IdentityType.SamAccountName, identity.Name);
-				badgeNumber = user.EmployeeId;
-			}
+                if (identity.Name == null)
+                    return "";
 
-			return badgeNumber;
+                string badgeNumber = Regex.Replace(identity.Name, "[^0-9]", ""); //Remove string "TUSD\\" from "TUSD\\######"
+
+                if (!int.TryParse(badgeNumber, out int _))
+                {
+                    var tusdContext = new PrincipalContext(ContextType.Domain, "admin.tusd.local");
+                    var user = UserPrincipal.FindByIdentity(tusdContext, IdentityType.SamAccountName, identity.Name);
+                    badgeNumber = user.EmployeeId;
+                }
+
+                return badgeNumber;
+            }
+			catch (Exception ex)
+			{
+				throw;
+			}
         }
 
 		public static void Setup(WebApplicationBuilder builder)
