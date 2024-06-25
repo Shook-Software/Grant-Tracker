@@ -97,6 +97,7 @@ public class ReportRepository : IReportRepository
     private async Task<List<AttendanceCheckViewModel>> GroupAndFillAttendanceCheckAsync(DateOnly StartDate, DateOnly EndDate, Guid? OrganizationGuid, List<AttendanceCheckDbModel> AttendanceChecks)
     {
         var sessions = await _grantContext.Sessions
+			.AsNoTracking()
             .Where(x => OrganizationGuid == null || x.OrganizationYear.OrganizationGuid == OrganizationGuid)
             .Where(x => x.FirstSession <= EndDate)
             .Where(x => x.LastSession >= StartDate)
@@ -129,15 +130,11 @@ public class ReportRepository : IReportRepository
                 var lastSession = endDateBound > s.LastSession ? s.LastSession : endDateBound;
                 while (currentDate <= lastSession)
                 {
-                    if (currentDate < StartDate)
+                    if (currentDate < StartDate || s.BlackoutDates.Any(blackout => blackout.Date == currentDate))
                     {
                         currentDate = currentDate.AddDays(7);
                         continue;
                     }
-					else if (s.BlackoutDates.Any(blackout => blackout.Date == currentDate)) 
-					{
-						continue;
-					}
 
                     attendances.Add(new()
                     {
