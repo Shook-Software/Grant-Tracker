@@ -187,5 +187,23 @@ public class ReportController : ControllerBase
             _logger.LogError(ex, "{Function} - An unhandled error occured while fetching the site session report.", nameof(GetSiteSessionsAsync));
             return StatusCode(500);
 		}
-	}
+    }
+
+    [HttpGet("schedule")]
+    public async Task<ActionResult<List<SiteSessionViewModel>>> GetScheduleReportAsync(Guid yearGuid, Guid? organizationGuid = null)
+    {
+        try
+        {
+            if (organizationGuid is null && !HttpContext.User.IsAdmin())
+                return Unauthorized();
+
+            var scheduleReport = await _reportRepository.GetScheduleReportAsync(yearGuid, organizationGuid);
+            return Ok(scheduleReport);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "{Function} - An unhandled error occured while fetching the site session report.", nameof(GetSiteSessionsAsync));
+            return StatusCode(500);
+        }
+    }
 }

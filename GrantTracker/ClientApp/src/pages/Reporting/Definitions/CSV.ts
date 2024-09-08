@@ -536,3 +536,50 @@ export const cclc10Fields = [
 		value: 'activity'
 	},
 ]
+
+export const scheduleFields = [
+	{
+		label: 'Class Name',
+		value: 'className',
+	},
+	{
+		label: 'Activity',
+		value: 'activity',
+	},
+	{
+		label: 'Objective',
+		value: 'objective',
+	},
+	{
+		label: 'Session Type',
+		value: 'sessionType',
+	},
+	{
+		label: 'Day of Week',
+		value: 'dayOfWeek',
+	},
+	{
+		label: 'Start Time',
+		value: 'startTime',
+	},
+	{
+		label: 'End Time',
+		value: 'endTime',
+	},
+	{
+		label: 'Start Date',
+		value: 'startDate',
+	},
+	{
+		label: 'End Date',
+		value: 'endDate',
+	},
+	{
+		label: 'First Name',
+		value: 'firstName',
+	},
+	{
+		label: 'Last Name',
+		value: 'lastName',
+	},
+]

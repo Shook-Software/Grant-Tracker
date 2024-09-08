@@ -347,4 +347,12 @@ public class ReportRepository : IReportRepository
 				})
 			.ToList();
 	}
+
+	public async Task<List<ScheduleReport>> GetScheduleReportAsync(Guid yearGuid, Guid? organizationGuid = null)
+	{
+		return await _grantContext.Set<ScheduleReport>()
+			.FromSqlInterpolated($"EXEC [GTkr].ReportQuery_Schedule {yearGuid}, {organizationGuid}")
+			.AsNoTracking()
+			.ToListAsync();
+    }
 }

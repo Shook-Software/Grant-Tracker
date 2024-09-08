@@ -90,6 +90,7 @@ namespace GrantTracker.Dal.Schema
             builder.Entity<AttendanceCheckDbModel>().HasNoKey().ToView(null);
 			builder.Entity<CCLC10ViewModel>().HasNoKey().ToView(null);
 			builder.Entity<SessionAttendance>().HasNoKey().ToView(null);
+            builder.Entity<ScheduleReport>().HasNoKey().ToView(null);
 
             AuditLog.Setup(builder);
 			Activity.Setup(builder);
