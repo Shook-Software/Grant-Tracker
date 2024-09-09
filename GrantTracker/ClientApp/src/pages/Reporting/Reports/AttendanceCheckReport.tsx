@@ -19,6 +19,9 @@ interface Props {
 }
 
 export default ({params, dateDisplay, fileOrgName, fileDate, onRowCountChange}: Props) => {
+
+	const [attendanceCheckClassFilter, setAttendanceCheckFilter] = useState<string>('')
+
 	const { isPending, error, data: report, refetch } = useQuery({
 		queryKey: [ `report/attendanceCheck?startDateStr=${params.startDate?.toString()}&endDateStr=${params.endDate?.toString()}&organizationGuid=${params.organizationGuid}` ],
 		select: (data) => data.map(x => ({
@@ -33,11 +36,9 @@ export default ({params, dateDisplay, fileOrgName, fileDate, onRowCountChange}: 
 		staleTime: Infinity
 	})
 
-	const [attendanceCheckClassFilter, setAttendanceCheckFilter] = useState<string>('')
-
 	useEffect(() => {
-	  onRowCountChange(report?.length || 0)
-	}, [report])
+	  	onRowCountChange(report?.length || 0)
+	}, [report?.length])
 
 	const filteredReport = report?.filter(e => e.className?.toLocaleLowerCase().includes(attendanceCheckClassFilter)) || []
 	
@@ -46,7 +47,7 @@ export default ({params, dateDisplay, fileOrgName, fileDate, onRowCountChange}: 
 			isLoading={isPending}
 			displayData={report}
 			displayName={`Attendance Check for ${params.organizationName}, ${dateDisplay}`}
-			fileData={flattenAttendanceCheck(filteredReport)}
+			fileData={() => flattenAttendanceCheck(filteredReport)}
 			fileName={`Attendance_Check_${fileOrgName}_${fileDate}`}
 			fileFields={attendanceCheckFields}
 		>

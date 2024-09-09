@@ -31,6 +31,7 @@ type ReducerAction =
 	| { type: 'classes', payload: number }
 
 function reducer (state, action: ReducerAction) {
+
 	switch (action.type) {
 		case 'activity':
 		  	return { ...state, activity: action.payload }
@@ -104,6 +105,7 @@ export default ({user}): JSX.Element => {
 	function handleParameterChange(form: ReportParameters): void {
 		setReportParameters(form)
 	}
+
 
 	return (
 		<Container style={{minWidth: '90vw'}}>
@@ -180,7 +182,7 @@ export default ({user}): JSX.Element => {
 										user.claim == IdentityClaim.Administrator ?
 											<Nav.Item>
 												<Nav.Link eventKey='payroll-audit'>
-													Payroll Audit ({reportRowCounts.payroll})
+													Payroll Audit
 												</Nav.Link>
 											</Nav.Item>
 										: null
@@ -307,6 +309,8 @@ export default ({user}): JSX.Element => {
 									<PayrollAuditReport
 										params={reportParameters}
 										dateDisplay={reportDateDisplayString}
+										fileOrgName={organizationFileString}
+										fileDate={reportDateFileString}
 										onRowCountChange={(rows: number) => dispatchRowCounts({ type: 'payroll', payload: rows })}
 									/>
 								</Tab.Pane>
@@ -324,7 +328,7 @@ export default ({user}): JSX.Element => {
 										params={reportParameters}
 										dateDisplay={reportDateDisplayString}
 										fileOrgName={organizationFileString}
-										fileDate={`${reportParameters.year.startDate?.toString()}_${reportParameters.year.endDate?.toString()}`}
+										fileDate={`${reportParameters?.year?.startDate?.toString()}_${reportParameters?.year?.endDate?.toString()}`}
 									/>
 								</Tab.Pane>
 

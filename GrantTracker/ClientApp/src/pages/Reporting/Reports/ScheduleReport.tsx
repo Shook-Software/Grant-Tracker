@@ -30,7 +30,6 @@ interface ScheduleRow {
 }
 
 export default ({params, dateDisplay, fileOrgName, fileDate}: Props) => {
-	console.log(params)
 	const { isPending, data, error } = useQuery<ScheduleRow[]>({
 		queryKey: [`report/schedule?yearGuid=${params?.year?.guid}&organizationGuid=${params?.organizationGuid}`],
 		enabled: !!params?.startDate && !!params?.endDate,
@@ -49,7 +48,7 @@ export default ({params, dateDisplay, fileOrgName, fileDate}: Props) => {
 		<ReportComponent
 			isLoading={isPending}
 			displayData={data}
-			displayName={`Schedule Report for biweekly attendance comparisons, ${dateDisplay}`}
+			displayName={`Schedule Report for ${params.organizationName}, ${dateDisplay}`}
 			fileData={data}
 			fileName={`${fileOrgName}_Semester_Schedule_${fileDate}`}
 			fileFields={scheduleFields}

@@ -32,7 +32,7 @@ export default ({params, dateDisplay, fileOrgName, fileDate, onRowCountChange}: 
 			isLoading={isPending}
 			displayData={report}
 			displayName={`Summary of Classes for ${params.organizationName}, ${dateDisplay}`}
-			fileData={flattenSummaryOfClasses(report)}
+			fileData={() => flattenSummaryOfClasses(report)}
 			fileName={`Summary_of_Classes_${fileOrgName}_${fileDate}`}
 			fileFields={summaryOfClassesFields}
 		> 

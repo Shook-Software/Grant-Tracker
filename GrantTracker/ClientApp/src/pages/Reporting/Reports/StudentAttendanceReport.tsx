@@ -18,6 +18,9 @@ interface Props {
 }
 
 export default ({params, dateDisplay, fileOrgName, fileDate, onRowCountChange}: Props) => {
+	  
+	const [studentAttendMinDays, setStudentAttendMinDays] = useState<number>(0)
+	
 	const { isPending, error, data: report, refetch } = useQuery({
 		queryKey: [ `report/studentAttendance?startDateStr=${params.startDate?.toString()}&endDateStr=${params.endDate?.toString()}&organizationGuid=${params.organizationGuid}` ],
 		retry: false,
@@ -27,8 +30,6 @@ export default ({params, dateDisplay, fileOrgName, fileDate, onRowCountChange}: 
 	  useEffect(() => {
 		onRowCountChange(report?.length || 0)
 	  }, [report])
-	  
-	const [studentAttendMinDays, setStudentAttendMinDays] = useState<number>(0)
 
 	const filteredReport = report?.filter(x => x.totalDays >= studentAttendMinDays) || []
 	

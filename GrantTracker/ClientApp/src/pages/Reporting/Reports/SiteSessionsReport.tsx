@@ -32,7 +32,7 @@ export default ({params, dateDisplay, fileOrgName, fileDate, onRowCountChange}: 
 			isLoading={isPending}
 			displayData={report}
 			displayName={`Site Sessions for ${params.organizationName}, ${dateDisplay}`}
-			fileData={flattenSiteSessions(report)}
+			fileData={() => flattenSiteSessions(report)}
 			fileName={`Site_Sessions_${fileOrgName}_${fileDate}`}
 			fileFields={siteSessionFields}
 		> 
