@@ -56,7 +56,9 @@ public class ReportRepository : IReportRepository
 					SessionGuid = grp.First().SessionGuid,
 					School = id.School,
 					ClassName = id.ClassName,
+					Activity = grp.First().Activity,
 					InstanceDate = id.InstanceDate,
+					TotalAttendees = grp.First().TotalAttendees,
 					RegisteredInstructors = registeredSessionPayrollAuditInstructors
 						.Where(x => x.SessionGuid == grp.First().SessionGuid)
 						.Select(x => new Schema.Sprocs.Reporting.Instructor()
@@ -347,4 +349,12 @@ public class ReportRepository : IReportRepository
 				})
 			.ToList();
 	}
+
+	public async Task<List<ScheduleReport>> GetScheduleReportAsync(Guid yearGuid, Guid? organizationGuid = null)
+	{
+		return await _grantContext.Set<ScheduleReport>()
+			.FromSqlInterpolated($"EXEC [GTkr].ReportQuery_Schedule {yearGuid}, {organizationGuid}")
+			.AsNoTracking()
+			.ToListAsync();
+    }
 }

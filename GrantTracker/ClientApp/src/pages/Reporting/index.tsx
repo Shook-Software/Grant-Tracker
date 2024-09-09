@@ -14,6 +14,7 @@ import StudentSurveyReport from './Reports/StudentSurveyReport'
 import SummaryOfClassesReport from './Reports/SummaryOfClassesReport'
 import StaffingReport from './Reports/StaffingReport'
 import CCLC10Report from './Reports/CCLC10Report'
+import ScheduleReport from './Reports/ScheduleReport'
 
 import { IdentityClaim } from 'utils/authentication'
 
@@ -30,6 +31,7 @@ type ReducerAction =
 	| { type: 'classes', payload: number }
 
 function reducer (state, action: ReducerAction) {
+
 	switch (action.type) {
 		case 'activity':
 		  	return { ...state, activity: action.payload }
@@ -98,11 +100,12 @@ export default ({user}): JSX.Element => {
 
 	const reportDateFileString: string = reportParameters.startDate && reportParameters.startDate == reportParameters.endDate 
 		? `${reportParameters.startDate?.toString()}`
-		: `${reportParameters.startDate?.toString()}-${reportParameters.endDate?.toString()}`
+		: `${reportParameters.startDate?.toString()}_${reportParameters.endDate?.toString()}`
 
 	function handleParameterChange(form: ReportParameters): void {
 		setReportParameters(form)
 	}
+
 
 	return (
 		<Container style={{minWidth: '90vw'}}>
@@ -179,7 +182,7 @@ export default ({user}): JSX.Element => {
 										user.claim == IdentityClaim.Administrator ?
 											<Nav.Item>
 												<Nav.Link eventKey='payroll-audit'>
-													Payroll Audit ({reportRowCounts.payroll})
+													Payroll Audit
 												</Nav.Link>
 											</Nav.Item>
 										: null
@@ -190,6 +193,16 @@ export default ({user}): JSX.Element => {
 											<Nav.Item>
 												<Nav.Link eventKey='cclc10'>
 													AzEDS CCLC10
+												</Nav.Link>
+											</Nav.Item>
+										: null
+									}
+
+									{
+										user.claim == IdentityClaim.Administrator ?
+											<Nav.Item>
+												<Nav.Link eventKey='schedule'>
+													Instructor Schedule
 												</Nav.Link>
 											</Nav.Item>
 										: null
@@ -296,6 +309,8 @@ export default ({user}): JSX.Element => {
 									<PayrollAuditReport
 										params={reportParameters}
 										dateDisplay={reportDateDisplayString}
+										fileOrgName={organizationFileString}
+										fileDate={reportDateFileString}
 										onRowCountChange={(rows: number) => dispatchRowCounts({ type: 'payroll', payload: rows })}
 									/>
 								</Tab.Pane>
@@ -305,6 +320,15 @@ export default ({user}): JSX.Element => {
 										params={reportParameters}
 										dateDisplay={reportDateDisplayString}
 										fileOrgName={organizationFileString}
+									/>
+								</Tab.Pane>
+
+								<Tab.Pane eventKey='schedule'>
+									<ScheduleReport
+										params={reportParameters}
+										dateDisplay={reportDateDisplayString}
+										fileOrgName={organizationFileString}
+										fileDate={`${reportParameters?.year?.startDate?.toString()}_${reportParameters?.year?.endDate?.toString()}`}
 									/>
 								</Tab.Pane>
 

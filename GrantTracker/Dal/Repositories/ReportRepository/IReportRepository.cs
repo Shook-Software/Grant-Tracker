@@ -28,4 +28,6 @@ public interface IReportRepository
 	Task<List<TotalFamilyAttendanceViewModel>> GetFamilyAttendanceAsync(DateOnly startDate, DateOnly endDate, Guid? organizationGuid = null);
 
 	Task<List<StudentSurveyViewModel>> GetStudentSurveyAsync(DateOnly startDate, DateOnly endDate, Guid? organizationGuid = null);
+
+	Task<List<ScheduleReport>> GetScheduleReportAsync(Guid yearGuid, Guid? organizationGuid = null);
 }

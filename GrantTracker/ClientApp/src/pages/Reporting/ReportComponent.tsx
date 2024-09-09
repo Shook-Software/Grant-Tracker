@@ -9,7 +9,7 @@ interface Parameters {
 	isLoading: boolean
 	displayData: any[] | undefined
 	displayName: string
-	fileData?: any[] | undefined
+	fileData?: () => any[] | any[] | undefined
 	fileName?: string | undefined
 	fileFields?: any[] | undefined
 }
@@ -58,5 +58,5 @@ function exportToCSV(data, fileFields, fileName) {
 	  header: true
 	}
   
-	saveCSVToFile(data, options, fileName)
+	saveCSVToFile(data.length ? data : data(), options, fileName)
 }

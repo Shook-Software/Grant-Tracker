@@ -42,7 +42,7 @@ export default ({params, dateDisplay, fileOrgName, fileDate, onRowCountChange}: 
 			isLoading={isPending}
 			displayData={report}
 			displayName={`Family Attendance Attendance for ${params.organizationName}, ${dateDisplay}`}
-			fileData={flattenFamilyAttendance(filteredRecords)}
+			fileData={() => flattenFamilyAttendance(filteredRecords)}
 			fileName={`Family_Attendance_${fileOrgName}_${fileDate}`}
 			fileFields={familyAttendanceFields}
 		> 
