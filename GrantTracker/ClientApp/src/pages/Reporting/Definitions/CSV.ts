@@ -668,6 +668,10 @@ export const flattenPayrollReport = (data) => {
 
 export const scheduleFields = [
 	{
+		label: 'School',
+		value: 'school',
+	},
+	{
 		label: 'Class Name',
 		value: 'className',
 	},

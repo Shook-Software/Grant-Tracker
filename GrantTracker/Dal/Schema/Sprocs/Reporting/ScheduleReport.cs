@@ -2,6 +2,7 @@
 
 public record ScheduleReport
 {
+    public string School { get; set; }
     public string ClassName { get; set; }
     public string Activity { get; set; }
     public string Objective { get; set; }
