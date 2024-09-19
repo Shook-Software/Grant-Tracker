@@ -33,6 +33,13 @@ public static class Extensions
     }
 
     public static string Id(this ClaimsPrincipal user) => user.Claims.FirstOrDefault(x => x.Type == "Id")?.Value ?? "";
+
+    public static string ToDisplayString(this Quarter quarter) => quarter switch
+    {
+        Quarter.Summer => "Summer",
+        Quarter.AcademicYear => "Academic Year",
+        _ => ""
+    };
 }
 
 

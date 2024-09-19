@@ -7,6 +7,9 @@ using GrantTracker.Utilities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using ClosedXML.Excel;
+using System.Runtime.Intrinsics.X86;
+using DocumentFormat.OpenXml.Spreadsheet;
 
 namespace GrantTracker.Dal.Repositories.AttendanceRepository;
 
@@ -21,8 +24,17 @@ public class AttendanceRepository : IAttendanceRepository
         _user = httpContextAccessor.HttpContext.User;
     }
 
-	//needs auth fix
-	public async Task<AttendanceViewModel> GetAsync(Guid attendanceGuid)
+    private static bool HasTimeConflict(StudentAttendanceTimeRecord existingTimeSchedule, AttendTimeSchedule newTimeSchedule)
+    {
+
+        bool timesPartiallyOverlap = existingTimeSchedule.EntryTime < newTimeSchedule.EndTime && existingTimeSchedule.ExitTime > newTimeSchedule.StartTime;
+        bool timesFullyOverlap = existingTimeSchedule.EntryTime == newTimeSchedule.StartTime && existingTimeSchedule.ExitTime == newTimeSchedule.EndTime;
+
+        return timesPartiallyOverlap || timesFullyOverlap || newTimeSchedule.StartTime == newTimeSchedule.EndTime;
+    }
+
+    //needs auth fix
+    public async Task<AttendanceViewModel> GetAsync(Guid attendanceGuid)
 	{
 		var session = await _grantContext
 			.AttendanceRecords
@@ -271,12 +283,123 @@ public class AttendanceRepository : IAttendanceRepository
         return validationErrors;
     }
 
-    private static bool HasTimeConflict(StudentAttendanceTimeRecord existingTimeSchedule, AttendTimeSchedule newTimeSchedule)
-    {
+	public async Task<XLWorkbook> CreateExcelExportAsync(Guid sessionGuid, DateOnly startDate, DateOnly endDate)
+	{
+		Session session = await _grantContext.Sessions
+			.AsNoTracking()
+			.Where(s => s.SessionGuid == sessionGuid)
+			.Include(s => s.DaySchedules).ThenInclude(ds => ds.TimeSchedules)
+			.Include(s => s.OrganizationYear).ThenInclude(oy => oy.Organization)
+			.Include(s => s.OrganizationYear).ThenInclude(oy => oy.Year)
+			.Include(s => s.InstructorRegistrations).ThenInclude(ir => ir.InstructorSchoolYear).ThenInclude(isy => isy.Instructor)
+			.FirstAsync();
 
-		bool timesPartiallyOverlap = existingTimeSchedule.EntryTime < newTimeSchedule.EndTime && existingTimeSchedule.ExitTime > newTimeSchedule.StartTime;
-		bool timesFullyOverlap = existingTimeSchedule.EntryTime == newTimeSchedule.StartTime && existingTimeSchedule.ExitTime == newTimeSchedule.EndTime;
+		List<AttendanceRecord> attendanceRecords = await _grantContext.AttendanceRecords
+			.Where(ar => ar.SessionGuid == sessionGuid)
+			.Where(ar => ar.InstanceDate >= startDate && ar.InstanceDate <= endDate)
+			.Include(ar => ar.StudentAttendance)
+			.Include(ar => ar.InstructorAttendance)
+			.ToListAsync();
 
-		return timesPartiallyOverlap || timesFullyOverlap || newTimeSchedule.StartTime == newTimeSchedule.EndTime;
+		List<Guid> studentSchoolYearGuids = attendanceRecords.SelectMany(ar => ar.StudentAttendance).Select(sa => sa.StudentSchoolYearGuid).Distinct().ToList();
+
+		List<StudentSchoolYear> studentSchoolYears = await _grantContext.StudentSchoolYears
+			.Where(ssy => studentSchoolYearGuids.Contains(ssy.StudentSchoolYearGuid))
+			.Include(ssy => ssy.Student)
+            .OrderBy(ssy => ssy.Student.LastName).ThenBy(ssy => ssy.Student.FirstName)
+            .ToListAsync();
+
+		XLWorkbook workbook = new();
+
+		IXLWorksheet worksheet = workbook.Worksheets.Add($"{startDate.ToDateTime(new TimeOnly()):yyyy-MM-dd}-to-{endDate.ToDateTime(new TimeOnly()):yyyy-MM-dd}");
+
+        void addTitle(string cell, string value)
+        {
+            worksheet.Cell(cell).Value = value;
+            worksheet.Cell(cell).Style.Font.Bold = true;
+        }
+
+		worksheet.Column("A").Width = 20;
+        worksheet.Column("B").Width = 20;
+        worksheet.Column("C").Width = 20;
+        worksheet.Column("D").Width = 20;
+
+        addTitle("A1", "Site Name");
+		worksheet.Cell("B1").Value = session.OrganizationYear.Organization.Name;
+
+        addTitle("A2", "Semester");
+        worksheet.Cell("B2").Value = $"{session.OrganizationYear.Year.Quarter.ToDisplayString()} {session.OrganizationYear.Year.SchoolYear}";
+
+        addTitle("A3", "Date Range");
+        worksheet.Cell("B3").Value = $"Start: {startDate.ToShortDateString()}";
+        worksheet.Cell("C3").Value = $"End: {endDate.ToShortDateString()}";
+
+        addTitle("A4", "Session Name");
+        worksheet.Cell("B4").Value = session.Name;
+
+        addTitle("A5", "Days of the Week");
+        addTitle("A6", "Start - End Time(s)");
+        foreach (var (day, idx) in session.DaySchedules.OrderBy(day => day.DayOfWeek).Select((day, idx) => (day, idx)))
+        {
+            worksheet.Cell($"{(char)('B' + idx)}5").Value = day.DayOfWeek.ToString();
+			worksheet.Cell($"{(char)('B' + idx)}6").Value = day.TimeSchedules
+				.OrderBy(ts => ts.StartTime)
+				.Aggregate("", (agg, schedule) => $"{agg}{(schedule == day.TimeSchedules.OrderBy(ts => ts.StartTime).First() ? "" : Environment.NewLine)}{schedule.StartTime.ToShortTimeString()} - {schedule.EndTime.ToShortTimeString()}");
+        }
+
+        addTitle("A7", "Instructor Name(s)");
+
+		List<Instructor> registeredInstructors = session.InstructorRegistrations
+			.Select(ir => ir.InstructorSchoolYear.Instructor)
+			.DistinctBy(i => i.PersonGuid)
+			.ToList();
+
+		foreach (var (instructor, idx) in registeredInstructors.Select((ri, idx) => (ri, idx)))
+		{
+			worksheet.Cell($"{(char)('B' + idx)}7").Value = $"{instructor.FirstName} {instructor.LastName}";
+        }
+
+        addTitle("A8", "Substitute Name(s)");
+
+        List<Instructor> substitutes = attendanceRecords
+            .SelectMany(ar => ar.InstructorAttendance)
+            .Where(ia => ia.IsSubstitute)
+            .Select(ia => ia.InstructorSchoolYear.Instructor)
+            .DistinctBy(i => i.PersonGuid)
+            .ToList();
+
+        foreach (var (substitute, idx) in substitutes.Select((s, idx) => (s, idx)))
+        {
+            worksheet.Cell($"{(char)('B' + idx)}8").Value = $"{substitute.FirstName} {substitute.LastName}";
+        }
+
+
+        addTitle("A10", "Student Last Name");
+        addTitle("B10", "Student First Name");
+        addTitle("C10", "Matric #");
+        addTitle("D10", "Grade");
+
+        foreach (var (attendRecord, idx) in attendanceRecords.OrderBy(ar => ar.InstanceDate).Select((ar, idx) => (ar, idx)))
+        {
+            worksheet.Column($"{(char)('E' + idx)}").Width = 12;
+            addTitle($"{(char)('E' + idx)}10", $"{attendRecord.InstanceDate.DayOfWeek},{Environment.NewLine}{attendRecord.InstanceDate.ToDateTime(new TimeOnly()):MM/dd}");
+        }
+
+		foreach (var (studentSY, idx) in studentSchoolYears.Select((ssy, idx) => (ssy, idx)))
+        {
+			int row = 11 + idx;
+			worksheet.Cell($"A{row}").Value = studentSY.Student.LastName;
+            worksheet.Cell($"B{row}").Value = studentSY.Student.FirstName;
+            worksheet.Cell($"C{row}").Value = studentSY.Student.MatricNumber;
+            worksheet.Cell($"D{row}").Value = studentSY.Grade;
+
+            foreach (var (attendRecord, attendIdx) in attendanceRecords.OrderBy(ar => ar.InstanceDate).Select((ar, idx) => (ar, idx)))
+            {
+				if (attendRecord.StudentAttendance.Any(sa => sa.StudentSchoolYearGuid == studentSY.StudentSchoolYearGuid))
+					worksheet.Cell($"{(char)('E' + attendIdx)}{row}").Style.Fill.SetBackgroundColor(XLColor.Black);
+            }
+        }
+
+        return workbook;
     }
 }

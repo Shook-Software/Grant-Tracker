@@ -30,6 +30,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="ClosedXML" Version="0.102.3" />
+    <PackageReference Include="ClosedXML.Extensions.WebApi" Version="0.3.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.Certificate" Version="6.0.6" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.Negotiate" Version="6.0.6" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="6.0.31" />
@@ -65,11 +67,20 @@
   <ItemGroup>
     <!-- Don't publish the SPA source files, but do show them in the project files list -->
     <Content Remove="$(SpaRoot)**" />
+    <Content Remove="ClientApp\.vscode\**" />
     <None Remove="$(SpaRoot)**" />
+    <None Remove="ClientApp\.vscode\**" />
     <None Include="$(SpaRoot)**" Exclude="$(SpaRoot)node_modules\**" />
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Remove="ClientApp\.vscode\**" />
+    <EmbeddedResource Remove="ClientApp\.vscode\**" />
+    <TypeScriptCompile Remove="ClientApp\.vscode\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="ClientApp\.vscode\settings.json" />
     <None Remove="ClientApp\src\components\SessionDetails\index.tsx" />
     <None Remove="ClientApp\src\components\Tabset\styles.ts" />
     <None Remove="ClientApp\src\components\TimeRangeSelector\index.tsx" />
