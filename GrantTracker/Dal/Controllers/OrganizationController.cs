@@ -77,16 +77,17 @@ namespace GrantTracker.Dal.Controllers
         }
 
         [HttpGet("organizationYear/{OrganizationYearGuid:Guid}/Attendance/Missing")]
-        public async Task<ActionResult<List<AttendanceRecord>>> GetMissingAttendanceRecordsAsync(Guid OrganizationYearGuid)
+        public async Task<ActionResult<List<AttendanceRecord>>> GetMissingAttendanceRecordsAsync(Guid organizationYearGuid)
         {
             try
             {
-                var orgYear = await _organizationYearRepository.GetOrganizationYear(OrganizationYearGuid).FirstAsync();
+                var orgYear = await _organizationYearRepository.GetOrganizationYear(organizationYearGuid).FirstAsync();
                 var blackoutDates = await _organizationRepository.GetBlackoutDatesAsync(orgYear.OrganizationGuid);
+                var sessionBlackoutDates = await _organizationYearRepository.GetSessionBlackoutDatesAsync(organizationYearGuid);
 
-                var missingRecords = await _organizationYearRepository.GetOrganizationYear(OrganizationYearGuid)
+                var missingRecords = await _organizationYearRepository.GetOrganizationYear(organizationYearGuid)
                     .WithSessions().WithAttendanceRecords()
-                    .GetMissingAttendanceRecordsAsync(blackoutDates);
+                    .GetMissingAttendanceRecordsAsync(blackoutDates, sessionBlackoutDates);
 
                 return Ok(missingRecords);
             }
