@@ -198,8 +198,6 @@ export default ({sessionGuid, simpleRecord, onDeleteClick, sessionType}: Props):
         studentTableColumns = removeStudentTimeRecords(studentTableColumns)
   }
 
-  console.log(simpleRecord)
-
   useEffect(() => {
     fetchAttendanceRecord(simpleRecord.guid)
   }, [simpleRecord])

@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Tab, Nav, Row, Col, Modal, Form, Button as BButton, Spinner, Accordion, Toast, ToastContainer } from 'react-bootstrap'
+import { QueryClient, useQuery } from '@tanstack/react-query'
 
 import Table, { Column } from 'components/BTable'
 import Button from 'components/Input/Button'
@@ -8,6 +9,7 @@ import api from 'utils/api'
 import { Quarter, YearView } from 'Models/OrganizationYear'
 
 import Years from './Years'
+import Payroll from './Payroll'
 
 const createOrgYearColumns = (deleteOrgYear): Column[] => [
   {
@@ -117,10 +119,10 @@ const createOrgColumns = (deleteOrg, orgYearColumns): Column[] => [
 ]
 
 export default (): JSX.Element => {
-
-  const [organizations, setOrganizations] = useState([])
-  const [organizationsAreLoading, setOrgsLoading] = useState<boolean>(false)
-  const [orgFetchError, setOrgFetchError] = useState<string>()
+  const { isPending: organizationsAreLoading, data: organizations, error: orgFetchError, refetch: refetchOrganizations, } = useQuery({
+    queryKey: ['organizations'],
+    queryFn: () => api.get('organization').then(res => res.data)
+  }, new QueryClient())
 
   const [showOrgToast, setShowOrgToast] = useState<boolean>(false)
   const [deletedOrg, setDeletedOrg] = useState(null)
@@ -129,19 +131,6 @@ export default (): JSX.Element => {
   const [showOrgYearToast, setShowOrgYearToast] = useState<boolean>(false)
   const [deletedOrgYear, setDeletedOrgYear] = useState(null)
   const [orgYearDeleteError, setOrgYearDeleteError] = useState<boolean>()
-
-  async function fetchOrganizationsAsync (): Promise<void> {
-    setOrgsLoading(true)
-
-    api
-      .get('organization')
-      .then(res => {
-        setOrganizations(res.data)
-        setOrgFetchError(undefined)
-      })
-      .catch(err => setOrgFetchError('An error has occured while fetching organizations.'))
-      .finally(() => setOrgsLoading(false))
-  }
 
   const deleteOrganization = (organizationGuid): Promise<void> => (
 	  api
@@ -156,7 +145,7 @@ export default (): JSX.Element => {
         let deletedOrg = organizations.find(x => x.guid == organizationGuid)
         setDeletedOrg(deletedOrg)
         setShowOrgToast(true)
-        fetchOrganizationsAsync()
+        refetchOrganizations()
       })
   )
   
@@ -171,13 +160,9 @@ export default (): JSX.Element => {
         let orgYear = organizations.find(x => x.guid == organizationGuid).organizationYears.find(x => x.guid == organizationYearGuid)
         setDeletedOrgYear(orgYear)
         setShowOrgYearToast(true)
-        fetchOrganizationsAsync()
+        refetchOrganizations()
       })
   )
-
-  useEffect(() => {
-    fetchOrganizationsAsync()
-  }, [])
 
   const orgYearColumns: Column[] = createOrgYearColumns(deleteOrganizationYear)
   const orgColumns: Column[] = createOrgColumns(deleteOrganization, orgYearColumns)
@@ -224,13 +209,18 @@ export default (): JSX.Element => {
                 Organizations
               </Nav.Link>
             </Nav.Item>
+            <Nav.Item>
+              <Nav.Link className='user-select-none' eventKey='payroll'>
+                Payroll Years
+              </Nav.Link>
+            </Nav.Item>
           </Nav>
         </Col>
 
         <Col lg={9}>
           <Tab.Content>
             <Tab.Pane eventKey='year'>
-				<Years />
+				      <Years />
             </Tab.Pane>
             
             <Tab.Pane eventKey='org'>
@@ -251,6 +241,11 @@ export default (): JSX.Element => {
                 </>
               }
 
+            </Tab.Pane>
+
+            
+            <Tab.Pane eventKey='payroll'>
+				      <Payroll />
             </Tab.Pane>
           </Tab.Content>
         </Col>

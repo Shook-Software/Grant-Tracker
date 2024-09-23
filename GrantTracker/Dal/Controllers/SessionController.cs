@@ -17,6 +17,8 @@ using GrantTracker.Dal.Schema.Sprocs;
 using GrantTracker.Dal.Models.DTO.Attendance;
 using System.Diagnostics;
 using GrantTracker.Dal.Models.DTO.SessionDTO;
+using ClosedXML.Excel;
+using ClosedXML.Extensions;
 
 namespace GrantTracker.Dal.Controllers;
 
@@ -215,6 +217,20 @@ public class SessionController : ControllerBase
         }
     }
 
+	[HttpGet("{sessionGuid:guid}/attendance/export")]
+	public async Task<ActionResult<StreamContent>> DownloadAttendanceExportAsync(Guid sessionGuid, string startDate, string endDate)
+	{
+		try
+		{
+			XLWorkbook attendanceBook = await _attendanceRepository.CreateExcelExportAsync(sessionGuid, DateOnly.Parse(startDate), DateOnly.Parse(endDate));
+			return Ok(await attendanceBook.Deliver("").Content.ReadAsStreamAsync());
+		}
+		catch (Exception ex)
+		{
+			_logger.LogError(ex, "{Function} - An unhandled error occured.", nameof(DownloadAttendanceExportAsync));
+			return StatusCode(500);
+		}
+	}
 
     #endregion Get
 

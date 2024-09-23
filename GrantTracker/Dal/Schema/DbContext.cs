@@ -8,11 +8,8 @@ namespace GrantTracker.Dal.Schema
 {
     public class GrantTrackerContext : DbContext
 	{
-		private readonly IHttpContextAccessor _httpContextAccessor;
-
-		public GrantTrackerContext(DbContextOptions<GrantTrackerContext> options, IHttpContextAccessor httpContextAccessor) : base(options)
+		public GrantTrackerContext(DbContextOptions<GrantTrackerContext> options) : base(options)
 		{
-			_httpContextAccessor = httpContextAccessor;
 		}
 
 		protected override void ConfigureConventions(ModelConfigurationBuilder builder)
@@ -73,6 +70,7 @@ namespace GrantTracker.Dal.Schema
         public DbSet<StudentGroup> StudentGroups { get; set; }
         public DbSet<StudentGroupItem> StudentGroupItems { get; set; }
 		public DbSet<SessionBlackoutDate> SessionBlackoutDates { get; set; }
+		public DbSet<PayrollYear> PayrollYears { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
 		{
@@ -102,7 +100,7 @@ namespace GrantTracker.Dal.Schema
 			Person.Setup(builder);
 			Identity.Setup(builder);
             PartnershipType.Setup(builder);
-			Session.Setup(builder, _httpContextAccessor);
+			Session.Setup(builder);
 			SessionType.Setup(builder);
 			Student.Setup(builder);
 			StudentRegistration.Setup(builder);
@@ -130,6 +128,9 @@ namespace GrantTracker.Dal.Schema
             StudentGroup.Setup(builder);
             StudentGroupItem.Setup(builder);
 			SessionBlackoutDate.Setup(builder);
+			PayrollYear.Setup(builder);
+			PayrollPeriod.Setup(builder);
+			PayrollYearGrantTrackerYearMap.Setup(builder);
         }
 	}
 }

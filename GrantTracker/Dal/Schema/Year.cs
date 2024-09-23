@@ -19,7 +19,8 @@ namespace GrantTracker.Dal.Schema
 		public DateOnly EndDate { get; set; }
 		public bool IsCurrentSchoolYear { get; set; } = false;
 
-		public virtual ICollection<OrganizationYear> Organizations { get; set; }
+		public virtual List<OrganizationYear> Organizations { get; set; }
+		public virtual List<PayrollYear> PayrollYears { get; set; }
 
 		public static void Setup(ModelBuilder builder)
 		{

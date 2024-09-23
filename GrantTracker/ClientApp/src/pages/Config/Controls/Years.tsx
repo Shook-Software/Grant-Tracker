@@ -11,9 +11,6 @@ import { useQuery } from '@tanstack/react-query'
 import { Locale } from '@js-joda/locale_en-us'
 import { NIL as NullGuid } from 'uuid'
 
-
-
-
 export default (): JSX.Element => {
 	const { isPending, data: years, error, refetch } = useQuery({
 		queryKey: ['developer/year'],

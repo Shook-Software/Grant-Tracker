@@ -1,4 +1,5 @@
 ﻿using GrantTracker.Dal.Models.Views;
+using GrantTracker.Dal.Schema;
 
 namespace GrantTracker.Dal.Repositories.DropdownRepository;
 
@@ -28,7 +29,9 @@ public interface IDropdownRepository
 
 	Task<List<YearView>> GetYearsAsync(Guid? organizationGuid = default);
 
+    Task<List<PayrollYear>> GetPayrollYearsAsync();
 
-	Task CreateAsync(DropdownOptionType optionType, DropdownOption option);
+
+    Task CreateAsync(DropdownOptionType optionType, DropdownOption option);
     Task UpdateAsync(DropdownOptionType optionType, DropdownOption option);
 }

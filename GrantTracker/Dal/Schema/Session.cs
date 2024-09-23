@@ -33,7 +33,7 @@ namespace GrantTracker.Dal.Schema
         public virtual ICollection<SessionGrade> Grades { get; set; }
 		public virtual ICollection<SessionBlackoutDate> BlackoutDates { get; set; }
 
-		public static void Setup(ModelBuilder builder, IHttpContextAccessor httpAccessor)
+		public static void Setup(ModelBuilder builder)
 		{
 			var entity = builder.Entity<Session>();
 
