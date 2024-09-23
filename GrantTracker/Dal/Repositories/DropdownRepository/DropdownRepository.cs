@@ -119,6 +119,15 @@ public class DropdownRepository : IDropdownRepository
         return years.Select(YearView.FromDatabase).ToList();
     }
 
+    public async Task<List<PayrollYear>> GetPayrollYearsAsync()
+    {
+        return await _grantContext.PayrollYears
+            .AsNoTracking()
+            .Include(py => py.Periods)
+            .Include(py => py.GrantTrackerYears)
+            .ToListAsync();
+    }
+
     public async Task CreateAsync(DropdownOptionType optionType, DropdownOption option)
     {
         //I know, I know. This is stupid. I should've folded all dropdown options into LookupDefinition/Value from the start.

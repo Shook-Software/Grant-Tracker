@@ -1,20 +1,28 @@
-import { useEffect, useState } from 'react'
+import { createContext, useEffect, useState } from 'react'
 import { useLocation, Location } from 'react-router-dom'
 import { Container } from 'react-bootstrap'
+import { QueryClient, useQuery } from '@tanstack/react-query'
 
 import Breadcrumb from 'components/Breadcrumb'
 import MainNavigation from 'components/MainNavigation'
+import { PayrollYear } from 'Models/PayPeriod'
 
 import paths from 'utils/routing/paths'
 import appRoutes, { RenderRoutes } from 'utils/routing'
 import { IdentityClaim, User as User } from 'utils/authentication'
-import { AxiosIdentityConfig } from 'utils/api'
+import api, { AxiosIdentityConfig } from 'utils/api'
 
 
 export const App = (): JSX.Element => {
-  const [user, setUser] = useState<User>(new User(null))
-  const [isLoading, setIsLoading] = useState<boolean>(false)
   const location: Location = useLocation()
+  const [user, setUser] = useState<User>(new User(null)) //move into appcontext
+  const [isLoading, setIsLoading] = useState<boolean>(false)
+  const { data: payrollYears, refetch: refetchPayrollYears } = useQuery({
+    queryKey: ['payrollYear'],
+    queryFn: () => api.get('dropdown/payrollYear').then(res => res.data.map(py => PayrollYear.toViewModel(py)))
+  }, new QueryClient())
+
+  const appContextValue = { refetchPayrollYears, data: { payrollYears} };
 
   const breadcrumbItems: string[] = location.pathname
     .split('/')
@@ -60,17 +68,33 @@ export const App = (): JSX.Element => {
         className='d-flex flex-column align-items-center w-100 mx-5'
         style={{ paddingTop: '6.5rem', minWidth: '95vw' }}
       >
-        <RenderRoutes 
-          routes={appRoutes} 
-          user={user} 
-          breadcrumbs={
-            <Breadcrumb
-              items={breadcrumbItems}
-              activeItem={breadcrumbItems[breadcrumbItems.length - 1]}
-            />
-          } 
-        />
+        <AppContext.Provider value={appContextValue}>
+          <RenderRoutes 
+            routes={appRoutes} 
+            user={user} 
+            breadcrumbs={
+              <Breadcrumb
+                items={breadcrumbItems}
+                activeItem={breadcrumbItems[breadcrumbItems.length - 1]}
+              />
+            } 
+          />
+        </AppContext.Provider>
       </Container>
     </div>
   )
 }
+
+interface AppContext {
+  refetchPayrollYears: () => undefined,
+  data: {
+    payrollYears: PayrollYear[]
+  }
+}
+
+export const AppContext = createContext<AppContext>({
+  refetchPayrollYears: () => undefined,
+  data: {
+    payrollYears: []
+  }
+})

@@ -74,4 +74,17 @@ public class DevRepository : IDevRepository
 		await _grantContext.AddRangeAsync(identities);
 		await _grantContext.SaveChangesAsync();
 	}
+
+	public async Task AddPayrollYearAsync(List<Guid> yearGuids, PayrollYear payYear)
+	{
+		_grantContext.AddRange(yearGuids.Select(yearGuid => new PayrollYearGrantTrackerYearMap
+		{
+			PayrollYearGuid = payYear.Guid,
+			GrantTrackerYearGuid = yearGuid
+		})
+		.ToList());
+
+		_grantContext.Add(payYear);
+		await _grantContext.SaveChangesAsync();
+	}
 }

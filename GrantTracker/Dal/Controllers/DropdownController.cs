@@ -1,4 +1,5 @@
-﻿using GrantTracker.Dal.Models.Views;
+﻿using GrantTracker.Dal.Models.Dto;
+using GrantTracker.Dal.Models.Views;
 using GrantTracker.Dal.Repositories.DropdownRepository;
 using GrantTracker.Dal.Schema;
 using GrantTracker.Utilities;
@@ -32,8 +33,8 @@ public class DropdownController : ControllerBase
         }
         catch (Exception ex)
         {
-            //log
-            return StatusCode(500, ex.Message);
+            _logger.LogError(ex, "");
+            return StatusCode(500);
         }
     }
 
@@ -67,5 +68,35 @@ public class DropdownController : ControllerBase
 
         var years = await _dropdownRepository.GetYearsAsync(OrganizationGuid);
         return Ok(years);
+    }
+
+    [HttpGet("payrollYear")]
+    public async Task<ActionResult<List<PayrollYearDto>>> GetPayrollYearAsync()
+    {
+        try
+        {
+            var payrollYears = await _dropdownRepository.GetPayrollYearsAsync();
+
+            return Ok(payrollYears.Select(py => new PayrollYearDto
+            {
+                Guid = py.Guid,
+                Name = py.Name,
+                Periods = [.. py.Periods.Select(p => new PayrollPeriodDto
+                    {
+                        Period = p.Period,
+                        StartDate = p.StartDate,
+                        EndDate = p.EndDate
+                    })
+                    .OrderBy(p => p.Period)],
+                Years = [..py.GrantTrackerYears
+                    .OrderBy(y => y.SchoolYear).ThenByDescending(y => y.Quarter)]
+            })
+            .ToList());
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "");
+            return StatusCode(500);
+        }
     }
 }

@@ -11,6 +11,14 @@ using GrantTracker.Dal.Schema;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
+using System.Net.Http;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
+using PdfSharp.Pdf;
+using PdfSharp.Pdf.IO;
+using PdfSharp.Pdf.Content;
+using PdfSharp.Pdf.Content.Objects;
+using GrantTracker.Utilities;
+using System.ComponentModel.DataAnnotations;
 
 namespace GrantTracker.Dal.Controllers;
 
@@ -172,6 +180,101 @@ public class DevController(
         {
             _logger.LogError(ex, "");
             return StatusCode(500);
+        }
+    }
+
+    public class PayrollYearFormDto
+    {
+        public string Name { get; set; }
+        public List<Guid> YearGuids { get; set; }
+        [DataType(DataType.Upload)]
+        public IFormFile File { get; set; }
+    }
+
+    [HttpPost("PayrollYear")]
+    public async Task<IActionResult> UploadPayrollYearPDFAsync([FromForm] PayrollYearFormDto form)
+    {
+        try
+        {
+            if (!Request.HasFormContentType || !HttpContext.Request.Form.Files.Any() || HttpContext.Request.Form.Files[0].ContentType != "application/pdf")
+                throw new UnsupportedContentTypeException("Requires a PDF File, with PDF file upload only.");
+
+            using Stream fileStream = form.File.OpenReadStream();
+
+            PdfDocument file = PdfReader.Open(fileStream, PdfDocumentOpenMode.Import);
+
+            var page = file.Pages[0];
+            var content = ContentReader.ReadContent(page);
+
+            var unparsedText = content.ExtractText();
+
+            List<string> textParsed = new();
+
+            string parsedSnippet = string.Empty;
+            bool snippetOpen = false;
+            string snippetOpenSymbol = "startString"; //a little jank, but we can revise if/when we need expanded and spread out functionality for PDF reading.
+            string snippetCloseSymbol = "endString";
+
+            foreach (var snippet in unparsedText)
+            {
+                if (!snippetOpen && snippet == snippetOpenSymbol)
+                {
+                    snippetOpen = true;
+                    parsedSnippet = "";
+                }
+                else if (snippetOpen && snippet != snippetCloseSymbol)
+                {
+                    parsedSnippet = $"{parsedSnippet}{snippet}";
+                }
+                else if (snippet == snippetCloseSymbol)
+                {
+                    snippetOpen = false;
+                    textParsed.Add(parsedSnippet);
+                }
+            }
+
+            List<PayrollPeriod> payPeriods = new();
+
+            for (int idx = textParsed.FindIndex(text => text.StartsWith("PR ")); idx < textParsed.Count; idx = idx + 6)
+            {
+                try
+                {
+                    string text = textParsed[idx];
+
+                    if (text.StartsWith("PR "))
+                    {
+                        var portalStringSplit = textParsed[idx + 4].Split(" to ");
+
+                        payPeriods.Add(new()
+                        {
+                            Period = Int32.Parse(text.Replace("PR ", "")),
+                            StartDate = DateOnly.Parse(textParsed[idx + 1]),
+                            EndDate = DateOnly.Parse(textParsed[idx + 2]),
+                            AdjustmentDeadline = DateOnly.Parse(textParsed[idx + 3]),
+                            PortalChangeStartDate = portalStringSplit.Count() > 1 ? DateOnly.Parse(portalStringSplit[0]) : null,
+                            PortalChangeEndDate = portalStringSplit.Count() > 1 ? DateOnly.Parse(portalStringSplit[1]) : null,
+                            PaymentDate = DateOnly.Parse(textParsed[idx + 5])
+                        });
+                    }
+                }
+                catch (Exception ex)
+                {
+                    continue;
+                }
+            }
+
+            await _devRepository.AddPayrollYearAsync(form.YearGuids, new PayrollYear()
+            {
+                Name = form.Name,
+                Periods = payPeriods
+            });
+
+            return Ok();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "");
+            return BadRequest(ex.Message);
         }
     }
 }

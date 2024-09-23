@@ -1,14 +1,18 @@
 import { useState, useEffect, useContext } from 'react'
 import { Accordion } from 'react-bootstrap'
+import { Locale } from '@js-joda/locale_en-us'
+import { DateTimeFormatter, LocalDate } from '@js-joda/core'
+import { QueryClient, useQuery } from '@tanstack/react-query'
 
 import RecordDisplay from './RecordDisplay'
 
 import { SimpleAttendanceView } from 'Models/StudentAttendance'
-import { deleteAttendanceRecord } from '../api'
-import { DateTimeFormatter, LocalDate } from '@js-joda/core'
+import { PayPeriod } from 'Models/PayPeriod'
+import { DateOnly } from 'Models/DateOnly'
 import { OrgYearContext } from 'pages/Admin'
-import { Locale } from '@js-joda/locale_en-us'
+import { deleteAttendanceRecord } from '../api'
 import api from 'utils/api'
+import { AppContext } from 'App'
 
 
 interface Props {
@@ -61,17 +65,20 @@ interface ExportProps {
 
 const AttendanceExport = ({sessionGuid, attendanceRecords}: ExportProps): JSX.Element => {
   attendanceRecords.sort((a, b) => a.instanceDate.compareTo(b.instanceDate));
+	const { data } = useContext(AppContext)
   const { orgYear, setOrgYear } = useContext(OrgYearContext)
-  const [startDate, setStartDate] = useState<LocalDate>(attendanceRecords[0].instanceDate);
-  const [endDate, setEndDate] = useState<LocalDate>(attendanceRecords[attendanceRecords.length - 1].instanceDate);
+  const [payPeriod, setPayPeriod] = useState<PayPeriod | undefined>(undefined);
   const [isDownloading, setIsDownloading] = useState<boolean>(false)
   const [hasSubmitError, setHasSubmitError] = useState<boolean>(false);
 
   function downloadExcelReport() {
+    if (!payPeriod)
+      return;
+
     setIsDownloading(true);
     setHasSubmitError(false);
 
-    api.get(`session/${sessionGuid}/attendance/export?startDate=${startDate}&endDate=${endDate}`, {
+    api.get(`session/${sessionGuid}/attendance/export?startDate=${payPeriod.startDate}&endDate=${payPeriod.endDate}`, {
       responseType: 'blob'
     })
     .then(res => {
@@ -79,8 +86,8 @@ const AttendanceExport = ({sessionGuid, attendanceRecords}: ExportProps): JSX.El
       const link = document.createElement('a');
       link.href = href;
 
-      let startDateStr: string = startDate.format(DateTimeFormatter.ofPattern('yyyy-MM-dd').withLocale(Locale.ENGLISH));
-      let endDateStr: string = endDate.format(DateTimeFormatter.ofPattern('yyyy-MM-dd').withLocale(Locale.ENGLISH));
+      let startDateStr: string = payPeriod.startDate.format(DateTimeFormatter.ofPattern('yyyy-MM-dd').withLocale(Locale.ENGLISH));
+      let endDateStr: string = payPeriod.endDate.format(DateTimeFormatter.ofPattern('yyyy-MM-dd').withLocale(Locale.ENGLISH));
       link.setAttribute('download', `${orgYear?.organization.name.replaceAll(' ', '-')}_Attendance_Printout_${startDateStr}-to-${endDateStr}.xlsx`)
 
       document.body.appendChild(link);
@@ -97,21 +104,27 @@ const AttendanceExport = ({sessionGuid, attendanceRecords}: ExportProps): JSX.El
     })
   }
 
+  const payrollPeriods = data.payrollYears.filter(py => py.years.some(y => y.yearGuid == orgYear?.year.guid)).flatMap(py => py.periods)
+
+  let firstAttendanceDate = attendanceRecords[0].instanceDate;
+  let lastAttendanceDate = attendanceRecords[attendanceRecords.length - 1].instanceDate;
+  
   return (
     <div style={{fontSize: '16px'}}>
       <div className='row'>
-        <div className='col-3'>
-          <label htmlFor='export-start-date' className='form-label'><small>Start Date</small></label>
-          <input id='export-start-date' className='form-control' type='date' value={startDate.toString()} onChange={(e) => setStartDate(LocalDate.parse(e.target.value))} />
-        </div>
-
-        <div className='col-3'>
-          <label htmlFor='export-end-date' className='form-label'><small>End Date</small></label>
-          <input id='export-end-date' className='form-control' type='date' value={endDate.toString()} onChange={(e) => setEndDate(LocalDate.parse(e.target.value))} />
+        <div className='col-6'>
+          <label htmlFor='export-pay-period' className='form-label'><small>Pay Period</small></label>
+          <select id='export-pay-period' className='form-select' value={payPeriod?.period} onChange={(e) => setPayPeriod(payrollPeriods.find(p => p.period.toString() == e.target.value.toString()))}>
+            <option value={undefined}></option>
+            {payrollPeriods
+              .filter((p: PayPeriod) => p.startDate.isEqual(firstAttendanceDate) || p.startDate.isBefore(lastAttendanceDate))
+              .filter((p: PayPeriod) => p.endDate.isEqual(lastAttendanceDate) || p.endDate.isAfter(firstAttendanceDate))
+              .map(p => <option value={p.period}>{p.startDate.toString()} to {p.endDate.toString()}</option>)}
+          </select>
         </div>
 
         <div className='col-6 d-flex align-items-end'>
-          <button className='btn btn-primary d-flex' type='button' onClick={downloadExcelReport} disabled={isDownloading}>
+          <button className='btn btn-primary d-flex' type='button' onClick={downloadExcelReport} disabled={isDownloading || !payPeriod}>
             {isDownloading ? <div className='spinner-border' /> : 'Export' }
           </button>
         </div>
