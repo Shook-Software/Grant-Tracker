@@ -12,8 +12,8 @@ public interface IOrganizationYearRepository
 	Task CreateAsync(List<Organization> organizations, Guid yearGuid);
 
 	Task DeleteOrganizationYearAsync(Guid OrganizationYearGuid);
-
-    Task<List<StudentGroupView>> GetStudentGroupsAsync(Guid organizationYearGuid, string? fields = null);
+    Task<List<SessionBlackoutDate>> GetSessionBlackoutDatesAsync(Guid organizationYearGuid);
+    Task <List<StudentGroupView>> GetStudentGroupsAsync(Guid organizationYearGuid, string? fields = null);
     Task<StudentGroupView> GetStudentGroupAsync(Guid groupGuid, string? fields = null);
     Task<StudentGroup> CreateStudentGrouping(Guid organizationYearGuid, string name);
     Task DeleteStudentGroup(Guid groupGuid);

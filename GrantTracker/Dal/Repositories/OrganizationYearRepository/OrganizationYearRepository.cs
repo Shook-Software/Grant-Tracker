@@ -94,6 +94,9 @@ public class OrganizationYearRepository : IOrganizationYearRepository
 		await _grantContext.SaveChangesAsync();
     }
 
+    public async Task<List<SessionBlackoutDate>> GetSessionBlackoutDatesAsync(Guid organizationYearGuid) => 
+        await _grantContext.SessionBlackoutDates.AsNoTracking().Where(sbd => sbd.Session.OrganizationYearGuid == organizationYearGuid).ToListAsync();
+
     public async Task<StudentGroupView> GetStudentGroupAsync(Guid groupGuid, string? fields = null)
     {
         string[]? fieldSplit = fields?.ToLower()?.Split(",");
@@ -210,13 +213,13 @@ public static class OrganizationYearExtensions
         return Query.ThenInclude(s => s.DaySchedules);
     }
 
-    public static async Task<List<AttendanceRecord>> GetMissingAttendanceRecordsAsync(this IIncludableQueryable<OrganizationYear, IEnumerable<AttendanceRecord>> Query, List<OrganizationBlackoutDate> BlackoutDates)
+    public static async Task<List<AttendanceRecord>> GetMissingAttendanceRecordsAsync(this IIncludableQueryable<OrganizationYear, IEnumerable<AttendanceRecord>> query, List<OrganizationBlackoutDate> orgBlackoutDates, List<SessionBlackoutDate> sessionBlackoutDates)
 	{
 		List<AttendanceRecord> missingAttendanceRecords = new();
-		var organizationYear = await Query.Include(x => x.Sessions).ThenInclude(x => x.DaySchedules).FirstAsync();
+		var organizationYear = await query.Include(x => x.Sessions).ThenInclude(x => x.DaySchedules).FirstAsync();
 		var yesterday = DateOnly.FromDateTime(DateTime.Now).AddDays(-1);
 
-		return organizationYear.Sessions.Select(session =>
+        return organizationYear.Sessions.Select(session =>
 		{
 			List<AttendanceRecord> missingAttendance = new();
             DateOnly endDateBound = yesterday >= session.LastSession ? session.LastSession : yesterday;
@@ -229,7 +232,7 @@ public static class OrganizationYearExtensions
 				while (currentDate <= endDateBound)
 				{
 					bool attendanceRecordExists = !session.AttendanceRecords.Any(ar => ar.InstanceDate == currentDate);
-					bool isABlackoutDate = BlackoutDates.Any(blackout => blackout.Date == currentDate);
+					bool isABlackoutDate = orgBlackoutDates.Any(blackout => blackout.Date == currentDate) || sessionBlackoutDates.Any(sbd => sbd.SessionGuid == session.SessionGuid && sbd.Date == currentDate);
 
                     if (attendanceRecordExists && !isABlackoutDate)
 					{

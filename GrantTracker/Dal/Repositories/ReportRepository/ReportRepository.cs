@@ -170,11 +170,17 @@ public class ReportRepository : IReportRepository
         })
         .ToList();
 
+		List<Guid> sessionGuids = attendanceChecksBySession.SelectMany(x => x, (_, y) => y.SessionGuid).Distinct().ToList();
+
         List<OrganizationBlackoutDate> orgBlackoutDates = await _organizationRepository.GetBlackoutDatesAsync(OrganizationGuid);
+		List<SessionBlackoutDate> sesBlackoutDates = await _grantContext.SessionBlackoutDates
+			.Where(sbd => sessionGuids.Contains(sbd.SessionGuid))
+			.ToListAsync();
 
         return attendanceChecksBySession
             .SelectMany(x => x)
             .Where(x => !orgBlackoutDates.Any(bd => bd.OrganizationGuid == x.OrganizationGuid && bd.Date == x.InstanceDate))
+			.Where(x => !sesBlackoutDates.Any(sbd => sbd.SessionGuid == x.SessionGuid && sbd.Date == x.InstanceDate))
             .OrderByDescending(x => x.InstanceDate)
             .ThenBy(x => x.TimeBounds.Min(x => x.StartTime))
             .ToList();
