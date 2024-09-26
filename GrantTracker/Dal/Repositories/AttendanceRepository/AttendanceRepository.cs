@@ -298,8 +298,8 @@ public class AttendanceRepository : IAttendanceRepository
 			.Where(ar => ar.SessionGuid == sessionGuid)
 			.Where(ar => ar.InstanceDate >= startDate && ar.InstanceDate <= endDate)
 			.Include(ar => ar.StudentAttendance)
-			.Include(ar => ar.InstructorAttendance)
-			.ToListAsync();
+			.Include(ar => ar.InstructorAttendance).ThenInclude(ia => ia.InstructorSchoolYear).ThenInclude(isy => isy.Instructor)
+            .ToListAsync();
 
 		List<Guid> studentSchoolYearGuids = attendanceRecords.SelectMany(ar => ar.StudentAttendance).Select(sa => sa.StudentSchoolYearGuid).Distinct().ToList();
 
