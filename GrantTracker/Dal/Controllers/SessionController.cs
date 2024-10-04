@@ -107,7 +107,7 @@ public class SessionController : ControllerBase
 		return Ok(await _sessionRepository.GetStatusAsync(sessionGuid));
 	}
 
-	[HttpGet("{sessionGuid:Guid}/registration")]
+	[HttpGet("{sessionGuid:Guid}/student/registration")]
 	public async Task<ActionResult<List<StudentRegistrationView>>> GetStudents(Guid sessionGuid, int dayOfWeek = -1)
 	{
 		var students = await _sessionRepository.GetStudentRegistrationsAsync(sessionGuid, dayOfWeek);
@@ -239,25 +239,49 @@ public class SessionController : ControllerBase
     [HttpPost("")]
 	public async Task<ActionResult<Guid>> AddSession([FromBody] FormSessionDto session)
 	{
-		await _sessionRepository.AddAsync(session);
-		return Created("session", session);
+		try
+		{
+            await _sessionRepository.AddAsync(session);
+            return Created("session", session);
+        }
+		catch (Exception ex)
+		{
+            _logger.LogError(ex, "{Function} - An unhandled error occured.", nameof(AddSession));
+			return StatusCode(500);
+        }
 	}
 
-	[HttpPost("{sessionGuid:guid}/registration")]
+	[HttpPost("{sessionGuid:guid}/student/registration")]
 	public async Task<ActionResult<List<SessionErrorMessage>>> RegisterStudent(Guid sessionGuid, [FromBody] StudentRegistrationDTO newRegistration)
 	{
-		//Fetch basic session details
-		var targetSession = await _sessionRepository.GetAsync(sessionGuid);
+		try
+        {
+            await _sessionRepository.RegisterStudentAsync(sessionGuid, newRegistration.DayScheduleGuids, newRegistration.StudentSchoolYearGuid);
+			return Ok();
+        }
+		catch (Exception ex)
+		{
+			_logger.LogError(ex, "{Function} - An unhandled error occured.", nameof(RegisterStudent));
+            return StatusCode(500);
+        }
+    }
 
-		if (targetSession == null) 
-			return BadRequest("SessionGuid is invalid: " + sessionGuid);
+    [HttpPost("{sessionGuid:guid}/instructor/registration")]
+    public async Task<IActionResult> RegisterInstructor(Guid sessionGuid, Guid instructorSchoolYearGuid)
+    {
+        try
+        {
+            await _sessionRepository.RegisterInstructorAsync(sessionGuid, instructorSchoolYearGuid);
+            return Ok();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "{Function} - An unhandled error occured.", nameof(RegisterInstructor));
+            return StatusCode(500);
+        }
+    }
 
-		await _sessionRepository.RegisterStudentAsync(sessionGuid, newRegistration.DayScheduleGuids, newRegistration.StudentSchoolYearGuid);
-
-		return Created($"{sessionGuid}/registration", newRegistration.StudentSchoolYearGuid);
-	}
-
-	[HttpPost("{destinationSessionGuid:guid}/registration/copy")]
+    [HttpPost("{destinationSessionGuid:guid}/registration/copy")]
 	public async Task<ActionResult<List<string>>> CopyStudentRegistrations(Guid destinationSessionGuid, [FromBody] List<Guid> studentSchoolYearGuids)
 	{
 		//the student school years are assured to exist, otherwise they wouldn't have been registered already
@@ -400,7 +424,7 @@ public class SessionController : ControllerBase
         }
 	}
 
-	[HttpDelete("registration")]
+	[HttpDelete("student/registration")]
 	public async Task<IActionResult> UnregisterStudent(Guid studentSchoolYearGuid, [FromQuery(Name = "dayScheduleGuid[]")] Guid[] dayScheduleGuids)
 	{
 		try

@@ -1,5 +1,5 @@
 ﻿import { createContext, useEffect, useState } from 'react'
-import { QueryClient, useQuery } from '@tanstack/react-query'
+import { QueryClient, useQuery, UseQueryResult } from '@tanstack/react-query'
 import { Outlet, useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 
 import Select from 'react-select'
@@ -11,6 +11,9 @@ import { OrganizationYear, OrganizationYearDomain, OrganizationYearView, Quarter
 import { IdentityClaim, User } from 'utils/authentication'
 import paths from 'utils/routing/paths'
 import api from 'utils/api'
+import { SimpleSessionView } from 'Models/Session'
+import { InstructorSchoolYearView, InstructorView } from 'Models/Instructor'
+import { DateOnly } from 'Models/DateOnly'
 
 const TabSelector = ({user}: {user: User}): JSX.Element => (
   <Tabset basePath={paths.Admin.path}>
@@ -47,18 +50,38 @@ interface Props {
 
 interface IOrgYearContext {
   orgYear: OrganizationYearView | undefined
+  sessionsQuery: UseQueryResult<SimpleSessionView[], Error> | undefined
+  instructorsQuery: UseQueryResult<InstructorSchoolYearView[], Error> | undefined
   setOrgYear: (orgYear: OrganizationYearView) => void
 }
 
 export const OrgYearContext = createContext<IOrgYearContext>({
   orgYear: undefined,
+  sessionsQuery: undefined,
+  instructorsQuery: undefined,
   setOrgYear: (orgYear) => {}
 })
 
 export default ({ user, breadcrumbs}: Props) => {
   const navigate = useNavigate()
   const [orgYear, setOrgYear] = useState<OrganizationYearView>()
-  const orgYearContextValue = { orgYear, setOrgYear }
+
+  const sessionsQuery = useQuery<SimpleSessionView[]>({
+      queryKey: [`session?orgYearGuid=${orgYear?.guid}`],
+      enabled: !!orgYear?.guid,
+      select: (sessions) => sessions.map(session => ({
+          ...session,
+          firstSessionDate: DateOnly.toLocalDate(session.firstSessionDate as unknown as DateOnly),
+          lastSessionDate: DateOnly.toLocalDate(session.lastSessionDate as unknown as DateOnly)
+      })) 
+  })
+
+  const instructorsQuery = useQuery<InstructorSchoolYearView[]>({
+      queryKey: [`instructor?orgYearGuid=${orgYear?.guid}`],
+      enabled: !!orgYear?.guid
+  })
+
+  const orgYearContextValue = { orgYear, sessionsQuery, instructorsQuery, setOrgYear }
 
   function handleOrgYearChange(orgYear) {
     setOrgYear(orgYear)

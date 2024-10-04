@@ -5,13 +5,13 @@ import { useQuery } from '@tanstack/react-query'
 import { LocalDate } from '@js-joda/core'
 
 import CopyRegistrations from './CopyRegistrations'
-import { OrgYearContext } from 'pages/Admin'
+import RegisterInstructor from 'pages/Admin/Shared/RegisterInstructor'
 import AddButton from 'components/Input/Button'
 import SessionDetails from 'components/SessionDetails'
 import Table, { Column, SortDirection } from 'components/BTable'
+import { OrgYearContext } from 'pages/Admin'
 
 import { DayOfWeek } from 'Models/DayOfWeek'
-import { DateOnly } from 'Models/DateOnly'
 import { SimpleSessionView } from 'Models/Session'
 import { DropdownOption } from 'types/Session'
 
@@ -24,18 +24,8 @@ export default ({user}: { user: User}): JSX.Element => {
     document.title = 'GT - Admin / Sessions'
     const navigate = useNavigate()
     const { sessionGuid } = useParams()
-    const { orgYear, setOrgYear } = useContext(OrgYearContext)
+    const { orgYear, setOrgYear, sessionsQuery, instructorsQuery } = useContext(OrgYearContext)
     const [searchTerm, setSearchTerm] = useState<string>('')
-
-    const { isPending: sessionsLoading, data: sessions } = useQuery<SimpleSessionView[]>({
-        queryKey: [`session?orgYearGuid=${orgYear?.guid}`],
-        enabled: !!orgYear?.guid,
-        select: (sessions) => sessions.map(session => ({
-            ...session,
-            firstSessionDate: DateOnly.toLocalDate(session.firstSessionDate as unknown as DateOnly),
-            lastSessionDate: DateOnly.toLocalDate(session.lastSessionDate as unknown as DateOnly)
-        }))
-    })
 
     const { isPending: missingLoading, data: missingAttendance } = useQuery<AttendanceRecord[]>({
         queryKey: [`organizationYear/${orgYear?.guid}/Attendance/Missing`],
@@ -51,7 +41,7 @@ export default ({user}: { user: User}): JSX.Element => {
         if (sessionGuid)
             api.get(`/session/${sessionGuid}/orgYear`)
                 .then(res => setOrgYear(res.data))
-    }, [sessions?.length])
+    }, [sessionGuid])
 
     let columns: Column[] = createColumns(missingAttendance, sessionGuid)
     let rowClick = null
@@ -60,7 +50,7 @@ export default ({user}: { user: User}): JSX.Element => {
         rowClick = (event, row) => navigate(`${paths.Admin.path}/${paths.Admin.Tabs.Sessions.path}/${row.sessionGuid}`)
     }
 
-    if (sessionsLoading || missingLoading)
+    if (!sessionsQuery || !instructorsQuery || sessionsQuery?.isPending || missingLoading)
         return <Spinner animation='border' />
 
     return (
@@ -81,7 +71,7 @@ export default ({user}: { user: User}): JSX.Element => {
                     </div>
                 </div>
 
-                {!sessions || sessions.length === 0 ? (
+                {!sessionsQuery.data || sessionsQuery.data.length === 0 ? (
                     <div className='d-flex align-items-center justify-content-center'>
                         <p>No sessions found...</p>
                     </div>
@@ -108,7 +98,7 @@ export default ({user}: { user: User}): JSX.Element => {
                                         <Row>
                                             <Table
                                                 columns={columns}
-                                                dataset={sessions
+                                                dataset={sessionsQuery.data
                                                     .filter(session => session.name.toLocaleLowerCase().includes(searchTerm))
                                                     .filter(session => (session.firstSessionDate.isBefore(LocalDate.now()) && session.lastSessionDate.isAfter(LocalDate.now()))
                                                         || session.firstSessionDate.equals(LocalDate.now()) || session.lastSessionDate.equals(LocalDate.now()))
@@ -123,7 +113,7 @@ export default ({user}: { user: User}): JSX.Element => {
                                         <h4>Finished Sessions</h4>
                                         <Table
                                             columns={columns}
-                                            dataset={sessions
+                                            dataset={sessionsQuery.data
                                                 .filter(session => session.name.toLocaleLowerCase().includes(searchTerm))
                                                 .filter(session => session.lastSessionDate.isBefore(LocalDate.now()))
                                             }
@@ -136,7 +126,7 @@ export default ({user}: { user: User}): JSX.Element => {
                                         <h4>Pending Sessions</h4>
                                         <Table
                                             columns={columns}
-                                            dataset={sessions
+                                            dataset={sessionsQuery.data
                                                 .filter(session => session.name.toLocaleLowerCase().includes(searchTerm))
                                                 .filter(session => session.firstSessionDate.isAfter(LocalDate.now()))
                                             }
@@ -159,8 +149,17 @@ export default ({user}: { user: User}): JSX.Element => {
                     <h3>Tools</h3>
                 </Card.Header>
                 <Card.Body>
-                    Copy Registrations:
-                    <CopyRegistrations state={sessions} />
+                    <div className='row'>
+                        <div>Add Instructor to Sessions</div>
+                        <RegisterInstructor sessions={sessionsQuery.data || []} instructors={instructorsQuery.data || []} />
+                    </div>
+
+                    <hr />
+
+                    <div className='row'>
+                        Copy Registrations:
+                        <CopyRegistrations state={sessionsQuery.data!} />
+                    </div>
                 </Card.Body>
             </Card>
         </>

@@ -4,7 +4,7 @@ import api from 'utils/api'
 
 
 export function addStudentToSession (sessionGuid, studentSchoolYearGuid, schedule): Promise<void> {
-  return api.post(`session/${sessionGuid}/registration`, {
+  return api.post(`session/${sessionGuid}/student/registration`, {
         studentSchoolYearGuid,
         dayScheduleGuids: schedule
       })
