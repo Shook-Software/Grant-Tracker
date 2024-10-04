@@ -149,6 +149,7 @@ export default ({user}: {user: User}) => {
                   user
                 }}
               />
+            {console.log(errors)}
             </Form>
           )}
         </Formik>

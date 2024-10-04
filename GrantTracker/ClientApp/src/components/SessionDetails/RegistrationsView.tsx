@@ -138,7 +138,7 @@ export default ({
 
   function getStudentRegistrationsAsync (): void {
     api
-      .get<StudentRegistrationDomain[]>(`session/${sessionGuid}/registration`)
+      .get<StudentRegistrationDomain[]>(`session/${sessionGuid}/student/registration`)
       .then(res => {
         const registrations: StudentRegistrationView[] = res.data.map(item => StudentRegistration.toViewModel(item))
         setRegistrations(registrations)
@@ -151,7 +151,7 @@ export default ({
   function removeStudentRegistrationsAsync (scheduleGuids: string[], studentSchoolYearGuid: string): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       api
-        .delete('session/registration', {
+        .delete('session/student/registration', {
           params: {
             studentSchoolYearGuid,
             dayScheduleGuid: scheduleGuids
@@ -166,8 +166,6 @@ export default ({
   useState(() => {
     getStudentRegistrationsAsync()
   }, [])
-
-  console.log(studentGroupAPIState)
 
   const dataset = groupRegistrationsByStudent(registrations || [])
   const columns: Column[] = createStudentColumns(handleStudentRemoval)

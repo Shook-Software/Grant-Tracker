@@ -26,7 +26,7 @@ export default ({state}: Props): JSX.Element => {
     setSecondSession('')
 
     api
-      .get<StudentRegistrationDomain[]>(`session/${firstSession}/registration`)
+      .get<StudentRegistrationDomain[]>(`session/${firstSession}/student/registration`)
       .then(res => {
         //sorted for ease of display
         studentSchoolYearGuids = res.data.map(i => i.studentSchoolYear.guid).filter((guid, index, self) => self.indexOf(guid) === index)

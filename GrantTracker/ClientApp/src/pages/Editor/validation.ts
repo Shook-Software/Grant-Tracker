@@ -4,7 +4,7 @@ import * as Yup from 'yup'
 export default Yup.object().shape({
 
   name: Yup.string()
-    .min(3, 'Too short.')
+    .min(2, 'Too short.')
     .max(100, 'Too long.')
     .required('Required.'),
 
