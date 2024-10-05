@@ -282,6 +282,7 @@ export const flattenSummaryOfClasses = (data) => {
 	let flattenedData: any[] = []
 
 	data.forEach(session => {
+		const objectives = session.objectives.reduce((str, curr) => str += (curr + '\n'))
 		if (session.instructors.length !== 0) {
 			session.instructors.forEach(i => {
 				flattenedData = [
@@ -297,10 +298,11 @@ export const flattenSummaryOfClasses = (data) => {
 						startDate: DateOnly.toLocalDate(session.firstSession).toString(),
 						endDate: DateOnly.toLocalDate(session.lastSession).toString(),
 						weeksToDate: session.weeksToDate,
-						//daysOfWeek: session.daysOfWeek.map(day => `${DayOfWeek.toChar(day)}`).toString(),
+						objectives: objectives.slice(0, -2),
 						avgDailyAttendance: session.avgDailyAttendance,
 						avgHoursPerDay: session.avgHoursPerDay
-					}
+					},
+					
 				]
 			})
 		}
@@ -318,7 +320,7 @@ export const flattenSummaryOfClasses = (data) => {
 					startDate: DateOnly.toLocalDate(session.firstSession).toString(),
 					endDate: DateOnly.toLocalDate(session.lastSession).toString(),
 					weeksToDate: session.weeksToDate,
-					//daysOfWeek: session.daysOfWeek.map(day => `${DayOfWeek.toChar(day)}`).toString(),
+					objectives: objectives.slice(0, -2),
 					avgDailyAttendance: session.avgDailyAttendance,
 					avgHoursPerDay: session.avgHoursPerDay
 				}
@@ -506,6 +508,10 @@ export const cclc10Fields = [
 	{
 		label: 'Matric Number',
 		value: 'matricNumber'
+	},
+	{
+		label: 'Grade',
+		value: 'grade'
 	},
 	{
 		label: 'Last Name',

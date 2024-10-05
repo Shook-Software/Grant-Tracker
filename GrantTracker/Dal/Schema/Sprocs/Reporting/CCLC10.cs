@@ -4,6 +4,7 @@ public class CCLC10ViewModel
 {
     public string School { get; set; }
     public string MatricNumber { get; set; }
+    public string Grade { get; set; }
     public string LastName { get; set; }
     public string FirstName { get; set; }
     public string Session { get; set; }
