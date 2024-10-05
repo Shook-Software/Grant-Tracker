@@ -56,25 +56,14 @@ const createColumns = (): Column[] => [
 export default (): JSX.Element => {
   document.title = 'GT - Admin / Staff'
   const { instructorSchoolYearGuid } = useParams()
-  const { orgYear } = useContext(OrgYearContext)
-  const [state, setState] = useState<any[]>([])
+  const { orgYear, instructorsQuery } = useContext(OrgYearContext)
   const [showModal, setShowModal] = useState<boolean>(false)
-  const [isLoading, setIsLoading] = useState<boolean>(false)
   const [searchTerm, setSearchTerm] = useState<string>('')
   const navigate = useNavigate()
 
   function handleSearchTermChange(term) {
     term = term.toLocaleLowerCase()
     setSearchTerm(term)
-  }
-
-  function fetchInstructors (): void {
-    setIsLoading(true)
-
-    fetchGrantTrackerInstructors(orgYear?.guid)
-      .then(res => setState(res))
-      .catch(err => console.warn(err))
-      .finally(() => setIsLoading(false))
   }
 
   function addInternalInstructor (instructor): Promise<ApiResult> {
@@ -115,12 +104,11 @@ export default (): JSX.Element => {
 
   const handleOpenModal = () => setShowModal(true)
   const handleCloseModal = () => {
-    fetchInstructors()
     setShowModal(false)
   }
 
   useEffect(() => {
-    fetchInstructors()
+    instructorsQuery?.refetch()
   }, [orgYear])
 
   let columns: Column[] = createColumns()
@@ -152,9 +140,9 @@ export default (): JSX.Element => {
       <Row className='my-3'>
         <Col>
           <h5>Instructors for {orgYear?.organization.name}</h5>
-          {isLoading ? (
+          {!instructorsQuery || instructorsQuery.isPending ? (
             <Spinner animation='border' />
-          ): !state || state.length === 0 ? (
+          ): !instructorsQuery.isFetched && instructorsQuery.data!.length === 0 ? (
             <div className='d-flex align-items-center justify-content-center'>
               <p>No instructors found...</p>
             </div>
@@ -176,7 +164,7 @@ export default (): JSX.Element => {
               <Row>
                 <Table 
                   columns={columns} 
-                  dataset={state.filter(e => (`${e.instructor.firstName} ${e.instructor.lastName}`).toLocaleLowerCase().includes(searchTerm))} 
+                  dataset={instructorsQuery.data!.filter(e => (`${e.instructor.firstName} ${e.instructor.lastName}`).toLocaleLowerCase().includes(searchTerm))} 
                   defaultSort={{index: 1, direction: SortDirection.Ascending}}
                   rowProps={{key: 'guid', onClick: rowClick}} 
                 />
