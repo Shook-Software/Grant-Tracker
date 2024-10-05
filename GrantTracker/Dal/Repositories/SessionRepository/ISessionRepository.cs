@@ -31,5 +31,7 @@ public interface ISessionRepository
 	Task RemoveStudentAsync(Guid studentSchoolYearGuid, List<Guid> dayScheduleGuids);
 	Task RemoveAttendanceRecordAsync(Guid attendanceGuid);
 
-	Task<List<SessionIssuesDTO>> GetIssues(Guid organizationYearGuid);
+	Task RegisterInstructorAsync(Guid sessionGuid, Guid instructorSchoolYearGuid);
+
+    Task<List<SessionIssuesDTO>> GetIssues(Guid organizationYearGuid);
 }

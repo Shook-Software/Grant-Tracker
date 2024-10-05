@@ -48,7 +48,7 @@ export default (): React.ReactElement => {
 	})
 
 	const { isPending: fetchingStudentRegs, data: studentRegs, error: studentRegError } = useQuery({
-		queryKey: [`session/${sessionGuid}/registration?dayOfWeek=${(date?.dayOfWeek().value() % 7)}`],
+		queryKey: [`session/${sessionGuid}/student/registration?dayOfWeek=${(date?.dayOfWeek().value() % 7)}`],
 		select: (regs: StudentRegistrationDomain[]) => regs.map(reg =>StudentRegistration.toViewModel(reg)),
 		enabled: !!date,
 		retry: false,

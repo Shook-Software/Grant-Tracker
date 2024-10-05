@@ -107,10 +107,10 @@ public class SessionRepository : ISessionRepository
 		var sessionObjectives = sessionDetails.Objectives.Select(objective => new SessionObjective { SessionGuid = sessionDetails.Guid, ObjectiveGuid = objective });
 		await _grantContext.Sessions.AddAsync(session);
 		await _grantContext.SaveChangesAsync();
-		await _grantContext.SessionDaySchedules.AddRangeAsync(daySchedule);
-		await _grantContext.SessionTimeSchedules.AddRangeAsync(timeSchedule);
-		await _grantContext.SessionGrades.AddRangeAsync(grades);
-		await _grantContext.InstructorRegistrations.AddRangeAsync(instructorRegistrations);
+		_grantContext.SessionDaySchedules.AddRange(daySchedule);
+		_grantContext.SessionTimeSchedules.AddRange(timeSchedule);
+		_grantContext.SessionGrades.AddRange(grades);
+		_grantContext.InstructorRegistrations.AddRange(instructorRegistrations);
 		await _grantContext.SaveChangesAsync();
 	}
 
@@ -123,7 +123,7 @@ public class SessionRepository : ISessionRepository
 		})
 		.ToList();
 
-		await _grantContext.StudentRegistrations.AddRangeAsync(newRegistrations);
+		_grantContext.StudentRegistrations.AddRange(newRegistrations);
 		await _grantContext.SaveChangesAsync();
 	}
 
@@ -133,6 +133,17 @@ public class SessionRepository : ISessionRepository
 		_grantContext.StudentRegistrations.RemoveRange(registrations);
 		await _grantContext.SaveChangesAsync();
 	}
+
+	public async Task RegisterInstructorAsync(Guid sessionGuid, Guid instructorSchoolYearGuid)
+	{
+		_grantContext.InstructorRegistrations.Add(new InstructorRegistration()
+		{
+			InstructorSchoolYearGuid = instructorSchoolYearGuid,
+			SessionGuid = sessionGuid
+		});
+
+        await _grantContext.SaveChangesAsync();
+    }
 
 	private async Task UpdateGradeLevels(List<SessionGrade> newGrades, List<SessionGrade> oldGrades)
 	{
