@@ -36,7 +36,7 @@ namespace GrantTracker.Dal.Models.Views
 						(ssyGuid, group) => new StudentAttendanceViewModel()
 						{
 							StudentSchoolYear = StudentSchoolYearViewModel.FromDatabase(group.First().StudentSchoolYear),
-							TimeRecords = null,
+							TimeRecords = [],
 							FamilyAttendance = group
 								.GroupBy(fa => fa.FamilyMember,
 								(familyMember, group) => new FamilyAttendanceViewModel

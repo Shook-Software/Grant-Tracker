@@ -66,7 +66,7 @@ public class DropdownController : ControllerBase
         if ((OrganizationGuid == default && !HttpContext.User.IsAdmin()) || !HttpContext.User.IsAuthorizedToViewOrganization(OrganizationGuid))
             return Unauthorized();
 
-        var years = await _dropdownRepository.GetYearsAsync(OrganizationGuid);
+        var years = (await _dropdownRepository.GetYearsAsync(OrganizationGuid)).OrderByDescending(y => y.SchoolYear).ThenByDescending(y => y.Quarter).ToList();
         return Ok(years);
     }
 
@@ -89,7 +89,7 @@ public class DropdownController : ControllerBase
                     })
                     .OrderBy(p => p.Period)],
                 Years = [..py.GrantTrackerYears
-                    .OrderBy(y => y.SchoolYear).ThenByDescending(y => y.Quarter)]
+                    .OrderByDescending(y => y.SchoolYear).ThenByDescending(y => y.Quarter)]
             })
             .ToList());
         }

@@ -180,7 +180,7 @@ const entryExitColumn: Column = {
 		
 		return (
 			<div className={(studentConflicts.length > 0 ? ' border border-danger' : '')}>
-				{record.times.map(time => (
+				{record.times?.map(time => (
 					<div className={'d-flex justify-content-evenly'}>
 						<div className='text-center flex-1'>{time.startTime.format(DateTimeFormatter.ofPattern('hh:mm a').withLocale(Locale.ENGLISH))}</div>
 						<div className='text-center flex-1'>{time.endTime.format(DateTimeFormatter.ofPattern('hh:mm a').withLocale(Locale.ENGLISH))}</div>
@@ -202,7 +202,7 @@ const studentPresentColumn: Column = {
 	label: 'Student Present',
 	attributeKey: '',
 	sortable: false,
-	transform: (record: StudentRecord) => record.times.length > 0 ? <span className='text-success'>Y</span> : <span className='text-danger'>N</span>
+	transform: (record: StudentRecord) => record.times && record.times.length > 0 ? <span className='text-success'>Y</span> : <span className='text-danger'>N</span>
 }
 
 const familyAttendColumn: Column = {

@@ -18,7 +18,7 @@ export default ({ apiResult, scroll = true }: { apiResult: ApiResult | undefined
 
   useEffect(() => {
     setShow(true)
-    if (scroll && alertRef && alertRef.current) { 
+    if (scroll && alertRef && alertRef.current && apiResult?.message) { 
       alertRef.current.scrollIntoView()
     }
   }, [apiResult])

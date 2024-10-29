@@ -63,7 +63,7 @@ export const StudentAttendance = ({ orgYearGuid, state, dispatch, sessionType }:
                 </button>
             </div>
 
-            <Table dataset={state.studentRecords} columns={columns} defaultSort={{ index: 1, direction: SortDirection.Ascending}} />
+            <Table dataset={state.studentRecords} columns={columns} defaultSort={{ index: 1, direction: SortDirection.Ascending}} size='sm' tableProps={{ style: {width: '1350px'}}}  />
 
             <SearchStudentsModal
                 orgYearGuid={orgYearGuid}
@@ -95,7 +95,6 @@ const FamilyInput = ({ familyRecord, studentSchoolYearGuid, dispatch }: { family
                 onClick={(e) => {
                     e.stopPropagation()
                     e.preventDefault()
-                    console.log('Fired')
                     dispatch({ type: 'setFamilyMemberCount', payload: { studentSchoolYearGuid, familyMember: familyRecord.familyMember, count: familyRecord.count + 1 } })
                 }}
             >
@@ -129,7 +128,6 @@ const createParentAttendanceColumn = (dispatch: React.Dispatch<ReducerAction>): 
     sortable: false,
     transform: (record: StudentRecord) => {
         const addFamilyMember = (familyMember: FamilyMember) =>  {
-            console.log('fired elsewhere')
             dispatch({ type: 'setFamilyMemberCount', payload: { studentSchoolYearGuid: record.id, familyMember, count: 1 } })
         }
 
@@ -147,7 +145,6 @@ const createParentAttendanceColumn = (dispatch: React.Dispatch<ReducerAction>): 
                     size='sm'
                     className='align-self-center'
                     onClick={(e) => {
-                        console.log('this?')
                         e.stopPropagation()
                         e.preventDefault()
                     }}
@@ -172,12 +169,16 @@ const createFamilyStudentPresenceColumn = (dispatch: React.Dispatch<ReducerActio
         <div
             role='button'
             className='d-flex justify-content-center align-items-center'
-            onClick={() => dispatch({ type: 'familyStudentPresence', payload: { guid: record.id, isPresent: !record.isPresent } })}
+            onClick={() => {
+                let isPresent: boolean = record.times.length != 0
+                dispatch({ type: 'familyStudentPresence', payload: { guid: record.id, isPresent: !isPresent } })
+            }}
             style={{ minHeight: '100%' }}
         >
-            <Form.Check checked={record.times.length > 0} onChange={(e) => { }} />
+            <Form.Check checked={record.times?.length > 0} onChange={(e) => { }} />
         </div>
     ),
+    headerProps: { style: { width: '150px' } },
     cellProps: {
         style: { height: '1px', padding: '0px' }
     }
@@ -188,11 +189,12 @@ const createCoreStudentColumns = (dispatch: React.Dispatch<ReducerAction>): Colu
         label: 'Present',
         attributeKey: '',
         sortable: false,
+		headerProps: { style: { width: '150px' } },
         transform: (record: StudentRecord) => {
             const conflictClass: string = record.conflicts.length > 0 ? 'border border-danger' : '';
 
-            const equalTimes = record.times.filter(x => x.startTime.equals(x.endTime))
-            const endBeforeStartTimes = record.times.filter(x => x.endTime.isBefore(x.startTime))
+            const equalTimes = record.times?.filter(x => x.startTime.equals(x.endTime)) || []
+            const endBeforeStartTimes = record.times?.filter(x => x.endTime.isBefore(x.startTime)) || []
             
             return (
                 <>
@@ -239,6 +241,7 @@ const createCoreStudentColumns = (dispatch: React.Dispatch<ReducerAction>): Colu
     {
         label: 'Matric Number',
         attributeKey: 'matricNumber',
-        sortable: true
+        sortable: true,
+		headerProps: { style: { width: '150px' } },
     },
 ]

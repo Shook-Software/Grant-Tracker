@@ -241,6 +241,7 @@ export default ({sessionGuid, simpleRecord, onDeleteClick, sessionType}: Props):
       </Accordion.Header>
       <Accordion.Body className='p-0' >
         <Row className='justify-content-between'>
+          {/* Button to nav to edit for another session with this attendance info*/}
           <Link 
             className='btn btn-primary my-3 mx-3'
             to={attendanceHref}
