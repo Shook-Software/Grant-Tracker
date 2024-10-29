@@ -17,6 +17,7 @@ interface Props {
 interface CCLC10Row {
 	school: string
 	matricNumber: string
+	grade: string
 	lastName: string
 	firstName: string
 	session: string

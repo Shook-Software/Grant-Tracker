@@ -19,7 +19,9 @@ public interface IReportRepository
 
 	Task<List<StaffSummaryViewModel>> GetStaffSummaryAsync(Guid yearGuid, Guid? organizationGuid = null);
 
-	Task<List<TotalStudentAttendanceViewModel>> GetStudentAttendanceAsync(DateOnly startDate, DateOnly endDate, Guid? organizationGuid = null);
+	Task<List<StaffMember>> GetStaffMembersAsync();
+
+    Task<List<TotalStudentAttendanceViewModel>> GetStudentAttendanceAsync(DateOnly startDate, DateOnly endDate, Guid? organizationGuid = null);
 
 	Task<List<ClassSummaryViewModel>> GetSummaryOfClassesAsync(DateOnly startDate, DateOnly endDate, Guid? organizationGuid = null);
 

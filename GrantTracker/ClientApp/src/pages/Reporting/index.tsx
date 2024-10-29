@@ -15,6 +15,7 @@ import SummaryOfClassesReport from './Reports/SummaryOfClassesReport'
 import StaffingReport from './Reports/StaffingReport'
 import CCLC10Report from './Reports/CCLC10Report'
 import ScheduleReport from './Reports/ScheduleReport'
+import AllStaffReport from './Reports/StaffMemberReport'
 
 import { IdentityClaim } from 'utils/authentication'
 
@@ -66,8 +67,6 @@ function reducer (state, action: ReducerAction) {
 		default: 
 			return { ...state }
 	}
-
-	return { ...state }
 }
 
 export default ({user}): JSX.Element => {
@@ -178,16 +177,12 @@ export default ({user}): JSX.Element => {
 										</Nav.Link>
 									</Nav.Item>
 
-									{
-										user.claim == IdentityClaim.Administrator ?
-											<Nav.Item>
-												<Nav.Link eventKey='payroll-audit'>
-													Payroll Audit
-												</Nav.Link>
-											</Nav.Item>
-										: null
-									}
-
+									<Nav.Item>
+										<Nav.Link eventKey='payroll-audit'>
+											Payroll Audit
+										</Nav.Link>
+									</Nav.Item>
+									
 									{
 										user.claim == IdentityClaim.Administrator ?
 											<Nav.Item>
@@ -198,11 +193,17 @@ export default ({user}): JSX.Element => {
 										: null
 									}
 
+									<Nav.Item>
+										<Nav.Link eventKey='schedule'>
+											Instructor Schedule
+										</Nav.Link>
+									</Nav.Item>
+
 									{
 										user.claim == IdentityClaim.Administrator ?
 											<Nav.Item>
-												<Nav.Link eventKey='schedule'>
-													Instructor Schedule
+												<Nav.Link eventKey='all-staff'>
+													All Staff
 												</Nav.Link>
 											</Nav.Item>
 										: null
@@ -330,6 +331,10 @@ export default ({user}): JSX.Element => {
 										fileOrgName={organizationFileString}
 										fileDate={`${reportParameters?.year?.startDate?.toString()}_${reportParameters?.year?.endDate?.toString()}`}
 									/>
+								</Tab.Pane>
+
+								<Tab.Pane eventKey='all-staff'>
+									<AllStaffReport />
 								</Tab.Pane>
 
 							</Tab.Content>

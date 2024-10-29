@@ -456,6 +456,11 @@ export const staffingColumns: Column[] = [
 	  sortable: true
 	},
 	{
+	  label: 'Objective',
+	  attributeKey: 'objective',
+	  sortable: true
+	},
+	{
 	  label: 'Matric Number',
 	  attributeKey: 'matricNumber',
 	  sortable: true
@@ -467,11 +472,6 @@ export const staffingColumns: Column[] = [
 	  cellProps: {
 		className: 'text-center'
 	  }
-	},
-	{
-	  label: 'Objective',
-	  attributeKey: 'objective',
-	  sortable: true
 	},
 	{
 	  label: 'Total Days',

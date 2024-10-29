@@ -247,6 +247,14 @@ public class ReportRepository : IReportRepository
 				.ToList();
     }
 
+    public async Task<List<StaffMember>> GetStaffMembersAsync()
+    {
+		return await _grantContext
+            .Set<StaffMember>()
+            .FromSqlInterpolated($"exec GTkr.ReportQuery_Staffing")
+            .ToListAsync();
+    }
+
     public async Task<List<TotalStudentAttendanceViewModel>> GetStudentAttendanceAsync(DateOnly startDate, DateOnly endDate, Guid? organizationGuid = null)
     {
 		return await _grantContext
