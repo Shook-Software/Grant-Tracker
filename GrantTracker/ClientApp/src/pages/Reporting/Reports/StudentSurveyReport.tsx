@@ -3,8 +3,8 @@ import { Col, Row, Form } from 'react-bootstrap'
 
 import Table, { SortDirection } from 'components/BTable'
 import { ReportParameters } from '../ReportParameters'
-import { studentAttendanceFields } from '../Definitions/CSV'
-import { studentAttendanceColumns } from '../Definitions/Columns'
+import { studentSurveyFields } from '../Definitions/CSV'
+import { studentSurveyColumns } from '../Definitions/Columns'
 import ReportComponent from '../ReportComponent'
 import { useEffect } from 'react'
 
@@ -34,12 +34,12 @@ export default ({params, dateDisplay, fileOrgName, fileDate, onRowCountChange}: 
 			displayName={`Student Survey for ${params.organizationName}, ${dateDisplay}`}
 			fileData={report}
 			fileName={`Student_Survey_${fileOrgName}_${fileDate}`}
-			fileFields={studentAttendanceFields}
+			fileFields={studentSurveyFields}
 		> 
 			<Row>
 				<Table 
 					className='m-0'
-					columns={studentAttendanceColumns} 
+					columns={studentSurveyColumns} 
 					dataset={report}
 					defaultSort={{index: 0, direction: SortDirection.Ascending}}
 					maxHeight='45rem'

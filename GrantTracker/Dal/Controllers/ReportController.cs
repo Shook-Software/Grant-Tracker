@@ -215,7 +215,7 @@ public class ReportController : ControllerBase
         try
         {
             var staff = await _reportRepository.GetStaffMembersAsync();
-            return Ok(staff);
+            return Ok(staff.OrderBy(x => x.OrganizationName).ThenByDescending(x => x.SchoolYear).ThenByDescending(x => x.Quarter).ToList());
         }
         catch (Exception ex)
         {
