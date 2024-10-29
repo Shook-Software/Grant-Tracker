@@ -18,8 +18,9 @@ export default ({}: Props) => {
 	return (
 		<ReportComponent
 			isLoading={isPending}
-			displayName='All Staff'
-			fileData={report.map(row => ({...row, quarter: Quarter[row.quarter]}))}
+			displayName='All Staff, All Years'
+			displayData={report}
+			fileData={report?.map(row => ({...row, quarter: Quarter[row.quarter]})) || []}
 			fileName='All_Staff'
 			fileFields={fields}
 		> 
@@ -85,7 +86,7 @@ const fields = [
 	},
 	{
 		label: 'SchoolYear',
-		value: 'badgeNumber'
+		value: 'schoolYear'
 	},
 	{
 		label: 'Quarter',

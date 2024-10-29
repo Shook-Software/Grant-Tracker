@@ -420,16 +420,16 @@ export const studentSurveyFields = [
 		value: 'firstName'
 	},
 	{
+		label: 'Objective',
+		value: 'objective'
+	},
+	{
 		label: 'Matric Number',
 		value: 'matricNumber'
 	},
 	{
 		label: 'Grade',
 		value: 'grade',
-	},
-	{
-		label: 'Objective',
-		value: 'objective'
 	},
 	{
 		label: 'Total Days',

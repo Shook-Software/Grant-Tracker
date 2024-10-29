@@ -334,11 +334,7 @@ export default ({user}): JSX.Element => {
 								</Tab.Pane>
 
 								<Tab.Pane eventKey='all-staff'>
-									<AllStaffReport
-										dateDisplay={reportDateDisplayString}
-										fileOrgName={organizationFileString}
-										fileDate={`${reportParameters?.year?.startDate?.toString()}_${reportParameters?.year?.endDate?.toString()}`}
-									/>
+									<AllStaffReport />
 								</Tab.Pane>
 
 							</Tab.Content>
