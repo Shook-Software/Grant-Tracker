@@ -25,7 +25,6 @@ export const InstructorAttendance = ({ orgYearGuid, state, dispatch }: IAttendPr
 	const iColumns = createInstructorColumns(dispatch)
 
 	function addInternalInstructor(instructor, instructorSchoolYearGuid: string): Promise<ApiResult> {
-		console.log(instructor)
 
 		return api.post(`instructor/add?organizationYearGuid=${orgYearGuid}`, {
 			firstName: instructor.firstName.trim(),
@@ -48,7 +47,6 @@ export const InstructorAttendance = ({ orgYearGuid, state, dispatch }: IAttendPr
 	}
 
 	function addExternalInstructor(instructor): Promise<ApiResult> {
-		console.log(instructor)
 
 		return api.post(`instructor/add?organizationYearGuid=${orgYearGuid}`, {
 			firstName: instructor.firstName.trim(),
@@ -77,7 +75,7 @@ export const InstructorAttendance = ({ orgYearGuid, state, dispatch }: IAttendPr
 				</button>
 			</div>
 
-			<Table dataset={state.instructorRecords} columns={iColumns} />
+			<Table dataset={state.instructorRecords} columns={iColumns} size='sm' tableProps={{ style: {width: '1350px'}}} />
 
 			<AddInstructorModal 
 				show={showAddModal} 
@@ -122,6 +120,7 @@ const createInstructorColumns = (dispatch: React.Dispatch<ReducerAction>): Colum
 				</div>
         	)
 		},
+		headerProps: { style: { width: '150px' } },
         cellProps: {
             style: { height: '1px', padding: '0px' }
         }

@@ -23,6 +23,9 @@ export const AttendanceStartTimeInput = ({personId, times, dispatch}: Attendance
 		dispatch({ type: 'setAttendanceStartTime', payload: { personId, times: modifyTimesByIndex(index, time)}})
 	}
 
+	if (!times)
+		return <></>;
+
 	return times.map((schedule, index) => (
 			<div key={'start-time-' + personId + index}>
 				<TimeInput 
@@ -45,6 +48,9 @@ export const AttendanceEndTimeInput = ({personId, times, dispatch}: AttendanceTi
 	function handleTimeChange(time, index) {
 		dispatch({ type: 'setAttendanceEndTime', payload: { personId, times: modifyTimesByIndex(index, time)}})
 	}
+
+	if (!times)
+		return <></>;
 
 	return times.map((schedule, index) => (
 			<div key={'end-time-' + personId + index}>

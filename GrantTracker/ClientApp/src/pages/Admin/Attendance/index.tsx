@@ -28,6 +28,8 @@ enum FormState {
 export default (): React.ReactElement => {
 	const [searchParams] = useSearchParams();
 	const sessionGuid = searchParams.get('session')
+
+	//going to need the dayscheduleId for the session in order to import
 	const attendanceGuid = searchParams.get('attendanceId')
 
 	const [formState, setFormState] = useState<FormState>(FormState.DateTimeSelect)

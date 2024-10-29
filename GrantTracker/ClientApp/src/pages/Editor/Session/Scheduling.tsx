@@ -62,7 +62,6 @@ const TimeScheduling = ({
   return today?.timeSchedules?.map((timeSchedule, index) => (
     <div className='d-flex flex-row justify-content-start mb-2'>
       <TimeInput
-        key={timeSchedule.startTime.toString() + 'start'}
         value={timeSchedule.startTime}
         onChange={value => {
           handleTimeChange(value, timeSchedule.endTime, 'start', index)
@@ -70,7 +69,6 @@ const TimeScheduling = ({
         style={{ width: '200px' }}
       />
       <TimeInput
-        key={timeSchedule.endTime.toString() + 'end'}
         className='mx-1'
         value={timeSchedule.endTime}
         onChange={value => {

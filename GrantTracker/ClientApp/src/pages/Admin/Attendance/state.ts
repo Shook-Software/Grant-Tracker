@@ -199,7 +199,6 @@ export function reducer(state: AttendanceForm, action: ReducerAction): Attendanc
             return {...state}
 
         case 'setFamilyMemberCount':
-            console.debug(action)
             studentRecord = state.studentRecords.find(record => record.id == action.payload?.studentSchoolYearGuid) as StudentRecord
 
             if (studentRecord.familyAttendance) {

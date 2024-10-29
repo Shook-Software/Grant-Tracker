@@ -41,7 +41,7 @@ interface Props {
 }
 
 const smallCellStyle = {
-  fontSize: '0.75rem',
+  fontSize: '0.875rem',
   padding: '0.25rem 0.25rem'
 }
 
@@ -59,19 +59,23 @@ export default ({ columns, dataset, rowProps, defaultSort, maxHeight, maxRows = 
   }, [dataset])
 
   useEffect(() => {
-    setColumns(columns.map(col => ({...col, key: col.key || col.attributeKey})))
+    handleSetColumns()
   }, [columns])
 
   useEffect(() => { 
+    handleSetColumns()
+  }, [size])
+  
+  function handleSetColumns() {
     if (size === 'sm')
       setColumns(columnset.map(col => ({
         ...col, 
         cellProps: { ...col.cellProps, style: {...smallCellStyle, ...col.cellProps?.style }},
         headerProps: { ...col.headerProps, style: {...smallCellStyle, ...col.headerProps?.style }}
       })))
-
-  }, [size])
-  
+    else 
+      setColumns(columns.map(col => ({...col, key: col.key || col.attributeKey})))
+  }
 
   function handleSortIndexChange(value: number): void {
     let direction = value === sortIndex ? mod(sortDirection + 1, 3) : SortDirection.Ascending
