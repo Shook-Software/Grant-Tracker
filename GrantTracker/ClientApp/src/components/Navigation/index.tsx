@@ -7,7 +7,6 @@ import { Container, Nav, Link as NavLink } from './styles'
 
 interface NavigationProps {
   user: User
-  orgYearChange: () => void
   children: ReactNode
 }
 

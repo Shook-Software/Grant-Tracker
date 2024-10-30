@@ -1,5 +1,5 @@
 import { DropdownOption } from 'Models/Session'
-import api, { AxiosIdentityConfig } from 'utils/api'
+import api from 'utils/api'
 
 export function fetchStatusDropdownOptions(): Promise<DropdownOption[]> {
   return new Promise((resolve, reject) => {

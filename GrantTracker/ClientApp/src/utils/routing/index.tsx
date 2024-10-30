@@ -30,8 +30,8 @@ import Help from 'pages/Help'
 import { User } from 'utils/authentication'
 
 
-export const RenderRoutes = ({ routes, user, breadcrumbs }) => (
-  useRoutes(routes(user, breadcrumbs))
+export const RenderRoutes = ({ routes, user }) => (
+  useRoutes(routes(user))
 )
 
 const editSessionChildren = [
@@ -53,7 +53,7 @@ const editSessionChildren = [
   }
 ]
 
-export default (user: User, Breadcrumbs: JSX.Element): RouteObject[] => [
+export default (user: User): RouteObject[] => [
   {
     path: paths.Root.path,
     element: <Navigate to='/home' />
@@ -87,7 +87,7 @@ export default (user: User, Breadcrumbs: JSX.Element): RouteObject[] => [
   },
   {
     path: paths.Admin.path,
-    element: <AdminPage user={user} breadcrumbs={Breadcrumbs} />,
+    element: <AdminPage user={user} />,
     children: [
       //Overview tab when ready for it, show site aggregates and information.
       {

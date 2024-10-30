@@ -1,4 +1,4 @@
-﻿import { createContext, useEffect, useState } from 'react'
+﻿import { createContext, useContext, useEffect, useState } from 'react'
 import { QueryClient, useQuery, UseQueryResult } from '@tanstack/react-query'
 import { Outlet, useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 
@@ -14,6 +14,7 @@ import api from 'utils/api'
 import { SimpleSessionView } from 'Models/Session'
 import { InstructorSchoolYearView, InstructorView } from 'Models/Instructor'
 import { DateOnly } from 'Models/DateOnly'
+import { AppContext } from 'App'
 
 const TabSelector = ({user}: {user: User}): JSX.Element => (
   <Tabset basePath={paths.Admin.path}>
@@ -43,11 +44,6 @@ const TabSelector = ({user}: {user: User}): JSX.Element => (
   </Tabset>
 )
 
-interface Props {
-  user: User
-  breadcrumbs: JSX.Element
-}
-
 interface IOrgYearContext {
   orgYear: OrganizationYearView | undefined
   sessionsQuery: UseQueryResult<SimpleSessionView[], Error> | undefined
@@ -62,8 +58,9 @@ export const OrgYearContext = createContext<IOrgYearContext>({
   setOrgYear: (orgYear) => {}
 })
 
-export default ({ user, breadcrumbs}: Props) => {
+export default () => {
   const navigate = useNavigate()
+  const { user } = useContext(AppContext)
   const [orgYear, setOrgYear] = useState<OrganizationYearView>()
 
   const sessionsQuery = useQuery<SimpleSessionView[]>({
@@ -84,7 +81,8 @@ export default ({ user, breadcrumbs}: Props) => {
   const orgYearContextValue = { orgYear, sessionsQuery, instructorsQuery, setOrgYear }
 
   function handleOrgYearChange(orgYear) {
-    setOrgYear(orgYear)
+    setOrgYear(orgYear) //this can be reworked to only the user later
+    user.setOrganizationYear(orgYear)
   }
 
   useEffect(() => {
@@ -95,7 +93,7 @@ export default ({ user, breadcrumbs}: Props) => {
 
   return (
     <PageContainer className='rounded-top-left-0'>
-      <OrgYearInput value={orgYear} onChange={handleOrgYearChange} defaultOrgYearGuid={user.organizationYearGuid} />
+      <OrgYearInput value={orgYear} onChange={handleOrgYearChange} defaultOrgYearGuid={user.organizationYear.guid} />
       <div className='w-100'>
         <TabSelector user={user} />
       </div>
@@ -120,14 +118,10 @@ function getOrgYear(
 const OrgYearInput = ({value, onChange, defaultOrgYearGuid}): React.ReactElement => {
   const navigate = useNavigate()
   const location = useLocation()
-  const [searchParams, setSearchParams] = useSearchParams(); //this is an argument in favor of moving the api call up a level. We deffo should..
-  //an input component should be disconnected from the business logic of an api fetch anyhow.
+  const { user } = useContext(AppContext)
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const { isPending, error, data: orgYears, refetch } = useQuery({
-    queryKey: ['orgYears'],
-    queryFn: () => api.get('user/orgYear').then(res => res.data),
-    select: (data: OrganizationYearDomain[]) => data.map(oy => OrganizationYear.toViewModel(oy))
-  }, new QueryClient())
+  const orgYears: OrganizationYearView[] = user.organizationYears
 
   function handleInputChange(
     orgYears: OrganizationYearView[] | undefined, 
@@ -164,16 +158,6 @@ const OrgYearInput = ({value, onChange, defaultOrgYearGuid}): React.ReactElement
       setSearchParams(searchParams)
     }
   }, [orgYears])
-
-  if (isPending)
-    return <span>Loading...</span>
-  else if (error)
-    return (
-      <div>
-        <div>An error occured while fetching organization years.</div>
-        <button>Try again</button>
-      </div>
-    )
 
   const orgGuids: string[] = [...(new Set(orgYears.map(x => x.organization.guid)))]
   const orgs: any[] = orgGuids.map(guid => orgYears.find(oy => oy.organization.guid === guid)?.organization)
