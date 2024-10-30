@@ -130,16 +130,15 @@ public class DropdownRepository : IDropdownRepository
 
     public async Task CreateAsync(DropdownOptionType optionType, DropdownOption option)
     {
-        //I know, I know. This is stupid. I should've folded all dropdown options into LookupDefinition/Value from the start.
         IInfrastructure<InternalEntityEntry> _ = optionType switch
         {
             DropdownOptionType.Activity => _grantContext.Activities.Add(option.Convert<Activity>()),
             DropdownOptionType.Objective => _grantContext.Objectives.Add(option.Convert<Objective>()),
-            DropdownOptionType.FundingSource => _grantContext.FundingSources.Add((FundingSource)option),
-            DropdownOptionType.InstructorStatus => _grantContext.InstructorStatuses.Add((InstructorStatus)option),
-            DropdownOptionType.OrganizationType => _grantContext.OrganizationTypes.Add((OrganizationType)option),
-            DropdownOptionType.PartnershipType => _grantContext.Partnerships.Add((PartnershipType)option),
-            DropdownOptionType.SessionType => _grantContext.SessionTypes.Add((SessionType)option),
+            DropdownOptionType.FundingSource => _grantContext.FundingSources.Add(option.Convert<FundingSource>()),
+            DropdownOptionType.InstructorStatus => _grantContext.InstructorStatuses.Add(option.Convert<InstructorStatus>()),
+            DropdownOptionType.OrganizationType => _grantContext.OrganizationTypes.Add(option.Convert<OrganizationType>()),
+            DropdownOptionType.PartnershipType => _grantContext.Partnerships.Add(option.Convert<PartnershipType>()),
+            DropdownOptionType.SessionType => _grantContext.SessionTypes.Add(option.Convert<SessionType>()),
             _ => throw new InvalidEnumArgumentException()
         };
 
@@ -152,11 +151,11 @@ public class DropdownRepository : IDropdownRepository
         {
             DropdownOptionType.Activity => _grantContext.Activities.Update(option.Convert<Activity>()),
             DropdownOptionType.Objective => _grantContext.Objectives.Update(option.Convert<Objective>()),
-            DropdownOptionType.FundingSource => _grantContext.FundingSources.Update((FundingSource)option),
-            DropdownOptionType.InstructorStatus => _grantContext.InstructorStatuses.Update((InstructorStatus)option),
-            DropdownOptionType.OrganizationType => _grantContext.OrganizationTypes.Update((OrganizationType)option),
-            DropdownOptionType.PartnershipType => _grantContext.Partnerships.Update((PartnershipType)option),
-            DropdownOptionType.SessionType => _grantContext.SessionTypes.Update((SessionType)option),
+            DropdownOptionType.FundingSource => _grantContext.FundingSources.Update(option.Convert<FundingSource>()),
+            DropdownOptionType.InstructorStatus => _grantContext.InstructorStatuses.Update(option.Convert<InstructorStatus>()),
+            DropdownOptionType.OrganizationType => _grantContext.OrganizationTypes.Update(option.Convert<OrganizationType>()),
+            DropdownOptionType.PartnershipType => _grantContext.Partnerships.Update(option.Convert<PartnershipType>()),
+            DropdownOptionType.SessionType => _grantContext.SessionTypes.Update(option.Convert<SessionType>()),
             _ => throw new InvalidEnumArgumentException()
         };
 
