@@ -1,5 +1,6 @@
 import api from 'utils/api'
-import { OrganizationYearView, OrganizationView, Quarter, YearView } from 'Models/OrganizationYear'
+import { OrganizationYearView, OrganizationView, Quarter, YearView, OrganizationYear } from 'Models/OrganizationYear'
+import { QueryObserverResult } from '@tanstack/react-query'
 
 export enum IdentityClaim {
   Administrator = 0,
@@ -10,8 +11,6 @@ export enum IdentityClaim {
 
 export interface IUser {
   userGuid: string
-  userOrganizationYearGuid: string
-  organizationYearGuid: string
 
   firstName: string
   lastName: string
@@ -20,6 +19,7 @@ export interface IUser {
 
   organization: OrganizationView
   organizationYear: OrganizationYearView
+  year: YearView
 }
 
 export class User implements IUser {
@@ -27,39 +27,39 @@ export class User implements IUser {
   private _firstName: string = ''
   private _lastName: string = ''
   private _userGuid: string = ''
-  private _userOrganizationYearGuid: string = ''
   private _badgeNumber: string = ''
   private _claim: IdentityClaim = IdentityClaim.Unauthenticated
 
-  private _currentOrganizationYearGuid: string = ''
+  private _currentOrganizationYear: OrganizationYearView
+
   private _currentOrganization: OrganizationView = {
     guid: '',
     name: '',
     organizationYears: []
   }
-  private _currentYear: OrganizationYearView = {
-    guid: '',
-    year: {
+
+  private _currentYear: YearView = {
       guid: '',
       schoolYear: '',
       quarter: Quarter.None
-    }
   }
+
+  private _organizationYears: OrganizationYearView[] = []
+  private _organizations: OrganizationView[] = []
+  private _years: YearView[] = []
 
   constructor (user: IUser | null) {
     if (user) {
       this._firstName = user.firstName
       this._lastName = user.lastName
       this._userGuid = user.userGuid
-      this._userOrganizationYearGuid = user.userOrganizationYearGuid
       this._badgeNumber = user.badgeNumber
-      this._currentOrganizationYearGuid = user.organizationYearGuid
       this._currentOrganization = {
         guid: user.organization.guid,
         name: user.organization.name,
         organizationYears: []
       }
-      this._currentYear = {...user.organizationYear, year: user.organizationYear.year},
+      this._currentOrganizationYear = {...user.organizationYear},
       this._claim = user.claim
     }
   }
@@ -73,8 +73,6 @@ export class User implements IUser {
 
           const user: IUser = {
             userGuid: res.data.userGuid,
-            userOrganizationYearGuid: res.data.userOrganizationYearGuid,
-            organizationYearGuid: res.data.organizationYearGuid,
 
             firstName: res.data.firstName,
             lastName: res.data.lastName,
@@ -91,6 +89,7 @@ export class User implements IUser {
           }
 
           const newUser = new User(user)
+          newUser.setOrganizationYear(OrganizationYear.toViewModel(user.organizationYear))
 
           resolve(newUser)
         })
@@ -102,30 +101,7 @@ export class User implements IUser {
     })
   }
 
-  public getAuthorizedOrganizationsAsync (): Promise<OrganizationView[]> {
-    return new Promise((resolve, reject) => {
-      api
-        .get<OrganizationView[]>('dropdown/organization')
-        .then(res => {
-          resolve(res.data)
-        })
-    })
-  }
-
-  public getOrganizationYearsAsync (organizationGuid: string): Promise<OrganizationYearView[]> {
-    return new Promise((resolve, reject) => {
-      if (organizationGuid) {
-        api
-          .get<OrganizationYearView[]>('dropdown/year', { params: {organizationGuid}})
-          .then(res => {
-            resolve(res.data)
-          })
-      }
-      else { console.warn('No organizationGuid provided for user.getOrganizationYearsAsync')}
-    })
-  }
-
-  public setYear (year: OrganizationYearView | undefined): void {
+  public setYear (year: YearView | undefined): void {
     if (year) {
       this._currentYear = year
     }
@@ -137,9 +113,26 @@ export class User implements IUser {
     }
   }
 
-  public setOrganizationYear (organizationYearGuid: string | undefined): void {
-    if (organizationYearGuid) {
-      this._currentOrganizationYearGuid = organizationYearGuid
+  public setOrganizationYear (organizationYear: OrganizationYearView | undefined): void {
+    if (!!organizationYear) {
+      this._currentOrganizationYear = organizationYear
+    }
+
+    if (!!organizationYear?.organization) {
+      this._currentOrganization = organizationYear.organization
+    }
+
+    if (!!organizationYear?.year) {
+      this._currentYear = organizationYear.year
+    }
+  }
+
+  public setOrganizationYears(organizationYears: OrganizationYearView[]): void {
+    if (!!organizationYears) {
+      this._organizationYears = organizationYears
+
+      this._organizations = [...new Map(organizationYears.map(oy => [oy.organization['guid'], oy.organization])).values()]
+      this._years = [...new Map(organizationYears.map(oy => [oy.year['guid'], oy.year])).values()]
     }
   }
 
@@ -159,16 +152,8 @@ export class User implements IUser {
     return this._badgeNumber
   }
 
-  public get userOrganizationYearGuid (): string {
-    return this._userOrganizationYearGuid
-  }
-
   public get organizationName (): string {
     return this._currentOrganization.name
-  }
-
-  public get organizationYearGuid (): string { 
-    return this._currentOrganizationYearGuid
   }
 
   public get organization (): OrganizationView {
@@ -176,15 +161,31 @@ export class User implements IUser {
   }
 
   public get organizationYear (): OrganizationYearView {
-    return this._currentYear
+    return this._currentOrganizationYear
   }
 
   public get year(): YearView {
-    return this._currentYear.year
+    return this._currentYear
   }
 
   public get claim (): IdentityClaim {
     return this._claim
+  }
+
+  public get years() : YearView[] {
+    return this._years
+  }
+
+  public get organizations() : OrganizationView[] {
+    return this._organizations
+  }
+
+  public get organizationYears (): OrganizationYearView[] {
+    return this._organizationYears
+  }
+
+  public isAuthenticated (): boolean {
+    return this.claim != IdentityClaim.Unauthenticated
   }
 
   public isAuthorized (requiredClaim: IdentityClaim): boolean {

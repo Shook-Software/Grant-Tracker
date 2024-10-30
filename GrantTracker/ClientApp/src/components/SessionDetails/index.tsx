@@ -76,6 +76,7 @@ export default ({ sessionGuid, user }: Props): JSX.Element => {
   /// /Effects
 
   useEffect(() => {
+    window.scrollTo(0, 0)
     setAttendanceApiResult(undefined)
     getSessionDetails()
     getAttendance()

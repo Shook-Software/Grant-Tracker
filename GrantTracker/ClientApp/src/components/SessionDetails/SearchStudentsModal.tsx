@@ -171,11 +171,9 @@ export default ({
         })
       })
       ?.catch(err => {
-        console.error(err)
         setApiResult({
           label: fullName,
-          success: false,
-          message: err.response.data
+          success: false
         })
       })
   }
