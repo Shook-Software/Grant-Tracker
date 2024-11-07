@@ -67,6 +67,7 @@ export default ({onSubmit}): JSX.Element => {
 			<Form>
 				<Row className='mb-3'>
 					<Col sm={3} xs={6}> 
+					{console.log()}
 						<Form.Group>
 							<Form.Label htmlFor='org'>Organization</Form.Label>
 								<Select 
