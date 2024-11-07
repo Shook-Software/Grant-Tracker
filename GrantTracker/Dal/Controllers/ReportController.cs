@@ -28,6 +28,9 @@ public class ReportController : ControllerBase
 	{
 		try
         {
+            if (!HttpContext.User.IsAdmin())
+                return Unauthorized();
+
             var report = await _reportRepository.GetCCLC10Async(DateOnly.Parse(startDateStr), DateOnly.Parse(endDateStr));
 			return Ok(report);
         }
@@ -191,13 +194,10 @@ public class ReportController : ControllerBase
     }
 
     [HttpGet("schedule")]
-    public async Task<ActionResult<List<SiteSessionViewModel>>> GetScheduleReportAsync(Guid yearGuid, Guid? organizationGuid = null)
+    public async Task<ActionResult<List<ScheduleReport>>> GetScheduleReportAsync(Guid yearGuid, Guid? organizationGuid = null)
     {
         try
         {
-            if (organizationGuid is null && !HttpContext.User.IsAdmin())
-                return Unauthorized();
-
             var scheduleReport = await _reportRepository.GetScheduleReportAsync(yearGuid, organizationGuid);
             return Ok(scheduleReport);
         }
@@ -210,10 +210,13 @@ public class ReportController : ControllerBase
 
     [HttpGet("all-staff")]
     [Authorize(Policy = "Administrator")]
-    public async Task<ActionResult<List<StaffMember>>> GetScheduleReportAsync()
+    public async Task<ActionResult<List<StaffMember>>> GetStaffingReportAsync()
     {
         try
         {
+            if (!HttpContext.User.IsAdmin())
+                return Unauthorized();
+
             var staff = await _reportRepository.GetStaffMembersAsync();
             return Ok(staff.OrderBy(x => x.OrganizationName).ThenByDescending(x => x.SchoolYear).ThenByDescending(x => x.Quarter).ToList());
         }
