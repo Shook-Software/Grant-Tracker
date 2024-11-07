@@ -233,6 +233,10 @@ export const summaryOfClassesFields = [
 		label: 'Session Name',
 		value: 'sessionName'
 	},
+	{ 
+		label: 'Objectives',
+		value: 'objectives'
+	},
 	{
 		label: 'Activity Type',
 		value: 'activityType'
@@ -298,7 +302,7 @@ export const flattenSummaryOfClasses = (data) => {
 						startDate: DateOnly.toLocalDate(session.firstSession).toString(),
 						endDate: DateOnly.toLocalDate(session.lastSession).toString(),
 						weeksToDate: session.weeksToDate,
-						objectives: objectives.slice(0, -2),
+						objectives: objectives,
 						avgDailyAttendance: session.avgDailyAttendance,
 						avgHoursPerDay: session.avgHoursPerDay
 					},
@@ -320,7 +324,7 @@ export const flattenSummaryOfClasses = (data) => {
 					startDate: DateOnly.toLocalDate(session.firstSession).toString(),
 					endDate: DateOnly.toLocalDate(session.lastSession).toString(),
 					weeksToDate: session.weeksToDate,
-					objectives: objectives.slice(0, -2),
+					objectives: objectives,
 					avgDailyAttendance: session.avgDailyAttendance,
 					avgHoursPerDay: session.avgHoursPerDay
 				}

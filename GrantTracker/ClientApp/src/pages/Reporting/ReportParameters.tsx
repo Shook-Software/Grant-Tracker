@@ -51,12 +51,6 @@ export default ({onSubmit}): JSX.Element => {
 	}
 
 	useEffect(() => {
-		if (!user.organization)
-			return
-		
-	}, [user.organization])
-
-	useEffect(() => {
 		if (!user.year)
 			return
 
@@ -73,12 +67,13 @@ export default ({onSubmit}): JSX.Element => {
 			<Form>
 				<Row className='mb-3'>
 					<Col sm={3} xs={6}> 
+					{console.log()}
 						<Form.Group>
 							<Form.Label htmlFor='org'>Organization</Form.Label>
 								<Select 
 									id='org'
 									options={orgOptions}
-									value={{ value: user.organization.guid, label: user.organizations.find(o => o.guid == user.organization.guid)?.name}}
+									value={{ value: orgGuid, label: orgGuid == '' ? 'All' : user.organizations.find(o => o.guid == user.organization.guid)?.name}}
 									onChange={option => setOrganization(option.value)}
 								/>
 						</Form.Group>
