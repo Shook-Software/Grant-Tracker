@@ -74,7 +74,6 @@ function formatScheduling (scheduling: WeeklySchedule, errors): JSX.Element[] {
 }
 
 function sessionHasValidationIssues(errors: any[], values): boolean {
-  console.log(JSON.stringify(errors))
   return JSON.stringify(errors) != '{}'
 }
 
@@ -279,7 +278,6 @@ export default (): JSX.Element => {
         console.warn(err)
       })
   }, [])
-  console.log(props.values.scheduling)
 
   //on click, take user to appropriate page and focus the appropriate element
   return (
@@ -295,7 +293,6 @@ export default (): JSX.Element => {
       <Row lg={3}>
         <Col />
         <Col className='d-flex justify-content-center'>
-        {console.log(sessionHasValidationIssues(props.errors, props.values))}
           <button className='btn btn-primary' type='submit' disabled={sessionHasValidationIssues(props.errors, props.values)}>
             Submit
           </button>
