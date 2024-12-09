@@ -10,6 +10,7 @@ import appRoutes, { RenderRoutes } from 'utils/routing'
 import { IdentityClaim, User as User } from 'utils/authentication'
 import api from 'utils/api'
 import { OrganizationYear, OrganizationYearDomain } from 'Models/OrganizationYear'
+import 'app.scss'
 
 
 export const App = (): JSX.Element => {

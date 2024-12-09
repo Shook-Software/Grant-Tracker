@@ -6,7 +6,7 @@ import {
   useNavigate,
   useSearchParams
 } from 'react-router-dom'
-import { Formik } from 'formik'
+import { Formik, FormikErrors } from 'formik'
 import { Form, Spinner } from 'react-bootstrap'
 
 import { Tabset, Tab } from 'components/Tabset'
@@ -22,33 +22,35 @@ import { User } from 'utils/authentication'
 import { OrgYearContext } from 'pages/Admin'
 
 interface TabProps {
-  guid: string | undefined
+  orgYearGuid: string | undefined
+  sessionGuid: string | undefined
 }
 
-const TabSelector = ({ guid }: TabProps): JSX.Element => (
+const TabSelector = ({ orgYearGuid, sessionGuid }: TabProps): JSX.Element => (
+
   <Tabset>
     <Tab
-      path={`/home/edit/session/${guid ? guid + '/' : ''}${
+      path={`/home/edit/session/${sessionGuid ? sessionGuid + '/' : ''}${
         paths.Edit.Sessions.Overview.path
-      }`}
+      }${orgYearGuid ? '?orgYearGuid=' + orgYearGuid : ''}`}
       text='Overview'
     />
     <Tab
-      path={`/home/edit/session/${guid ? guid + '/' : ''}${
+      path={`/home/edit/session/${sessionGuid ? sessionGuid + '/' : ''}${
         paths.Edit.Sessions.Involved.path
-      }`}
+      }${orgYearGuid ? '?orgYearGuid=' + orgYearGuid : ''}`}
       text='Instructor/Funding'
     />
     <Tab
-      path={`/home/edit/session/${guid ? guid + '/' : ''}${
+      path={`/home/edit/session/${sessionGuid ? sessionGuid + '/' : ''}${
         paths.Edit.Sessions.Scheduling.path
-      }`}
+      }${orgYearGuid ? '?orgYearGuid=' + orgYearGuid : ''}`}
       text='Date/Time'
     />
     <Tab
-      path={`/home/edit/session/${guid ? guid + '/' : ''}${
+      path={`/home/edit/session/${sessionGuid ? sessionGuid + '/' : ''}${
         paths.Edit.Sessions.Submit.path
-      }`}
+      }${orgYearGuid ? '?orgYearGuid=' + orgYearGuid : ''}`}
       text='Review and Submit'
     />
   </Tabset>
@@ -125,7 +127,7 @@ export default ({user}: {user: User}) => {
       </h3>
       <PageContainer>
         <div className='w-100 p-3'>
-          <TabSelector guid={sessionGuid} />
+          <TabSelector orgYearGuid={orgYearGuid} sessionGuid={sessionGuid} />
         </div>
         <Formik
           enableReinitialize
@@ -136,7 +138,7 @@ export default ({user}: {user: User}) => {
             submitForm(values)
           }}
         >
-          {({ handleSubmit, values, touched, errors }) => (
+          {({ handleSubmit, values, touched, errors, validateForm }) => (
             <Form onSubmit={handleSubmit}>
               <Outlet
                 context={{
@@ -146,10 +148,10 @@ export default ({user}: {user: User}) => {
                   dropdownData,
                   touched,
                   errors,
-                  user
+                  user,
+                  forceValidation: validateForm
                 }}
               />
-            {console.log(errors)}
             </Form>
           )}
         </Formik>
@@ -164,8 +166,9 @@ export type Context = {
   dropdownData: DropdownOptions
   values: SessionForm
   touched
-  errors,
-  user: User
+  errors: FormikErrors<SessionForm>,
+  user: User,
+  forceValidation: () => null
 }
 
 export function useSession (): Context {

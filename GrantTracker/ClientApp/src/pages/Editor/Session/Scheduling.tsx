@@ -38,14 +38,24 @@ const TimeScheduling = ({
     changeType: 'start' | 'end',
     index
   ): void {
-    if (changeType === 'start' && endTime.isBefore(startTime))
-      endTime = startTime
-    else if (changeType === 'end' && startTime.isAfter(endTime))
-      startTime = endTime
 
-    //Only uncomment this if you've fixed the outsideClick issue that doesn't trigger soon enough
-    //shit still sucks oh well
-    today.timeSchedules[index] = { startTime, endTime }
+    let scheduleToAlter = today.timeSchedules[index]
+
+    if (scheduleToAlter.startTime === startTime && scheduleToAlter.endTime === endTime)
+      return
+
+    if (changeType === 'start') {
+      if (endTime.isBefore(startTime))
+        scheduleToAlter.endTime = startTime
+
+      scheduleToAlter.startTime = startTime
+    }
+    else if (changeType === 'end'){
+      if (startTime.isAfter(endTime))
+        scheduleToAlter.startTime = endTime
+
+      scheduleToAlter.endTime = endTime
+    }
 
     if (today.recurs) {
       dispatch({ type: 'scheduleDayTime', payload: { dayIndex, day: today } })

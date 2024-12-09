@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Row, Col, Container, ListGroup, Button, Form } from 'react-bootstrap'
-import { convert, DateTimeFormatter } from '@js-joda/core'
+import { convert, DateTimeFormatter, LocalTime } from '@js-joda/core'
 import { Locale } from '@js-joda/locale_en-us'
 
 import ListItem from 'components/Item'
@@ -21,13 +21,25 @@ function timesMoreThanTwoHoursApart(timeSchedules: any[]): boolean {
   })
 }
 
-function formatScheduling (scheduling: WeeklySchedule): JSX.Element[] {
+function sessionDurationHours(timeSchedules: any[]): number {
+  let largestInterval: number = 0;
+
+  timeSchedules?.forEach(ts => {
+    const interval = ts.endTime.hour() - ts.startTime.hour()
+    if (interval > largestInterval)
+      largestInterval = interval
+  })
+
+  return largestInterval
+}
+
+function formatScheduling (scheduling: WeeklySchedule, errors): JSX.Element[] {
 
   return scheduling.map(weekday => { 
     if (weekday.recurs)
       return (
         <div>
-          <p className='my-0'>{`${weekday.dayOfWeek}: `}</p>
+          <p className='my-0 fw-bold'>{`${weekday.dayOfWeek}: `}</p>
           {weekday.timeSchedules.map(schedule => (
             <p className={schedule.startTime === schedule.endTime ? 'text-danger m-0' : 'm-0'}>
               {`${schedule.startTime.format(
@@ -44,12 +56,26 @@ function formatScheduling (scheduling: WeeklySchedule): JSX.Element[] {
             </p>
             
           ))}
+          { errors.timeSchedules 
+            ? <small className='text-danger'>{errors.timeSchedules}</small>
+            : null}
+          
           {timesMoreThanTwoHoursApart(weekday.timeSchedules) ? <div className='text-warning'>Please consider creating two sessions, given times more than two hours apart.</div> : null}
+            
+          {sessionDurationHours(weekday.timeSchedules) >= 4
+            ? <div className='text-warning'>Are you sure this session is intended to span <span className='fw-bold'>{sessionDurationHours(weekday?.timeSchedules)}</span> hours?</div>
+            : null
+          }
         </div>
       )
 
     return <></>
   })
+}
+
+function sessionHasValidationIssues(errors: any[], values): boolean {
+  console.log(JSON.stringify(errors))
+  return JSON.stringify(errors) != '{}'
 }
 
 //Create component to replace Item & inner HTML if a refactor is ever needed
@@ -68,7 +94,7 @@ const SessionDisplay = ({
   <Col>
     <ListGroup>
       <h3>Session</h3>
-      <ListItem label='Name:' value={values.name} />
+      <ListItem label='Name:' value={values.name} subscript={errors.name}/>
       <ListItem
         label='Type'
         value={
@@ -87,6 +113,7 @@ const SessionDisplay = ({
           {`(${dropdownData.objectives.find(e => e.guid === objGuid)?.abbreviation}) ${dropdownData.objectives.find(e => e.guid === objGuid)?.label}`}
           </div>
         )}
+        subscript={errors.objectives}
       />
       <ListItem
         label='Grade Levels:'
@@ -151,32 +178,11 @@ const SchedulingDisplay = ({
         <ListItem
           label={values.recurring ? 'Weekly Schedule:' : 'Time Schedule:'}
           value={
-            values.recurring ? (
               <div className='d-flex flex-column'>
-                {formatScheduling(schedule)}
-                <small className='text-danger'>{errors.timeSchedules}</small>
+                {formatScheduling(schedule, errors)}
               </div>
-            ) : (
-              <div className='d-flex flex-column'>
-                {schedule?.timeSchedules?.map(time => (
-                  <div>
-                    {time.startTime?.format(
-                      DateTimeFormatter.ofPattern('hh:mm a').withLocale(
-                        Locale.ENGLISH
-                      )
-                    )}{' '}
-                    to{' '}
-                    {time.endTime?.format(
-                      DateTimeFormatter.ofPattern('hh:mm a').withLocale(
-                        Locale.ENGLISH
-                      )
-                    )}
-                  </div>
-                ))}
-              {timesMoreThanTwoHoursApart(schedule?.timeSchedules || []) ? <div className='text-warning'>Please consider creating two sessions, given times more than two hours apart.</div> : null}
-              </div>
-            )
           }
+          subscript={errors.scheduling}
         />
       </ListGroup>
     </Col>
@@ -249,7 +255,10 @@ export default (): JSX.Element => {
 
   document.title = `${props.values.guid ? 'Edit' : 'New'} Session - Submit`
 
+
   useEffect(() => {
+    props.forceValidation();
+
     api
       .get<DropdownOption[]>('dropdown/view/grades')
       .then(res => {
@@ -270,6 +279,7 @@ export default (): JSX.Element => {
         console.warn(err)
       })
   }, [])
+  console.log(props.values.scheduling)
 
   //on click, take user to appropriate page and focus the appropriate element
   return (
@@ -285,9 +295,10 @@ export default (): JSX.Element => {
       <Row lg={3}>
         <Col />
         <Col className='d-flex justify-content-center'>
-          <Button variant='primary' type='submit'>
+        {console.log(sessionHasValidationIssues(props.errors, props.values))}
+          <button className='btn btn-primary' type='submit' disabled={sessionHasValidationIssues(props.errors, props.values)}>
             Submit
-          </Button>
+          </button>
         </Col>
         <Col />
       </Row>

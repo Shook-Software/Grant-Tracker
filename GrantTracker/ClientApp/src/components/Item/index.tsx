@@ -14,7 +14,6 @@ export const Item = styled(ListGroup.Item)`
     text-align: left;
     font-size: 0.95rem;
     text-decoration: var(--bs-gray-500) underline;
-    padding-right: 1rem;
 	}
 
 	& > div {
@@ -22,27 +21,30 @@ export const Item = styled(ListGroup.Item)`
 	}
 
 	& > label {
-		flex: 1;
 		margin: 0;
 		text-align: left;
 		font-size: 0.9rem;
 		text-decoration: var(--bs-gray-500) underline;
-		padding-right: 1rem;
 	}
 `
 
-export default ({ label, value, editable = false, style = null }): JSX.Element => {
+export default ({ label, value, subscript = undefined, editable = false, style = null }): JSX.Element => {
   if (editable)
     return <p>Not Implemented</p>
 
   const valueComponent = (typeof value === 'object' || typeof value === 'function')
-    ? <div>{value}</div>
-    : <p>{value}</p>
+    ? <div className='col-8 px-0'>{value}</div>
+    : <p className='col-8 px-0'>{value}</p>
 
   return (
-    <Item style={style}>
-      <p>{label}</p>
-      {valueComponent}
-    </Item>
+    <div className='container'>
+      <Item style={style} className='row'>
+        <p className='col-4 ps-0'>{label}</p>
+        {valueComponent}
+        {subscript 
+          ? <small className='col-12 p-0 text-danger'>{subscript}</small>
+          : null}
+      </Item>
+    </div>
   )
 }
