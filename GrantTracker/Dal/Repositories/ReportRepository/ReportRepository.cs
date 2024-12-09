@@ -100,6 +100,7 @@ public class ReportRepository : IReportRepository
     {
         var sessions = await _grantContext.Sessions
 			.AsNoTracking()
+			.Where(s => s.OrganizationYear.Organization.Name.ToLower() != "administration")
             .Where(x => OrganizationGuid == null || x.OrganizationYear.OrganizationGuid == OrganizationGuid)
             .Where(x => x.FirstSession <= EndDate)
             .Where(x => x.LastSession >= StartDate)
