@@ -69,7 +69,7 @@ public class SessionRepository : ISessionRepository
                 || (_user.IsCoordinator() && _user.HomeOrganizationGuids().Contains(s.OrganizationYear.OrganizationGuid))
                 || (_user.IsTeacher() && s.InstructorRegistrations.Any(ir => ir.InstructorSchoolYear.Instructor.BadgeNumber.Trim() == _user.Id())))
             .Include(s => s.OrganizationYear)
-			.Include(s => s.OrganizationYear)
+			.Include(s => s.InstructorRegistrations).ThenInclude(ir => ir.InstructorSchoolYear).ThenInclude(isy => isy.Instructor)
 			.Include(s => s.Grades).ThenInclude(g => g.Grade)
 			.Include(s => s.SessionType)
 			.Include(s => s.Activity)

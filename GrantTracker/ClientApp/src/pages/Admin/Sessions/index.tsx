@@ -18,6 +18,7 @@ import { DropdownOption } from 'types/Session'
 import paths from 'utils/routing/paths'
 import api from 'utils/api'
 import { IdentityClaim, User } from 'utils/authentication'
+import { InstructorView } from 'Models/Instructor'
 
 
 export default ({user}: { user: User}): JSX.Element => {
@@ -38,7 +39,7 @@ export default ({user}: { user: User}): JSX.Element => {
     }
 
     useEffect(() => {
-        if (sessionGuid)
+        if (!!sessionGuid)
             api.get(`/session/${sessionGuid}/orgYear`)
                 .then(res => setOrgYear(res.data))
     }, [sessionGuid])
@@ -201,6 +202,16 @@ const createColumns = (missingAttendanceRecords, openSessionGuid): Column[] => [
         attributeKey: 'sessionType',
         sortable: true,
         transform: dropdownOptionTransform
+    },
+    {
+        label: 'Instructor(s)',
+        attributeKey: 'instructors',
+        sortable: false,
+        transform: (instructors: InstructorView[]): JSX.Element => <div className='d-flex flex-column'>
+            {instructors.map(instructor => <div className='d-flex'>
+                {instructor.firstName} {instructor.lastName}
+            </div>)}
+        </div>
     },
     {
         label: 'Schedule',
