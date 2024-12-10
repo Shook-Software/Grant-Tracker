@@ -65,9 +65,9 @@ export default ({onSubmit}): JSX.Element => {
 	user.years
 		.sort((curr, next) => {
 			if (curr.schoolYear == next.schoolYear)
-				return curr.quarter > next.quarter ? 1 : -1
+				return curr.quarter > next.quarter ? -1 : 1
 			
-			return curr.schoolYear > next.schoolYear ? 1 : -1
+			return curr.schoolYear > next.schoolYear ? -1 : 1
 			
 		})
 
