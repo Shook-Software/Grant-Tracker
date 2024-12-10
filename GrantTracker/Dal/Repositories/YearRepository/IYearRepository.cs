@@ -1,4 +1,5 @@
-﻿using GrantTracker.Dal.Schema;
+﻿using GrantTracker.Dal.Models.Dto;
+using GrantTracker.Dal.Schema;
 
 namespace GrantTracker.Dal.Repositories.YearRepository
 {
@@ -6,9 +7,9 @@ namespace GrantTracker.Dal.Repositories.YearRepository
 	{
 		Task<List<Year>> GetAsync();
 		Task<Year> GetAsync(int year, Quarter quarter);
-		Task AddAsync(Year yearModel);
-		Task UpdateAsync(Year yearModel);
-		Task<List<string>> ValidateYearAsync(Year year);
+		Task AddAsync(YearForm yearModel);
+		Task UpdateAsync(YearForm yearModel);
+		Task<List<string>> ValidateYearAsync(YearForm year);
 		IQueryable<Year> Get(Guid YearGuid);
     }
 }

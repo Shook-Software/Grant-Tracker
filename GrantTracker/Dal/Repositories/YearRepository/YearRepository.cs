@@ -6,6 +6,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
+using GrantTracker.Dal.Models.Dto;
+using GrantTracker.Dal.Models.DTO;
 
 namespace GrantTracker.Dal.Repositories.YearRepository;
 
@@ -25,7 +27,7 @@ public class YearRepository : IYearRepository
 		return await _grantContext.Years
             .OrderByDescending(x => x.SchoolYear)
             .ThenBy(x => x.Quarter)
-		.ToListAsync();
+			.ToListAsync();
     }
 
     public IQueryable<Year> Get(Guid YearGuid)
@@ -40,11 +42,13 @@ public class YearRepository : IYearRepository
 			.FirstOrDefaultAsync();
 	}
 
-	public async Task AddAsync(Year yearModel)
+	public async Task AddAsync(YearForm yearModel)
 	{
-		await _grantContext.AddAsync(new Year
+		Guid newYearGuid = Guid.NewGuid();
+
+        _grantContext.Add(new Year
 		{
-			YearGuid = Guid.NewGuid(),
+			YearGuid = newYearGuid,
 			SchoolYear = yearModel.SchoolYear,
 			Quarter = yearModel.Quarter,
 			StartDate = yearModel.StartDate,
@@ -52,10 +56,50 @@ public class YearRepository : IYearRepository
 			IsCurrentSchoolYear = false
 		});
 
+		List<Guid> instructorSchoolYearGuids = yearModel.Users.Select(user => user.UserOrganizationYearGuid).ToList();
+
+		List<InstructorSchoolYear> instructorSchoolYears = await _grantContext.InstructorSchoolYears
+			.Where(isy => instructorSchoolYearGuids.Contains(isy.InstructorSchoolYearGuid))
+			.ToListAsync();
+
+		List<Organization> organizations = await _grantContext.Organizations.ToListAsync();
+		List<OrganizationYear> newOrgYears = organizations.Select(org => new OrganizationYear()
+		{
+			OrganizationYearGuid = Guid.NewGuid(),
+			OrganizationGuid = org.OrganizationGuid,
+			YearGuid = newYearGuid
+		})
+		.ToList();
+
+		List<InstructorSchoolYear> newInstructorSchoolYears = yearModel.Users.Select(user =>
+		{
+			InstructorSchoolYear currentInstructorSchoolYearMatch = instructorSchoolYears.First(isy => isy.InstructorSchoolYearGuid == user.UserOrganizationYearGuid);
+            OrganizationYear newOrgYearMatch = newOrgYears.First(orgYear => orgYear.OrganizationGuid == user.Organization.Guid);
+
+			Guid newIsyGuid = Guid.NewGuid();
+
+            return new InstructorSchoolYear()
+			{
+				InstructorSchoolYearGuid = newIsyGuid,
+                InstructorGuid = currentInstructorSchoolYearMatch.InstructorGuid,
+				OrganizationYearGuid = newOrgYearMatch.OrganizationYearGuid,
+				StatusGuid = currentInstructorSchoolYearMatch.StatusGuid,
+				Identity = new Identity()
+				{
+					Guid = newIsyGuid,
+					Claim = user.Claim
+                }
+			};
+		})
+		.ToList();
+
+		_grantContext.OrganizationYears.AddRange(newOrgYears);
+		_grantContext.InstructorSchoolYears.AddRange(newInstructorSchoolYears);
+
 		await _grantContext.SaveChangesAsync();
 	}
 
-	public async Task UpdateAsync(Year yearModel)
+	public async Task UpdateAsync(YearForm yearModel)
 	{
 		Year dbYear = await _grantContext.Years.FindAsync(yearModel.YearGuid);
 		dbYear.SchoolYear = yearModel.SchoolYear;
@@ -76,7 +120,7 @@ public class YearRepository : IYearRepository
 	}
 
 	//todo: Create a validator class instead of this
-	public async Task<List<string>> ValidateYearAsync(Year year)
+	public async Task<List<string>> ValidateYearAsync(YearForm year)
 	{
 		static bool DateIsBetween(DateOnly date, DateOnly startDate, DateOnly endDate)
 		{
