@@ -125,7 +125,7 @@ export function reducer (
       return {
         ...state,
         firstSessionDate: newDate,
-        scheduling: scheduling
+        scheduling: [...scheduling]
       }
 
     case 'endDate':
@@ -168,7 +168,7 @@ export function reducer (
         }
       ) as WeeklySchedule
 
-      return { ...state, scheduling: newSchedule }
+      return { ...state, scheduling: [...newSchedule] }
 
     case 'singleSessionTimeSchedule':
       var newScheduling = state.scheduling.map(s => {
@@ -177,10 +177,9 @@ export function reducer (
         }
         return s
       })
-      return { ...state, scheduling: newScheduling }
+      return { ...state, scheduling: [...newScheduling] }
 
     case 'setBlackoutDates': 
-      console.log(action.payload)
       return { ...state, blackoutDates: action.payload }
 
     default:

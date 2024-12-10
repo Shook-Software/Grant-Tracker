@@ -23,11 +23,13 @@ export const Tab = ({
     return <></>
 
   const destination: string = `${basePath ? basePath + '/' : ''}${path}`
+  const indexOfQueryParams: number = path.indexOf('?') === -1 ? path.length : path.indexOf('?')
+
   return (
     <li>
       <Link
         to={destination}
-        isActive={props.currentPath?.includes(path)}
+        isActive={props.currentPath?.includes(path.substring(0, indexOfQueryParams))}
       >
         {text}
       </Link>
