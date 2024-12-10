@@ -62,6 +62,15 @@ export default ({onSubmit}): JSX.Element => {
 		? [{ value: '', label: 'All' }, ...user.organizations.map(org => ({ value: org.guid, label: org.name }))]
 		: user.organizations.map(org => ({ value: org.guid, label: org.name }))
 
+	user.years
+		.sort((curr, next) => {
+			if (curr.schoolYear == next.schoolYear)
+				return curr.quarter > next.quarter ? 1 : -1
+			
+			return curr.schoolYear > next.schoolYear ? 1 : -1
+			
+		})
+
 	return (
 		<Container className='ms-0'>
 			<Form>
@@ -83,10 +92,11 @@ export default ({onSubmit}): JSX.Element => {
 							<Form.Label htmlFor='school-year'>School Year <small>(Affects Staffing Only)</small></Form.Label> 
 								<Dropdown
 									id='school-year'
-									options={user.years.map(year => ({
-										guid: year.guid,
-										label: `${year.schoolYear} - ${Quarter[year.quarter]}`
-									}))}
+									options={user.years
+										.map(year => ({
+											guid: year.guid,
+											label: `${year.schoolYear} - ${Quarter[year.quarter]}`
+										}))}
 									value={user.year.guid}
 									onChange={(yearGuid: string) => setYear(yearGuid)}
 								/>
