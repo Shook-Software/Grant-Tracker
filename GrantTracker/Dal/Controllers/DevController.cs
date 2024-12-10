@@ -19,6 +19,7 @@ using PdfSharp.Pdf.Content;
 using PdfSharp.Pdf.Content.Objects;
 using GrantTracker.Utilities;
 using System.ComponentModel.DataAnnotations;
+using GrantTracker.Dal.Models.Dto;
 
 namespace GrantTracker.Dal.Controllers;
 
@@ -76,7 +77,7 @@ public class DevController(
     }
 
     [HttpPatch("year")]
-    public async Task<IActionResult> UpdateYear([FromBody] Year yearModel)
+    public async Task<IActionResult> UpdateYear([FromBody] YearForm yearModel)
     {
         try
         {
@@ -107,27 +108,8 @@ public class DevController(
         }
     }
 
-    //Parameters
-    //4 digit year
-    //quarter of year
-    //start date
-    //end date
-    //we need the coordinators to be added onto the year [taken from a list in ui of current coordinators and their locations]
-    public class UserProps
-    {
-        public Guid UserGuid { get; set; }
-        public Guid OrganizationGuid { get; set; }
-        public IdentityClaim Claim { get; set; }
-    }
-
-    public class YearProps
-    {
-        public Year yearModel { get; set; }
-        public List<UserProps> users { get; set; }
-    }
-
     [HttpPost("year")]
-    public async Task<IActionResult> AddYear([FromBody] Year year)
+    public async Task<IActionResult> AddYear([FromBody] YearForm year)
     {
         try
         {
