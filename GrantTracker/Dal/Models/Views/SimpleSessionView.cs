@@ -60,6 +60,7 @@ namespace GrantTracker.Dal.Models.Views
 		public DropdownOption Activity { get; set; }
         public DateOnly FirstSessionDate { get; set; }
         public DateOnly LastSessionDate { get; set; }
+		public List<InstructorView> Instructors { get; set; }
 		public List<DayScheduleView> DaySchedules { get; set; }
 		public List<GradeView> SessionGrades { get; set; }
 
@@ -72,6 +73,13 @@ namespace GrantTracker.Dal.Models.Views
 			Activity = DropdownOption.FromDatabase(session.Activity),
 			FirstSessionDate = session.FirstSession,
 			LastSessionDate = session.LastSession,
+			Instructors = session.InstructorRegistrations.Select(ir => new InstructorView()
+			{
+				Guid = ir.InstructorSchoolYear.InstructorGuid,
+				FirstName = ir.InstructorSchoolYear.Instructor.FirstName,
+                LastName = ir.InstructorSchoolYear.Instructor.LastName,
+				BadgeNumber = ir.InstructorSchoolYear.Instructor.BadgeNumber,
+            }).ToList(),
 			DaySchedules = session.DaySchedules.Select(DayScheduleView.FromDatabase).ToList(),
 			SessionGrades = session.Grades.Select(GradeView.FromDatabase).ToList()
 		};

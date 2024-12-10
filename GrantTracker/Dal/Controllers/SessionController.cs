@@ -62,7 +62,6 @@ public class SessionController : ControllerBase
         {
             var sessions = await _sessionRepository.GetAsync("", orgYearGuid);
             return Ok(sessions);
-
         }
 		catch (Exception ex)
 		{

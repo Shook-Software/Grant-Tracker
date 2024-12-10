@@ -3,7 +3,7 @@ import { LocalDate, LocalDateTime, LocalTime } from '@js-joda/core'
 import { DateOnly } from './DateOnly'
 import { DayOfWeek, DayOfWeekNumeric } from './DayOfWeek'
 import { Grade, GradeDomain, GradeView } from './Grade'
-import { Instructor, InstructorSchoolYearView } from './Instructor'
+import { Instructor, InstructorSchoolYearView, InstructorView } from './Instructor'
 import * as DaySchedule from './DaySchedule'
 import { TimeSchedule } from './TimeSchedule'
 import { BlackoutDate, SessionBlackoutDateDomain, SessionBlackoutDateView } from './BlackoutDate'
@@ -21,8 +21,9 @@ export interface SimpleSessionView {
   name: string
   sessionType: DropdownOption
   activity: DropdownOption
-  firstSessionDate: LocalDate,
-  lastSessionDate: LocalDate,
+  firstSessionDate: LocalDate
+  lastSessionDate: LocalDate
+  instructors: InstructorView[]
   daySchedules: DaySchedule.DayScheduleView[]
   sessionGrades: GradeView[]
 }
