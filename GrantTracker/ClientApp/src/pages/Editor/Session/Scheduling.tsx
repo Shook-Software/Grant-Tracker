@@ -170,6 +170,9 @@ const DayScheduling = ({
                       }
                     ]
                   }
+                  else {
+                    today.timeSchedules = []
+                  }
                   dispatch({
                     type: 'scheduleDayTime',
                     payload: { dayIndex, day: today }

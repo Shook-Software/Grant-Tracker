@@ -41,29 +41,31 @@ function formatScheduling (scheduling: WeeklySchedule, errors): JSX.Element[] {
         <div>
           <p className='my-0 fw-bold'>{`${weekday.dayOfWeek}: `}</p>
           {weekday.timeSchedules.map(schedule => (
-            <p className={schedule.startTime === schedule.endTime ? 'text-danger m-0' : 'm-0'}>
-              {`${schedule.startTime.format(
-                DateTimeFormatter.ofPattern('hh:mm a').withLocale(
-                  Locale.ENGLISH
-                )
-              )}
-								to
-								${schedule.endTime.format(
+            <div>
+              <p className={schedule.startTime === schedule.endTime ? 'text-danger m-0' : 'm-0'}>
+                {`${schedule.startTime.format(
                   DateTimeFormatter.ofPattern('hh:mm a').withLocale(
                     Locale.ENGLISH
                   )
-                )}`}
-            </p>
+                )}
+                  to
+                  ${schedule.endTime.format(
+                    DateTimeFormatter.ofPattern('hh:mm a').withLocale(
+                      Locale.ENGLISH
+                    )
+                  )}`}
+              </p>
+              { errors.timeSchedules && schedule.startTime.equals(schedule.endTime)
+                ? <p><small className='text-danger'>{errors.timeSchedules}</small></p>
+                : null}
+            </div>
             
           ))}
-          { errors.timeSchedules 
-            ? <small className='text-danger'>{errors.timeSchedules}</small>
-            : null}
           
-          {timesMoreThanTwoHoursApart(weekday.timeSchedules) ? <div className='text-warning'>Please consider creating two sessions, given times more than two hours apart.</div> : null}
+          {timesMoreThanTwoHoursApart(weekday.timeSchedules) ? <div><small className='text-warning'>Please consider creating two sessions, given times more than two hours apart.</small></div> : null}
             
           {sessionDurationHours(weekday.timeSchedules) >= 4
-            ? <div className='text-warning'>Are you sure this session is intended to span <span className='fw-bold'>{sessionDurationHours(weekday?.timeSchedules)}</span> hours?</div>
+            ? <div><small className='text-warning'>Are you sure this session is intended to span <span className='fw-bold'>{sessionDurationHours(weekday?.timeSchedules)}</span> hours?</small></div>
             : null
           }
         </div>

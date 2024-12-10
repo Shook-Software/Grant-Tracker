@@ -42,7 +42,7 @@ export default ({ label, value, subscript = undefined, editable = false, style =
         <p className='col-4 ps-0'>{label}</p>
         {valueComponent}
         {subscript 
-          ? <small className='col-12 p-0 text-danger'>{subscript}</small>
+          ? <small className='col-12 p-0 text-danger' style={{flexBasis: '100%'}}>{subscript}</small>
           : null}
       </Item>
     </div>

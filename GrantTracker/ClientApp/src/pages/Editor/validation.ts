@@ -37,7 +37,7 @@ export default Yup.object().shape({
           endTime: Yup.mixed<LocalTime>().required()
         })
       .test((x, { createError }) => {
-        if (x.recurs && x.startTime === x.endTime)
+        if (x.startTime?.equals(x.endTime))
           return createError({
             message: `Start and end times cannot be equivalent.`,
             path: 'timeSchedules'
@@ -51,7 +51,7 @@ export default Yup.object().shape({
   )
   .test((x, { createError }) => {
     const sessionHasScheduledDays = x?.some(schedule => schedule.timeSchedules.length > 0)
-    
+
     if (!sessionHasScheduledDays)
       return createError({
         message: 'At least one scheduled day is required.',
