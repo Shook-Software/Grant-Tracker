@@ -43,7 +43,16 @@ public class OrganizationYearRepository : IOrganizationYearRepository
             .ToListAsync();
     }
 
-	public async Task<OrganizationYear> GetAsyncBySessionId(Guid sessionGuid)
+    public async Task<OrganizationYear> GetAsync(Guid organizationGuid, DateOnly date)
+    {
+        return await _grantContext.OrganizationYears
+            .Include(oy => oy.Organization)
+            .Include(oy => oy.Year)
+            .FirstAsync(oy => oy.OrganizationGuid == organizationGuid && oy.Year.StartDate <= date && date <= oy.Year.EndDate);
+    }
+
+
+    public async Task<OrganizationYear> GetAsyncBySessionId(Guid sessionGuid)
 	{
 		return await _grantContext
 			.OrganizationYears
@@ -183,6 +192,13 @@ public class OrganizationYearRepository : IOrganizationYearRepository
 
         _grantContext.Remove(studentGroup);
         await _grantContext.SaveChangesAsync();
+    }
+
+    public async Task<DateOnly> GetLastAttendanceEntryDate(Guid organizationYearGuid)
+    {
+        return await _grantContext.AttendanceRecords
+            .Where(ar => ar.Session.OrganizationYearGuid == organizationYearGuid)
+            .MaxAsync(ar => ar.InstanceDate);
     }
 
     public IQueryable<OrganizationYear> GetOrganizationYear(Guid OrganizationYearGuid)

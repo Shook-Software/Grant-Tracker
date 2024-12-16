@@ -72,6 +72,8 @@ namespace GrantTracker.Dal.Schema
 		public DbSet<SessionBlackoutDate> SessionBlackoutDates { get; set; }
 		public DbSet<PayrollYear> PayrollYears { get; set; }
 
+		public DbSet<OrganizationAttendanceGoal> AttendanceGoals { get; set; }
+
         protected override void OnModelCreating(ModelBuilder builder)
 		{
 			builder.HasDefaultSchema("GTkr");
@@ -90,6 +92,9 @@ namespace GrantTracker.Dal.Schema
 			builder.Entity<SessionAttendance>().HasNoKey().ToView(null);
             builder.Entity<ScheduleReport>().HasNoKey().ToView(null);
             builder.Entity<StaffMember>().HasNoKey().ToView(null);
+
+            builder.Entity<RegularAttendeeDate>().HasNoKey().ToView(null);
+            builder.Entity<StudentDaysAttendedDTO>().HasNoKey().ToView(null);
 
             AuditLog.Setup(builder);
 			Activity.Setup(builder);
@@ -132,6 +137,7 @@ namespace GrantTracker.Dal.Schema
 			PayrollYear.Setup(builder);
 			PayrollPeriod.Setup(builder);
 			PayrollYearGrantTrackerYearMap.Setup(builder);
+			OrganizationAttendanceGoal.Setup(builder);
         }
 	}
 }

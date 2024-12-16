@@ -1,5 +1,6 @@
 ﻿using GrantTracker.Dal.Models.Views;
 using GrantTracker.Dal.Schema;
+using GrantTracker.Dal.Schema.Sprocs;
 using GrantTracker.Dal.Schema.Sprocs.Reporting;
 
 namespace GrantTracker.Dal.Repositories.ReportRepository;
@@ -32,4 +33,6 @@ public interface IReportRepository
 	Task<List<StudentSurveyViewModel>> GetStudentSurveyAsync(DateOnly startDate, DateOnly endDate, Guid? organizationGuid = null);
 
 	Task<List<ScheduleReport>> GetScheduleReportAsync(Guid yearGuid, Guid? organizationGuid = null);
+
+	Task<List<StudentDaysAttendedDTO>> GetStudentDaysAttendedAsync(DateOnly startDate, DateOnly endDate, Guid? organizationGuid = null);
 }

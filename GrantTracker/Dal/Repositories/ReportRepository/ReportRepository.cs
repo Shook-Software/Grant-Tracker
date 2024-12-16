@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
 using System.Xml.Serialization;
 using GrantTracker.Dal.Models.Views;
+using GrantTracker.Dal.Schema.Sprocs;
 
 namespace GrantTracker.Dal.Repositories.ReportRepository;
 
@@ -370,5 +371,12 @@ public class ReportRepository : IReportRepository
 			.FromSqlInterpolated($"EXEC [GTkr].ReportQuery_Schedule {yearGuid}, {organizationGuid}")
 			.AsNoTracking()
 			.ToListAsync();
+    }
+
+	public async Task<List<StudentDaysAttendedDTO>> GetStudentDaysAttendedAsync(DateOnly startDate, DateOnly endDate, Guid? organizationGuid = null)
+	{
+        return await _grantContext.Set<StudentDaysAttendedDTO>()
+            .FromSqlInterpolated($"GTkr.DataQuery_GetDaysAttendedByStudent {DateOnlyToSQLString(startDate)}, {DateOnlyToSQLString(endDate)}, {organizationGuid}")
+            .ToListAsync();
     }
 }

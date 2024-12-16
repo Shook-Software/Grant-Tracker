@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using GrantTracker.Dal.Models.Views;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
+using GrantTracker.Dal.Schema.Sprocs;
 
 namespace GrantTracker.Dal.Repositories.OrganizationRepository;
 
@@ -84,8 +85,8 @@ public class OrganizationRepository : IOrganizationRepository
         var organizations = await _grantContext
             .Organizations
             .AsNoTracking()
-            .Include(org => org.Years)
-            .ThenInclude(oy => oy.Year)
+            .Include(org => org.Years).ThenInclude(oy => oy.Year)
+			.Include(org => org.AttendanceGoals)
 			.OrderBy(o => o.Name)
             .ToListAsync();
 
@@ -106,7 +107,67 @@ public class OrganizationRepository : IOrganizationRepository
 		});
 
 		await _grantContext.SaveChangesAsync();
+    }
+
+    public async Task<List<OrganizationAttendanceGoal>> GetAttendanceGoalsAsync(DateOnly date)
+    {
+        return await _grantContext.AttendanceGoals
+            .Where(ag => ag.StartDate <= date && date <= ag.EndDate)
+            .Include(ag => ag.Organization)
+            .ToListAsync();
+    }
+
+    public async Task<OrganizationAttendanceGoal> GetAttendanceGoalAsync(Guid organizationGuid, DateOnly date)
+	{
+        return await _grantContext.AttendanceGoals
+            .Include(ag => ag.Organization)
+			.FirstAsync(ag => ag.OrganizationGuid == organizationGuid && ag.StartDate <= date && date <= ag.EndDate);
 	}
+
+    private string DateOnlyToSQLString(DateOnly date) => $"{date.Year}-{date.Month}-{date.Day}";
+    public async Task<List<RegularAttendeeDate>> GetRegularAttendeeThresholdDatesAsync(DateOnly startDate, DateOnly endDate, Guid? organizationGuid = null)
+    {
+        return await _grantContext.Set<RegularAttendeeDate>()
+			.FromSqlInterpolated($"GTkr.DataQuery_GetRegularAttendeesThresholdDates {DateOnlyToSQLString(startDate)}, {DateOnlyToSQLString(endDate)}, {organizationGuid}")
+			.ToListAsync();
+    }
+
+    public async Task<List<StudentDaysAttendedDTO>> GetStudentDaysAttendedAsync(DateOnly startDate, DateOnly endDate, Guid? organizationGuid = null)
+    {
+        return await _grantContext.Set<StudentDaysAttendedDTO>()
+            .FromSqlInterpolated($"GTkr.DataQuery_GetDaysAttendedByStudent {DateOnlyToSQLString(startDate)}, {DateOnlyToSQLString(endDate)}, {organizationGuid}")
+            .ToListAsync();
+    }
+
+	public async Task<Guid> CreateOrganizationAttendanceGoalAsync(OrganizationAttendanceGoal goal)
+	{
+		goal.Created = goal.Updated = DateTime.Now;
+
+		var entity = _grantContext.AttendanceGoals.Add(goal);
+		await _grantContext.SaveChangesAsync();
+
+		return entity.Entity.Guid;
+    }
+
+    public async Task AlterOrganizationAttendanceGoalAsync(Guid attendanceGoalGuid, OrganizationAttendanceGoal goal)
+    {
+        OrganizationAttendanceGoal existingRecord = await _grantContext.AttendanceGoals.FindAsync(attendanceGoalGuid);
+
+		existingRecord.StartDate = goal.StartDate;
+		existingRecord.EndDate = goal.EndDate;
+		existingRecord.RegularAttendeeCountThreshold = goal.RegularAttendeeCountThreshold;
+        existingRecord.Updated = DateTime.Now;
+
+        await _grantContext.SaveChangesAsync();
+    }
+
+	public async Task DeleteOrganizationAttendanceGoalAsync(Guid attendanceGoalGuid)
+    {
+        OrganizationAttendanceGoal existingRecord = await _grantContext.AttendanceGoals.FindAsync(attendanceGoalGuid);
+		_grantContext.AttendanceGoals.Remove(existingRecord);
+
+        await _grantContext.SaveChangesAsync();
+    }
 
     public async Task DeleteBlackoutDateAsync(Guid BlackoutDateGuid)
 	{

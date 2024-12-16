@@ -7,8 +7,9 @@ namespace GrantTracker.Dal.Schema
 		public Guid OrganizationGuid { get; set; }
 		public string Name { get; set; }
 
-		public ICollection<OrganizationYear> Years { get; set; }
-		public ICollection<OrganizationBlackoutDate> BlackoutDates { get; set; }
+		public virtual ICollection<OrganizationYear> Years { get; set; }
+		public virtual ICollection<OrganizationBlackoutDate> BlackoutDates { get; set; }
+		public virtual ICollection<OrganizationAttendanceGoal> AttendanceGoals { get; set; }
 
 		public static void Setup(ModelBuilder builder)
 		{
@@ -32,6 +33,10 @@ namespace GrantTracker.Dal.Schema
                 .WithOne(e => e.Organization)
                 .HasForeignKey(e => e.OrganizationGuid)
                 .OnDelete(DeleteBehavior.Cascade);
+
+			entity.HasMany(e => e.AttendanceGoals)
+				.WithOne(e => e.Organization)
+				.HasForeignKey(e => e.OrganizationGuid);
         }
 	}
 }
