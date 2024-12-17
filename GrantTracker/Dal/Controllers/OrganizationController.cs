@@ -10,6 +10,8 @@ using GrantTracker.Dal.Models.DTO.Attendance;
 using GrantTracker.Dal.Repositories.AttendanceRepository;
 using GrantTracker.Dal.Models.DTO.SessionDTO;
 using GrantTracker.Dal.Repositories.SessionRepository;
+using GrantTracker.Dal.Schema.Sprocs;
+using GrantTracker.Dal.Models.Dto.Attendance;
 
 namespace GrantTracker.Dal.Controllers
 {
@@ -44,6 +46,7 @@ namespace GrantTracker.Dal.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "");
                 return StatusCode(500);
             }
         }
@@ -57,8 +60,9 @@ namespace GrantTracker.Dal.Controllers
                 return Ok(organization);
             }
 			catch (Exception ex)
-			{
-				return StatusCode(500);
+            {
+                _logger.LogError(ex, "");
+                return StatusCode(500);
 			}
 		}
 
@@ -71,8 +75,9 @@ namespace GrantTracker.Dal.Controllers
                 return Ok(organizationYear);
             }
 			catch (Exception ex)
-			{
-				return StatusCode(500);
+            {
+                _logger.LogError(ex, "");
+                return StatusCode(500);
 			}
         }
 
@@ -93,6 +98,7 @@ namespace GrantTracker.Dal.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "");
                 return StatusCode(500, "An unknown error occured while fetching missing attendance.");
             }
         }
@@ -109,6 +115,7 @@ namespace GrantTracker.Dal.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "");
                 return StatusCode(500, "An unknown error occured while fetching attendance issues.");
             }
         }
@@ -127,7 +134,66 @@ namespace GrantTracker.Dal.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "");
                 return StatusCode(500, "An unknown error occured while fetching session issues.");
+            }
+        }
+
+        [HttpGet("organization/{organizationGuid:Guid}/studentAttendanceDays")]
+        public async Task<ActionResult<List<StudentDaysAttendedDTO>>> GetStudentDaysAttended(Guid organizationGuid, string dateStr)
+        {
+            try
+            {
+                DateOnly date = DateOnly.Parse(dateStr);
+                Guid organizationYearGuid = (await _organizationYearRepository.GetAsync(organizationGuid, date)).OrganizationYearGuid;
+                OrganizationAttendanceGoal goal = await _organizationRepository.GetAttendanceGoalAsync(organizationGuid, date);
+                List<StudentDaysAttendedDTO> students = await _organizationRepository.GetStudentDaysAttendedAsync(goal.StartDate, goal.EndDate, organizationGuid);
+
+                return Ok(students); 
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "");
+                return StatusCode(500, "An unknown error occured while fetching student days attended.");
+            }
+        }
+
+        public record AttendanceGoalAggregateDTO
+        {
+            public Guid OrganizationGuid { get; set; }
+            public Int16 RegularAttendeeGoalThreshold { get; set; }
+            public DateOnly StartDate { get; set; }
+            public DateOnly EndDate { get; set; }
+            public DateOnly LastAttendanceEntryDate { get; set; }
+            public int Goal { get; set; }
+            public List<RegularAttendeeDate> RegularAttendeesByDates { get; set; }
+        }
+
+        [HttpGet("organization/{organizationGuid:Guid}/regularAttendeeTimeline")]
+        public async Task<ActionResult<AttendanceGoalAggregateDTO>> GetAttendanceGoalAggregates(Guid organizationGuid, string dateStr)
+        {
+            try
+            {
+                DateOnly date = DateOnly.Parse(dateStr);
+                Guid organizationYearGuid = (await _organizationYearRepository.GetAsync(organizationGuid, date)).OrganizationYearGuid;
+                OrganizationAttendanceGoal goal = await _organizationRepository.GetAttendanceGoalAsync(organizationGuid, date);
+                List<RegularAttendeeDate> regularAttendeeDates = await _organizationRepository.GetRegularAttendeeThresholdDatesAsync(goal.StartDate, goal.EndDate, organizationGuid);
+
+                return Ok(new AttendanceGoalAggregateDTO()
+                {
+                    OrganizationGuid = organizationGuid,
+                    StartDate = goal.StartDate,
+                    EndDate = goal.EndDate,
+                    //LastAttendanceEntryDate = await _organizationYearRepository.GetLastAttendanceEntryDate(organizationYearGuid),
+                    RegularAttendeeGoalThreshold = goal.RegularAttendeeCountThreshold,
+                    Goal = goal.RegularAttendeeCountThreshold,
+                    RegularAttendeesByDates = regularAttendeeDates.OrderBy(x => x.DateOfRegularAttendance).ToList()
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "");
+                return StatusCode(500, "An unknown error occured while fetching attendance goal aggregates.");
             }
         }
 
@@ -165,6 +231,76 @@ namespace GrantTracker.Dal.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, $"An unknown error occured while adding the blackout date {BlackoutDate.ToShortDateString()}.");
+            }
+        }
+
+        [Authorize(Policy = "Administrator")]
+        [HttpPost("organization/{organizationGuid:Guid}/attendanceGoal")]
+        public async Task<IActionResult> AddOrganizationAttendanceGoal(Guid organizationGuid, AttendanceGoalDTO goal)
+        {
+            try
+            {
+                if (!User.IsAdmin() && !User.HomeOrganizationGuids().Contains(organizationGuid))
+                    return Unauthorized();
+
+                Guid id = await _organizationRepository.CreateOrganizationAttendanceGoalAsync(new OrganizationAttendanceGoal()
+                {
+                    OrganizationGuid = organizationGuid,
+                    StartDate = goal.StartDate,
+                    EndDate = goal.EndDate,
+                    RegularAttendeeCountThreshold = (short)goal.RegularAttendees
+                });
+
+                return Created("", id);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "");
+                return StatusCode(500);
+            }
+        }
+
+        [Authorize(Policy = "Administrator")]
+        [HttpPatch("organization/{organizationGuid:Guid}/attendanceGoal/{attendanceGoalGuid:Guid}")]
+        public async Task<IActionResult> AlterOrganizationAttendanceGoal(Guid organizationGuid, Guid attendanceGoalGuid, AttendanceGoalDTO goal)
+        {
+            try
+            {
+                if (!User.IsAdmin() && !User.HomeOrganizationGuids().Contains(organizationGuid))
+                    return Unauthorized();
+
+                await _organizationRepository.AlterOrganizationAttendanceGoalAsync(attendanceGoalGuid, new OrganizationAttendanceGoal()
+                {
+                    StartDate = goal.StartDate,
+                    EndDate = goal.EndDate,
+                    RegularAttendeeCountThreshold = (short)goal.RegularAttendees
+                });
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "");
+                return StatusCode(500);
+            }
+        }
+
+        [Authorize(Policy = "Administrator")]
+        [HttpDelete("organization/{organizationGuid:Guid}/attendanceGoal/{attendanceGoalGuid:Guid}")]
+        public async Task<IActionResult> DeleteOrganizationAttendanceGoal(Guid organizationGuid, Guid attendanceGoalGuid)
+        {
+            try
+            {
+                if (!User.IsAdmin() && !User.HomeOrganizationGuids().Contains(organizationGuid))
+                    return Unauthorized();
+
+                await _organizationRepository.DeleteOrganizationAttendanceGoalAsync(attendanceGoalGuid);
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "");
+                return StatusCode(500);
             }
         }
 

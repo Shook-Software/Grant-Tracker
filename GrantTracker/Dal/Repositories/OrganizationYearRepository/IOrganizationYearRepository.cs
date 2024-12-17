@@ -7,7 +7,8 @@ public interface IOrganizationYearRepository
 {
 	Task<List<OrganizationYear>> GetAsync();
     Task<List<OrganizationYear>> GetAsync(Guid yearGuid);
-	Task<OrganizationYear> GetAsyncBySessionId(Guid sessionGuid);
+    Task<OrganizationYear> GetAsync(Guid organizationGuid, DateOnly date);
+    Task<OrganizationYear> GetAsyncBySessionId(Guid sessionGuid);
     Task<Guid> GetGuidAsync(Guid organizationGuid, Guid yearGuid);
 	Task CreateAsync(List<Organization> organizations, Guid yearGuid);
 
@@ -19,4 +20,7 @@ public interface IOrganizationYearRepository
     Task DeleteStudentGroup(Guid groupGuid);
 
     IQueryable<OrganizationYear> GetOrganizationYear(Guid OrganizationYearGuid);
+
+
+    Task<DateOnly> GetLastAttendanceEntryDate(Guid organizationYearGuid);
 }

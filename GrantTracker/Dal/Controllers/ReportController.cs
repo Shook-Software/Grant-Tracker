@@ -7,6 +7,7 @@ using GrantTracker.Dal.Schema;
 using GrantTracker.Dal.Schema.Sprocs.Reporting;
 using GrantTracker.Utilities;
 using Microsoft.AspNetCore.Authorization;
+using GrantTracker.Dal.Schema.Sprocs;
 
 namespace GrantTracker.Dal.Controllers;
 
@@ -219,6 +220,21 @@ public class ReportController : ControllerBase
 
             var staff = await _reportRepository.GetStaffMembersAsync();
             return Ok(staff.OrderBy(x => x.OrganizationName).ThenByDescending(x => x.SchoolYear).ThenByDescending(x => x.Quarter).ToList());
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "{Function} - An unhandled error occured while fetching the site session report.", nameof(GetSiteSessionsAsync));
+            return StatusCode(500);
+        }
+    }
+
+    [HttpGet("studentDaysAttended")]
+    public async Task<ActionResult<List<StudentDaysAttendedDTO>>> GetStudentDaysAttendedAsync(string startDateStr, string endDateStr, Guid? organizationGuid = null)
+    {
+        try
+        {
+            DateOnly startDate = DateOnly.Parse(startDateStr), endDate = DateOnly.Parse(endDateStr);
+            return Ok(await _reportRepository.GetStudentDaysAttendedAsync(startDate, endDate, organizationGuid));
         }
         catch (Exception ex)
         {

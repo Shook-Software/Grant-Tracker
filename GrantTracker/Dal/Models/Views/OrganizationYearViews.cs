@@ -1,4 +1,5 @@
-﻿using GrantTracker.Dal.Schema;
+﻿using GrantTracker.Dal.Models.Dto.Attendance;
+using GrantTracker.Dal.Schema;
 
 namespace GrantTracker.Dal.Models.Views
 {
@@ -35,6 +36,7 @@ namespace GrantTracker.Dal.Models.Views
 		public string Name { get; set; }
 
 		public List<OrganizationYearView> OrganizationYears { get; set; }
+		public List<AttendanceGoalDTO> AttendanceGoals { get; set; }
 
 		public static OrganizationView? FromDatabase(Organization? organization)
 		{
@@ -44,7 +46,20 @@ namespace GrantTracker.Dal.Models.Views
 			return new()
 			{
 				Guid = organization.OrganizationGuid,
-				Name = organization.Name
+				Name = organization.Name,
+				OrganizationYears = organization.Years.Select(oy =>
+				{
+					oy.Organization = null;
+					oy.Year.Organizations = new();
+					return OrganizationYearView.FromDatabase(oy);
+				}).ToList(),
+				AttendanceGoals = organization.AttendanceGoals?.Select(ag => new AttendanceGoalDTO()
+				{
+					Guid = ag.Guid,
+					StartDate = ag.StartDate,
+					EndDate = ag.EndDate,
+					RegularAttendees = ag.RegularAttendeeCountThreshold
+				}).ToList() ?? []
 			};
 		}
 	}
@@ -55,11 +70,20 @@ namespace GrantTracker.Dal.Models.Views
 		public YearView Year { get; set; }
 		public OrganizationView Organization { get; set; }
 
-		public static OrganizationYearView FromDatabase(OrganizationYear organizationYear) => new()
+		public static OrganizationYearView FromDatabase(OrganizationYear organizationYear)
 		{
-			Guid = organizationYear.OrganizationYearGuid,
-			Year = YearView.FromDatabase(organizationYear.Year),
-			Organization = OrganizationView.FromDatabase(organizationYear.Organization)
-		};
+			if (organizationYear.Year is not null) 
+				organizationYear.Year.Organizations = [];
+
+			if (organizationYear.Organization is not null)
+				organizationYear.Organization.Years = [];
+
+			return new()
+			{
+				Guid = organizationYear.OrganizationYearGuid,
+				Year = YearView.FromDatabase(organizationYear.Year),
+				Organization = OrganizationView.FromDatabase(organizationYear.Organization)
+			};
+		}
 	}
 }
