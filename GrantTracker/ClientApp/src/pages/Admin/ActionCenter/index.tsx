@@ -106,14 +106,12 @@ export default ({}): ReactElement => {
 	const { isPending: loadingAttendIssues, data: attendIssues, error: attendError } = useQuery<AttendanceIssueDTO[]>({ 
 		queryKey: [`organization/${orgYear?.organization.guid}/attendance/issues`],
 		select: (issues: AttendanceIssueDomain[]) => issues.map(issue => ({...issue, instanceDate: DateOnly.toLocalDate(issue.instanceDate)})),
-		retry: false,
-		staleTime: Infinity
+		retry: false
 	})
 
 	const { isPending: loadingSessionIssues, data: sessionIssues, error: sessionsError } = useQuery<SessionIssuesDTO[]>({ 
 		queryKey: [`organizationYear/${orgYear?.guid}/session/issues`],
-		retry: false,
-		staleTime: Infinity
+		retry: false
 	})
 
 	const { data: attendanceGoalAggregate } = useQuery<AttendanceGoalAggregateDTO>({ 
@@ -123,14 +121,12 @@ export default ({}): ReactElement => {
 			startDate: DateOnly.toLocalDate(agg.startDate as unknown as DateOnly), 
 			endDate: DateOnly.toLocalDate(agg.endDate as unknown as DateOnly)
 		}),
-		retry: false,
-		staleTime: Infinity
+		retry: false
 	})
 
 	const { data: studentAttendanceDayCounts } = useQuery({ 
 		queryKey: [`organization/${orgYear?.organization.guid}/studentAttendanceDays?dateStr=${(LocalDate.now().toString())}`],
 		retry: false,
-		staleTime: Infinity,
 		select: groupStudentAttendanceDaysIntoBuckets
 	})
 
@@ -208,7 +204,7 @@ export default ({}): ReactElement => {
 			<div className='row mt-3'>
 				{showReports ? <h5>Statistics:</h5> : null}
 				{showReports ? <div>Reporting Period: <span className='fw-bold'>{attendanceGoalAggregate!.startDate.toString()}</span> to <span className='fw-bold'>{attendanceGoalAggregate!.endDate.toString()}</span></div> : null}
-				{showReports ? <div>Goal: {attendanceGoalAggregate!.goal} Regular Attendees - <span className={attendanceGoalAggregate!.regularAttendeesByDates.length >= attendanceGoalAggregate!.goal ? 'text-success' : ''}>{(attendanceGoalAggregate!.regularAttendeesByDates.length / attendanceGoalAggregate!.goal).toFixed(0)}%</span></div> : null}
+				{showReports ? <div>Goal: {attendanceGoalAggregate!.goal} Regular Attendees - <span className={attendanceGoalAggregate!.regularAttendeesByDates.length >= attendanceGoalAggregate!.goal ? 'text-success' : ''}>{Math.min((attendanceGoalAggregate!.regularAttendeesByDates.length / attendanceGoalAggregate!.goal * 100), 100).toFixed(0)}%</span></div> : null}
 			</div>
 
 			<div className='row mt-1'>	 
