@@ -725,4 +725,8 @@ export const scheduleFields = [
 		label: 'Last Name',
 		value: 'lastName',
 	},
+	{
+		label: 'Instructor Not Added',
+		value: 'instructorMissing'
+	}
 ]

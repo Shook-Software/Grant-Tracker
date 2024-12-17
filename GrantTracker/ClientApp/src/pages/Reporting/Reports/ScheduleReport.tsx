@@ -49,7 +49,7 @@ export default ({params, dateDisplay, fileOrgName, fileDate}: Props) => {
 			isLoading={isPending}
 			displayData={data}
 			displayName={`Schedule Report for ${params.organizationName}, ${dateDisplay}`}
-			fileData={data}
+			fileData={data?.map(x => ({...x, instructorMissing: !x.firstName && !x.lastName}))}
 			fileName={`${fileOrgName}_Semester_Schedule_${fileDate}`}
 			fileFields={scheduleFields}
 		>
