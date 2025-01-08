@@ -151,11 +151,11 @@ public class DevController(
     }
 
     [HttpPatch("dropdown")]
-    public async Task<IActionResult> UpdateDropdownOption(DropdownOptionType type, DropdownOption option)
+    public async Task<IActionResult> UpdateDropdownOption(DropdownOptionType type, DropdownOption[] options)
     {
         try
         {
-            await _dropdownRepository.UpdateAsync(type, option);
+            await _dropdownRepository.UpdateAsync(type, options);
             return Ok();
         }
         catch (Exception ex)

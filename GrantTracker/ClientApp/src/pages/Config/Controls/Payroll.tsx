@@ -21,8 +21,6 @@ export default ({}): JSX.Element => {
 	if (yearsPending)
 		return <div className='spinner-border' />
 
-	console.log(data.payrollYears)
-
 	return (
 		<div className='row'>
 			<div className='row mb-3'>

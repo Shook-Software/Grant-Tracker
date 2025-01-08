@@ -124,7 +124,7 @@ module.exports = {
 	},
 
 	devServer: {
-		port: 44395,
+		port: 44398,
 		static: paths.dist, //where to look for files to serve
 		hot: true,
 		historyApiFallback: true,

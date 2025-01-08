@@ -26,9 +26,10 @@ public class DropdownRepository : IDropdownRepository
                 Abbreviation = t.Abbreviation,
                 Label = t.Label,
                 Description = t.Description,
-                DeactivatedAt = t.DeactivatedAt
+                DeactivatedAt = t.DeactivatedAt,
+                DisplayOrder = t.DisplayOrder
             })
-            .OrderBy(t => t.Abbreviation ?? t.Label)
+            .OrderBy(t => t.DisplayOrder)
             .ToListAsync();
     }
 
@@ -160,6 +161,39 @@ public class DropdownRepository : IDropdownRepository
         };
 
         await _grantContext.SaveChangesAsync();
+    }
+
+    public async Task UpdateAsync(DropdownOptionType optionType, DropdownOption[] options)
+    {
+        using var transaction = await _grantContext.Database.BeginTransactionAsync();
+
+        try
+        {
+            List<EntityEntry> entries = new();
+
+            foreach (DropdownOption option in options)
+            {
+                entries.Add(optionType switch
+                {
+                    DropdownOptionType.Activity => _grantContext.Activities.Update(option.Convert<Activity>()),
+                    DropdownOptionType.Objective => _grantContext.Objectives.Update(option.Convert<Objective>()),
+                    DropdownOptionType.FundingSource => _grantContext.FundingSources.Update(option.Convert<FundingSource>()),
+                    DropdownOptionType.InstructorStatus => _grantContext.InstructorStatuses.Update(option.Convert<InstructorStatus>()),
+                    DropdownOptionType.OrganizationType => _grantContext.OrganizationTypes.Update(option.Convert<OrganizationType>()),
+                    DropdownOptionType.PartnershipType => _grantContext.Partnerships.Update(option.Convert<PartnershipType>()),
+                    DropdownOptionType.SessionType => _grantContext.SessionTypes.Update(option.Convert<SessionType>()),
+                    _ => throw new InvalidEnumArgumentException()
+                }); ;
+            }
+
+            await _grantContext.SaveChangesAsync();
+            await transaction.CommitAsync();
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
     }
 
     //no delete, the update can be updated with a DeactivatedAt date if needed.

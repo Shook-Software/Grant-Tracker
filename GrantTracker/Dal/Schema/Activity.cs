@@ -16,7 +16,6 @@ namespace GrantTracker.Dal.Schema
 				.HasComment("Lookup table for session activity types.")
 				.HasKey(e => e.Guid);
 
-			entity.HasIndex(e => e.Abbreviation).IsUnique();
 			entity.HasIndex(e => e.Label).IsUnique();
 
 			/// /Properties
@@ -42,6 +41,8 @@ namespace GrantTracker.Dal.Schema
 				.HasColumnType("nvarchar")
 				.HasMaxLength(400)
 				.HasComment("Extended description of the activity for future use and ensuring the activity is well explained in the event it's label is unhelpful.");
+
+			DropdownOption.Setup(entity);
 		}
 	}
 }

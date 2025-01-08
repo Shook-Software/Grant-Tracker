@@ -34,4 +34,5 @@ public interface IDropdownRepository
 
     Task CreateAsync(DropdownOptionType optionType, DropdownOption option);
     Task UpdateAsync(DropdownOptionType optionType, DropdownOption option);
+    Task UpdateAsync(DropdownOptionType optionType, DropdownOption[] options);
 }

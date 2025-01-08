@@ -10,6 +10,10 @@ export interface DateTime {
 
 export abstract class DateTime {
 	public static toLocalTime(obj: DateTime): LocalDateTime {
-	  return LocalDateTime.of(obj.year, obj.month, obj.day, obj.hour, obj.minute)
+		console.log(obj instanceof LocalDateTime)
+		if (obj instanceof LocalDateTime)
+			return obj;
+
+	  	return LocalDateTime.of(obj.year, obj.month, obj.day, obj.hour, obj.minute)
 	}
   }

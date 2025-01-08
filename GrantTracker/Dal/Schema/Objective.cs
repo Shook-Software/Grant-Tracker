@@ -14,10 +14,6 @@ public class Objective : DropdownOption
         entity.ToTable("Objective", "GTkr")
                 .HasComment("Lookup table for session objective option definitions.")
                 .HasKey(e => e.Guid);
-
-        entity.HasIndex(e => e.Abbreviation)
-                .IsUnique();
-
         entity.HasIndex(e => e.Label)
                 .IsUnique();
 
@@ -50,5 +46,7 @@ public class Objective : DropdownOption
                  .HasColumnType("nvarchar")
                  .HasMaxLength(400)
                  .HasComment("Extended description of the objective for future use and ensuring the objective is well explained in the event it's label is unhelpful.");
+
+        DropdownOption.Setup(entity);
     }
 }
