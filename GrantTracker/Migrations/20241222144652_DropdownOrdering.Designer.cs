@@ -4,6 +4,7 @@ using GrantTracker.Dal.Schema;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace GrantTracker.Migrations
 {
     [DbContext(typeof(GrantTrackerContext))]
-    partial class GrantTrackerContextModelSnapshot : ModelSnapshot
+    [Migration("20241222144652_DropdownOrdering")]
+    partial class DropdownOrdering
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -54,6 +57,13 @@ namespace GrantTracker.Migrations
                         .HasComment("Short textual description of the activity type for use in frontend dropdowns.");
 
                     b.HasKey("Guid");
+
+                    b.HasIndex("Abbreviation")
+                        .IsUnique()
+                        .HasFilter("[Abbreviation] IS NOT NULL");
+
+                    b.HasIndex("DisplayOrder")
+                        .IsUnique();
 
                     b.HasIndex("Label")
                         .IsUnique();
@@ -189,6 +199,9 @@ namespace GrantTracker.Migrations
                     b.HasIndex("Abbreviation")
                         .IsUnique()
                         .HasFilter("[Abbreviation] IS NOT NULL");
+
+                    b.HasIndex("DisplayOrder")
+                        .IsUnique();
 
                     b.HasIndex("Label")
                         .IsUnique();
@@ -368,6 +381,13 @@ namespace GrantTracker.Migrations
 
                     b.HasKey("Guid");
 
+                    b.HasIndex("Abbreviation")
+                        .IsUnique()
+                        .HasFilter("[Abbreviation] IS NOT NULL");
+
+                    b.HasIndex("DisplayOrder")
+                        .IsUnique();
+
                     b.HasIndex("Label")
                         .IsUnique();
 
@@ -472,6 +492,9 @@ namespace GrantTracker.Migrations
                     b.HasIndex("Abbreviation")
                         .IsUnique()
                         .HasFilter("[Abbreviation] IS NOT NULL");
+
+                    b.HasIndex("DisplayOrder")
+                        .IsUnique();
 
                     b.HasIndex("Label")
                         .IsUnique();
@@ -598,6 +621,9 @@ namespace GrantTracker.Migrations
                         .IsUnique()
                         .HasFilter("[Abbreviation] IS NOT NULL");
 
+                    b.HasIndex("DisplayOrder")
+                        .IsUnique();
+
                     b.HasIndex("Label")
                         .IsUnique();
 
@@ -667,6 +693,9 @@ namespace GrantTracker.Migrations
                     b.HasIndex("Abbreviation")
                         .IsUnique()
                         .HasFilter("[Abbreviation] IS NOT NULL");
+
+                    b.HasIndex("DisplayOrder")
+                        .IsUnique();
 
                     b.HasIndex("Label")
                         .IsUnique();
@@ -1001,6 +1030,13 @@ namespace GrantTracker.Migrations
                         .HasComment("Short textual description of the type for use in frontend dropdowns.");
 
                     b.HasKey("Guid");
+
+                    b.HasIndex("Abbreviation")
+                        .IsUnique()
+                        .HasFilter("[Abbreviation] IS NOT NULL");
+
+                    b.HasIndex("DisplayOrder")
+                        .IsUnique();
 
                     b.HasIndex("Label")
                         .IsUnique();

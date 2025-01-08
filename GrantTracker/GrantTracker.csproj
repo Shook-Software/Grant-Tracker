@@ -11,7 +11,7 @@
     <IsPackable>false</IsPackable>
     <SpaRoot>ClientApp\</SpaRoot>
     <DefaultItemExcludes>$(DefaultItemExcludes);$(SpaRoot)node_modules\**</DefaultItemExcludes>
-    <SpaProxyServerUrl>http://localhost:44395</SpaProxyServerUrl>
+    <SpaProxyServerUrl>http://localhost:44398</SpaProxyServerUrl>
     <SpaProxyLaunchCommand>npm start</SpaProxyLaunchCommand>
     <ImplicitUsings>enable</ImplicitUsings>
     <Configurations>Debug;Release;</Configurations>
@@ -127,6 +127,7 @@
 
   <ItemGroup>
     <Folder Include="ClientApp\dist\" />
+    <Folder Include="Dal\Schema\Scripts\Aggregates\" />
     <Folder Include="Migrations\" />
     <Folder Include="Tests\" />
   </ItemGroup>

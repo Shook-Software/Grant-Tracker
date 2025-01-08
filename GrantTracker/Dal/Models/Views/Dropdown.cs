@@ -1,4 +1,6 @@
 ﻿using GrantTracker.Dal.Schema;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
@@ -15,10 +17,18 @@ public class DropdownOption : IDropdownOption
 	public string Label { get; set; }
 	public string? Description { get; set; }
 	public DateTime? DeactivatedAt { get; set; } = null;
+	public short DisplayOrder { get; set; }
 
 	[NotMapped]
 	[JsonIgnore]
 	public bool IsActive => DeactivatedAt is null || DeactivatedAt > DateTime.Now;
+
+	internal static void Setup<T>(EntityTypeBuilder<T> entity) where T : DropdownOption
+    {
+        entity.Property(e => e.DisplayOrder)
+			.IsRequired()
+			.HasColumnType("smallint");
+	}
 
 	public static DropdownOption FromDatabase<T>(T option) where T : class, IDropdownOption => new()
 	{
@@ -26,8 +36,9 @@ public class DropdownOption : IDropdownOption
 		Abbreviation = option.Abbreviation,
 		Label = option.Label,
 		Description = option.Description,
-		DeactivatedAt = option.DeactivatedAt
-	};
+		DeactivatedAt = option.DeactivatedAt,
+        DisplayOrder = option.DisplayOrder
+    };
 
 	public TType Convert<TType>() where TType : DropdownOption, new()
 	{
@@ -37,7 +48,8 @@ public class DropdownOption : IDropdownOption
 			Abbreviation = this.Abbreviation,
 			Label = this.Label,
 			Description = this.Description,
-			DeactivatedAt = this.DeactivatedAt
+			DeactivatedAt = this.DeactivatedAt,
+			DisplayOrder = this.DisplayOrder
 		};
 	}
 }
@@ -49,6 +61,7 @@ public interface IDropdownOption
 	public abstract string Label { get; set; }
 	public abstract string Description { get; set; }
     public abstract DateTime? DeactivatedAt { get; set; }
+	public abstract short DisplayOrder { get; set; }
 }
 
 public class SessionDropdownOptions

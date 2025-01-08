@@ -15,9 +15,6 @@ namespace GrantTracker.Dal.Schema
 				.HasComment("Lookup table for session funding sources.")
 				.HasKey(e => e.Guid);
 
-			entity.HasIndex(e => e.Abbreviation)
-				.IsUnique();
-
 			entity.HasIndex(e => e.Label)
 				.IsUnique();
 
@@ -50,6 +47,8 @@ namespace GrantTracker.Dal.Schema
 					.HasColumnType("nvarchar")
 					.HasMaxLength(400)
 					.HasComment("Extended description of the source for future use and ensuring the source is well explained in the event it's label is unhelpful.");
-		}
+
+            DropdownOption.Setup(entity);
+        }
 	}
 }
