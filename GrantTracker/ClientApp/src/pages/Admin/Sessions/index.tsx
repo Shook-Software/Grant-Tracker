@@ -85,7 +85,7 @@ export default ({user}: { user: User}): JSX.Element => {
                                     <section>
                                         <h4>Active Sessions</h4>
                                         <Row>
-                                            <Col md={!sessionGuid ? 3 : 12} className='p-0'>
+                                            <Col md={!sessionGuid ? 3 : 12}>
                                                 <Form.Control
                                                     type='text'
                                                     className='border-bottom-0'
@@ -158,7 +158,7 @@ export default ({user}: { user: User}): JSX.Element => {
                     <hr />
 
                     <div className='row'>
-                        Copy Registrations:
+                        <div>Copy Registrations:</div>
                         <CopyRegistrations state={sessionsQuery.data!} />
                     </div>
                 </Card.Body>

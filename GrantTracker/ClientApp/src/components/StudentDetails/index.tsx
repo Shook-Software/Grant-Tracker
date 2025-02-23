@@ -55,7 +55,7 @@ export default ({studentGuid}): JSX.Element => {
 
   return (
     <PageContainer>
-      <Card className='mt-3'>
+      <Card>
         <Card.Header className='d-flex flex-column align-items-center'>
           <h2>{`${student.firstName} ${student.lastName}`}</h2>
           <h6> {studentSchoolYear.organizationYear.year.schoolYear} - {Quarter[studentSchoolYear.organizationYear.year.quarter]}</h6>

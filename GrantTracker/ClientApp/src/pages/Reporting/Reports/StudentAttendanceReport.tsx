@@ -43,7 +43,6 @@ function groupStudentAttendanceDaysIntoBuckets(studentDays: StudentDaysDTO[]) {
 
 		return dayRange;
 	}, [0, 0, 0, 0, 0])
-
 }
 
 export default ({params, dateDisplay, fileOrgName, fileDate, onRowCountChange}: Props) => {
