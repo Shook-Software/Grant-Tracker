@@ -52,10 +52,10 @@ export default ({params, dateDisplay, fileOrgName, fileDate, onRowCountChange}: 
 			fileFields={attendanceCheckFields}
 		>
 			<Row>
-				<Col sm={3} className='p-0'>
+				<Col sm={3}>
 					<Form.Control 
 						type='text' 
-						className='border-bottom-0'
+						className=' mb-2 border-bottom-1'
 						placeholder='Filter sessions...'
 						value={attendanceCheckClassFilter} 
 						onChange={(e) => setAttendanceCheckFilter(e.target.value?.toLocaleLowerCase)}

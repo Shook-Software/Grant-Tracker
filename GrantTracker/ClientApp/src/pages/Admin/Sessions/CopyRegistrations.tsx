@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Row, Col, Button, ListGroup, Spinner } from 'react-bootstrap'
+import { Row, Col, Button, ListGroup, Spinner, Container } from 'react-bootstrap'
 
 import Dropdown from 'components/Input/Dropdown'
 
@@ -50,9 +50,9 @@ export default ({state}: Props): JSX.Element => {
   }
 
   return (
-    <>
+    <Container>
       <Row>
-        <Col>
+        <div>
           <label htmlFor='from-session'>From...</label>
           <Dropdown
             id='from-session'
@@ -63,8 +63,8 @@ export default ({state}: Props): JSX.Element => {
             }))}
             onChange={(guid: string) => setFirstSession(guid)}
           />
-        </Col>
-        <Col>
+        </div>
+        <div>
           <label htmlFor='to-session'>To...</label>
           <Dropdown
             id='to-session'
@@ -75,8 +75,8 @@ export default ({state}: Props): JSX.Element => {
             }))}
             onChange={(guid: string) => setSecondSession(guid)}
           />
-        </Col>
-        <Col className='d-flex flex-column-reverse'>
+        </div>
+        <div className='d-flex flex-column-reverse mt-1'>
           <Button 
             style={{width: 'fit-content'}}
             disabled={!(firstSession !== '' && secondSession !== '')}
@@ -84,7 +84,7 @@ export default ({state}: Props): JSX.Element => {
           >
             Submit
           </Button>
-        </Col>
+        </div>
       </Row>
       <Row>
         {isLoading
@@ -97,7 +97,7 @@ export default ({state}: Props): JSX.Element => {
             </>
         }
       </Row>
-    </>
+    </Container>
   )
 }
 

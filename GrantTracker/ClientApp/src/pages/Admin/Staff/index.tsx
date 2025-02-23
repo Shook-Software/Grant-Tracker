@@ -150,7 +150,7 @@ export default (): JSX.Element => {
           <Row>
             <Col md={!instructorSchoolYearGuid ? 12 : 3}>
               <Row>
-                <Col md={!instructorSchoolYearGuid ? 3 : 12} className='p-0'>
+                <Col md={!instructorSchoolYearGuid ? 3 : 12}>
                   <Form.Control 
                     type='text' 
                     className='border-bottom-0'

@@ -176,7 +176,7 @@ export default ({instructorSchoolYearGuid}): JSX.Element => {
 
   return (
     <PageContainer>
-      <Card className='mt-3'>
+      <Card>
         <Card.Header className='mb-3 d-flex flex-column align-items-center'>
           <h2 className='text-center'>{`${instructor.firstName} ${instructor.lastName}`}</h2>
           <h5>{instructorSchoolYear.organizationName}</h5>
