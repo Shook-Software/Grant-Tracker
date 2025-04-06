@@ -180,6 +180,7 @@ export function reducer (
       return { ...state, scheduling: [...newScheduling] }
 
     case 'setBlackoutDates': 
+      action.payload.sort((first, second) => first.date.isBefore(second.date) ? 1 : -1)
       return { ...state, blackoutDates: action.payload }
 
     default:

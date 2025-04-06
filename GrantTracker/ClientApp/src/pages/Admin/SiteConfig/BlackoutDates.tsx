@@ -20,6 +20,7 @@ export const BlackoutDateConfig = (): JSX.Element => {
 		setBlackoutDatesAreLoading(true)
 		getBlackoutDates(orgGuid)
 			.then(res => {
+				res.sort((first, second) => first.date.isBefore(second.date) ? 1 : -1)
 				setBlackoutDates(res)
 				setBlackoutFetchError(undefined)
 			})

@@ -104,7 +104,7 @@ public class OrganizationYearRepository : IOrganizationYearRepository
     }
 
     public async Task<List<SessionBlackoutDate>> GetSessionBlackoutDatesAsync(Guid organizationYearGuid) => 
-        await _grantContext.SessionBlackoutDates.AsNoTracking().Where(sbd => sbd.Session.OrganizationYearGuid == organizationYearGuid).ToListAsync();
+        await _grantContext.SessionBlackoutDates.AsNoTracking().Where(sbd => sbd.Session.OrganizationYearGuid == organizationYearGuid).OrderByDescending(sbd => sbd.Date).ToListAsync();
 
     public async Task<StudentGroupView> GetStudentGroupAsync(Guid groupGuid, string? fields = null)
     {
