@@ -15,6 +15,7 @@ const columns: Column[] = [
     attributeKey: '',
     key: 'ss',
     sortable: true,
+    sortTransform: (value: StudentAttendanceView) => value.attendanceRecord?.session.name || "",
     transform: (value: StudentAttendanceView) => (
       <Link to={`/home/admin/sessions/${value.attendanceRecord?.session.guid}`}>
         {value.attendanceRecord?.session.name}
@@ -47,6 +48,12 @@ export default ({ attendance }): JSX.Element => {
   if (!attendance) return <></>
 
   attendance = attendance.map(a => InstructorAttendance.toViewModel(a))
+    .sort((first, second) =>  {
+      if (first.attendanceRecord.instanceDate.isEqual(second.attendanceRecord.instanceDate))
+        return first.timeRecords[0].startTime.isBefore(second.timeRecords[0].endTime) ? -1 : 1
+      
+      return first.attendanceRecord.instanceDate.isBefore(second.attendanceRecord.instanceDate) ? 1 : -1
+    })
 
   return (
     <Container className='p-0'>
