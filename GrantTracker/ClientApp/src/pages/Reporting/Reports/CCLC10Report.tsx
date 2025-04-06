@@ -45,9 +45,9 @@ export default ({params, dateDisplay, fileOrgName}: Props) => {
 		<ReportComponent
 			isLoading={isPending}
 			displayData={data}
-			displayName={`AzEDS CCLC10 Report for all Organizations, ${dateDisplay}`}
+			displayName={`GT CCLC10 Report for all Organizations, ${dateDisplay}`}
 			fileData={data}
-			fileName={`AzEDS_CCLC10_Grant_Tracker_${fileOrgName}`}
+			fileName={`GT_CCLC10_Grant_Tracker_${fileOrgName}`}
 			fileFields={cclc10Fields}
 		>
 			<div>

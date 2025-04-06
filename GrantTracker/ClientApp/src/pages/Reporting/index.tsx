@@ -187,7 +187,7 @@ export default ({user}): JSX.Element => {
 										user.claim == IdentityClaim.Administrator ?
 											<Nav.Item>
 												<Nav.Link eventKey='cclc10'>
-													AzEDS CCLC10
+													GT CCLC10
 												</Nav.Link>
 											</Nav.Item>
 										: null
