@@ -366,10 +366,10 @@ public class ReportRepository : IReportRepository
 			.ToList();
 	}
 
-	public async Task<List<ScheduleReport>> GetScheduleReportAsync(Guid yearGuid, Guid? organizationGuid = null)
+	public async Task<List<ScheduleReport>> GetScheduleReportAsync(DateOnly startDate, DateOnly endDate, Guid? organizationGuid = null)
 	{
 		return await _grantContext.Set<ScheduleReport>()
-			.FromSqlInterpolated($"EXEC [GTkr].ReportQuery_Schedule {yearGuid}, {organizationGuid}")
+			.FromSqlInterpolated($"EXEC [GTkr].ReportQuery_Schedule {DateOnlyToSQLString(startDate)}, {DateOnlyToSQLString(endDate)}, {organizationGuid}")
 			.AsNoTracking()
 			.ToListAsync();
     }
