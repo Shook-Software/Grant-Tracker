@@ -49,7 +49,7 @@ export default ({ session }: Props): JSX.Element => {
       <Card.Body>
           <Card.Title>Session Blackout Dates</Card.Title>
           <Row>
-            {session.blackoutDates.map(blackout => (
+            {session.blackoutDates.sort((first, second) => first.date.isBefore(second.date) ? 1 : -1).map(blackout => (
               <Col sm={6}>{blackout.date.format(DateTimeFormatter.ofPattern('eeee, MMMM d, y').withLocale(Locale.ENGLISH))}</Col>
             ))}
           </Row>

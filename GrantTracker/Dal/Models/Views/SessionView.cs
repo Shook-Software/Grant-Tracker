@@ -45,7 +45,7 @@ namespace GrantTracker.Dal.Models.Views
 				{
 					Date = blackout.Date,
 				})
-				.OrderBy(blackout => blackout.Date)
+				.OrderByDescending(blackout => blackout.Date)
 				.ToList()
         };
 	}
