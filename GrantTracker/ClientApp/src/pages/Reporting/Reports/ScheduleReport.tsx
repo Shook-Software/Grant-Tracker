@@ -31,7 +31,7 @@ interface ScheduleRow {
 
 export default ({params, dateDisplay, fileOrgName, fileDate}: Props) => {
 	const { isPending, data, error } = useQuery<ScheduleRow[]>({
-		queryKey: [`report/schedule?yearGuid=${params?.year?.guid}&organizationGuid=${params?.organizationGuid}`],
+		queryKey: [`report/schedule?startDateStr=${params.startDate?.toString()}&endDateStr=${params.endDate?.toString()}&organizationGuid=${params?.organizationGuid}`],
 		enabled: !!params?.startDate && !!params?.endDate,
 		select: (rows: any[]) => rows.map(row => ({
 			...row,

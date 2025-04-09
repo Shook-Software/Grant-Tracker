@@ -195,11 +195,13 @@ public class ReportController : ControllerBase
     }
 
     [HttpGet("schedule")]
-    public async Task<ActionResult<List<ScheduleReport>>> GetScheduleReportAsync(Guid yearGuid, Guid? organizationGuid = null)
+    public async Task<ActionResult<List<ScheduleReport>>> GetScheduleReportAsync(string startDateStr, string endDateStr, Guid? organizationGuid = null)
     {
         try
         {
-            var scheduleReport = await _reportRepository.GetScheduleReportAsync(yearGuid, organizationGuid);
+            DateOnly startDate = DateOnly.Parse(startDateStr);
+            DateOnly endDate = DateOnly.Parse(endDateStr);
+            var scheduleReport = await _reportRepository.GetScheduleReportAsync(startDate, endDate, organizationGuid);
             return Ok(scheduleReport);
         }
         catch (Exception ex)

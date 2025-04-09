@@ -32,7 +32,7 @@ public interface IReportRepository
 
 	Task<List<StudentSurveyViewModel>> GetStudentSurveyAsync(DateOnly startDate, DateOnly endDate, Guid? organizationGuid = null);
 
-	Task<List<ScheduleReport>> GetScheduleReportAsync(Guid yearGuid, Guid? organizationGuid = null);
+	Task<List<ScheduleReport>> GetScheduleReportAsync(DateOnly startDate, DateOnly endDate, Guid? organizationGuid = null);
 
 	Task<List<StudentDaysAttendedDTO>> GetStudentDaysAttendedAsync(DateOnly startDate, DateOnly endDate, Guid? organizationGuid = null);
 }
