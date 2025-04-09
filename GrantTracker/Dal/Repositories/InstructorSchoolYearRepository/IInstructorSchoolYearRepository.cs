@@ -8,8 +8,11 @@ public interface IInstructorSchoolYearRepository
 	Task<InstructorSchoolYearViewModel> CreateIfNotExistsAsync(Guid studentGuid, Guid organizationYearGuid, Guid statusGuid);
 	Task<InstructorSchoolYearViewModel> CreateAsync(Guid studentGuid, Guid organizationYearGuid, Guid statusGuid);
 
-	Task<InstructorSchoolYearViewModel?> GetAsync(Guid instructorSchoolYearGuid);
+	Task<List<Guid>> GetSchoolYearsIdsAsync(Guid instructorGuid);
+    Task<InstructorSchoolYearViewModel?> GetAsync(Guid instructorSchoolYearGuid);
 
 	Task<InstructorSchoolYearStudentGroupMap> AttachStudentGroupAsync(Guid instructorSchoolYearGuid, Guid studentGroupGuid);
 	Task DetachStudentGroupAsync(Guid instructorSchoolYearGuid, Guid studentGroupGuid);
+	Task ToggleDeletionAsync(Guid instructorSchoolYearGuid);
+	Task DeleteInstructorSchoolYearAsync(Guid instructorSchoolYearGuid);
 }

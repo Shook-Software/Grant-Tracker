@@ -12,7 +12,7 @@ import { InstructorSchoolYearView, InstructorView } from 'Models/Instructor'
 import { Quarter } from 'Models/OrganizationYear'
 import { DropdownOption } from 'Models/Session'
 
-import { getInstructorStatusOptions, getInstructor, patchInstructorStatus } from './api'
+import { getInstructorStatusOptions, getInstructor, patchInstructorStatus, markForDeletion as markInstructorForDeletion } from './api'
 import paths from 'utils/routing/paths'
 import { PageContainer } from 'styles'
 import { OrgYearContext } from 'pages/Admin'
@@ -70,10 +70,11 @@ const flattenOrganizationHistory = (organizations: any) => {
 interface BasicDetailsProps {
   instructor: InstructorSchoolYearView
   onChange: (instructor: InstructorSchoolYearView) => void
+  pendingDeletion: boolean
   editing: boolean
 }
 
-const BasicDetails = ({instructor: instructorSchoolYear, onChange, editing}: BasicDetailsProps): JSX.Element => {
+const BasicDetails = ({instructor: instructorSchoolYear, onChange, pendingDeletion, editing}: BasicDetailsProps): JSX.Element => {
   const instructor: InstructorView = instructorSchoolYear.instructor
   const [status, setStatus] = useState(instructorSchoolYear.status.guid)
   const [dropdownOptions, setOptions] = useState<DropdownOption[]>([])
@@ -93,7 +94,7 @@ const BasicDetails = ({instructor: instructorSchoolYear, onChange, editing}: Bas
       />
 
       <ListItem 
-        label='Status:' 
+        label='Reporting Status:' 
         value={
           editing
           ? 
@@ -114,6 +115,22 @@ const BasicDetails = ({instructor: instructorSchoolYear, onChange, editing}: Bas
         } 
       /> 
 
+      <ListItem
+        label='Site Status:'
+        value={ 
+          editing
+          ?
+            <span>
+              <button type='button' className='btn btn-sm btn-danger' onClick={() => onChange({...instructorSchoolYear, isPendingDeletion: !instructorSchoolYear.isPendingDeletion})}>
+                {instructorSchoolYear.isPendingDeletion ? 'Undo Deletion Request': 'Request Deletion'}
+                </button>
+            </span>
+          : <span className={pendingDeletion ? 'text-danger' : 'text-success'}>
+              {pendingDeletion ? 'Pending Deletion. An administrator will review your request.' : 'Active'}
+            </span>
+        }
+      />
+
     </ListGroup>
   )
 }
@@ -123,33 +140,44 @@ export default ({instructorSchoolYearGuid}): JSX.Element => {
   const [instructorSchoolYear, setInstructorSchoolYear] = useState<InstructorSchoolYearView | null>(null)
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const [editing, setEditing] = useState<boolean>(false)
+  const [persistedDeletionRequested, setPersistedDeletionRequested] = useState<boolean>(false);
 
   function fetchInstructor(instructorSchoolYearGuid): void {
+    console.log('fetching')
     setIsLoading(true)
     setInstructorSchoolYear(null)
 
     getInstructor(instructorSchoolYearGuid)
-      .then(res => setInstructorSchoolYear(res))
+      .then(res => {
+        setPersistedDeletionRequested(res.isPendingDeletion)
+        setInstructorSchoolYear(res)
+      })
       .catch(err => console.warn(err))
       .finally(() => setIsLoading(false))
   }
 
-  function handleStatusChange(instructor: InstructorSchoolYearView): void {
+  function handleInstructorChange(instructor: InstructorSchoolYearView): void {
     setInstructorSchoolYear(instructor)
   }
 
-  //PATCHING
-  //on any change of instructor, where instructor exists, send a patch request for status attribute
-  useEffect(() => {
-    if (!instructorSchoolYear)
-      return
+  function markForDeletion() {
+    if (!instructorSchoolYear || persistedDeletionRequested == instructorSchoolYear.isPendingDeletion)
+      return;
 
-    patchInstructorStatus(instructorSchoolYear)
-      .then(res => {
-        fetchInstructor(instructorSchoolYearGuid)
-      })
-      .finally(() => setEditing(false))
-  }, [editing])
+    return markInstructorForDeletion(instructorSchoolYearGuid);
+  }
+
+  async function saveChangesAsync() {
+    if (!instructorSchoolYear)
+      return;
+
+    await Promise.all([patchInstructorStatus(instructorSchoolYear), markForDeletion()]) //bad design, I know. To be replaced with the major update.
+      .then(res => fetchInstructor(instructorSchoolYearGuid))
+      .finally(() =>  {
+        console.log('done editing')
+        setEditing(false)
+  });
+  }
 
   //INITIAL LOAD
   //On any change of the guid parameter, fetch that instructor's details
@@ -185,12 +213,18 @@ export default ({instructorSchoolYearGuid}): JSX.Element => {
             <Button 
               className='mx-3'
               size='sm'
-              onClick={() => editing ? setEditing(false) : setEditing(true)}
+              onClick={() => editing ? saveChangesAsync() : setEditing(true)} //what was I thinking here? lmao...
             >
               {editing ? 'Save Changes' : 'Edit'}
             </Button>
+            {
+              editing 
+              ? <Button className='mx-3' size='sm' variant='secondary' onClick={() => setEditing(false)}>Cancel</Button>
+              : null
+            }
             <Button 
                 variant='secondary' 
+                size='sm'
                 as={Link} 
                 className='ms-3 px-2 py-1' 
                 to={`${paths.Admin.path}/${paths.Admin.Tabs.Staff.path}`}
@@ -203,7 +237,7 @@ export default ({instructorSchoolYearGuid}): JSX.Element => {
 
           <Row className='d-flex flex-column align-items-center'>
             <Col>
-              <BasicDetails instructor={instructorSchoolYear} onChange={(instructor: InstructorSchoolYearView) => handleStatusChange(instructor)} editing={editing}/>
+              <BasicDetails instructor={instructorSchoolYear} onChange={(instructor: InstructorSchoolYearView) => handleInstructorChange(instructor)} pendingDeletion={persistedDeletionRequested} editing={editing}/>
             </Col>
           </Row>
 

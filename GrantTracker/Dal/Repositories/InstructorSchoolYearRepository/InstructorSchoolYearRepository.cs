@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
+using GrantTracker.Dal.Schema.Sprocs;
 
 namespace GrantTracker.Dal.Repositories.InstructorSchoolYearRepository;
 
@@ -20,6 +21,13 @@ public class InstructorSchoolYearRepository : IInstructorSchoolYearRepository
     {
         _grantContext = grantContext;
         _user = httpContextAccessor.HttpContext.User;
+    }
+
+    public async Task<List<Guid>> GetSchoolYearsIdsAsync(Guid instructorGuid)
+    {
+        return await _grantContext.InstructorSchoolYears.Where(isy => isy.InstructorGuid == instructorGuid)
+            .Select(isy => isy.InstructorSchoolYearGuid)
+            .ToListAsync();
     }
 
     //we need to remove the latter part of this tbh, and query it separately
@@ -116,5 +124,44 @@ public class InstructorSchoolYearRepository : IInstructorSchoolYearRepository
         _grantContext.InstructorStudentGroups.Remove(studentGroupMap);
 
         await _grantContext.SaveChangesAsync();
+    }
+
+    public async Task ToggleDeletionAsync(Guid instructorSchoolYearGuid)
+    {
+        var instructorSchoolYear = await _grantContext.InstructorSchoolYears.FindAsync(instructorSchoolYearGuid);
+        instructorSchoolYear.IsPendingDeletion = !instructorSchoolYear.IsPendingDeletion;
+
+        await _grantContext.SaveChangesAsync();
+    }
+
+    public async Task DeleteInstructorSchoolYearAsync(Guid instructorSchoolYearGuid)
+    {
+        using var transaction = await _grantContext.Database.BeginTransactionAsync();
+
+        try
+        {
+            await _grantContext.InstructorAttendanceRecords
+                .Where(iar => iar.InstructorSchoolYearGuid == instructorSchoolYearGuid)
+                .ExecuteDeleteAsync();
+
+            await _grantContext.InstructorRegistrations
+                .Where(ir => ir.InstructorSchoolYearGuid == instructorSchoolYearGuid)
+                .ExecuteDeleteAsync();
+
+            await _grantContext.InstructorStudentGroups
+                .Where(isg => isg.InstructorSchoolYearGuid == instructorSchoolYearGuid)
+                .ExecuteDeleteAsync();
+
+            await _grantContext.InstructorSchoolYears
+                .Where(isy => isy.InstructorSchoolYearGuid == instructorSchoolYearGuid)
+                .ExecuteDeleteAsync();
+
+            await transaction.CommitAsync();
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
     }
 }

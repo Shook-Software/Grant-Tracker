@@ -10,6 +10,7 @@ public class InstructorSchoolYear
     public Guid OrganizationYearGuid { get; set; }
     public virtual OrganizationYear OrganizationYear { get; set; }
     public Guid StatusGuid { get; set; }
+    public bool IsPendingDeletion { get; set; } = false;
     public virtual InstructorStatus Status { get; set; }
     public virtual Identity Identity { get; set; }
 

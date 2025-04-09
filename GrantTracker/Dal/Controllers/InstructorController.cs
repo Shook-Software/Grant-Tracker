@@ -99,8 +99,31 @@ public class InstructorController : ControllerBase
 
 	[HttpPatch("{instructorSchoolYearGuid:guid}/status")]
 	public async Task<IActionResult> AlterInstructorStatus(Guid instructorSchoolYearGuid, [FromBody] InstructorSchoolYearViewModel instructorSchoolYear)
-	{
-		await _instructorRepository.UpdateInstructorAsync(instructorSchoolYearGuid, instructorSchoolYear);
-		return NoContent();
-	}
+    {
+        try
+        {
+            await _instructorRepository.UpdateInstructorAsync(instructorSchoolYearGuid, instructorSchoolYear);
+		    return NoContent();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "");
+            return StatusCode(500);
+        }
+    }
+
+    [HttpPatch("{instructorSchoolYearGuid:guid}/deletion")]
+    public async Task<IActionResult> ToggleInstructorDeletion(Guid instructorSchoolYearGuid)
+    {
+        try
+        {
+            await _instructorSchoolYearRepository.ToggleDeletionAsync(instructorSchoolYearGuid);
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "");
+            return StatusCode(500);
+        }
+    }
 }

@@ -21,11 +21,13 @@ export function getInstructor(instructorSchoolYearGuid: string): Promise<Instruc
 }
 
 export function patchInstructorStatus(instructorSchoolYear: InstructorSchoolYearView): Promise<void> {
-  return new Promise((resolve, reject) => {
-    api
+  return api
       .patch(`instructor/${instructorSchoolYear.guid}/status`, {
         instructor: instructorSchoolYear.instructor,
         status: instructorSchoolYear.status
       })
-  })
+}
+
+export function markForDeletion(instructorSchoolYearGuid: string) : Promise<void> {
+  return api.patch(`instructor/${instructorSchoolYearGuid}/deletion`)
 }

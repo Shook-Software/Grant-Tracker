@@ -16,6 +16,7 @@ export interface InstructorSchoolYearView {
   year: YearView
   organizationName: string
   status: DropdownOption
+  isPendingDeletion: boolean
   organizations: any[]
   enrollmentRecords: any[]
   attendanceRecords: any[]

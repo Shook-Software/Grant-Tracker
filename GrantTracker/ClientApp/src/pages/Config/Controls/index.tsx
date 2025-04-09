@@ -3,7 +3,7 @@ import { Tab, Nav, Row, Col } from 'react-bootstrap'
 import Years from './Years'
 import Payroll from './Payroll'
 import Organizations from './Organizations'
-
+import Instructors from './Instructors'
 
 
 
@@ -31,6 +31,11 @@ export default (): JSX.Element => {
                 Payroll Years
               </Nav.Link>
             </Nav.Item>
+            <Nav.Item>
+              <Nav.Link className='user-select-none' eventKey='instructor'>
+                Instructor Management
+              </Nav.Link>
+            </Nav.Item>
           </Nav>
         </Col>
 
@@ -47,6 +52,10 @@ export default (): JSX.Element => {
             
             <Tab.Pane eventKey='payroll'>
 				      <Payroll />
+            </Tab.Pane>
+            
+            <Tab.Pane eventKey='instructor'>
+				      <Instructors />
             </Tab.Pane>
 
           </Tab.Content>

@@ -36,16 +36,17 @@ namespace GrantTracker.Dal.Repositories.InstructorRepository
 				.ToListAsync();
 		}
 
-		public async Task<List<InstructorSchoolYearViewModel>> GetInstructorsAsync(Guid orgYearGuid)
+		public async Task<List<InstructorSchoolYearViewModel>> GetInstructorsAsync(Guid? orgYearGuid = null)
 		{
 			return await _grantContext
 				.InstructorSchoolYears
 				.AsNoTracking()
-				.Include(isy => isy.Instructor)
+				.Include(isy => isy.OrganizationYear).ThenInclude(oy => oy.Year)
+                .Include(isy => isy.OrganizationYear).ThenInclude(oy => oy.Organization)
+                .Include(isy => isy.Instructor)
 				.Include(isy => isy.Status)
-				.Where(isy => isy.OrganizationYearGuid == orgYearGuid)
+				.Where(isy => orgYearGuid == null || isy.OrganizationYearGuid == orgYearGuid)
 				.Select(isy => InstructorSchoolYearViewModel.FromDatabase(isy, null))
-				.Take(100)
 				.ToListAsync();
 		}
 
@@ -109,6 +110,11 @@ namespace GrantTracker.Dal.Repositories.InstructorRepository
 			dbInstructorSchoolYear.StatusGuid = instructorSchoolYear.Status.Guid;
 
 			await _grantContext.SaveChangesAsync();
+		}
+
+		public async Task DeleteInstructorAsync(Guid instructorGuid) 
+		{
+			await _grantContext.Instructors.Where(i => i.PersonGuid == instructorGuid).ExecuteDeleteAsync();
 		}
 	}
 }

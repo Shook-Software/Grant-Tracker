@@ -20,6 +20,7 @@ using PdfSharp.Pdf.Content.Objects;
 using GrantTracker.Utilities;
 using System.ComponentModel.DataAnnotations;
 using GrantTracker.Dal.Models.Dto;
+using GrantTracker.Dal.Repositories.InstructorSchoolYearRepository;
 
 namespace GrantTracker.Dal.Controllers;
 
@@ -31,6 +32,7 @@ public class DevController(
     IDropdownRepository dropdownRepository,
     IAuthRepository authRepository, 
     IInstructorRepository staffRepository,
+    IInstructorSchoolYearRepository staffYearRepository,
     IYearRepository yearRepository, 
     IOrganizationRepository organizationRepository,
     IOrganizationYearRepository organizationYearRepository, 
@@ -41,6 +43,7 @@ public class DevController(
     private readonly IDropdownRepository _dropdownRepository = dropdownRepository;
     private readonly IAuthRepository _authRepository = authRepository;
     private readonly IInstructorRepository _instructorRepository = staffRepository;
+    private readonly IInstructorSchoolYearRepository _instructorSchoolYearRepository = staffYearRepository;
     private readonly IYearRepository _yearRepository = yearRepository;
     private readonly IOrganizationRepository _organizationRepository = organizationRepository;
     private readonly IOrganizationYearRepository _organizationYearRepository = organizationYearRepository;
@@ -58,6 +61,21 @@ public class DevController(
     {
         var users = await _authRepository.GetCurrentUsersAsync();
         return Ok(users);
+    }
+
+    [HttpGet("instructors")]
+    public async Task<ActionResult<List<InstructorSchoolYearViewModel>>> GetInstructorsPendingDeletionAsync()
+    {
+        try
+        {
+            var instructors = (await _instructorRepository.GetInstructorsAsync()).Where(isy => isy.IsPendingDeletion).ToList();
+            return Ok(instructors);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "");
+            return StatusCode(500);
+        }
     }
 
     [HttpGet("organizationYear")]
@@ -252,6 +270,29 @@ public class DevController(
             });
 
             return Ok();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "");
+            return BadRequest(ex.Message);
+        }
+    }
+
+    [HttpDelete("instructor/{instructorSchoolYearGuid:guid}")]
+    public async Task<IActionResult> DeleteInstructorSchoolYearAsync(Guid instructorSchoolYearGuid)
+    {
+        try
+        {
+            Guid instructorGuid = (await _instructorSchoolYearRepository.GetAsync(instructorSchoolYearGuid)).Instructor.Guid;
+            List<Guid> instructorSchoolYearIds = await _instructorSchoolYearRepository.GetSchoolYearsIdsAsync(instructorGuid);
+
+            await _instructorSchoolYearRepository.DeleteInstructorSchoolYearAsync(instructorSchoolYearGuid);
+            instructorSchoolYearIds.Remove(instructorSchoolYearGuid);
+
+            if (instructorSchoolYearIds.Count == 0)
+                await _instructorRepository.DeleteInstructorAsync(instructorGuid);
+
+            return NoContent();
         }
         catch (Exception ex)
         {
