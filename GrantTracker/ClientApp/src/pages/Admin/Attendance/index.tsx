@@ -1,4 +1,4 @@
-import { DateTimeFormatter, LocalDate, LocalTime } from "@js-joda/core";
+import { DateTimeFormatter, Instant, LocalDate, LocalDateTime, LocalTime } from "@js-joda/core";
 import { Locale } from "@js-joda/locale_en-us";
 
 import { useQuery } from "@tanstack/react-query";
@@ -9,7 +9,7 @@ import { useSearchParams } from "react-router-dom";
 import { TimeInput } from "components/TimeRangeSelector";
 import { DayOfWeek } from "Models/DayOfWeek";
 import { TimeScheduleView } from "Models/TimeSchedule";
-import { AttendanceForm, AttendanceForm as AttendanceFormState, ReducerAction, reducer } from './state'
+import { AttendanceForm, AttendanceForm as AttendanceFormState, ReducerAction, handleStateReduction } from './state'
 import { StudentRegistration, StudentRegistrationDomain } from "Models/StudentRegistration";
 
 import { InstructorAttendance } from './InstructorAttendance'
@@ -20,6 +20,7 @@ import { TimeOnly } from "Models/TimeOnly";
 
 
 enum FormState {
+	PreviousEntrySelect = -1,
 	DateTimeSelect = 0,
 	AttendanceRecords = 1,
 	Review = 2
@@ -64,12 +65,80 @@ export default (): React.ReactElement => {
 		staleTime: Infinity
 	})
 
-	function handleFormStateChange(newState: FormState) {
+	function createLocalStorageKey(): string {
+		return `attendance-${sessionGuid}-${date?.toString()}`;
+	}
+
+	function setLocalStorage(date: LocalDate, state: AttendanceForm) {
+		localStorage.setItem(createLocalStorageKey(), JSON.stringify({
+			date,
+			sessionGuid,
+			lastEditedAt: Date.now().toString(),
+			state
+		}))
+	}
+
+	function auditLocalStorage(): void {
+		for (let idx = 0; idx < localStorage.length; idx++) {
+			const key = localStorage.key(idx);
+
+			if (!key?.startsWith('attendance') || key === createLocalStorageKey())
+				continue;
+
+			const value = localStorage.getItem(key);
+			const msPerDay = 24 * 60 * 60 * 1000;
+
+			if (!!value && Date.now() - JSON.parse(value).lastEditedAt >= msPerDay * 3) {
+				console.log('DAYS PASSED DELETE IT')
+				window.localStorage.removeItem(key);
+			}
+
+			console.log('not deleting entry')
+		}
+	}
+
+	function getLocalStorageItem(): {date: LocalDate, sessionGuid: string, lastEditedAt: number, state: AttendanceForm} | null {
+		const jsonEntry: string | null = localStorage.getItem(createLocalStorageKey());
+
+		if (!jsonEntry)
+			return null;
+		
+		let parsedObj = JSON.parse(jsonEntry);
+
+		return {
+			date: LocalDate.parse(parsedObj.date),
+			sessionGuid: parsedObj.sessionGuid,
+			lastEditedAt: Number(parsedObj.lastEditedAt),
+			state: {
+				defaultTimeSchedule: parsedObj.state.defaultTimeSchedule.map(sched => ({guid: sched.guid, startTime: LocalTime.parse(sched.startTime), endTime: LocalTime.parse(sched.endTime) })),
+				instructorRecords: parsedObj.state.instructorRecords.map(ir => ({
+					...ir,
+					times: ir.times.map(time => ({ ...time, startTime: LocalTime.parse(time.startTime), endTime: LocalTime.parse(time.endTime) }))
+				})),
+				studentRecords: parsedObj.state.studentRecords.map(sr => ({
+					...sr,
+					times: sr.times.map(time => ({ ...time, startTime: LocalTime.parse(time.startTime), endTime: LocalTime.parse(time.endTime) }))
+				}))
+			}
+		}
+	}
+
+	function removeFromLocalStorage() {
+		window.localStorage.removeItem(createLocalStorageKey());
+	}
+
+	function reducer(state: AttendanceForm, action: ReducerAction): AttendanceForm {
+		const newState = handleStateReduction(state, action);
+		setLocalStorage(date!, state);
+		return newState;
+	}
+
+	function handleFormStateChange(newState: FormState, formStateOverride: AttendanceForm | null = null) {
 		const prevState: FormState = formState
 
 		switch (newState) {
 			case FormState.AttendanceRecords:
-				if (prevState === FormState.DateTimeSelect) 
+				if (prevState === FormState.DateTimeSelect || (prevState == FormState.PreviousEntrySelect && !formStateOverride)) 
 				{
 					if (timeSchedules) {
 						dispatch({ type: 'setDefaultTimeSchedules', payload: timeSchedules })
@@ -77,7 +146,6 @@ export default (): React.ReactElement => {
 
 					if (session && studentRegs && timeSchedules) {
 						if (!attendanceGuid) {
-							console.log(session.instructors, studentRegs, timeSchedules)
 							dispatch({ type: 'populateInstructors', payload: { instructors: session?.instructors, times: timeSchedules }})
 							dispatch({ type: 'populateStudents', payload: { students: studentRegs.map(reg => reg.studentSchoolYear), times: timeSchedules }})
 						}
@@ -85,6 +153,10 @@ export default (): React.ReactElement => {
 							dispatch({ type: 'populateExistingRecords', payload: { instructorAttendance: priorAttendance.instructorAttendanceRecords, studentAttendance: priorAttendance.studentAttendanceRecords }})
 						}
 					}
+				}
+				else if (prevState == FormState.PreviousEntrySelect && !!formStateOverride) 
+				{
+					dispatch({ type: 'overwriteAll', payload: formStateOverride });
 				}
 
 				break;
@@ -100,6 +172,22 @@ export default (): React.ReactElement => {
 			&& !fetchingStudentRegs
 
 		switch (formState) {
+			case FormState.PreviousEntrySelect:
+				const priorEntry = getLocalStorageItem();
+				console.log(priorEntry)
+
+				return (
+					<div className='d-flex flex-column gap-2'>
+						<p>
+							You have an unfinished attendance entry for this session for <b>{priorEntry?.date.format(DateTimeFormatter.ofPattern("MMMM d, y").withLocale(Locale.ENGLISH))}</b>, with {priorEntry?.state.instructorRecords.length} instructor record(s) and {priorEntry?.state.studentRecords.length} student record(s).<br />
+							This entry was last edited on <b>{LocalDateTime.ofInstant(Instant.ofEpochMilli(priorEntry!.lastEditedAt))?.format(DateTimeFormatter.ofPattern("MMMM d, y, h:m a").withLocale(Locale.ENGLISH))}</b>.<br />
+							Would you like to load this unfinished entry?
+						</p>
+
+						<button type='button' className='btn btn-primary btn-sm' style={{width: 'fit-content'}} aria-label='Yes, load unfinished attendance entry.' onClick={() => handleFormStateChange(FormState.AttendanceRecords, priorEntry?.state)}>Yes, load unfinished entry</button>
+						<button type='button' className='btn btn-secondary btn-sm' style={{width: 'fit-content'}} aria-label='No, create new attendance entry.' onClick={() => handleFormStateChange(FormState.AttendanceRecords)}>No, create new entry</button>
+					</div>
+				);
 			case FormState.DateTimeSelect:
 				return (
 					<DateTimeSelection 
@@ -121,12 +209,23 @@ export default (): React.ReactElement => {
 						date={date!}
 						state={attendanceState}
 						dispatch={dispatch}
+						onSuccessfulSave={() => removeFromLocalStorage(createLocalStorageKey())}
 					/>
 				)
 			default:
 				return <></>
 		}
 	}
+
+	useEffect(() => {
+		if (!!date && formState === FormState.DateTimeSelect && !!getLocalStorageItem()) {
+			handleFormStateChange(FormState.PreviousEntrySelect);
+		}
+	}, [date])
+
+	useEffect(() => {
+		auditLocalStorage();
+	}, [])
 
 	if (fetchingSession || !session)
 		return <span>Loading...</span>
@@ -153,9 +252,10 @@ interface AttendanceFormProps {
 	date: LocalDate
 	state: AttendanceFormState
 	dispatch: React.Dispatch<ReducerAction>
+	onSuccessfulSave: () => void
 }
 
-const AttendanceForm = ({session, attendanceGuid, date, state, dispatch}: AttendanceFormProps): ReactElement => {
+const AttendanceForm = ({session, attendanceGuid, date, state, dispatch, onSuccessfulSave}: AttendanceFormProps): ReactElement => {
 	useEffect(() => {
 		if (session.sessionType.label != 'Parent') {
 			const studentRecords = state.studentRecords.filter(sr => sr.isPresent).map(sr => ({
@@ -203,7 +303,12 @@ const AttendanceForm = ({session, attendanceGuid, date, state, dispatch}: Attend
 			<section>
 				<h5>Summary</h5>
 				<hr />
-				<AttendanceSummary sessionGuid={session.guid} sessionType={session.sessionType.label} attendanceGuid={attendanceGuid} date={date} state={state} />
+				<AttendanceSummary sessionGuid={session.guid} 
+					sessionType={session.sessionType.label} 
+					attendanceGuid={attendanceGuid} 
+					date={date} 
+					state={state}
+					onSuccessfulSave={onSuccessfulSave} />
 			</section>
 		</div>
 	)

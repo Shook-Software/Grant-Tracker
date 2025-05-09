@@ -12,6 +12,7 @@ export interface AttendanceForm {
 }
 
 export type ReducerAction =
+    | { type: 'overwriteAll', payload: AttendanceForm }
     | { type: 'setDefaultTimeSchedules', payload: TimeScheduleView[] }
     | { type: 'populateInstructors', payload: { instructors: InstructorSchoolYearView[], times: TimeScheduleView[] } }
     | { type: 'populateStudents', payload: { students: StudentSchoolYearView[], times: TimeScheduleView[]} }
@@ -33,7 +34,6 @@ export type ReducerAction =
     | { type: 'setFamilyMemberCount', payload: { studentSchoolYearGuid: string, familyMember: FamilyMember, count: number } }
 
 
-
 function getStudentRecord(state: AttendanceForm, id: string): StudentRecord | undefined {
     return state.studentRecords.find(x => x.id == id)
 }
@@ -42,8 +42,9 @@ function getInstructorRecord(state: AttendanceForm, id: string): InstructorRecor
     return state.instructorRecords.find(x => x.id == id)
 }
 
+
 //add in validation
-export function reducer(state: AttendanceForm, action: ReducerAction): AttendanceForm {
+export function handleStateReduction(state: AttendanceForm, action: ReducerAction): AttendanceForm {
     let record
     let studentRecord: StudentRecord
     let studentRecords: StudentRecord[]
@@ -51,11 +52,13 @@ export function reducer(state: AttendanceForm, action: ReducerAction): Attendanc
 
     switch (action.type) {
 
+        case 'overwriteAll':
+            return {...action.payload};
+
         case 'setDefaultTimeSchedules':
             return { ...state, defaultTimeSchedule: action.payload }
 
         case 'populateInstructors':
-            console.log(action.payload)
             instructorRecords = action.payload.instructors.map(i => ({
                 id: i.guid,
                 isPresent: true,
@@ -69,7 +72,6 @@ export function reducer(state: AttendanceForm, action: ReducerAction): Attendanc
             return { ...state, instructorRecords }
 
         case 'populateStudents':
-            console.log(action.payload)
             studentRecords = action.payload.students.map(s => ({
                 id: s.guid,
                 isPresent: true,

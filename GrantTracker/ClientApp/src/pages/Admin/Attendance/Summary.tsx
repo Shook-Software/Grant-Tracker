@@ -20,9 +20,10 @@ interface SummaryProps {
 	attendanceGuid: string | null
 	date: LocalDate
 	state: AttendanceForm
+	onSuccessfulSave: () => void
 }
 
-export const AttendanceSummary = ({ sessionGuid, sessionType, attendanceGuid, date, state }: SummaryProps): ReactElement => {
+export const AttendanceSummary = ({ sessionGuid, sessionType, attendanceGuid, date, state, onSuccessfulSave }: SummaryProps): ReactElement => {
 	const navigate = useNavigate();
 	const [criticalError, setCriticalError] = useState<boolean>(false)
 	const [errors, setErrors] = useState<string[]>([])
@@ -43,6 +44,7 @@ export const AttendanceSummary = ({ sessionGuid, sessionType, attendanceGuid, da
 			})
 			.finally(() => {
 				setSubmitting(false)
+				onSuccessfulSave()
 			})
 	}
 
