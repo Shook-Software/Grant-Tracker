@@ -89,11 +89,8 @@ export default (): React.ReactElement => {
 			const msPerDay = 24 * 60 * 60 * 1000;
 
 			if (!!value && Date.now() - JSON.parse(value).lastEditedAt >= msPerDay * 3) {
-				console.log('DAYS PASSED DELETE IT')
 				window.localStorage.removeItem(key);
 			}
-
-			console.log('not deleting entry')
 		}
 	}
 
@@ -174,7 +171,6 @@ export default (): React.ReactElement => {
 		switch (formState) {
 			case FormState.PreviousEntrySelect:
 				const priorEntry = getLocalStorageItem();
-				console.log(priorEntry)
 
 				return (
 					<div className='d-flex flex-column gap-2'>
