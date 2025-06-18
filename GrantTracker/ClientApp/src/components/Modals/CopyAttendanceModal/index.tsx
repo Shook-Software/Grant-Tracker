@@ -1,29 +1,15 @@
-//From an existing record, pre-populate into this modal
-//Source Session Records
-
-//show list of sessions, select one, then display days of week (by default to the day)
-
-//show full attendance w/ summary - maybe a summary then options to edit or submit.
-
-//"It'll be more likely to copy to another session that same day."
-
-
-//Show list of sessions for a selectable day, defaulted to today and excluding the current one.
-
-//one a session is selected (have back arrows), populate a summary with default times. Looks good? Submit. Otherwise, edit.
-
-
 import { DateTimeFormatter, LocalDate } from '@js-joda/core';
 import { Locale } from '@js-joda/locale_en-us';
 import { useState } from 'react';
 import { Form, Spinner } from 'react-bootstrap';
 import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
+
+import Table,  Column, SortDirection } from 'components/BTable';
 
 import { DropdownOption, SimpleSessionView } from 'Models/Session'
 import { DateOnly } from 'Models/DateOnly';
-import Table,{ Column, SortDirection } from 'components/BTable';
 import { DayOfWeek } from 'Models/DayOfWeek';
-import { useNavigate } from 'react-router-dom';
 import paths from 'utils/routing/paths';
 
 interface CopyAttendanceModalProps {
