@@ -17,12 +17,13 @@ import { AppContext } from 'App'
 
 interface Props {
   sessionGuid: string
+  sessionName: string
   attendanceRecords: SimpleAttendanceView[]
   onChange
   sessionType: string
 }
 
-export default ({sessionGuid, attendanceRecords, onChange, sessionType}: Props): JSX.Element => {
+export default ({sessionGuid, sessionName, attendanceRecords, onChange, sessionType}: Props): JSX.Element => {
   const [isLoading, setIsLoading] = useState<boolean>(false)
 
   useEffect(() => {
@@ -47,6 +48,7 @@ export default ({sessionGuid, attendanceRecords, onChange, sessionType}: Props):
             <Accordion className='my-3'>
               <RecordDisplay 
                 sessionGuid={sessionGuid} 
+                sessionName={sessionName}
                 simpleRecord={record} 
                 onDeleteClick={(record) => handleDeleteClick(record)}
                 sessionType={sessionType}

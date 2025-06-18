@@ -29,13 +29,14 @@ enum FormState {
 export default (): React.ReactElement => {
 	const [searchParams] = useSearchParams();
 	const sessionGuid = searchParams.get('session')
-
-	//going to need the dayscheduleId for the session in order to import
 	const attendanceGuid = searchParams.get('attendanceId')
+	const sourceAttendanceGuid = searchParams.get('sourceAttendanceId')
+	const initialDate = searchParams.get('date')
+	
+	const attendanceMode: 'new' | 'edit' | 'copy' = useAttendanceMode({ sessionGuid: sessionGuid || '', attendanceGuid, sourceAttendanceGuid });
 
 	const [formState, setFormState] = useState<FormState>(FormState.DateTimeSelect)
-
-	const [date, setDate] = useState<LocalDate | undefined>(undefined)
+	const [date, setDate] = useState<LocalDate | undefined>(!!initialDate ? LocalDate.parse(initialDate) : undefined)
 	const [timeSchedules, setTimeSchedules] = useState<TimeScheduleView[] | undefined>(undefined)
 	const [attendanceState, dispatch] = useReducer(reducer, {
 		defaultTimeSchedule: [],
@@ -59,11 +60,11 @@ export default (): React.ReactElement => {
 	})
 
 	const { data: priorAttendance } = useQuery({
-		queryKey: [`session/${sessionGuid}/attendance/${attendanceGuid}`],
-		enabled: !!attendanceGuid,
-		retry: false,
-		staleTime: Infinity
-	})
+        queryKey: [`session/${sessionGuid}/attendance/${attendanceMode === 'edit' ? attendanceGuid : sourceAttendanceGuid}`],
+        enabled: !!attendanceGuid || !!sourceAttendanceGuid,
+        retry: false,
+        staleTime: Infinity
+    })
 
 	function createLocalStorageKey(): string {
 		return `attendance-${sessionGuid}-${date?.toString()}`;
@@ -137,17 +138,20 @@ export default (): React.ReactElement => {
 			case FormState.AttendanceRecords:
 				if (prevState === FormState.DateTimeSelect || (prevState == FormState.PreviousEntrySelect && !formStateOverride)) 
 				{
-					if (timeSchedules) {
-						dispatch({ type: 'setDefaultTimeSchedules', payload: timeSchedules })
+					if (!!timeSchedules) {
+						dispatch({ type: 'setDefaultTimeSchedules', payload: timeSchedules || [] })
 					}
 
-					if (session && studentRegs && timeSchedules) {
-						if (!attendanceGuid) {
+					if (!!session && !!studentRegs && !!timeSchedules) {
+						if (!priorAttendance) {
 							dispatch({ type: 'populateInstructors', payload: { instructors: session?.instructors, times: timeSchedules }})
 							dispatch({ type: 'populateStudents', payload: { students: studentRegs.map(reg => reg.studentSchoolYear), times: timeSchedules }})
 						}
 						else { 
-							dispatch({ type: 'populateExistingRecords', payload: { instructorAttendance: priorAttendance.instructorAttendanceRecords, studentAttendance: priorAttendance.studentAttendanceRecords }})
+							dispatch({ type: 'populateExistingRecords', payload: { 
+								instructorAttendance: priorAttendance.instructorAttendanceRecords.map(iar => ({...iar, timeRecords: [...timeSchedules]})), 
+								studentAttendance: priorAttendance.studentAttendanceRecords.map(sar => ({...sar, timeRecords: [...timeSchedules]}))
+							}})
 						}
 					}
 				}
@@ -193,7 +197,7 @@ export default (): React.ReactElement => {
 						times={timeSchedules}
 						onTimeChange={setTimeSchedules}
 						progressFormState={() => handleFormStateChange(FormState.AttendanceRecords)}
-						originalAttendDate={priorAttendance ? DateOnly.toLocalDate(priorAttendance.instanceDate) : undefined}
+						originalAttendDate={priorAttendance && !sourceAttendanceGuid ? DateOnly.toLocalDate(priorAttendance.instanceDate) : undefined}
 						stateIsValidToContinue={continueEnabled}
 					/>
 				);
@@ -214,7 +218,7 @@ export default (): React.ReactElement => {
 	}
 
 	useEffect(() => {
-		if (!!date && formState === FormState.DateTimeSelect && !!getLocalStorageItem()) {
+		if (!sourceAttendanceGuid && !!date && formState === FormState.DateTimeSelect && !!getLocalStorageItem()) {
 			handleFormStateChange(FormState.PreviousEntrySelect);
 		}
 	}, [date])
@@ -310,6 +314,11 @@ const AttendanceForm = ({session, attendanceGuid, date, state, dispatch, onSucce
 	)
 }
 
+const enum DateIssueType {
+	Error,
+	Warning
+}
+
 const DateTimeSelection = ({session, date, onDateChange, times, onTimeChange, progressFormState, originalAttendDate, stateIsValidToContinue}): ReactElement => {
 	const [searchParams] = useSearchParams();
 	const dayOfWeek = searchParams.get('dow') ? Number(searchParams.get('dow')) : ''
@@ -327,18 +336,12 @@ const DateTimeSelection = ({session, date, onDateChange, times, onTimeChange, pr
 	}
 
 	function setTimeScheduleStartTime(id: string, time: LocalTime) {
-		if (!times)
-			return
-
 		let schedule: TimeScheduleView = times.find(x => x.guid === id)!
 		schedule.startTime = time;
 		onTimeChange([...times])
 	}
 
 	function setTimeScheduleEndTime(id: string, time: LocalTime) {
-		if (!times)
-			return
-
 		let schedule: TimeScheduleView = times.find(x => x.guid === id)!
 		schedule.endTime = time;
 		onTimeChange([...times])
@@ -356,8 +359,7 @@ const DateTimeSelection = ({session, date, onDateChange, times, onTimeChange, pr
 				.find(d => DayOfWeek.toInt(d.dayOfWeek) == date.dayOfWeek().value() % 7)
 				?.timeSchedules;
 
-			if (timeScheduleForDate)
-				onTimeChange(timeScheduleForDate)
+			onTimeChange(timeScheduleForDate)
 		}
 	}, [session?.guid, date?.toString()])
 
@@ -370,49 +372,79 @@ const DateTimeSelection = ({session, date, onDateChange, times, onTimeChange, pr
 
 	const dateFormatter = DateTimeFormatter.ofPattern('eeee, MMMM dd').withLocale(Locale.ENGLISH)
 
+	let issues: {text:string, type:DateIssueType}[] = [];
+	issues = date && (!times || times?.length === 0)
+		? [...issues, {text:`No schedule found for ${date.dayOfWeek().toString().charAt(0) + date.dayOfWeek().toString().substring(1).toLowerCase()}s`, type: DateIssueType.Error}] 
+		: issues;
+
+	issues = date && (date as LocalDate).isAfter(session.lastSession) ? 
+		[...issues, {text:'This is after the session\'s last scheduled date', type: DateIssueType.Warning}] 
+		: issues;
+
 	return (
-		<div className='row'>
-			<div className='col-xl-2 col-md-4 col-12'>
-				<label className='form-label' htmlFor='date-select'>Date</label>
-				{
-					!dates || dates.length != 0 
-						? 	<select className='form-select' aria-label='Select attendance date' value={date?.toString()} onChange={e => handleDateChange(LocalDate.parse(e.target.value))}>
-								{originalAttendDate ? <option className='text-primary' value={originalAttendDate.toString()}>{originalAttendDate.format(dateFormatter)}</option> : null}
-								{dates?.map(date => (<option value={date.toString()}>{date.format(dateFormatter)}</option>))}
-							</select>
-						:	<input className='form-control' type='date' aria-label='Select attendance date' value={date?.toString()} onChange={e => handleDateChange(LocalDate.parse(e.target.value))} />
+		<div>
+			<div className='row'>
+				<div className='col-xl-2 col-md-4 col-12'>
+					<label className='form-label' htmlFor='date-select'>Date</label>
+					{
+						!dates || dates.length != 0 
+							? 	<select className='form-select' aria-label='Select attendance date' value={date?.toString()} onChange={e => handleDateChange(LocalDate.parse(e.target.value))}>
+									{originalAttendDate ? <option className='text-primary' value={originalAttendDate.toString()}>{originalAttendDate.format(dateFormatter)}</option> : null}
+									{dates?.map(date => (<option value={date.toString()}>{date.format(dateFormatter)}</option>))}
+								</select>
+							:	<input className='form-control' type='date' aria-label='Select attendance date' value={date?.toString()} onChange={e => handleDateChange(LocalDate.parse(e.target.value))} />
+					}
+				</div>
+
+				<div className='col-xl-2 col-md-4 col-12'>
+					<label className='form-label'>Start Time</label>
+					{times?.map(schedule => (
+						<TimeInput 
+							id={'start-time-' + schedule.guid} 
+							value={schedule.startTime} 
+							onChange={(time) => setTimeScheduleStartTime(schedule.guid, time)} 
+						/>
+					))}
+				</div>
+
+				<div className='col-xl-2 col-md-4 col-12'>
+					<label className='form-label'>End Time</label>
+					{times?.map(schedule => (
+						<TimeInput 
+							id={'end-time-' + schedule.guid} 
+							value={schedule.endTime} 
+							onChange={(time) => setTimeScheduleEndTime(schedule.guid, time)} 
+						/>
+					))}
+				</div>
+
+				<div className='col-xl-2 d-flex align-items-end'>
+					<button className='btn btn-primary' onClick={progressFormState} disabled={!stateIsValidToContinue}>Continue</button>
+				</div>	
+			</div>
+			<div className='row mt-3'>
+				{issues.length > 0
+				? <div className='col'>
+					<ul className='px-3 mb-0'>
+						{issues.map(issue => <li className={`${issue.type === DateIssueType.Error? 'text-danger' : 'text-warning'}`}>{issue.text}</li>)}
+					</ul>
+					<div className={`${issues.some(i => i.type === DateIssueType.Error) ? 'text-danger' : 'text-warning'} fw-bold`}>Are you sure {date.format(dateFormatter)} is the correct date?</div>
+				</div>
+				: null
 				}
-
-				{
-					date && !times ? <div className='text-danger'>No schedule found for this day of week, are you sure this is the correct date?</div> : null
-				}
 			</div>
-
-			<div className='col-xl-2 col-md-4 col-12'>
-				<label className='form-label'>Start Time</label>
-				{times?.map(schedule => (
-					<TimeInput 
-						id={'start-time-' + schedule.guid} 
-						value={schedule.startTime} 
-						onChange={(time) => setTimeScheduleStartTime(schedule.guid, time)} 
-					/>
-				))}
-			</div>
-
-			<div className='col-xl-2 col-md-4 col-12'>
-				<label className='form-label'>End Time</label>
-				{times?.map(schedule => (
-					<TimeInput 
-						id={'end-time-' + schedule.guid} 
-						value={schedule.endTime} 
-						onChange={(time) => setTimeScheduleEndTime(schedule.guid, time)} 
-					/>
-				))}
-			</div>
-
-			<div className='col-xl-2 d-flex align-items-end'>
-				<button className='btn btn-primary' onClick={progressFormState} disabled={!stateIsValidToContinue}>Continue</button>
-			</div>	
 		</div>
 	)
+}
+
+function useAttendanceMode(params: {
+    sessionGuid: string;
+    attendanceGuid?: string | null;
+    sourceAttendanceGuid?: string | null;
+}) {
+    const { sessionGuid, attendanceGuid, sourceAttendanceGuid } = params;
+
+    if (attendanceGuid) return 'edit';
+    if (sourceAttendanceGuid) return 'copy';
+    return 'new';
 }

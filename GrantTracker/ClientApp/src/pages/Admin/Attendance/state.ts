@@ -4,6 +4,7 @@ import { FamilyRecord, InstructorRecord, StudentRecord } from 'Models/StudentAtt
 import { TimeScheduleForm, TimeScheduleView } from 'Models/TimeSchedule'
 import { InstructorSchoolYearView } from 'Models/Instructor'
 import { TimeOnly } from 'Models/TimeOnly'
+import { LocalTime } from '@js-joda/core'
 
 export interface AttendanceForm {
     defaultTimeSchedule: TimeScheduleForm[]
@@ -94,8 +95,8 @@ export function handleStateReduction(state: AttendanceForm, action: ReducerActio
                 firstName: x.instructorSchoolYear.instructor.firstName,
                 lastName: x.instructorSchoolYear.instructor.lastName,
                 times: x.timeRecords.map(y => ({
-                    startTime: TimeOnly.toLocalTime(y.startTime),
-                    endTime: TimeOnly.toLocalTime(y.endTime)
+                    startTime: y.startTime instanceof LocalTime ? y.startTime : TimeOnly.toLocalTime(y.startTime),
+                    endTime: y.endTime instanceof LocalTime ? y.endTime : TimeOnly.toLocalTime(y.endTime)
                 }))
             })) as InstructorRecord[] 
 
@@ -106,8 +107,8 @@ export function handleStateReduction(state: AttendanceForm, action: ReducerActio
                 lastName: x.studentSchoolYear.student.lastName,
                 matricNumber: x.studentSchoolYear.student.matricNumber,
                 times: x.timeRecords?.map(y => ({
-                    startTime: TimeOnly.toLocalTime(y.startTime),
-                    endTime: TimeOnly.toLocalTime(y.endTime)
+                    startTime: y.startTime instanceof LocalTime ? y.startTime : TimeOnly.toLocalTime(y.startTime),
+                    endTime: y.endTime instanceof LocalTime ? y.endTime : TimeOnly.toLocalTime(y.endTime)
                 })),
                 familyAttendance: x.familyAttendance?.slice() || [],
                 conflicts: []

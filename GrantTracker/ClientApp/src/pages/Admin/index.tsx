@@ -15,6 +15,7 @@ import { SimpleSessionView } from 'Models/Session'
 import { InstructorSchoolYearView, InstructorView } from 'Models/Instructor'
 import { DateOnly } from 'Models/DateOnly'
 import { AppContext } from 'App'
+import { DaySchedule } from 'Models/DaySchedule'
 
 const TabSelector = ({user}: {user: User}): JSX.Element => (
   <Tabset basePath={paths.Admin.path}>
@@ -69,7 +70,8 @@ export default () => {
       select: (sessions) => sessions.map(session => ({
           ...session,
           firstSessionDate: DateOnly.toLocalDate(session.firstSessionDate as unknown as DateOnly),
-          lastSessionDate: DateOnly.toLocalDate(session.lastSessionDate as unknown as DateOnly)
+          lastSessionDate: DateOnly.toLocalDate(session.lastSessionDate as unknown as DateOnly),
+          daySchedules: session.daySchedules.map(ds => DaySchedule.toViewModel(ds))
       })) 
   })
 

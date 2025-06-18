@@ -9,6 +9,7 @@ export interface TimeScheduleDomain {
   endTime: TimeOnly
 }
 
+//why did I make both the next two interfaces..?
 export interface TimeScheduleView {
   guid: string
   startTime: LocalTime
