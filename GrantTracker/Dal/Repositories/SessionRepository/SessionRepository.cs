@@ -77,7 +77,7 @@ public class SessionRepository : ISessionRepository
             .Include(s => s.FundingSource)
 			.Include(s => s.OrganizationType)
 			.Include(s => s.PartnershipType)
-			.Include(s => s.DaySchedules)
+			.Include(s => s.DaySchedules).ThenInclude(ds => ds.TimeSchedules)
 			.Select(s => SimpleSessionView.FromDatabase(s))
 			.ToListAsync();
 	}

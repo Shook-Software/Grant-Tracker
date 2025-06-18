@@ -29,13 +29,14 @@ enum FormState {
 export default (): React.ReactElement => {
 	const [searchParams] = useSearchParams();
 	const sessionGuid = searchParams.get('session')
-
-	//going to need the dayscheduleId for the session in order to import
 	const attendanceGuid = searchParams.get('attendanceId')
+	const sourceAttendanceGuid = searchParams.get('sourceAttendanceId')
+	const initialDate = searchParams.get('date')
+	
+	const attendanceMode: 'new' | 'edit' | 'copy' = useAttendanceMode({ sessionGuid: sessionGuid || '', attendanceGuid, sourceAttendanceGuid });
 
 	const [formState, setFormState] = useState<FormState>(FormState.DateTimeSelect)
-
-	const [date, setDate] = useState<LocalDate | undefined>(undefined)
+	const [date, setDate] = useState<LocalDate | undefined>(!!initialDate ? LocalDate.parse(initialDate) : undefined)
 	const [timeSchedules, setTimeSchedules] = useState<TimeScheduleView[] | undefined>(undefined)
 	const [attendanceState, dispatch] = useReducer(reducer, {
 		defaultTimeSchedule: [],
@@ -59,11 +60,11 @@ export default (): React.ReactElement => {
 	})
 
 	const { data: priorAttendance } = useQuery({
-		queryKey: [`session/${sessionGuid}/attendance/${attendanceGuid}`],
-		enabled: !!attendanceGuid,
-		retry: false,
-		staleTime: Infinity
-	})
+        queryKey: [`session/${sessionGuid}/attendance/${attendanceMode === 'edit' ? attendanceGuid : sourceAttendanceGuid}`],
+        enabled: !!attendanceGuid || !!sourceAttendanceGuid,
+        retry: false,
+        staleTime: Infinity
+    })
 
 	function createLocalStorageKey(): string {
 		return `attendance-${sessionGuid}-${date?.toString()}`;
@@ -137,15 +138,20 @@ export default (): React.ReactElement => {
 			case FormState.AttendanceRecords:
 				if (prevState === FormState.DateTimeSelect || (prevState == FormState.PreviousEntrySelect && !formStateOverride)) 
 				{
-					dispatch({ type: 'setDefaultTimeSchedules', payload: [] })
+					if (!!timeSchedules) {
+						dispatch({ type: 'setDefaultTimeSchedules', payload: timeSchedules || [] })
+					}
 
-					if (session && studentRegs && timeSchedules) {
-						if (!attendanceGuid) {
+					if (!!session && !!studentRegs && !!timeSchedules) {
+						if (!priorAttendance) {
 							dispatch({ type: 'populateInstructors', payload: { instructors: session?.instructors, times: timeSchedules }})
 							dispatch({ type: 'populateStudents', payload: { students: studentRegs.map(reg => reg.studentSchoolYear), times: timeSchedules }})
 						}
 						else { 
-							dispatch({ type: 'populateExistingRecords', payload: { instructorAttendance: priorAttendance.instructorAttendanceRecords, studentAttendance: priorAttendance.studentAttendanceRecords }})
+							dispatch({ type: 'populateExistingRecords', payload: { 
+								instructorAttendance: priorAttendance.instructorAttendanceRecords.map(iar => ({...iar, timeRecords: [...timeSchedules]})), 
+								studentAttendance: priorAttendance.studentAttendanceRecords.map(sar => ({...sar, timeRecords: [...timeSchedules]}))
+							}})
 						}
 					}
 				}
@@ -191,7 +197,7 @@ export default (): React.ReactElement => {
 						times={timeSchedules}
 						onTimeChange={setTimeSchedules}
 						progressFormState={() => handleFormStateChange(FormState.AttendanceRecords)}
-						originalAttendDate={priorAttendance ? DateOnly.toLocalDate(priorAttendance.instanceDate) : undefined}
+						originalAttendDate={priorAttendance && !sourceAttendanceGuid ? DateOnly.toLocalDate(priorAttendance.instanceDate) : undefined}
 						stateIsValidToContinue={continueEnabled}
 					/>
 				);
@@ -212,7 +218,7 @@ export default (): React.ReactElement => {
 	}
 
 	useEffect(() => {
-		if (!!date && formState === FormState.DateTimeSelect && !!getLocalStorageItem()) {
+		if (!sourceAttendanceGuid && !!date && formState === FormState.DateTimeSelect && !!getLocalStorageItem()) {
 			handleFormStateChange(FormState.PreviousEntrySelect);
 		}
 	}, [date])
@@ -429,4 +435,16 @@ const DateTimeSelection = ({session, date, onDateChange, times, onTimeChange, pr
 			</div>
 		</div>
 	)
+}
+
+function useAttendanceMode(params: {
+    sessionGuid: string;
+    attendanceGuid?: string | null;
+    sourceAttendanceGuid?: string | null;
+}) {
+    const { sessionGuid, attendanceGuid, sourceAttendanceGuid } = params;
+
+    if (attendanceGuid) return 'edit';
+    if (sourceAttendanceGuid) return 'copy';
+    return 'new';
 }

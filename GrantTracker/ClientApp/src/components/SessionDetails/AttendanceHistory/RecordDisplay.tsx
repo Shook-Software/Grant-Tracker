@@ -1,16 +1,18 @@
-import { useState, useEffect, useRef } from 'react'
-import { Accordion, Button, Row, Popover, Overlay, Spinner } from 'react-bootstrap'
+import { useState, useEffect, useRef, useContext } from 'react'
+import { Link } from 'react-router-dom'
+import { Accordion, Button, Row, Popover, Overlay, Spinner, Modal } from 'react-bootstrap'
 import { DateTimeFormatter } from '@js-joda/core'
 import { Locale } from '@js-joda/locale_en-us'
 
 import TimeRecordDisplay from './TimeRecordDisplay'
 import Table, { Column } from 'components/BTable'
+import { CopyAttendanceModal } from 'components/Modals/CopyAttendanceModal'
 
 import { AttendanceTimeRecordView, AttendanceView, SimpleAttendanceView } from 'Models/StudentAttendance'
 import { getAttendanceRecord } from '../api'
 import FamilyMemberOps from 'Models/FamilyMember'
 import paths from 'utils/routing/paths'
-import { Link } from 'react-router-dom'
+import { OrgYearContext } from 'pages/Admin'
 
 const studentColumns: Column[] = [
   {
@@ -171,14 +173,20 @@ const RemoveAttendanceRecord = ({date, onChange}): JSX.Element => {
 
 interface Props {
   sessionGuid: string
+  sessionName: string
   simpleRecord: SimpleAttendanceView
   onDeleteClick
   sessionType: string
 }
 
-export default ({sessionGuid, simpleRecord, onDeleteClick, sessionType}: Props): JSX.Element => {
+const dateFormatter = DateTimeFormatter.ofPattern('eeee, MMMM dd').withLocale(Locale.ENGLISH)
+
+export default ({sessionGuid, sessionName, simpleRecord, onDeleteClick, sessionType}: Props): JSX.Element => {
   const [record, setRecord] = useState<AttendanceView | null>(null)
   const [isLoading, setIsLoading] = useState<boolean>(false)
+  const [showModal, setShowModal] = useState<boolean>(false)
+
+    const { sessionsQuery } = useContext(OrgYearContext)
 
   function fetchAttendanceRecord(attendanceGuid: string) {
     setIsLoading(true)
@@ -240,19 +248,22 @@ export default ({sessionGuid, simpleRecord, onDeleteClick, sessionType}: Props):
         </div>
       </Accordion.Header>
       <Accordion.Body className='p-0' >
-        <Row className='justify-content-between'>
+        <Row>
           {/* Button to nav to edit for another session with this attendance info*/}
           <Link 
-            className='btn btn-primary my-3 mx-3'
+            className='btn btn-primary col-auto my-3 mx-3'
             to={attendanceHref}
             style={{width: 'fit-content'}}
           >
             Edit Record
           </Link>
-          <RemoveAttendanceRecord 
-            date={record.instanceDate} 
-            onChange={() => onDeleteClick(record)}
-          />
+          {sessionType === 'student' ? <button className='btn btn-primary col-auto m-3' type='button' onClick={() => setShowModal(true)}>Copy</button> : null}
+          <div className='col d-flex justify-content-end'>
+            <RemoveAttendanceRecord 
+              date={record.instanceDate} 
+              onChange={() => onDeleteClick(record)}
+            />
+          </div>
         </Row>
         
         <h6 className='px-3'>Instructor(s)</h6>
@@ -261,6 +272,14 @@ export default ({sessionGuid, simpleRecord, onDeleteClick, sessionType}: Props):
         <h6 className='px-3'>Student(s)</h6>
         <Table tableProps={{style: {fontSize: '0.9rem', marginBottom: '0'}}} columns={studentTableColumns} dataset={record.studentAttendanceRecords} />
 
+        <Modal show={showModal} size='xl'>
+          <Modal.Header closeButton onHide={() => setShowModal(false)}>
+              Copying Attendance for {sessionName}, {simpleRecord.instanceDate.format(dateFormatter)}
+          </Modal.Header>
+          <Modal.Body>
+            <CopyAttendanceModal sourceSessionGuid={sessionGuid} sourceAttendanceGuid={simpleRecord.guid} sourceDate={simpleRecord.instanceDate} sessions={sessionsQuery?.data|| []} />
+          </Modal.Body>
+        </Modal>
       </Accordion.Body>
     </Accordion.Item>
   )

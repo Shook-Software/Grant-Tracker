@@ -125,6 +125,7 @@ export default ({ sessionGuid, user }: Props): JSX.Element => {
                   <Card.Title>
                     <AttendanceHistory 
                       sessionGuid={sessionGuid}
+                      sessionName={session!.name}
                       attendanceRecords={attendanceRecords} 
                       onChange={getAttendance} 
                       sessionType={session!.sessionType.label.toLowerCase()}

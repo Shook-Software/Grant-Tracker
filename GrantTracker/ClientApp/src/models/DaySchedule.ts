@@ -23,7 +23,7 @@ export interface DayScheduleDomain {
 //should I make all view model fields readonly?
 export interface DayScheduleView {
   dayScheduleGuid: string
-  dayOfWeek: DayOfWeekString
+  dayOfWeek: DayOfWeekNumeric
   timeSchedules: TimeScheduleView[]
 }
 
