@@ -5,7 +5,7 @@ import { Form, Spinner } from 'react-bootstrap';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 
-import Table,  Column, SortDirection } from 'components/BTable';
+import Table, { Column, SortDirection } from 'components/BTable';
 
 import { DropdownOption, SimpleSessionView } from 'Models/Session'
 import { DateOnly } from 'Models/DateOnly';
