@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { Row, Col, Button, ListGroup, Spinner, Container } from 'react-bootstrap'
-
-import Dropdown from 'components/Input/Dropdown'
+import { Button } from '@/components/ui/button'
+import { Spinner } from '@/components/ui/Spinner'
+import { Label } from '@/components/ui/label'
+import { Combobox } from '@/components/ui/combobox'
 
 import { StudentRegistrationDomain } from 'Models/StudentRegistration'
 
@@ -50,54 +51,63 @@ export default ({state}: Props): JSX.Element => {
   }
 
   return (
-    <Container>
-      <Row>
-        <div>
-          <label htmlFor='from-session'>From...</label>
-          <Dropdown
+    <div className='space-y-4'>
+      <div className='grid grid-cols-1 md:grid-cols-12 gap-4 items-end'>
+        <div className='md:col-span-4 space-y-2'>
+          <Label htmlFor='from-session'>Copy From Session</Label>
+          <Combobox
             id='from-session'
             value={firstSession}
             options={state.map(s => ({
-              guid: s.sessionGuid,
+              value: s.sessionGuid,
               label: s.name
             }))}
-            onChange={(guid: string) => setFirstSession(guid)}
+            onChange={(value: string) => setFirstSession(value)}
+            placeholder='Search source session...'
+            emptyText='No sessions found'
           />
         </div>
-        <div>
-          <label htmlFor='to-session'>To...</label>
-          <Dropdown
+        <div className='md:col-span-4 space-y-2'>
+          <Label htmlFor='to-session'>Copy To Session</Label>
+          <Combobox
             id='to-session'
             value={secondSession}
             options={state.map(s => ({
-              guid: s.sessionGuid,
+              value: s.sessionGuid,
               label: s.name
             }))}
-            onChange={(guid: string) => setSecondSession(guid)}
+            onChange={(value: string) => setSecondSession(value)}
+            placeholder='Search destination session...'
+            emptyText='No sessions found'
           />
         </div>
-        <div className='d-flex flex-column-reverse mt-1'>
+        <div className='md:col-span-4'>
           <Button 
-            style={{width: 'fit-content'}}
+            className='w-full md:w-auto'
             disabled={!(firstSession !== '' && secondSession !== '')}
             onClick={() => handleCopy()}
           >
-            Submit
+            Copy Registrations
           </Button>
         </div>
-      </Row>
-      <Row>
-        {isLoading
-          ?
-            <Spinner animation='border' role='status' />
-          :
-            <> 
-              <h5 className='text-success'><u>{status}</u></h5>
-              <ConflictsDisplay conflicts={conflicts} />
-            </>
-        }
-      </Row>
-    </Container>
+      </div>
+      
+      <div className='mt-4'>
+        {isLoading ? (
+          <div className='flex items-center gap-2'>
+            <Spinner size='sm' />
+            <span className='text-sm text-gray-600'>Copying registrations...</span>
+          </div>
+        ) : (
+          <div className='space-y-3'>
+            {status && (
+              <div className='text-green-600 font-medium'>{status}</div>
+            )}
+            <ConflictsDisplay conflicts={conflicts} />
+          </div>
+        )}
+      </div>
+    </div>
   )
 }
 
@@ -107,13 +117,13 @@ const ConflictsDisplay = ({conflicts}: {conflicts: string[]}): JSX.Element => {
     return <></>
 
   return (
-    <>
-      <h5 className='text-danger'><u>Conflicts:</u></h5>
-      <ListGroup className='px-2'>
+    <div className='space-y-2'>
+      <h5 className='text-red-600 font-medium'>Conflicts:</h5>
+      <div className='bg-red-50 border border-red-200 rounded-md p-3 space-y-1'>
         {conflicts.map((conflict, index) => (
-          <ListGroup.Item key={index}>{conflict}</ListGroup.Item>
+          <div key={index} className='text-red-700 text-sm'>{conflict}</div>
         ))}
-      </ListGroup>
-    </>
+      </div>
+    </div>
   )
 }

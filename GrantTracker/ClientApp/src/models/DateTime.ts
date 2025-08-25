@@ -10,7 +10,6 @@ export interface DateTime {
 
 export abstract class DateTime {
 	public static toLocalTime(obj: DateTime): LocalDateTime {
-		console.log(obj instanceof LocalDateTime)
 		if (obj instanceof LocalDateTime)
 			return obj;
 

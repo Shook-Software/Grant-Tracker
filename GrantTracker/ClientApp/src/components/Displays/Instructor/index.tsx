@@ -1,10 +1,22 @@
-import { useEffect, useState, useContext } from 'react'
+import React, { useEffect, useState, useContext } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { Row, Col, Card, ListGroup, Button, Spinner } from 'react-bootstrap'
+import { User, Shield, CalendarDays, BookOpen, Clock, Edit3, Save, X, MoreVertical, Trash2 } from 'lucide-react'
 
-import Dropdown from 'components/Input/Dropdown'
-import Table, { Column } from 'components/BTable'
-import ListItem from 'components/Item'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Spinner } from '@/components/ui/Spinner'
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { ComboboxDropdownMenu, ComboboxDropdownMenuItem, ComboboxDropdownMenuItemClassName } from 'components/Dropdown'
+import { DataTable } from 'components/DataTable'
+import { ColumnDef } from '@tanstack/react-table'
+import { HeaderCell } from '@/components/ui/table'
+
 import EnrollmentDisplay from './Enrollment'
 import AttendanceDetails from './AttendanceDetails'
 
@@ -14,45 +26,58 @@ import { DropdownOption } from 'Models/Session'
 
 import { getInstructorStatusOptions, getInstructor, patchInstructorStatus, markForDeletion as markInstructorForDeletion } from './api'
 import paths from 'utils/routing/paths'
-import { PageContainer } from 'styles'
 import { OrgYearContext } from 'pages/Admin'
 
+interface OrganizationHistoryRecord {
+  organizationYearGuid: string
+  name: string
+  schoolYear: string
+  quarter: string
+}
 
-//name
-//badge number
-//status
-
-//organization && year displayed
-////org name, guid, 
-////year name, quarter, guid
-
-
-//Session enrollment for given year
-////session name, schedule w/ time of day... maybe make a visual component if there's leftover time, # of students
-
-//Attendance for given year
-
-//A list of years instructor was active, with their status attached, acts as links
-const organizationHistoryColumns: Column[] = [
+const organizationHistoryColumns: ColumnDef<OrganizationHistoryRecord, any>[] = [
   {
-    label: 'Name',
-    attributeKey: 'name',
-    sortable: true
+    accessorKey: "name",
+    header: ({ column }) => (
+      <HeaderCell 
+        label="Organization" 
+        sort={column.getIsSorted()} 
+        onSortClick={() => column.toggleSorting()} 
+      />
+    ),
+    id: 'name'
   },
   {
-    label: 'School Year',
-    attributeKey: 'schoolYear',
-    sortable: true
+    accessorKey: "schoolYear",
+    header: ({ column }) => (
+      <HeaderCell 
+        label="School Year" 
+        sort={column.getIsSorted()} 
+        onSortClick={() => column.toggleSorting()} 
+      />
+    ),
+    id: 'schoolYear'
   },
   {
-    label: 'Quarter',
-    attributeKey: 'quarter',
-    sortable: true
+    accessorKey: "quarter",
+    header: ({ column }) => (
+      <HeaderCell 
+        label="Quarter" 
+        sort={column.getIsSorted()} 
+        onSortClick={() => column.toggleSorting()} 
+      />
+    ),
+    cell: ({ row }) => (
+      <Badge variant="outline" className="font-normal">
+        {row.original.quarter}
+      </Badge>
+    ),
+    id: 'quarter'
   }
 ]
 
-const flattenOrganizationHistory = (organizations: any) => {
-  let flattenedHistory: any[] = []
+const flattenOrganizationHistory = (organizations: any): OrganizationHistoryRecord[] => {
+  let flattenedHistory: OrganizationHistoryRecord[] = []
 
   organizations.forEach(org => {
     org.organizationYears.forEach(oy => {
@@ -86,64 +111,90 @@ const BasicDetails = ({instructor: instructorSchoolYear, onChange, pendingDeleti
   }, [])
 
   return (
-    <ListGroup variant='flush'>
-
-      <ListItem 
-        label='Badge Number:'
-        value={instructor.badgeNumber}
-      />
-
-      <ListItem 
-        label='Reporting Status:' 
-        value={
-          editing
-          ? 
-            <span style={{width: 'min-content'}}>
-              <Dropdown
-                options={dropdownOptions}
-                value={status}
-                onChange={(guid: string) => {
-                  setStatus(guid)
-                  onChange({...instructorSchoolYear, status: dropdownOptions.find(o => o.guid === guid)})
-                }}
-              />
-            </span>
-          : 
-          <div>
-            {instructorSchoolYear.status.label} 
+    <div>
+      <div className="flex justify-between gap-6">
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+            <Shield className="h-4 w-4" />
+            Badge Number
           </div>
-        } 
-      /> 
+          <div className="font-mono text-lg p-3 bg-muted/30 rounded-md">
+            {instructor.badgeNumber}
+          </div>
+        </div>
 
-      <ListItem
-        label='Site Status:'
-        value={ 
-          editing
-          ?
-            <span>
-              <button type='button' className='btn btn-sm btn-danger' onClick={() => onChange({...instructorSchoolYear, isPendingDeletion: !instructorSchoolYear.isPendingDeletion})}>
-                {instructorSchoolYear.isPendingDeletion ? 'Undo Deletion Request': 'Request Deletion'}
-                </button>
-            </span>
-          : <span className={pendingDeletion ? 'text-danger' : 'text-success'}>
-              {pendingDeletion ? 'Pending Deletion. An administrator will review your request.' : 'Active'}
-            </span>
-        }
-      />
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+            <User className="h-4 w-4" />
+            Reporting Status
+          </div>
+          <div className="p-3 bg-muted/30 rounded-md">
+            {editing ? (
+              <Select 
+                value={status} 
+                onValueChange={(value) => {
+                  setStatus(value)
+                  onChange({...instructorSchoolYear, status: dropdownOptions.find(o => o.guid === value)!})
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {dropdownOptions.map(option => (
+                    <SelectItem key={option.guid} value={option.guid}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <Badge variant={instructorSchoolYear.status.label === 'Active' ? 'default' : 'secondary'}>
+                {instructorSchoolYear.status.label}
+              </Badge>
+            )}
+          </div>
+        </div>
 
-    </ListGroup>
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+            <CalendarDays className="h-4 w-4" />
+            Site Status
+          </div>
+          <div className="p-3 bg-muted/30 rounded-md">
+            {editing ? (
+              <Button
+                variant={instructorSchoolYear.isPendingDeletion ? "outline" : "destructive"}
+                size="sm"
+                onClick={() => onChange({...instructorSchoolYear, isPendingDeletion: !instructorSchoolYear.isPendingDeletion})}
+                className="flex items-center gap-2"
+              >
+                <Trash2 className="h-4 w-4" />
+                {instructorSchoolYear.isPendingDeletion ? 'Undo Deletion Request' : 'Request Deletion'}
+              </Button>
+            ) : (
+              <div className="flex items-center gap-2">
+                <div className={`w-2 h-2 rounded-full ${pendingDeletion ? 'bg-destructive' : 'bg-green-500'}`}></div>
+                <span className={pendingDeletion ? 'text-destructive' : 'text-green-600'}>
+                  {pendingDeletion ? 'Pending Deletion - An administrator will review your request.' : 'Active'}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }
 
 export default ({instructorSchoolYearGuid}): JSX.Element => {
-	const { orgYear } = useContext(OrgYearContext)
+  const { orgYear } = useContext(OrgYearContext)
   const [instructorSchoolYear, setInstructorSchoolYear] = useState<InstructorSchoolYearView | null>(null)
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const [editing, setEditing] = useState<boolean>(false)
-  const [persistedDeletionRequested, setPersistedDeletionRequested] = useState<boolean>(false);
+  const [persistedDeletionRequested, setPersistedDeletionRequested] = useState<boolean>(false)
 
   function fetchInstructor(instructorSchoolYearGuid): void {
-    console.log('fetching')
     setIsLoading(true)
     setInstructorSchoolYear(null)
 
@@ -171,93 +222,142 @@ export default ({instructorSchoolYearGuid}): JSX.Element => {
     if (!instructorSchoolYear)
       return;
 
-    await Promise.all([patchInstructorStatus(instructorSchoolYear), markForDeletion()]) //bad design, I know. To be replaced with the major update.
+    await Promise.all([patchInstructorStatus(instructorSchoolYear), markForDeletion()])
       .then(res => fetchInstructor(instructorSchoolYearGuid))
-      .finally(() =>  {
-        console.log('done editing')
+      .finally(() => {
         setEditing(false)
-  });
+      });
   }
 
-  //INITIAL LOAD
-  //On any change of the guid parameter, fetch that instructor's details
+  function cancelEdit() {
+    setEditing(false)
+    fetchInstructor(instructorSchoolYearGuid)
+  }
+
   useEffect(() => {
     fetchInstructor(instructorSchoolYearGuid)
   }, [instructorSchoolYearGuid])
   
   if (isLoading) 
     return (
-      <div className="d-flex flex-column align-items-center">
-        <Spinner animation='border' role='status' />
-        <small className='text-muted'>Loading Instructor...</small>
+      <div className="flex flex-col items-center justify-center py-8">
+        <Spinner variant="border" />
+        <div className="text-sm text-muted-foreground mt-2">Loading Instructor...</div>
       </div>
     )
   else if (!instructorSchoolYear) 
     return (
-      <div className='d-flex justify-content-center'>
-        <p className='text-danger'>An error occured while loading the instructor.</p>
+      <div className='flex justify-center py-8'>
+        <p className='text-destructive'>An error occurred while loading the instructor.</p>
       </div>
-  )
+    )
 
   const organizationHistoryFlattened = flattenOrganizationHistory(instructorSchoolYear.organizations)
   const instructor: InstructorView = instructorSchoolYear.instructor
 
   return (
-    <PageContainer>
-      <Card>
-        <Card.Header className='mb-3 d-flex flex-column align-items-center'>
-          <h2 className='text-center'>{`${instructor.firstName} ${instructor.lastName}`}</h2>
-          <h5>{instructorSchoolYear.organizationName}</h5>
-          <h5>{instructorSchoolYear.year.schoolYear} - {Quarter[instructorSchoolYear.year.quarter]}</h5>
-          <div className='d-flex justify-content-center'>
-            <Button 
-              className='mx-3'
-              size='sm'
-              onClick={() => editing ? saveChangesAsync() : setEditing(true)} //what was I thinking here? lmao...
-            >
-              {editing ? 'Save Changes' : 'Edit'}
-            </Button>
-            {
-              editing 
-              ? <Button className='mx-3' size='sm' variant='secondary' onClick={() => setEditing(false)}>Cancel</Button>
-              : null
-            }
-            <Button 
-                variant='secondary' 
-                size='sm'
-                as={Link} 
-                className='ms-3 px-2 py-1' 
-                to={`${paths.Admin.path}/${paths.Admin.Tabs.Staff.path}`}
-            >
-              Close
-            </Button>
+    <div>
+      {/* Header with Actions Menu */}
+      <header className="space-y-4 mb-6">
+        <div className='flex justify-center items-center gap-4'>
+          <div className="text-center">
+            <h1 className='text-3xl font-bold'>
+              {instructor.firstName} {instructor.lastName}
+            </h1>
+            <div className="text-muted-foreground space-y-1">
+              <div className="font-small flex gap-3">
+                <span>{instructorSchoolYear.organizationName}</span>
+                <span>{instructorSchoolYear.year.schoolYear} - {Quarter[instructorSchoolYear.year.quarter]}</span>
+              </div>
+            </div>
           </div>
-        </Card.Header>
-        <Card.Body>
 
-          <Row className='d-flex flex-column align-items-center'>
-            <Col>
-              <BasicDetails instructor={instructorSchoolYear} onChange={(instructor: InstructorSchoolYearView) => handleInstructorChange(instructor)} pendingDeletion={persistedDeletionRequested} editing={editing}/>
-            </Col>
-          </Row>
+          <ComboboxDropdownMenu aria-label="Instructor actions menu">
+            <div className={ComboboxDropdownMenuItemClassName}>
+              <Link 
+                className='block w-full' 
+                to={`${paths.Admin.path}/${paths.Admin.Tabs.Staff.path}`}
+                aria-label="Close instructor details and return to staff list"
+              >
+                Close
+              </Link>
+            </div>
 
-          <Card.Title className='mt-3'><u>History</u></Card.Title>
-          <Row className='px-2'>
-            <Table dataset={organizationHistoryFlattened} columns={organizationHistoryColumns} />
-          </Row>
+            {editing ? (
+              <>
+                <ComboboxDropdownMenuItem 
+                  variant='default'
+                  label='Save Changes'
+                  onClick={saveChangesAsync}
+                  icon={Save}
+                />
+                <ComboboxDropdownMenuItem 
+                  variant='secondary'
+                  label='Cancel'
+                  onClick={cancelEdit}
+                  icon={X}
+                />
+              </>
+            ) : (
+              <ComboboxDropdownMenuItem 
+                variant='default'
+                label='Edit'
+                onClick={() => setEditing(true)}
+                icon={Edit3}
+              />
+            )}
+          </ComboboxDropdownMenu>
+        </div>
+      </header>
 
-          <Card.Title className='mt-3'><u>Session Enrollment</u></Card.Title>
-          <Row className='px-2'>
-            <EnrollmentDisplay enrollments={instructorSchoolYear.enrollmentRecords} />
-          </Row>
+      <div>
+        <section>
+          <BasicDetails 
+            instructor={instructorSchoolYear} 
+            onChange={handleInstructorChange} 
+            pendingDeletion={persistedDeletionRequested} 
+            editing={editing}
+          />
+        </section>
 
-          <Card.Title className='mt-3'><u>Session Attendance</u></Card.Title>
-          <Row className='px-2'>
-            <AttendanceDetails attendance={instructorSchoolYear.attendanceRecords} />
-          </Row>
-          
-        </Card.Body>
-      </Card>
-    </PageContainer>
+        <hr className="my-6" />
+
+        {/* Organization History */}
+        <section>
+          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+            <CalendarDays className="h-5 w-5" />
+            Organization History
+          </h2>
+          <DataTable
+            columns={organizationHistoryColumns}
+            data={organizationHistoryFlattened}
+            emptyMessage="No organization history found"
+            containerClassName="w-full"
+          />
+        </section>
+
+        <hr className="my-6" />
+
+        {/* Session Enrollment */}
+        <section>
+          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+            <BookOpen className="h-5 w-5" />
+            Session Enrollment
+          </h2>
+          <EnrollmentDisplay enrollments={instructorSchoolYear.enrollmentRecords} />
+        </section>
+
+        <hr className="my-6" />
+
+        {/* Session Attendance */}
+        <section className="mb-6">
+          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+            <Clock className="h-5 w-5" />
+            Session Attendance
+          </h2>
+          <AttendanceDetails attendance={instructorSchoolYear.attendanceRecords} />
+        </section>
+      </div>
+    </div>
   )
 }

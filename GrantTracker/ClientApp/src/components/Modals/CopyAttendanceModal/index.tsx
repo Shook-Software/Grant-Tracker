@@ -1,11 +1,15 @@
 import { DateTimeFormatter, LocalDate } from '@js-joda/core';
 import { Locale } from '@js-joda/locale_en-us';
-import { useState } from 'react';
-import { Form, Spinner } from 'react-bootstrap';
+import { useState, useEffect } from 'react';
+import { FormControl } from '../../Form';
+import { Spinner } from '../../ui/Spinner';
+import { Button } from '../../ui/button';
+import { Badge } from '../../ui/badge';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
+import { ColumnDef } from '@tanstack/react-table';
 
-import Table, { Column, SortDirection } from 'components/BTable';
+import { DataTable } from 'components/DataTable';
 
 import { DropdownOption, SimpleSessionView } from 'Models/Session'
 import { DateOnly } from 'Models/DateOnly';
@@ -26,9 +30,8 @@ export const CopyAttendanceModal = ({ sourceSessionGuid, sourceAttendanceGuid, s
 	const navigate = useNavigate();
 	const [targetDate, setTargetDate] = useState<LocalDate>(sourceDate);
 	const [targetSessionGuid, setTargetSessionGuid] = useState<string | null>(null);
-    const [sessionSearchTerm, setSessionSearchTerm] = useState<string>('')
 
-	const { isFetching: fetchingDates, data: dates, error: dateError } = useQuery({ 
+	const { isFetching: fetchingDates, data: dates, error: dateError } = useQuery({
 		queryKey: [`session/${targetSessionGuid}/attendance/openDates`],
 		select: (dates: DateOnly[]) => dates.map(date => DateOnly.toLocalDate(date)),
 		enabled: !!targetSessionGuid,
@@ -36,13 +39,18 @@ export const CopyAttendanceModal = ({ sourceSessionGuid, sourceAttendanceGuid, s
 		staleTime: Infinity
 	})
 
-    function handleSessionSearchTermChange(term) {
-        term = term.toLocaleLowerCase()
-        setSessionSearchTerm(term)
-    }
-
-	function handleSessionClick(event, row: SimpleSessionView) {
+	function handleSessionClick(row: SimpleSessionView) {
 		setTargetSessionGuid(row.sessionGuid)
+		// Scroll to top of modal
+		setTimeout(() => {
+			const modalElement = document.querySelector('[role="dialog"]')
+			if (modalElement) {
+				const scrollElement = modalElement.querySelector('[data-scroll-container]')
+				if (scrollElement) {
+					scrollElement.scrollTop = 0
+				}
+			}
+		}, 100)
 	}
 
 	function handleAttendanceNavigation() {
@@ -50,90 +58,127 @@ export const CopyAttendanceModal = ({ sourceSessionGuid, sourceAttendanceGuid, s
 	}
 
 	return (
-		<div className=''>
-			<div className='row'>
-				<div className='col-6'>
-					<Form.Control
-						type='text'
-						className='border-bottom-0'
-						placeholder='Filter sessions...'
-						value={sessionSearchTerm}
-						onChange={(e) => handleSessionSearchTermChange(e.target.value)}
-						style={{ borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }}
-					/>
-					
-					<Table
-						columns={sessionColumns}
-						dataset={sessions.filter(session => session.name.toLocaleLowerCase().includes(sessionSearchTerm))}
-						defaultSort={{ index: 0, direction: SortDirection.Ascending }}
-						rowProps={{ key: 'sessionGuid', onClick: handleSessionClick }}
-					/>
-				</div> 
+		<div className='space-y-6'>
+			<div>
+				{!!targetSessionGuid ? (
+					<div className='flex items-end gap-3'>
+						<DateSelection
+							targetDate={targetDate}
+							dates={dates}
+							setDate={setTargetDate}
+							loadingDates={fetchingDates}
+							error={dateError}
+						/>
 
-				<div className='col-6'>
-					{!!targetSessionGuid ? <DateSelection targetDate={targetDate} dates={dates} setDate={setTargetDate} loadingDates={fetchingDates} error={dateError} /> : <div className='text-muted'>Please select a session</div>}
-					<div className='mt-3 d-flex justify-content-end'>
-						<button className='btn btn-primary' type='button' disabled={!targetSessionGuid || !targetDate} onClick={handleAttendanceNavigation}>Continue</button>
+							<Button
+								disabled={!targetSessionGuid || !targetDate}
+								onClick={handleAttendanceNavigation}
+							>
+								Continue
+							</Button>
 					</div>
-				</div>
+				) : (
+					<div className='text-gray-500 p-3 bg-gray-50 border border-gray-200 rounded'>Please select a session below</div>
+				)}
+			</div>
+
+			<div className='space-y-3'>
+				<DataTable
+					columns={sessionColumns}
+					data={sessions}
+					onRowClick={handleSessionClick}
+					initialSorting={[{ id: 'name', desc: false }]}
+					emptyMessage="No sessions found."
+					className="hover:bg-gray-50 cursor-pointer"
+					containerClassName='w-full'
+				/>
 			</div>
 		</div>
 	);
 }
 
-const DateSelection = ({targetDate, dates, setDate, loadingDates, error}) => {
+const DateSelection = ({ targetDate, dates, setDate, loadingDates, error }) => {
 
 	let render = <></>
 
-	if (loadingDates)
-		render = <Spinner title='Loading dates...' />
-	else if (!!error)
-		render = <div className='text-danger'>Unable to load open attendance dates.</div>
-	else if (!dates || dates.length == 0)
-		render = <input className='form-control' type='date' aria-label='Select attendance date' value={targetDate?.toString()} onChange={e => setDate(LocalDate.parse(e.target.value))} />
-	else 
-		render = <select className='form-select' aria-label='Select attendance date' value={targetDate?.toString()} onChange={e => setDate(LocalDate.parse(e.target.value))}>
-					{dates?.map(date => (<option value={date.toString()}>{date.format(dateFormatter)}</option>))}
-				</select>
+	if (loadingDates) {
+		render = (
+			<div className="flex items-center justify-center p-4">
+				<Spinner />
+			</div>
+		)
+	} else if (!!error) {
+		render = <div className='text-red-600 p-3 bg-red-50 border border-red-200 rounded'>Unable to load open attendance dates.</div>
+	} else if (!dates || dates.length == 0) {
+		render = (
+			<FormControl
+				type='date'
+				aria-label='Select attendance date'
+				value={targetDate?.toString()}
+				onChange={e => setDate(LocalDate.parse(e.target.value))}
+			/>
+		)
+	} else {
+		render = (
+			<FormControl
+				as='select'
+				aria-label='Select attendance date'
+				value={targetDate?.toString()}
+				onChange={e => setDate(LocalDate.parse(e.target.value))}
+			>
+				{dates?.map(date => (
+					<option key={date.toString()} value={date.toString()}>
+						{date.format(dateFormatter)}
+					</option>
+				))}
+			</FormControl>
+		)
+	}
 
 	return (
-		<div className='d-flex flex-column'>
-			<label className='form-label' htmlFor='date-select'>Date</label>
+		<div className='space-y-3'>
+			<label className='block text-sm font-medium text-gray-700'>Date</label>
 			{render}
 		</div>
 	)
 }
 
-const sessionColumns: Column[] = [
+const sessionColumns: ColumnDef<SimpleSessionView>[] = [
 	{
-        label: 'Name',
-        attributeKey: 'name',
-		sortable: true
+		header: 'Name',
+		accessorKey: 'name',
+		cell: ({ row }) => row.original.name
 	},
-    {
-        label: 'Session Type',
-        attributeKey: 'sessionType',
-        sortable: true,
-        transform: (value: DropdownOption) => value.label
-    },
 	{
-		label: 'Schedule',
-		attributeKey: '',
-		sortable: false,
-		transform: (session: SimpleSessionView) => {
+		header: 'Session Type',
+		accessorKey: 'sessionType',
+		cell: ({ row }) => row.original.sessionType.label
+	},
+	{
+		header: 'Schedule',
+		id: 'schedule',
+		cell: ({ row }) => {
+			const session = row.original
 			if (!session.daySchedules || session.daySchedules.length === 0)
-				return 'No Schedule'
-
-			return <div>
-					{session.daySchedules.sort((a, b) => a.dayOfWeek - b.dayOfWeek)
-							.flatMap(ds => ds.timeSchedules.map((ts, idx) => (
-								<div className='d-flex justify-content-between' key={ts.guid}>
-									<div>{idx === 0 ? DayOfWeek.toChar(ds.dayOfWeek) : ''}</div>
-									<div>{`${ts.startTime.format(timeFormatter)} to ${ts.endTime.format(timeFormatter)}`}</div>
-								</div>
-							)))
+				return <Badge variant="outline">No Schedule</Badge>
+			return (
+				<div className='space-y-1'>
+					{session.daySchedules
+						.sort((a, b) => DayOfWeek.toInt(a.dayOfWeek) - DayOfWeek.toInt(b.dayOfWeek))
+						.flatMap(ds => ds.timeSchedules
+							.slice() // Create a copy to avoid mutating original array
+							.sort((a, b) => a.startTime.compareTo(b.startTime))
+							.map((ts, idx) => (
+								<Badge key={ts.guid} variant="secondary" className='flex justify-between min-w-0'>
+									<span className='font-medium'>{idx === 0 ? DayOfWeek.toChar(ds.dayOfWeek) : ''}</span>
+									<span className='ml-2'>{`${ts.startTime.format(timeFormatter)} to ${ts.endTime.format(timeFormatter)}`}</span>
+								</Badge>
+							))
+						)
 					}
-			</div>
-		}
+				</div>
+			)
+		},
+		enableSorting: false
 	},
 ]

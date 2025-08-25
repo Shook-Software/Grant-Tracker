@@ -1,111 +1,108 @@
-import { useState } from 'react'
-import { Button, Container, ListGroup } from 'react-bootstrap'
 import { Link } from 'react-router-dom'
-import { DateTimeFormatter, LocalDate } from '@js-joda/core'
-import { Locale } from '@js-joda/locale_en-us'
 
-import Table, { Column, SortDirection } from 'components/BTable'
+import { DataTable } from 'components/DataTable'
+import { ColumnDef } from '@tanstack/react-table'
+import { HeaderCell } from '@/components/ui/table'
 
-import { DayScheduleView } from 'Models/DaySchedule'
-import { TimeSchedule, TimeScheduleView } from 'Models/TimeSchedule'
 import { StudentRegistrationView } from 'Models/StudentRegistration'
-import { SessionView } from 'Models/Session'
+import { Button } from '../ui/button'
+import { Clock, ExternalLink } from 'lucide-react'
+import { DaySchedule, DayScheduleView } from '@/Models/DaySchedule'
+import { DayOfWeek } from '@/Models/DayOfWeek'
+import TimeRecordDisplay from '../SessionDetails/AttendanceHistory/TimeRecordDisplay'
 
 interface Props {
   registrations: StudentRegistrationView[]
 }
 
-const columns: Column[] = [
+const registrationColumns: ColumnDef<StudentRegistrationView, any>[] = [
   {
-    label: 'Session',
-    attributeKey: '',
-    sortable: true,
-    transform: (value: StudentRegistrationView): JSX.Element => (
-      <Link to={`/home/admin/sessions/${value.sessionGuid}`}>
-        {value.sessionName}
-      </Link>
-    )
+    accessorKey: "sessionName",
+    header: ({ column }) => (
+      <HeaderCell 
+        label="Session" 
+        sort={column.getIsSorted()} 
+        onSortClick={() => column.toggleSorting()} 
+      />
+    ),
+    cell: ({ row }) => (
+      <Button variant="link" className="h-auto p-0 text-left justify-start font-normal" asChild>
+        <Link 
+          to={`/home/admin/sessions/${row.original.sessionGuid}`}
+          className="text-blue-600 hover:text-blue-800 hover:underline"
+        >
+          {row.original.sessionName}
+          <ExternalLink className="h-3 w-3" />
+        </Link>
+      </Button>
+    ),
+    id: 'sessionName'
   },
   {
-    label: 'Day of Week',
-    attributeKey: 'daySchedule.dayOfWeek',
-    sortable: true
-  },
-  {
-    label: 'Schedule',
-    attributeKey: 'daySchedule',
-    sortable: false,
-    transform: (value: DayScheduleView): JSX.Element => (
-      <>
-        {value.timeSchedules?.map(schedule => (
-          <p className='m-1'>
-            {`${schedule.startTime.format(
-              DateTimeFormatter.ofPattern('hh:mm a').withLocale(Locale.ENGLISH)
-            )} to ${schedule.endTime.format(
-              DateTimeFormatter.ofPattern('hh:mm a').withLocale(Locale.ENGLISH)
-            )}`}
-          </p>
-        ))}
-      </>
-    )
+    accessorKey: "schedule",
+    header: () => (
+      <div className="flex items-center gap-2 h-full">
+        <Clock className="h-4 w-4" />
+        Schedule
+      </div>
+    ),
+    cell: ({ row }) => {
+      const schedule = row.original.schedule
+      
+      if (!schedule || schedule.length === 0) {
+        return (
+          <div className="text-muted-foreground text-sm italic">
+            No schedule configured
+          </div>
+        )
+      }
+
+      const sortedDays = schedule.sort((curr, next) => DayOfWeek.toInt(curr.dayOfWeek) - DayOfWeek.toInt(next.dayOfWeek))
+
+      return (
+        <div className="space-y-2">
+          {sortedDays.map((day, index) => (
+            <div key={index} className="flex gap-3">
+              <div className="text-sm font-medium text-muted-foreground w-[80px]">
+                {day.dayOfWeek}
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {day.timeSchedules.map((timeSchedule, timeIndex) => (
+                  <TimeRecordDisplay timeRecords={[timeSchedule]} />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )
+    },
+    enableSorting: false,
+    id: 'schedule'
   }
 ]
 
-function getWeekBounds (firstDay: LocalDate): string {
-  let lastDay: LocalDate = firstDay.plusDays(6)
-  let firstDayNumeric: number = firstDay.dayOfYear()
-  let lastDayNumeric: number = lastDay.dayOfYear()
-
-  return `
-    ${LocalDate.ofYearDay(firstDay.year(), firstDayNumeric).format(
-      DateTimeFormatter.ofPattern('MM/dd').withLocale(Locale.ENGLISH)
-    )}
-    to 
-    ${LocalDate.ofYearDay(lastDay.year(), lastDayNumeric).format(
-      DateTimeFormatter.ofPattern('MM/dd').withLocale(Locale.ENGLISH)
-    )}
-  `
-}
-
-function setStartingDate (): LocalDate {
-  let today: LocalDate = LocalDate.now()
-  return today.minusDays(today.dayOfWeek().value())
-}
-
 export default ({ registrations }: Props): JSX.Element => {
-  const [weekStartDate, setWeekStartDate] = useState<LocalDate>(
-    setStartingDate()
-  )
-
-  function setWeekPrevious (): void {
-    setWeekStartDate(weekStartDate.minusWeeks(1))
-  }
-
-  function setWeekNext (): void {
-    setWeekStartDate(weekStartDate.plusWeeks(1))
-  }
-
-  function getScheduleForWeek (): void {
-    //Waiting upon the weekend to do a database revision
+  if (!registrations || registrations.length === 0) {
+    return (
+      <div className="text-center py-8 text-muted-foreground">
+        No registrations found
+      </div>
+    )
   }
 
   return (
-    <>
-      <h3 className='mt-3'>Registrations</h3>
-      
-      <Container>
-        <Table
-          columns={columns}
-          dataset={registrations}
-          defaultSort={{ index: 0, direction: SortDirection.Ascending }}
-        />
-      </Container>
-    </>
+    <DataTable
+      columns={registrationColumns}
+      data={registrations}
+      emptyMessage="No registrations found"
+      initialSorting={[{ id: 'sessionName', desc: false }]}
+      containerClassName="w-full"
+    />
   )
 }
 
 /*
-<div className='d-flex align-items-center pb-3'>
+<div className='d-flex items-center pb-3'>
         <Button
           variant='outline-dark'
           size='sm'

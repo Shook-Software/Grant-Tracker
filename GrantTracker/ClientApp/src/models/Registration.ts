@@ -15,7 +15,6 @@ export interface RegistrationView {
 
 export abstract class Registration {
   public static toViewModel(obj: RegistrationDomain): RegistrationView {
-    console.log(obj)
     return {
       ...obj,
       schedule: DaySchedule.toViewModel(obj?.schedule) || DaySchedule.toViewModel(obj.daySchedule)

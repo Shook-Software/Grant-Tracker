@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Link, useParams } from 'react-router-dom'
-import { Row, Col, Card, Spinner, Button } from 'react-bootstrap'
+import { Link } from 'react-router-dom'
+import { BookOpen, Clock } from 'lucide-react'
 
-import { PageContainer } from 'styles'
+import { Spinner } from '../ui/Spinner'
+import { ComboboxDropdownMenu, ComboboxDropdownMenuItem, ComboboxDropdownMenuItemClassName } from 'components/Dropdown'
 
 import BasicDetails from './BasicDetails'
 import RegistrationDetails from './RegistrationDetails'
@@ -25,7 +26,6 @@ import paths from 'utils/routing/paths'
 export default ({studentGuid}): JSX.Element => {
   const [studentSchoolYear, setStudentSchoolYear] = useState<StudentSchoolYearWithRecordsView | null>()
   const [isLoading, setIsLoading] = useState<boolean>(false)
-  const [error, setError] = useState<string>('')
 
   useEffect(() => {
     //get student details
@@ -41,47 +41,80 @@ export default ({studentGuid}): JSX.Element => {
       .finally(() => setIsLoading(false))
   }, [studentGuid])
 
-  if (!studentSchoolYear && isLoading) 
+  if (isLoading) 
     return (
-      <div className="d-flex flex-column align-items-center">
-        <Spinner animation='border' role='status' />
-        <small className='text-muted'>Loading Student Details...</small>
+      <div className="flex flex-col items-center justify-center py-8">
+        <Spinner variant="border" />
+        <div className="text-sm text-muted-foreground mt-2">Loading Student Details...</div>
       </div>
     )
-  else if (!studentSchoolYear) return <p>An error occured while loading student details.</p>
-
+  else if (!studentSchoolYear) 
+    return (
+      <div className='flex justify-center py-8'>
+        <p className='text-destructive'>An error occurred while loading the student.</p>
+      </div>
+    )
 
   const student: StudentView = studentSchoolYear.student
 
   return (
-    <PageContainer>
-      <Card>
-        <Card.Header className='d-flex flex-column align-items-center'>
-          <h2>{`${student.firstName} ${student.lastName}`}</h2>
-          <h6> {studentSchoolYear.organizationYear.year.schoolYear} - {Quarter[studentSchoolYear.organizationYear.year.quarter]}</h6>
-          <Link 
-              className='btn btn-secondary ms-3 px-2 py-1' 
-              to={`${paths.Admin.path}/${paths.Admin.Tabs.Students.path}`}
-              replace
-          >
-            Close
-          </Link>
-        </Card.Header>
-        <Card.Body>
-          <p>{error}</p>
-          <Row lg={2} className='d-flex flex-column align-items-center'>
-            <Col>
-              <BasicDetails studentSchoolYear={studentSchoolYear} minutes={studentSchoolYear.minutesAttended} />
-            </Col>
-          </Row>
-          <Row>
-            <RegistrationDetails registrations={studentSchoolYear.registrations} />
-          </Row>
-          <Row>
-            <AttendanceDetails attendance={studentSchoolYear.attendance} />
-          </Row>
-        </Card.Body>
-      </Card>
-    </PageContainer>
+    <div>
+      {/* Header with Actions Menu */}
+      <header className="space-y-4 mb-6">
+        <div className='flex justify-center items-center gap-4'>
+          <div className="text-center">
+            <h1 className='text-3xl font-bold'>
+              {student.firstName} {student.lastName}
+            </h1>
+            <div className="text-muted-foreground space-y-1">
+              <div className="font-small flex gap-3">
+                <span>{studentSchoolYear.organizationYear.organization.name}</span>
+                <span>{studentSchoolYear.organizationYear.year.schoolYear} - {Quarter[studentSchoolYear.organizationYear.year.quarter]}</span>
+              </div>
+            </div>
+          </div>
+
+          <ComboboxDropdownMenu aria-label="Student actions menu">
+            <div className={ComboboxDropdownMenuItemClassName}>
+              <Link 
+                className='block w-full' 
+                to={`${paths.Admin.path}/${paths.Admin.Tabs.Students.path}`}
+                aria-label="Close student details and return to students list"
+              >
+                Close
+              </Link>
+            </div>
+          </ComboboxDropdownMenu>
+        </div>
+      </header>
+
+      <div>
+        <section>
+          <BasicDetails studentSchoolYear={studentSchoolYear} minutes={studentSchoolYear.minutesAttended} />
+        </section>
+
+        <hr className="my-6" />
+
+        {/* Registrations */}
+        <section>
+          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+            <BookOpen className="h-5 w-5" />
+            Registrations
+          </h2>
+          <RegistrationDetails registrations={studentSchoolYear.registrations} />
+        </section>
+
+        <hr className="my-6" />
+
+        {/* Attendance */}
+        <section className="mb-6">
+          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+            <Clock className="h-5 w-5" />
+            Attendance
+          </h2>
+          <AttendanceDetails attendance={studentSchoolYear.attendance} />
+        </section>
+      </div>
+    </div>
   )
 }

@@ -8,7 +8,6 @@ export function saveCSVToFile(data, options, fileName) {
     const csvData = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
 
     FileSaver.saveAs(csvData, fileName)
-    console.log(csvData.text())
   }
   catch (err) {
     console.warn(err)

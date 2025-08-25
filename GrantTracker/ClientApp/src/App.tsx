@@ -1,5 +1,4 @@
 import { createContext, useEffect, useState } from 'react'
-import { Container } from 'react-bootstrap'
 import { QueryClient, useQuery } from '@tanstack/react-query'
 
 import MainNavigation from 'components/MainNavigation'
@@ -11,6 +10,7 @@ import { IdentityClaim, User as User } from 'utils/authentication'
 import api from 'utils/api'
 import { OrganizationYear, OrganizationYearDomain } from 'Models/OrganizationYear'
 import 'app.scss'
+import 'output.css'
 
 
 export const App = (): JSX.Element => {
@@ -70,9 +70,9 @@ export const App = (): JSX.Element => {
         paths={paths}
         user={user}
       />
-      <Container
-        className='d-flex flex-column align-items-center w-100 mx-5'
-        style={{ paddingTop: '6.5rem', minWidth: '95vw' }}
+      <div
+        className='mx-auto px-4 max-w-7xl flex flex-col items-center w-full mx-5'
+        style={{ paddingTop: '2rem', minWidth: '95vw' }}
       >
         <AppContext.Provider value={appContextValue}>
           <RenderRoutes 
@@ -80,7 +80,7 @@ export const App = (): JSX.Element => {
             user={user} 
           />
         </AppContext.Provider>
-      </Container>
+      </div>
     </div>
   )
 }

@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
-import { Alert } from 'react-bootstrap'
+import { Alert } from 'components/ui/Alert'
 
 import WordBreak from 'components/Wordbreak'
 

@@ -1,9 +1,7 @@
 import { ReactElement, useState } from "react";
 import { useNavigate } from "react-router";
-import { Spinner } from "react-bootstrap";
 import { DateTimeFormatter, LocalDate } from "@js-joda/core";
 import { Locale } from "@js-joda/locale_en-us";
-import Table, { Column, SortDirection } from "components/BTable";
 
 import { AttendanceForm } from "./state";
 import { InstructorRecord, StudentRecord } from "Models/StudentAttendance";
@@ -11,6 +9,11 @@ import { TimeScheduleForm } from "Models/TimeSchedule";
 import FamilyMemberOps from 'Models/FamilyMember'
 
 import api from 'utils/api'
+import { ColumnDef } from "@tanstack/react-table";
+import { DataTable } from "@/components/DataTable";
+import { HeaderCell } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/Spinner";
 
 
 
@@ -48,8 +51,8 @@ export const AttendanceSummary = ({ sessionGuid, sessionType, attendanceGuid, da
 			})
 	}
 
-	let studentColumns: Column[] = coreColumns.slice();
-	let instructorColumns: Column[] = [...coreColumns.slice(), {...entryExitColumn}];
+	let studentColumns: ColumnDef<any, any>[] = coreColumns.slice();
+	let instructorColumns: ColumnDef<any, any>[] = [...coreColumns.slice(), {...entryExitColumn}];
 
 	if (sessionType === 'Family')
 		studentColumns = [studentPresentColumn, ...studentColumns]
@@ -66,30 +69,29 @@ export const AttendanceSummary = ({ sessionGuid, sessionType, attendanceGuid, da
 
 	const submissionIssue: string = state.studentRecords.some(x => x.conflicts.length > 0) ? 'Please correct attendance time conflicts before submission.' : ''
 
-
 	return (
-		<div className='row'>
-			<div className='col-lg-6 col-12'>
-				<section>
+		<div className='flex flex-nowrap gap-3 mb-6'>
+			<div className='flex flex-col gap-3 w-6/10'>
+				<div>
 					<h6>Instructors - {instructors.length}</h6>
-					<Table dataset={instructors} columns={instructorColumns} defaultSort={{ index: 0, direction: SortDirection.Ascending}} size='sm' />
-				</section>
+					<DataTable data={instructors} columns={instructorColumns} initialSorting={[{ id: 'lastName', desc: false}]} className='text-sm' containerClassName="w-full" />
+				</div>
 
-				<section className={substitutes.length === 0 ? 'd-none' : ''}>
+				<div className={substitutes.length === 0 ? 'hidden' : ''}>
 					<h6>Substitutes - {substitutes.length}</h6>
-					<Table dataset={substitutes} columns={instructorColumns} defaultSort={{ index: 0, direction: SortDirection.Ascending}} size='sm' />
-				</section>
+					<DataTable data={substitutes} columns={instructorColumns} initialSorting={[{ id: 'lastName', desc: false}]} className='text-sm' containerClassName="w-full" />
+				</div>
 
-				<section>
+				<div>
 					<h6>Students - {students.length}</h6>
-					<Table dataset={students} columns={studentColumns} defaultSort={{ index: 0, direction: SortDirection.Ascending}} size='sm' />
-				</section>
+					<DataTable data={students} columns={studentColumns} initialSorting={[{ id: 'lastName', desc: false}]} className='text-sm' containerClassName="w-full" />
+				</div>
 			</div>
 
-			<div className='col-lg-6 col-12'>
-				<section>
+			<div className='w-7/20 pt-4'>
+				<div>
 					<FinalizeDisplay submitting={submitting} submissionIssue={submissionIssue} errors={errors} hasCriticalError={criticalError} handleSubmission={handleAttendanceSubmission} />
-				</section>
+				</div>
 			</div>
 		</div>
 	)
@@ -98,8 +100,8 @@ export const AttendanceSummary = ({ sessionGuid, sessionType, attendanceGuid, da
 const FinalizeDisplay = ({ submitting, submissionIssue, errors, hasCriticalError, handleSubmission }): ReactElement => {
 	if (hasCriticalError)
 		return (
-			<div className='d-flex flex-column'>
-				<span className='text-danger'>Submission Failed</span>
+			<div className='flex flex-col'>
+				<span className='text-red-500'>Submission Failed</span>
 				<span>Please send an email detailing the contents of this attendance record and we will diagnose and correct the issue as soon as able.</span>
 				<span>Apologies for the inconvenience.</span>
 			</div>
@@ -110,8 +112,8 @@ const FinalizeDisplay = ({ submitting, submissionIssue, errors, hasCriticalError
 			<>
 				<h6>Conflicts</h6>
 
-				<ul className='list-group'>
-					{errors.map(error => <li className='list-group-item text-danger'>{error}</li>)}
+				<ul className='bg-white border border-gray-200 rounded'>
+					{errors.map(error => <li className='px-4 py-3 border-b border-gray-200 last:border-b-0 text-red-500'>{error}</li>)}
 				</ul>
 			</>
 		)
@@ -119,19 +121,19 @@ const FinalizeDisplay = ({ submitting, submissionIssue, errors, hasCriticalError
 	if (submissionIssue) 
 		return (
 			<>
-				<h6 className='text-danger'>{submissionIssue}</h6>
-				<button className='btn btn-secondary' type='button' onClick={() => handleSubmission()} disabled={true}>
+				<h6 className='text-red-500'>{submissionIssue}</h6>
+				<Button variant='outline' onClick={() => handleSubmission()} disabled={true}>
 					{submitting ? <><Spinner /> Submitting</> : 'Submit'}
-				</button>
+				</Button>
 			</>
 		)
 
 	return (
 		<>
-			<h6 className='text-secondary'>Everything looks good?</h6>
-			<button className='btn btn-secondary' type='button' onClick={() => handleSubmission()}>
+			<h6 className='text-gray-600'>Everything looks good?</h6>
+			<Button variant='outline' onClick={() => handleSubmission()}>
 				{submitting ? <><Spinner /> Submitting</> : 'Submit'}
-			</button>
+			</Button>
 		</>
 	)
 }
@@ -160,78 +162,97 @@ function postAttendance(sessionGuid: string, attendanceGuid: string | null, date
 	return api.post(`session/${sessionGuid}/attendance`, formattedAttendance)
 }
 
-const coreColumns: Column[] = [
+const coreColumns: ColumnDef<any, any>[] = [
 	{
-		label: 'Last Name',
-		attributeKey: 'lastName',
-		sortable: true
+		id: 'lastName',
+		header: ({ column }) => (
+			<HeaderCell 
+				label='Last Name'
+				sort={column.getIsSorted() === "asc" ? "asc" : column.getIsSorted() === "desc" ? "desc" : false}
+				onSortClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+			/>
+		),
+		accessorKey: 'lastName',
+		enableSorting: true
 	},
 	{
-		label: 'First Name',
-		attributeKey: 'firstName',
-		sortable: true
+		id: 'firstName',
+		header: ({ column }) => (
+			<HeaderCell 
+				label='First Name'
+				sort={column.getIsSorted() === "asc" ? "asc" : column.getIsSorted() === "desc" ? "desc" : false}
+				onSortClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+			/>
+		),
+		accessorKey: 'firstName',
+		enableSorting: true
 	}
 ]
 
-const entryExitColumn: Column = {
-	label: 'Entry/Exit',
-	attributeKey: '',
-	sortable: false,
-	transform: (record: StudentRecord | InstructorRecord) => {
+const entryExitColumn: ColumnDef<any, any> = {
+	id: 'entryExit',
+	header: () => <HeaderCell className='text-center' label='Entry/Exit' />,
+	accessorKey: 'times',
+	enableSorting: false,
+	cell: ({ row }) => {
+		const record = row.original
 		const studentConflicts = record.conflicts || []
 		
 		return (
-			<div className={(studentConflicts.length > 0 ? ' border border-danger' : '')}>
+			<div className={(studentConflicts.length > 0 ? ' border border-red-500' : '')}>
 				{record.times?.map(time => (
-					<div className={'d-flex justify-content-evenly'}>
+					<div className='flex justify-evenly'>
 						<div className='text-center flex-1'>{time.startTime.format(DateTimeFormatter.ofPattern('hh:mm a').withLocale(Locale.ENGLISH))}</div>
 						<div className='text-center flex-1'>{time.endTime.format(DateTimeFormatter.ofPattern('hh:mm a').withLocale(Locale.ENGLISH))}</div>
 					</div>
 				))}
 				{studentConflicts.map(conflict => (
-					<div className='text-danger text-break text-center'>
+					<div className='text-red-500 break-words text-center'>
 						Conflict from {conflict.startTime.format(DateTimeFormatter.ofPattern('hh:mm a').withLocale(Locale.ENGLISH))} to {conflict.exitTime.format(DateTimeFormatter.ofPattern('hh:mm a').withLocale(Locale.ENGLISH))}
 					</div>
 				))}
 			</div>
 		)
-	},
-	headerProps: { className: 'text-center' },
-	cellProps:  { style: { padding: 0} }
+	}
 }
 
-const studentPresentColumn: Column = {
-	label: 'Student Present',
-	attributeKey: '',
-	sortable: false,
-	transform: (record: StudentRecord) => record.times && record.times.length > 0 ? <span className='text-success'>Y</span> : <span className='text-danger'>N</span>
+const studentPresentColumn: ColumnDef<StudentRecord, any> = {
+	id: 'studentPresent',
+	header: () => <HeaderCell label='Student Present' />,
+	accessorKey: 'times',
+	enableSorting: false,
+	cell: ({ row }) => {
+		const record = row.original
+		return record.times && record.times.length > 0 ? <span className='text-green-500'>Y</span> : <span className='text-red-500'>N</span>
+	}
 }
 
-const familyAttendColumn: Column = {
-	label: 'Family Attendance',
-	attributeKey: 'familyAttendance',
-	key: 'familyAttendance',
-	sortable: false,
-	headerTransform: () => (
-	  <th style={{...{ fontSize: '0.75rem', padding: '0.25rem 0.25rem'}}}>
-		<div className='d-flex flex-wrap'> 
-		  <span className='w-100 text-center'>Family Attendance</span>
-		  <span className='w-50 text-center'>Family Member</span>
-		  <span className='w-50 text-center'>Count</span>
-		</div>
-	  </th>
+const familyAttendColumn: ColumnDef<StudentRecord, any> = {
+	id: 'familyAttendance',
+	header: () => (
+		<HeaderCell>
+			<div className='flex flex-wrap w-full'> 
+				<span className='w-full text-center'>Family Attendance</span>
+				<span className='w-1/2 text-center text-xs'>Family Member</span>
+				<span className='w-1/2 text-center text-xs'>Count</span>
+			</div>
+		</HeaderCell>
 	),
-	transform: (familyAttendanceRecord) => (
-	  <div className='d-flex align-items-center flex-wrap h-100'>
-		{
-		  familyAttendanceRecord.map(fa => (
-			<>
-			  <span className='w-50 text-center'>{FamilyMemberOps.toString(fa.familyMember)}</span>
-			  <span className='w-50 text-center'>{fa.count}</span>
-			</>
-		  ))
-		}
-	  </div>
-	),
-	headerProps: { className: 'text-center' }
+	accessorKey: 'familyAttendance',
+	enableSorting: false,
+	cell: ({ row }) => {
+		const familyAttendanceRecord = row.original.familyAttendance
+		return (
+			<div className='flex items-center flex-wrap h-full'>
+				{
+					familyAttendanceRecord.map(fa => (
+						<>
+							<span className='w-1/2 text-center'>{FamilyMemberOps.toString(fa.familyMember)}</span>
+							<span className='w-1/2 text-center'>{fa.count}</span>
+						</>
+					))
+				}
+			</div>
+		)
+	}
 }

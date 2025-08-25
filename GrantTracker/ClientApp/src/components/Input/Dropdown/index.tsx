@@ -2,7 +2,6 @@
 import { useOutsideClickListener } from 'utils/React'
 
 import { Dropdown, DropdownController, OptionList, Option } from './styles'
-import { OverlayTrigger, Popover } from 'react-bootstrap'
 import { DropdownOption } from 'types/Session'
 
 enum Action {
@@ -151,33 +150,13 @@ export default ({ options, value, onChange, width, multipleSelect = false,  show
       selections = [ newValue ]
     }
 
-    console.log(selections)
-
     if (multipleSelect) onChange(selections)
     else onChange(selections.length > 0 ? selections[0] : '')
   }
 
   function createOption(input: DropdownOption): JSX.Element {
     return (
-      <OverlayTrigger
-        trigger={['hover', 'focus']}
-        key={`${input.guid || input.label}`}
-        placement='left'
-        overlay={
-          <Popover
-            id='popover-basic'
-            style={{
-              border: '1px solid var(--bs-gray-700)',
-              display: `${disableOverlay ? 'none' : 'block'}`
-            }}
-          >
-            <Popover.Header>{input.label}</Popover.Header>
-            {input.description ? (
-              <Popover.Body>{input.description}</Popover.Body>
-            ) : null}
-          </Popover>
-        }
-      >
+      <div key={`${input.guid || input.label}`} className="relative group">
         <Option
           role='option'
           tabIndex={0}
@@ -186,7 +165,15 @@ export default ({ options, value, onChange, width, multipleSelect = false,  show
         >
           <p>{input.abbreviation || input.label}</p>
         </Option>
-      </OverlayTrigger>
+        {!disableOverlay && (
+          <div className="absolute left-0 z-50 hidden group-hover:block bg-white border border-gray-700 rounded shadow-lg p-2 max-w-xs">
+            <div className="font-medium text-sm">{input.label}</div>
+            {input.description && (
+              <div className="text-xs text-gray-600 mt-1">{input.description}</div>
+            )}
+          </div>
+        )}
+      </div>
     )
   }
 

@@ -1,5 +1,5 @@
 import { useState, useEffect, ReactElement } from 'react'
-import { Table } from 'react-bootstrap'
+import { Table } from 'components/ui/table'
 import { Header } from './Header'
 import { Body } from './Body'
 
@@ -90,7 +90,7 @@ export default ({ columns, dataset, rowProps, defaultSort, maxHeight, maxRows = 
 
   return (
     <div>
-      <div className={'d-flex gap-1 mb-1' + (maxPages > 1 ? '' : ' d-none')}>
+      <div className={'d-flex gap-1 mb-1' + (maxPages > 1 ? '' : ' hidden')}>
         {Array.from({length: maxPages}, (_, idx) => (
           <button 
             className='btn btn-sm btn-outline-info' 
@@ -102,7 +102,7 @@ export default ({ columns, dataset, rowProps, defaultSort, maxHeight, maxRows = 
           </button>
         ))}
       </div>
-      <div className={'mb-1' + (maxPages > 1 ? '' : ' d-none')}>
+      <div className={'mb-1' + (maxPages > 1 ? '' : ' hidden')}>
           {maxPages > 0 ? `Showing ${pageNumber * maxRows + 1} to ${(pageNumber + 1) * maxRows > dataToRender?.length ? dataToRender?.length : (pageNumber + 1) * maxRows} of ${dataToRender?.length} rows` : ''}
       </div>
 

@@ -1,68 +1,93 @@
 import { Link } from 'react-router-dom'
-import { Container } from 'react-bootstrap'
 import { LocalDate, DateTimeFormatter, LocalTime } from '@js-joda/core'
 import { Locale } from '@js-joda/locale_en-us'
 
-import Table, { Column, SortDirection } from 'components/BTable'
+import { DataTable } from 'components/DataTable'
+import { ColumnDef } from '@tanstack/react-table'
+import { HeaderCell } from '@/components/ui/table'
 import TimeRecordDisplay from 'components/SessionDetails/AttendanceHistory/TimeRecordDisplay'
 
-import { AttendanceTimeRecordView, AttendanceView, StudentAttendanceView } from 'Models/StudentAttendance'
+import { StudentAttendanceView } from 'Models/StudentAttendance'
+import { Button } from '../ui/button'
+import { ExternalLink } from 'lucide-react'
 
-const columns: Column[] = [
+const attendanceColumns: ColumnDef<StudentAttendanceView, any>[] = [
   {
-    label: 'Session',
-    attributeKey: '',
-    key: 'ss',
-    sortable: true,
-    sortTransform: (value: StudentAttendanceView) => value.attendanceRecord?.session.name || "",
-    transform: (value: StudentAttendanceView) => (
-      <Link to={`/home/admin/sessions/${value.attendanceRecord?.session.guid}`}>
-        {value.attendanceRecord?.session.name}
-      </Link>
-    )
-  },
-  {
-    label: 'Date',
-    attributeKey: 'attendanceRecord',
-    sortable: true,
-    transform: (record: AttendanceView): string => record.instanceDate.format(DateTimeFormatter.ofPattern('MM/dd/y').withLocale(Locale.ENGLISH))
-  },
-  {
-    label: 'Time Records',
-    attributeKey: 'timeRecords',
-    sortable: false,
-    headerTransform: () => (
-      <th className='d-flex flex-wrap'>
-        <span className='w-100 text-center'>Time Records</span>
-        <span className='w-50 text-center'>Entered at:</span>
-        <span className='w-50 text-center'>Exited at:</span>
-      </th>
+    accessorKey: "attendanceRecord.session.name",
+    header: ({ column }) => (
+      <HeaderCell 
+        label="Session" 
+        sort={column.getIsSorted()} 
+        onSortClick={() => column.toggleSorting()} 
+      />
     ),
-    transform: (timeRecord: AttendanceTimeRecordView[]) => <TimeRecordDisplay timeRecords={timeRecord} />,
-    cellProps: {className: 'py-1'},
+    cell: ({ row }) => (
+      <Button variant="link" className="h-auto p-0 text-left justify-start font-normal" asChild>
+        <Link 
+          to={`/home/admin/sessions/${row.original.attendanceRecord?.session.guid}`}
+          className="text-blue-600 hover:text-blue-800 hover:underline"
+        >
+          {row.original.attendanceRecord?.session.name}
+          <ExternalLink className="h-3 w-3" />
+        </Link>
+      </Button>
+    ),
+    id: 'sessionName'
+  },
+  {
+    accessorKey: "attendanceRecord.instanceDate",
+    header: ({ column }) => (
+      <HeaderCell 
+        label="Date" 
+        sort={column.getIsSorted()} 
+        onSortClick={() => column.toggleSorting()} 
+      />
+    ),
+    cell: ({ row }) => (
+      <span>
+        {row.original.attendanceRecord.instanceDate.format(DateTimeFormatter.ofPattern('MM/dd/y').withLocale(Locale.ENGLISH))}
+      </span>
+    ),
+    sortingFn: (rowA, rowB) => {
+      const dateA = rowA.original.attendanceRecord.instanceDate
+      const dateB = rowB.original.attendanceRecord.instanceDate
+      if (dateA.isBefore(dateB)) return -1
+      if (dateA.isAfter(dateB)) return 1
+      return 0
+    },
+    id: 'instanceDate'
+  },
+  {
+    accessorKey: "timeRecords",
+    header: () => (
+      <HeaderCell label="Time Records" />
+    ),
+    cell: ({ row }) => (
+      <div className="py-1">
+        <TimeRecordDisplay timeRecords={row.original.timeRecords} />
+      </div>
+    ),
+    enableSorting: false,
+    id: 'timeRecords'
   }
 ]
 
 export default ({ attendance }): JSX.Element => {
-  if (!attendance) return <></>
-
-  attendance = attendance
-    .sort((first, second) =>  {
-      if (first.attendanceRecord.instanceDate.isEqual(second.attendanceRecord.instanceDate))
-        return first.timeRecords[0].startTime.isBefore(second.timeRecords[0].endTime) ? -1 : 1
-      
-      return first.attendanceRecord.instanceDate.isBefore(second.attendanceRecord.instanceDate) ? 1 : -1
-    })
+  if (!attendance || attendance.length === 0) {
+    return (
+      <div className="text-center py-8 text-muted-foreground">
+        No attendance records found
+      </div>
+    )
+  }
 
   return (
-    <Container>
-      <h3>Attendance</h3>
-
-      <Table
-        columns={columns}
-        dataset={attendance}
-        defaultSort={{ index: 1, direction: SortDirection.Descending }}
-      />
-    </Container>
+    <DataTable
+      columns={attendanceColumns}
+      data={attendance}
+      emptyMessage="No attendance records found"
+      initialSorting={[{ id: 'instanceDate', desc: true }]}
+      containerClassName="w-full"
+    />
   )
 }

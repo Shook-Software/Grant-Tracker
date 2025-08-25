@@ -1,11 +1,14 @@
 import { useContext, useEffect, useState } from 'react'
-import { Form, Container, Row, Col, Button, Spinner } from 'react-bootstrap'
 
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Spinner } from '@/components/ui/Spinner'
+import MultipleSelector, { MultiSelector, Option } from '@/components/ui/multiple-selector'
 
 import api from 'utils/api'
 import { OrgYearContext } from 'pages/Admin'
 import { DropdownOption } from 'types/Session'
-import Dropdown from 'components/Input/Dropdown'
 
 interface Filter {
   firstName: string
@@ -21,20 +24,12 @@ interface Props {
 export default ({ orgYearGuid, handleChange }: Props): JSX.Element => {
   const { orgYear } = useContext(OrgYearContext)
   const [isLoading, setIsLoading] = useState<boolean>(false)
-  const [grades, setGrades] = useState<DropdownOption[]>([])
+  const [grades, setGrades] = useState<Option[]>([])
   const [filter, setFilter] = useState<Filter>({
     firstName: '',
     lastName: '',
     grades: []
   })
-
-  function addGradeLevel(value: string): void {
-    setFilter({ ...filter, grades: [...filter.grades, value] })
-  }
-
-  function removeGradeLevel(value: string): void {
-    setFilter({ ...filter, grades: filter.grades.filter(guid => guid !== value) })
-  }
 
   function filterStudents(): void {
     setIsLoading(true)
@@ -48,75 +43,67 @@ export default ({ orgYearGuid, handleChange }: Props): JSX.Element => {
   useEffect(() => {
     fetchGradeOptions()
       .then(res => {
-        setGrades(res)
+        setGrades(res.map(grade => ({ value: grade.guid, label: grade.label })))
       })
   }, [])
 
   return (
-    <Container>
-      <Form
-        onSubmit={(event) => {
-          event.preventDefault()
-          setIsLoading(true)
-          filterStudents()
-        }}
-      >
-        <Container>
-          <Row lg={3}>
-            <Col>
-              <Form.Group>
-                <Form.Label htmlFor='first-name'>First Name</Form.Label>
-                <Form.Control
-                  type='text'
-                  id='first-name'
-                  value={filter.firstName}
-                  onChange={(event: React.BaseSyntheticEvent) => { setFilter({ ...filter, firstName: event.target.value }) }}
-                />
-              </Form.Group>
-            </Col>
-            <Col>
-              <Form.Group>
-                <Form.Label htmlFor='last-name'>Last Name</Form.Label>
-                <Form.Control
-                  type='text'
-                  id='last-name'
-                  value={filter.lastName}
-                  onChange={(event: React.BaseSyntheticEvent) => { setFilter({ ...filter, lastName: event.target.value }) }}
-                />
-                <Form.Text className='text-muted'>(optional)</Form.Text>
-              </Form.Group>
-            </Col>
-            <Col className='d-flex flex-column justify-content-center'>
-              <Form.Group className='pt-2'>
-                <Button type='submit'>
-                  {isLoading ? <Spinner className='m-1' as='span' animation='border' role='status' size='sm' aria-hidden='true'>
-                    <span className='visually-hidden'>Loading...</span>
-                  </Spinner> : null }
-                  Search
-                </Button>
-              </Form.Group>
-            </Col>
-          </Row>
-          <Row lg={1} className='mb-3'>
-            <Col>
-              <Form.Group>
-                <Form.Label>Grades</Form.Label>
-                <Dropdown
-                  width='80px'
-                  value={filter.grades}
-                  options={grades}
-                  onChange={(value: string[]) => {
-                    setFilter({...filter, grades: value})
-                  }}
-                  multipleSelect
-                />
-                <Form.Text className='text-muted'>(optional)</Form.Text>
-              </Form.Group>
-            </Col>
-          </Row>
-        </Container>
-      </Form>
-    </Container>
+    <form
+      onSubmit={(event) => {
+        event.preventDefault()
+        setIsLoading(true)
+        filterStudents()
+      }}
+      className='space-y-4'
+    >
+      {/* Main search fields */}
+      <div className='flex flex-col sm:flex-row gap-4 items-end'>
+        <div className='flex-1 space-y-2'>
+          <Input
+            type='text'
+            id='first-name'
+            value={filter.firstName}
+            onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+              setFilter({ ...filter, firstName: event.target.value })
+            }}
+            placeholder='First name'
+          />
+        </div>
+        
+        <div className='flex-1 space-y-2'>
+          <Input
+            type='text'
+            id='last-name'
+            value={filter.lastName}
+            onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+              setFilter({ ...filter, lastName: event.target.value })
+            }}
+            placeholder='Last name'
+          />
+        </div>
+        
+        <div className='flex-shrink-0'>
+          <Button type='submit' disabled={isLoading} className='min-w-[100px]'>
+            {isLoading && <Spinner size='sm' className='mr-2' />}
+            Search
+          </Button>
+        </div>
+      </div>
+      
+      {/* Grades filter */}
+      <div className='space-y-2'>
+        <div className='max-w-xs'>
+          <MultipleSelector
+            value={grades.filter(grade => filter.grades.includes(grade.value))}
+            options={grades}
+            onChange={(values: Option[]) => {
+              setFilter({...filter, grades: values.map(v => v.value)})
+            }}
+            placeholder='Filter grades'
+          />
+        </div>
+      </div>
+    </form>
   )
 }
 

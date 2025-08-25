@@ -1,53 +1,67 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Spinner } from 'react-bootstrap'
-import Table, { Column, SortDirection } from "components/BTable"
+import { DataTable } from 'components/DataTable'
+import { Button } from 'components/ui/button'
 import { InstructorSchoolYearView } from 'Models/Instructor'
 import { Quarter, Year } from 'Models/OrganizationYear'
 import paths from 'utils/routing/paths'
 import api from 'utils/api'
+import { ColumnDef } from '@tanstack/react-table'
 
-const createInstructorColumns = (onDeleteConfirmation): Column[] => [
+const createInstructorColumns = (onDeleteConfirmation): ColumnDef<InstructorSchoolYearView>[] => [
 	{
-		label: 'Last Name',
-		attributeKey: '',
-		transform: (instructorSY: InstructorSchoolYearView) => (<a target='_blank' href={`${paths.Admin.path}/${paths.Admin.Tabs.Staff.path}/${instructorSY.guid}`}>{instructorSY.instructor.lastName}</a>),
-		sortTransform: (instructorSY: InstructorSchoolYearView) => instructorSY.instructor.lastName,
-		sortable: true
+		header: 'Last Name',
+		accessorKey: 'instructor.lastName',
+		cell: ({ row }) => {
+			const instructorSY = row.original
+			return (
+				<a 
+					target='_blank' 
+					href={`${paths.Admin.path}/${paths.Admin.Tabs.Staff.path}/${instructorSY.guid}`}
+					className='text-blue-600 hover:text-blue-800 underline'
+				>
+					{instructorSY.instructor.lastName}
+				</a>
+			)
+		}
 	},
 	{
-		label: 'First Name',
-		attributeKey: 'instructor.firstName',
-		sortable: true
+		header: 'First Name',
+		accessorKey: 'instructor.firstName'
 	},
 	{
-		label: 'Org',
-		attributeKey: 'organizationName',
-		sortable: true
+		header: 'Org',
+		accessorKey: 'organizationName'
 	},
 	{
-		label: 'Badge #',
-		attributeKey: 'instructor.badgeNumber',
-		sortable: true
+		header: 'Badge #',
+		accessorKey: 'instructor.badgeNumber'
 	},
 	{
-		label: 'School Year',
-		attributeKey: 'year.schoolYear',
-		sortable: true
+		header: 'School Year',
+		accessorKey: 'year.schoolYear'
 	},
 	{
-		label: 'Quarter',
-		attributeKey: 'year.quarter',
-		transform: (quarter: number) => Quarter[quarter],
-		sortable: false
+		header: 'Quarter',
+		accessorKey: 'year.quarter',
+		cell: ({ row }) => Quarter[row.original.year.quarter]
 	},
 	{
-		label: '',
-		attributeKey: '',
-		transform: (isy: InstructorSchoolYearView) => (<div>
-			<button type='button' className='btn btn-sm btn-danger' onClick={() => onDeleteConfirmation(isy)}>Delete</button>
-		</div>),
-		sortable: false
+		header: 'Actions',
+		id: 'actions',
+		cell: ({ row }) => {
+			const isy = row.original
+			return (
+				<Button 
+					variant='destructive' 
+					size='sm' 
+					onClick={() => onDeleteConfirmation(isy)}
+				>
+					Delete
+				</Button>
+			)
+		},
+		enableSorting: false
 	}
 ]
 
@@ -76,23 +90,37 @@ export default (): JSX.Element => {
 
 	if (isPending)
 		return (
-			<div className="d-flex flex-column align-items-center">
-			  <Spinner animation='border' role='status' />
-			  <small className='text-muted'>Loading Instructor...</small>
+			<div className="flex flex-col items-center justify-center h-40 gap-3">
+			  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+			  <small className='text-gray-500'>Loading Instructors...</small>
 			</div>
 		  );
 
 	return (
-		<div className=''>
-			{
-				hasError ? <h5 className='text-danger mb-3'>Something went wrong with your request.</h5> : null
-			}
-			{
-				deletedInstructor ? <h5 className='text-success mb-3'>{deletedInstructor.instructor.firstName} {deletedInstructor.instructor.lastName} was deleted!</h5> : null
-			}
+		<div className='space-y-4'>
+			{hasError && (
+				<div className='bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded'>
+					<h5 className='font-medium'>Something went wrong with your request.</h5>
+				</div>
+			)}
+			{deletedInstructor && (
+				<div className='bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded'>
+					<h5 className='font-medium'>
+						{deletedInstructor.instructor.firstName} {deletedInstructor.instructor.lastName} was deleted!
+					</h5>
+				</div>
+			)}
 
-			<h3>Pending Instructor Deletions</h3>
-			<Table columns={createInstructorColumns((isy) => deleteInstructor(isy))} dataset={instructorOrgYears!} />
+			<div>
+				<h3 className='text-xl font-semibold mb-4'>Pending Instructor Deletions</h3>
+				<DataTable 
+					columns={createInstructorColumns((isy) => deleteInstructor(isy))} 
+					data={instructorOrgYears || []} 
+					emptyMessage="No instructors pending deletion."
+					className="hover:bg-gray-50"
+					containerClassName="w-full"
+				/>
+			</div>
 		</div>
 	);
 }

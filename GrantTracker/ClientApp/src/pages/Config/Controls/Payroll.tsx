@@ -1,12 +1,16 @@
 import { useContext, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { Quarter, Year, YearDomain, YearView } from "Models/OrganizationYear"
-import Table, { Column } from "components/BTable"
+import { DataTable } from "components/DataTable"
+import { Button } from "components/ui/button"
+import { FormControl } from "components/Form"
 
 import { AppContext } from 'App'
 import api from "utils/api"
 import { PayPeriod, PayrollYear } from "Models/PayPeriod"
 import { LocalDate } from "@js-joda/core"
+import { ColumnDef } from "@tanstack/react-table"
+import { HeaderCell } from "@/components/ui/table"
 
 
 export default ({}): JSX.Element => {
@@ -19,25 +23,33 @@ export default ({}): JSX.Element => {
 	})
 
 	if (yearsPending)
-		return <div className='spinner-border' />
+		return (
+			<div className="flex flex-col items-center justify-center h-40 gap-3">
+				<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+				<small className='text-gray-500'>Loading Payroll Years...</small>
+			</div>
+		)
 
 	return (
-		<div className='row'>
-			<div className='row mb-3'>
-				<div className='col-4'>
+		<div className='space-y-4'>
+			<div className='flex'>
 				{
 					editActive
-					? <button type='button' className='btn btn-primary' onClick={() => setEditActive(false)}>Back</button>
-					: <button type='button' className='btn btn-primary' onClick={() => setEditActive(true)}>Create</button>
+					? <Button onClick={() => setEditActive(false)}>Back</Button>
+					: <Button onClick={() => setEditActive(true)}>Create</Button>
 				}
-				</div>
 			</div>
 
 			<div>
 			{
 				editActive
 				? <PayrollYearForm years={years} />
-				: <Table columns={payrollYearColumns} dataset={data.payrollYears} rowProps={{key: 'guid'}} />
+				: <DataTable 
+						columns={payrollYearColumns} 
+						data={data.payrollYears || []} 
+						emptyMessage="No payroll years found."
+						className="hover:bg-gray-50"
+					/>
 			}
 			</div>
 		</div>
@@ -83,109 +95,149 @@ const PayrollYearForm = ({years}): JSX.Element => {
 		})
 	}
 
-	const columns: Column[] = createPayrollYearFormColumns(yearGuids, setYearGuids)
+	const columns: ColumnDef<YearView>[] = createPayrollYearFormColumns(yearGuids, setYearGuids)
 
 	return (
-		<div>
-			<div className='row'>
-				<div className='col-4'>
-					<label htmlFor='py-name' className='form-label'>Payroll Year Name</label>
-					<input id='py-name' className='form-control' type='text' value={name} onChange={(e) => setName(e.target.value)} />
+		<div className='space-y-4'>
+			<div className='flex gap-4'>
+				<div className='flex-1'>
+					<label htmlFor='py-name' className='block text-sm font-medium text-gray-700 mb-1'>Payroll Year Name</label>
+					<FormControl id='py-name' type='text' value={name} onChange={(e) => setName(e.target.value)} />
 				</div>
 
-				<div className='col-4'>
-					<label htmlFor='pr-file' className='form-label'>Payroll Dates PDF</label>
-					<input id='py-file' className='form-control' type='file' onChange={(e) => setFile(e.target.files ? e.target.files[0] : null)} />
+				<div className='flex-1'>
+					<label htmlFor='pr-file' className='block text-sm font-medium text-gray-700 mb-1'>Payroll Dates PDF</label>
+					<input 
+						id='py-file' 
+						className='w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500' 
+						type='file' 
+						onChange={(e) => setFile(e.target.files ? e.target.files[0] : null)} 
+					/>
 				</div>
 
-				<div className='col-4 d-flex align-items-end'>
-					<button type='button' className='btn btn-primary' disabled={yearGuids.length == 0 || name == '' || !file} onClick={() => submitYear()}>
-						{submission.submitting ? <div className='spinner-border'/> : 'Submit'}
-					</button>
+				<div className='flex items-end'>
+					<Button disabled={yearGuids.length == 0 || name == '' || !file} onClick={() => submitYear()}>
+						{submission.submitting ? (
+							<div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+						) : 'Submit'}
+					</Button>
 				</div>
 			</div>
 
-			<div className='row mb-3'>
-				{ !submission.submitting && submission.hasError ? <small className='text-danger'>The submission was unsuccessful.</small> : null }
-				{ !submission.submitting && !submission.hasError && submission.submitted ? <small className='text-success'>The submission was successful!</small> : null }
+			<div>
+				{ !submission.submitting && submission.hasError && (
+					<small className='text-red-600'>The submission was unsuccessful.</small>
+				)}
+				{ !submission.submitting && !submission.hasError && submission.submitted && (
+					<small className='text-green-600'>The submission was successful!</small>
+				)}
 			</div>
 			
-			<Table dataset={years} columns={columns} className='m-0' rowProps={{key: 'guid'}} />
+			<DataTable 
+				columns={columns} 
+				data={years || []} 
+				emptyMessage="No years found."
+				className="hover:bg-gray-50"
+			/>
 		</div>
 	)
 }
 
-const createPayrollYearFormColumns = (selectedYearGuids, setSelectedYearGuids): Column[] => [
+const createPayrollYearFormColumns = (selectedYearGuids, setSelectedYearGuids): ColumnDef<YearView>[] => [
 	{
-		label: '',
-		attributeKey: '',
-		transform: (year: YearView) => (
-			<div className='form-check'>
-				<input className='form-check-input' type='checkbox' 
-					checked={selectedYearGuids.includes(year.yearGuid)} 
-					onChange={(e) => setSelectedYearGuids(e.target.checked ? [...selectedYearGuids, year.yearGuid] : selectedYearGuids.filter(guid => guid != year.yearGuid))} 
-				/>
-			</div>
-		),
-		sortable: false
+		header: 'Select',
+		id: 'select',
+		cell: ({ row }) => {
+			const year = row.original
+			return (
+				<div className='flex justify-center'>
+					<input 
+						type='checkbox'
+						className='rounded'
+						checked={selectedYearGuids.includes(year.yearGuid)} 
+						onChange={(e) => setSelectedYearGuids(e.target.checked ? [...selectedYearGuids, year.yearGuid] : selectedYearGuids.filter(guid => guid != year.yearGuid))} 
+					/>
+				</div>
+			)
+		},
+		enableSorting: false
 	},
 	{
-		label: 'Year',
-		attributeKey: 'schoolYear',
-		sortable: true
+		header: 'Year',
+		accessorKey: 'schoolYear'
 	}, 
 	{
-		label: 'Quarter',
-		attributeKey: 'quarter',
-		transform: (quarter) => Quarter[quarter],
-		sortable: true
+		header: 'Quarter',
+		accessorKey: 'quarter',
+		cell: ({ row }) => Quarter[row.original.quarter]
 	}
 ]
 
-const payrollPeriodColumns: Column[] = [
+const payrollPeriodColumns: ColumnDef<PayPeriod>[] = [
 	{
-		label: 'Period',
-		attributeKey: 'period',
-		cellProps: {
-			className: 'text-center'
-		},
-		sortable: true
-	},
-	{
-		label: 'Start Date',
-		attributeKey: 'startDate',
-		sortable: false,
-		transform: (date: LocalDate) => date.toString()
-	},
-	{
-		label: 'End Date',
-		attributeKey: 'endDate',
-		sortable: false,
-		transform: (date: LocalDate) => date.toString()
-	}
-]
-
-const payrollYearColumns: Column[] = [
-	{
-		label: 'Name',
-		attributeKey: 'name',
-		sortable: true
-	},
-	{
-		label: 'GT Years',
-		attributeKey: 'years',
-		sortable: false,
-		transform: (years: YearView[]) => years.map(y => (<><span>{y.schoolYear} - {Quarter[y.quarter]}</span><br /></>))
-	},
-	{
-		label: 'Periods',
-		attributeKey: 'periods',
-		sortable: false,
-		cellProps: {
-			className: 'p-0'
-		},
-		transform: (periods: PayPeriod[]) => (
-			<Table columns={payrollPeriodColumns} dataset={periods} rowProps={{key: 'period'}} className="m-0 " />
+		header: 'Period',
+		accessorKey: 'period',
+		cell: ({ row }) => (
+			<div className='text-center'>{row.original.period}</div>
 		)
+	},
+	{
+		header: 'Start Date',
+		accessorKey: 'startDate',
+		cell: ({ row }) => row.original.startDate.toString(),
+		enableSorting: false
+	},
+	{
+		header: 'End Date',
+		accessorKey: 'endDate',
+		cell: ({ row }) => row.original.endDate.toString(),
+		enableSorting: false
+	}
+]
+
+const payrollYearColumns: ColumnDef<PayrollYear>[] = [
+	{
+		header: 'Name',
+		accessorKey: 'name',
+		cell: ({ row }) => <div  className='space-y-1 h-full'>{row.original.name}</div>,
+		meta: {
+			className: 'h-1'
+		},
+	},
+	{
+		header: 'GT Years',
+		accessorKey: 'years',
+		cell: ({ row }) => {
+			const years = row.original.years
+			return (
+				<div className='space-y-1 h-full'>
+					{years.map((y, idx) => (
+						<div key={idx}>{y.schoolYear} - {Quarter[y.quarter]}</div>
+					))}
+				</div>
+			)
+		},
+		meta: {
+			className: 'h-1'
+		},
+		enableSorting: false,
+	},
+	{
+		header: 'Periods',
+		accessorKey: 'periods',
+		cell: ({ row }) => (
+			<DataTable 
+				columns={payrollPeriodColumns} 
+				data={row.original.periods} 
+				emptyMessage="No periods found."
+				containerClassName="border-0 rounded-none"
+			/>
+		),
+		meta: {
+			className: 'py-0',
+			filter: false
+		},
+		enableSorting: false,
+		filterFn: undefined
 	}
 ]

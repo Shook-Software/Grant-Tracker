@@ -1,13 +1,16 @@
 import { useState, useEffect, useMemo } from 'react'
-import { Alert, Button, Form, Modal, Popover } from 'react-bootstrap'
 
-import Table, { Column } from 'components/BTable'
+import { DataTable } from 'components/DataTable'
+import { ColumnDef } from '@tanstack/react-table'
+import { HeaderCell } from 'components/ui/table'
+import { Button } from 'components/ui/button'
 import Dropdown from 'components/Input/Dropdown'
 
 import { DropdownOption } from 'Models/Session'
 
 import { User } from 'utils/authentication'
 import api from 'utils/api'
+import { Trash } from 'lucide-react'
 
 interface UserDeletionProps {
   user: User
@@ -15,16 +18,15 @@ interface UserDeletionProps {
 }
 
 const ConfirmDeletionPopover = ({user, handleChange}: UserDeletionProps): JSX.Element => (
-  <Popover 
-    id='popover-contained' 
-    style={{left: '100%', top: '0', width: 'max-content'}}
+  <div 
+    className="absolute right-full top-0 w-max bg-white border border-gray-300 rounded shadow-lg p-4 z-50"
   >
-    <Popover.Header as='h3'>{user.firstName} {user.lastName}</Popover.Header>
-    <Popover.Body>
+    <h3 className="text-lg font-semibold mb-2">{user.firstName} {user.lastName}</h3>
+    <div className="mb-3">
       <div>
         Are you sure you want to delete this user?
       </div>
-      <div className='d-flex justify-content-between mt-3'>
+      <div className='flex justify-between mt-3'>
         <Button 
           size='sm'
           onClick={() => {handleChange(true)}}
@@ -33,13 +35,14 @@ const ConfirmDeletionPopover = ({user, handleChange}: UserDeletionProps): JSX.El
         </Button>
         <Button 
           size='sm'
+          variant='secondary'
           onClick={() => {handleChange(false)}}
         >
-          Return
+          Cancel
         </Button>
       </div>
-    </Popover.Body>
-  </Popover>
+    </div>
+  </div>
 )
 
 const DeleteUserComponent = ({user, onChange}) => {
@@ -53,52 +56,89 @@ const DeleteUserComponent = ({user, onChange}) => {
   }
   
   return (
-    <div className='position-relative'>
+    <div className='relative'>
       <Button 
-        className='w-100'
-        variant='danger'
+        variant='destructive'
         size='sm'
+        className='w-full'
         onClick={(e) => setShowPopup(!showPopup)}
+        aria-label={`Delete ${user.firstName} ${user.lastName} from ${user.organizationName}`}
+        aria-haspopup="dialog"
       >
-        Delete
+        <Trash aria-hidden />
       </Button>
       {showPopup ? <ConfirmDeletionPopover user={user} handleChange={(userIsDeleted: boolean) => handleChange(userIsDeleted)} /> : null}
     </div>
   )
 }
 
-const createColumns = (onChange): Column[] => ([
+const createColumns = (onChange): ColumnDef<User, any>[] => ([
   {
-    label: 'First Name',
-    attributeKey: 'firstName',
-    sortable: true
+    id: 'firstName',
+    header: ({ column }) => (
+      <HeaderCell 
+        label='First Name'
+        sort={column.getIsSorted() === "asc" ? "asc" : column.getIsSorted() === "desc" ? "desc" : false}
+        onSortClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      />
+    ),
+    accessorKey: 'firstName',
+    enableSorting: true
   },{
-    label: 'Last Name',
-    attributeKey: 'lastName',
-    sortable: true
+    id: 'lastName',
+    header: ({ column }) => (
+      <HeaderCell 
+        label='Last Name'
+        sort={column.getIsSorted() === "asc" ? "asc" : column.getIsSorted() === "desc" ? "desc" : false}
+        onSortClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      />
+    ),
+    accessorKey: 'lastName',
+    enableSorting: true
   },
   {
-    label: 'Badge Number',
-    attributeKey: 'badgeNumber',
-    sortable: true
+    id: 'badgeNumber',
+    header: ({ column }) => (
+      <HeaderCell 
+        label='Badge Number'
+        sort={column.getIsSorted() === "asc" ? "asc" : column.getIsSorted() === "desc" ? "desc" : false}
+        onSortClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      />
+    ),
+    accessorKey: 'badgeNumber',
+    enableSorting: true
   },
   {
-    label: 'Organization Name',
-    attributeKey: 'organization.name',
-    sortable: true
+    id: 'organizationName',
+    header: ({ column }) => (
+      <HeaderCell 
+        label='Organization Name'
+        sort={column.getIsSorted() === "asc" ? "asc" : column.getIsSorted() === "desc" ? "desc" : false}
+        onSortClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      />
+    ),
+    accessorKey: 'organization.name',
+    enableSorting: true
   },
   {
-    label: 'User Type',
-    attributeKey: 'claim',
-    sortable: true,
-    transform: (claim: number) => claim === 0 ? 'Administrator' : 'Coordinator'
+    id: 'userType',
+    header: ({ column }) => (
+      <HeaderCell 
+        label='User Type'
+        sort={column.getIsSorted() === "asc" ? "asc" : column.getIsSorted() === "desc" ? "desc" : false}
+        onSortClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      />
+    ),
+    accessorKey: 'claim',
+    enableSorting: true,
+    cell: ({ row }) => row.original.claim === 0 ? 'Administrator' : 'Coordinator'
   },
   {
-    label: '',
-    attributeKey: '',
-    key: 'userOrganizationYearGuid',
-    sortable: false,
-    transform: (user: User) => <DeleteUserComponent user={user} onChange={onChange} />
+    id: 'actions',
+    header: () => <HeaderCell label='Actions' />,
+    accessorKey: 'userOrganizationYearGuid',
+    enableSorting: false,
+    cell: ({ row }) => <DeleteUserComponent user={row.original} onChange={onChange} />
   }
 ])
 
@@ -126,46 +166,54 @@ const AddUserModal = ({organizationYears, show, setShow, onChange}): JSX.Element
   ]
 
   return (
-    <Modal show={show}>
-      <Modal.Header closeButton onHide={() => setShow(false)}>
-        Add Coordinator
-      </Modal.Header>
-      <Modal.Body>
-        <Form>
-          <Form.Group>
-            <Form.Label htmlFor='org-dropdown'>Organization</Form.Label>
-            <Dropdown
-              id='org-dropdown'
-              options={options}
-              value={organizationYearGuid}
-              onChange={(guid: string) => setOrganizationYearGuid(guid)}
-            />
-          </Form.Group> <Form.Group>
-            <Form.Label htmlFor='claim-dropdown'>User Type</Form.Label>
-            <Dropdown
-              id='claim-dropdown'
-              options={claimOptions}
-              value={claimType}
-              onChange={(guid: string) => setClaimType(guid)}
-            />
-          </Form.Group>
-          <Form.Group>
-            <Form.Label htmlFor='coordinator-badge-number'>Badge Number</Form.Label>
-            <Form.Control type='text' value={badgeNumber} onChange={(event) => setBadgeNumber(event.target.value)} />
-            <Form.Text className='text-muted'>6 digits, including leading zeros.</Form.Text>
-          </Form.Group>
-        </Form>
-      </Modal.Body>
-      <Modal.Footer>
-        <Button 
-          onClick={() => {
-            onChange(organizationYearGuid, badgeNumber, claimType)
-          }}
-          >
-            Add
-          </Button>
-        </Modal.Footer>
-    </Modal>
+    <>
+      {show && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="bg-white rounded-lg max-w-md w-full mx-4">
+            <div className="p-4 border-b flex justify-between items-center">
+              <h3>Add Coordinator</h3>
+              <Button variant='ghost' size='sm' onClick={() => setShow(false)}>×</Button>
+            </div>
+            <div className="p-4">
+              <form>
+                <div className="mb-4">
+                  <label htmlFor='org-dropdown' className="block text-sm font-medium mb-2">Organization</label>
+                  <Dropdown
+                    id='org-dropdown'
+                    options={options}
+                    value={organizationYearGuid}
+                    onChange={(guid: string) => setOrganizationYearGuid(guid)}
+                  />
+                </div>
+                <div className="mb-4">
+                  <label htmlFor='claim-dropdown' className="block text-sm font-medium mb-2">User Type</label>
+                  <Dropdown
+                    id='claim-dropdown'
+                    options={claimOptions}
+                    value={claimType}
+                    onChange={(guid: string) => setClaimType(guid)}
+                  />
+                </div>
+                <div className="mb-4">
+                  <label htmlFor='coordinator-badge-number' className="block text-sm font-medium mb-2">Badge Number</label>
+                  <input type='text' className="w-full px-3 py-2 border border-gray-300 rounded-md" value={badgeNumber} onChange={(event) => setBadgeNumber(event.target.value)} />
+                  <small className='text-gray-500'>6 digits, including leading zeros.</small>
+                </div>
+              </form>
+            </div>
+            <div className="p-4 border-t flex justify-end gap-2">
+              <Button 
+                onClick={() => {
+                  onChange(organizationYearGuid, badgeNumber, claimType)
+                }}
+              >
+                Add
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   )
 }
 
@@ -176,7 +224,7 @@ export default (): JSX.Element => {
   const [organizationYears, setOrganizations] = useState<DropdownOption[]>([])
   const [show, setShow] = useState<boolean>(false)
   const [userHasChanged, setUserHasChanged] = useState<{user: string, action: 'added' | 'removed'}>() 
-  const columns: Column[] = useMemo(() => createColumns(deleteUserAsync), [users])
+  const columns: ColumnDef<User, any>[] = useMemo(() => createColumns(deleteUserAsync), [users])
 
   function fetchUsersAsync(): Promise<User[]> {
     return new Promise((resolve, reject) => {
@@ -238,8 +286,8 @@ export default (): JSX.Element => {
   return (
     <div>
       <Button className='my-3' onClick={() => setShow(true)}>Add User</Button>
-      {userHasChanged?.user ? <Alert variant='success'>{userHasChanged.user} has been {userHasChanged.action}.</Alert> : null}
-      <Table dataset={users} columns={columns} rowProps={{key: 'userOrganizationYearGuid'}} />
+      {userHasChanged?.user ? <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded">{userHasChanged.user} has been {userHasChanged.action}.</div> : null}
+      <DataTable data={users} columns={columns} initialSorting={[{ id: 'lastName', desc: false }]} className='text-sm' containerClassName='w-full' />
       <AddUserModal
         organizationYears={organizationYears}
         show={show}

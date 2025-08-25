@@ -1,72 +1,203 @@
-import { useEffect, useState, useContext } from 'react'
-import { Container, Row, Col, Spinner, Button as BButton, Form } from 'react-bootstrap'
+import React, { useEffect, useState, useContext } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import { UserCheck, Search, Plus, Users } from 'lucide-react'
 
-import Table, { Column, SortDirection } from 'components/BTable'
 import AddInstructorsModal from 'components/Modals/AddInstructorModal'
-import Button from 'components/Input/Button'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
+import { Spinner } from '@/components/ui/Spinner'
 
 import { DropdownOption } from 'types/Session'
 import { addInstructor, fetchGrantTrackerInstructors } from './api'
 import { ApiResult } from 'components/ApiResultAlert'
+
+import { ColumnDef } from '@tanstack/react-table'
+import { HeaderCell } from '@/components/ui/table'
+import { DataTable } from 'components/DataTable'
 
 import InstructorPage from 'components/Displays/Instructor'
 import paths from 'utils/routing/paths'
 import { OrgYearContext } from '..'
 
 
-const createColumns = (): Column[] => [
+interface InstructorRecord {
+  guid: string
+  instructor: {
+    firstName: string
+    lastName: string
+    badgeNumber: string
+  }
+  status: DropdownOption
+}
+
+const createInstructorColumns = (): ColumnDef<InstructorRecord, any>[] => [
   {
-    label: 'First Name',
-    attributeKey: 'instructor.firstName',
-    sortable: true
+    accessorKey: "instructor.firstName",
+    header: ({ column }) => (
+      <HeaderCell
+        label="First Name"
+        sort={column.getIsSorted()}
+        onSortClick={() => column.toggleSorting()}
+        filterValue={column.getFilterValue() as string}
+        onFilterChange={(event) => column.setFilterValue(event.target.value.trim())}
+      />
+    ),
+    id: 'instructor.firstName'
   },
   {
-    label: 'Last Name',
-    attributeKey: 'instructor.lastName',
-    sortable: true
+    accessorKey: "instructor.lastName",
+    header: ({ column }) => (
+      <HeaderCell
+        label="Last Name"
+        sort={column.getIsSorted()}
+        onSortClick={() => column.toggleSorting()}
+        filterValue={column.getFilterValue() as string}
+        onFilterChange={(event) => column.setFilterValue(event.target.value.trim())}
+      />
+    ),
+    id: 'instructor.lastName'
   },
   {
-    label: 'Badge Number',
-    attributeKey: 'instructor.badgeNumber',
-    sortable: true
+    accessorKey: "instructor.badgeNumber",
+    header: ({ column }) => (
+      <HeaderCell
+        label="Badge Number"
+        sort={column.getIsSorted()}
+        onSortClick={() => column.toggleSorting()}
+        filterValue={column.getFilterValue() as string}
+        onFilterChange={(event) => column.setFilterValue(event.target.value.trim())}
+      />
+    ),
+    cell: ({ row }) => (
+      <div className="font-mono text-sm">
+        {row.original.instructor.badgeNumber}
+      </div>
+    ),
+    id: 'badgeNumber'
   },
   {
-    label: 'Status',
-    attributeKey: 'status',
-    sortable: true,
-    transform: (value: DropdownOption): string => value.label
+    accessorKey: "status.label",
+    header: ({ column }) => (
+      <HeaderCell
+        label="Status"
+        sort={column.getIsSorted()}
+        onSortClick={() => column.toggleSorting()}
+      />
+    ),
+    cell: ({ row }) => (
+      <Badge
+        variant={row.original.status.label === 'Active' ? 'default' : 'secondary'}
+        className="font-medium"
+      >
+        {row.original.status.label}
+      </Badge>
+    ),
+    id: 'status'
   },
   {
-    label: '',
-    attributeKey: 'guid',
-    sortable: false,
-    transform: (value: string) => (
-      <div className='d-flex justify-content-center'>
-        <BButton className='' size='sm'>
-          <Link to={value} style={{ color: 'inherit' }}>
+    header: "",
+    cell: ({ row }) => (
+      <div className='flex justify-center'>
+        <Button size='sm' asChild>
+          <Link to={row.original.guid}>
             View
           </Link>
-        </BButton>
+        </Button>
       </div>
-    )
-  }
+    ),
+    id: 'actions',
+    enableSorting: false,
+    enableColumnFilter: false
+  },
 ]
+
+interface InstructorDataTableProps {
+  data: InstructorRecord[]
+  openInstructorGuid?: string
+  onRowClick?: (row: InstructorRecord) => void
+}
+
+function InstructorDataTable({
+  data,
+  openInstructorGuid,
+  onRowClick
+}: InstructorDataTableProps) {
+  const getCustomCellClassName = React.useCallback((cellIndex: number, row: InstructorRecord) => {
+    if (cellIndex === 0 && openInstructorGuid === row.guid) {
+      return "text-blue-600 font-medium"
+    }
+    return ""
+  }, [openInstructorGuid])
+
+  // Create combined name column for when an instructor is selected
+  const combinedNameColumn: ColumnDef<InstructorRecord, any> = {
+    accessorKey: "instructor.firstName",
+    header: ({ column }) => (
+      <HeaderCell
+        label="Name"
+        sort={column.getIsSorted()}
+        onSortClick={() => column.toggleSorting()}
+        filterValue={column.getFilterValue() as string}
+        onFilterChange={(event) => column.setFilterValue(event.target.value.trim())}
+      />
+    ),
+    cell: ({ row }) => (
+      <div>
+        {row.original.instructor.firstName} {row.original.instructor.lastName}
+      </div>
+    ),
+    filterFn: (row, id, value) => {
+      if (!value) return true
+      const fullName = `${row.original.instructor.firstName} ${row.original.instructor.lastName}`.toLowerCase()
+      return fullName.includes(value.toLowerCase())
+    },
+    id: 'fullName'
+  }
+
+  const styledColumns = React.useMemo(() => {
+    const columnsToUse = openInstructorGuid ? [combinedNameColumn] : createInstructorColumns()
+
+    return columnsToUse.map((column, index) => ({
+      ...column,
+      cell: ({ row, ...rest }) => {
+        const originalCell = column.cell
+        const cellContent = typeof originalCell === 'function'
+          ? originalCell({ row, ...rest })
+          : row.getValue(column.accessorKey as string)
+
+        const className = getCustomCellClassName(index, row.original)
+
+        return (
+          <div className={className}>
+            {cellContent}
+          </div>
+        )
+      }
+    }))
+  }, [openInstructorGuid, getCustomCellClassName, combinedNameColumn])
+
+  return (
+    <DataTable
+      columns={styledColumns}
+      containerClassName='w-fit'
+      data={data}
+      emptyMessage="No instructors found"
+      onRowClick={onRowClick}
+      initialSorting={[{ id: 'lastName', desc: false }]}
+    />
+  )
+}
 
 export default (): JSX.Element => {
   document.title = 'GT - Admin / Staff'
   const { instructorSchoolYearGuid } = useParams()
   const { orgYear, instructorsQuery } = useContext(OrgYearContext)
   const [showModal, setShowModal] = useState<boolean>(false)
-  const [searchTerm, setSearchTerm] = useState<string>('')
   const navigate = useNavigate()
 
-  function handleSearchTermChange(term) {
-    term = term.toLocaleLowerCase()
-    setSearchTerm(term)
-  }
 
-  function addInternalInstructor (instructor): Promise<ApiResult> {
+  function addInternalInstructor(instructor): Promise<ApiResult> {
     return new Promise((resolve, reject) => {
       addInstructor(orgYear.guid, instructor)
         .then(res => {
@@ -84,21 +215,21 @@ export default (): JSX.Element => {
     })
   }
 
-  function addExternalInstructor (instructor): Promise<ApiResult> {
+  function addExternalInstructor(instructor): Promise<ApiResult> {
     return new Promise((resolve, reject) => {
       addInstructor(orgYear?.guid, instructor)
-      .then(res => {
-        resolve({
-          label: `${instructor.firstName} ${instructor.lastName}`,
-          success: true
+        .then(res => {
+          resolve({
+            label: `${instructor.firstName} ${instructor.lastName}`,
+            success: true
+          })
         })
-      })
-      .catch(err => {
-        resolve({
-          label: `${instructor.firstName} ${instructor.lastName}`,
-          success: false
+        .catch(err => {
+          resolve({
+            label: `${instructor.firstName} ${instructor.lastName}`,
+            success: false
+          })
         })
-      })
     })
   }
 
@@ -111,15 +242,13 @@ export default (): JSX.Element => {
     instructorsQuery?.refetch()
   }, [orgYear])
 
-  let columns: Column[] = createColumns()
   let rowClick = null
   if (instructorSchoolYearGuid) {
-    columns = [columns[0], columns[1]]
-    rowClick = (event, row) => navigate(`${paths.Admin.path}/${paths.Admin.Tabs.Staff.path}/${row.guid}`)
+    rowClick = (row: InstructorRecord) => navigate(`${paths.Admin.path}/${paths.Admin.Tabs.Staff.path}/${row.guid}`)
   }
 
   return (
-    <Container>
+    <div>
       <AddInstructorsModal
         show={showModal}
         orgYearGuid={orgYear?.guid}
@@ -127,57 +256,48 @@ export default (): JSX.Element => {
         onInternalChange={addInternalInstructor}
         onExternalChange={addExternalInstructor}
       />
-      <Row>
-        <Col>
-          <Button
-            className='d-flex align-items-center mt-3'
-            onClick={handleOpenModal}
-          >
-            Add New Instructor
-          </Button>
-        </Col>
-      </Row>
-      <Row className='my-3'>
-        <Col>
-          <h5>Instructors for {orgYear?.organization.name}</h5>
-          {!instructorsQuery || instructorsQuery.isPending ? (
-            <Spinner animation='border' />
-          ): !instructorsQuery.isFetched && instructorsQuery.data!.length === 0 ? (
-            <div className='d-flex align-items-center justify-content-center'>
-              <p>No instructors found...</p>
+
+      <div className='mx-auto px-4 w-full pt-3'>
+        {!instructorSchoolYearGuid && 
+          <div className='flex items-center gap-3 mb-3'>
+            <h4 className='m-0 mr-3 text-xl font-semibold'>Instructors <Users className='inline-block' /></h4>
+            <span className='text-background text-sm'>{orgYear?.organization.name}</span>
+            <Button onClick={handleOpenModal} className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Add Instructor
+            </Button>
+          </div>
+        }
+
+        {!instructorsQuery || instructorsQuery.isPending ? (
+          <div className="flex justify-center py-8">
+            <Spinner variant='border' />
+          </div>
+        ) : !instructorsQuery.isFetched && instructorsQuery.data!.length === 0 ? (
+          <div className='flex items-center justify-center'>
+            <p>No instructors found...</p>
+          </div>
+        ) : (
+          <div className='pt-1'>
+            <div className='flex flex-nowrap -mx-2'>
+              <div className={`px-2 flex-1 w-full`} style={instructorSchoolYearGuid ? { marginLeft: `-250px`, maxWidth: '250px' } : {}}>
+                <div className='space-y-6'>
+                  <section>
+                    <InstructorDataTable
+                      data={instructorsQuery.data || []}
+                      openInstructorGuid={instructorSchoolYearGuid}
+                      onRowClick={rowClick ? (instructor) => rowClick(instructor) : undefined}
+                    />
+                  </section>
+                </div>
+              </div>
+              <div className={`flex-1 ${!instructorSchoolYearGuid ? 'hidden' : 'md:w-9/12'}`}>
+                {instructorSchoolYearGuid && <InstructorPage instructorSchoolYearGuid={instructorSchoolYearGuid} />}
+              </div>
             </div>
-          ) : (<div className='pt-1'>
-          <Row>
-            <Col md={!instructorSchoolYearGuid ? 12 : 3}>
-              <Row>
-                <Col md={!instructorSchoolYearGuid ? 3 : 12}>
-                  <Form.Control 
-                    type='text' 
-                    className='border-bottom-0'
-                    placeholder='Filter instructors...'
-                    value={searchTerm} 
-                    onChange={(e) => handleSearchTermChange(e.target.value)}
-                    style={{borderBottomLeftRadius: 0, borderBottomRightRadius: 0}}
-                  />
-                </Col>
-              </Row>
-              <Row>
-                <Table 
-                  columns={columns} 
-                  dataset={instructorsQuery.data!.filter(e => (`${e.instructor.firstName} ${e.instructor.lastName}`).toLocaleLowerCase().includes(searchTerm))} 
-                  defaultSort={{index: 1, direction: SortDirection.Ascending}}
-                  rowProps={{key: 'guid', onClick: rowClick}} 
-                />
-              </Row>
-            </Col>
-            <Col md={!instructorSchoolYearGuid ? 0 : 9}>
-              {instructorSchoolYearGuid && <InstructorPage instructorSchoolYearGuid={instructorSchoolYearGuid} />}
-            </Col>
-          </Row>
-        </div>
-          )}
-        </Col>
-      </Row>
-    </Container>
+          </div>
+        )}
+      </div>
+    </div>
   )
 }

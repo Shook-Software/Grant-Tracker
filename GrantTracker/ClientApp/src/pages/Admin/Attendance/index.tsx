@@ -17,6 +17,7 @@ import { StudentAttendance } from './StudentAttendance'
 import { AttendanceSummary } from './Summary'
 import api from "utils/api";
 import { TimeOnly } from "Models/TimeOnly";
+import { Button } from "@/components/ui/button";
 
 
 enum FormState {
@@ -177,15 +178,15 @@ export default (): React.ReactElement => {
 				const priorEntry = getLocalStorageItem();
 
 				return (
-					<div className='d-flex flex-column gap-2'>
+					<div className='flex flex-col gap-2'>
 						<p>
 							You have an unfinished attendance entry for this session for <b>{priorEntry?.date.format(DateTimeFormatter.ofPattern("MMMM d, y").withLocale(Locale.ENGLISH))}</b>, with {priorEntry?.state.instructorRecords.length} instructor record(s) and {priorEntry?.state.studentRecords.length} student record(s).<br />
 							This entry was last edited on <b>{LocalDateTime.ofInstant(Instant.ofEpochMilli(priorEntry!.lastEditedAt))?.format(DateTimeFormatter.ofPattern("MMMM d, y, h:m a").withLocale(Locale.ENGLISH))}</b>.<br />
 							Would you like to load this unfinished entry?
 						</p>
 
-						<button type='button' className='btn btn-primary btn-sm' style={{width: 'fit-content'}} aria-label='Yes, load unfinished attendance entry.' onClick={() => handleFormStateChange(FormState.AttendanceRecords, priorEntry?.state)}>Yes, load unfinished entry</button>
-						<button type='button' className='btn btn-secondary btn-sm' style={{width: 'fit-content'}} aria-label='No, create new attendance entry.' onClick={() => handleFormStateChange(FormState.AttendanceRecords)}>No, create new entry</button>
+						<Button variant='outline' className='w-fit' onClick={() => handleFormStateChange(FormState.AttendanceRecords, priorEntry?.state)}>Yes, load unfinished entry</Button>
+						<Button variant='outline' className='w-fit' onClick={() => handleFormStateChange(FormState.AttendanceRecords)}>No, create new entry</Button>
 					</div>
 				);
 			case FormState.DateTimeSelect:
@@ -231,12 +232,12 @@ export default (): React.ReactElement => {
 		return <span>Loading...</span>
 
 	const subHeading: ReactElement | null = priorAttendance?.instanceDate 
-		? <h5 className='text-secondary'>Original attendance date - {DateOnly.toLocalDate(priorAttendance.instanceDate).format(DateTimeFormatter.ofPattern('eeee, MMMM dd').withLocale(Locale.ENGLISH))}</h5>
+		? <h5 className='text-gray-600'>Original attendance date - {DateOnly.toLocalDate(priorAttendance.instanceDate).format(DateTimeFormatter.ofPattern('eeee, MMMM dd').withLocale(Locale.ENGLISH))}</h5>
 		: null;
 
 	return (
-		<div className='w-100'>
-			<h3>{session.name}</h3>
+		<div className='w-full'>
+			<h2 className='font-bold text-xl'>{session.name}</h2>
 			{subHeading}
 
 			<main>
@@ -285,24 +286,25 @@ const AttendanceForm = ({session, attendanceGuid, date, state, dispatch, onSucce
 
 	return (
 		<div>
-			<h5 className='text-secondary'>Attendance for {date.format(DateTimeFormatter.ofPattern('eeee, MMMM dd').withLocale(Locale.ENGLISH))}</h5>
+			<h5 className='text-gray-600'>Attendance for {date.format(DateTimeFormatter.ofPattern('eeee, MMMM dd').withLocale(Locale.ENGLISH))}</h5>
 			<hr />
 
-			<section>
-            	<h5>Instructors</h5>
+			<section className='py-3 max-w-[1400px]'>
+            	<h4 className="font-medium text-lg">Instructors</h4>
 
 				<InstructorAttendance orgYearGuid={session.organizationYear.guid} state={state} dispatch={dispatch} />
 			</section>
 
-			<section>
-            	<h5>Students</h5>
+			<section className='py-3 max-w-[1400px]'>
+            	<h4 className="font-medium text-lg">Students</h4>
 
 				<StudentAttendance orgYearGuid={session.organizationYear.guid} state={state} dispatch={dispatch} sessionType={session.sessionType.label} />
 			</section>
 
-			<section>
-				<h5>Summary</h5>
-				<hr />
+			<hr />
+
+			<section className='py-3'>
+				<h4 className="font-medium text-lg">Summary</h4>
 				<AttendanceSummary sessionGuid={session.guid} 
 					sessionType={session.sessionType.label} 
 					attendanceGuid={attendanceGuid} 
@@ -383,52 +385,61 @@ const DateTimeSelection = ({session, date, onDateChange, times, onTimeChange, pr
 
 	return (
 		<div>
-			<div className='row'>
-				<div className='col-xl-2 col-md-4 col-12'>
-					<label className='form-label' htmlFor='date-select'>Date</label>
+			<div className='flex flex-wrap gap-4 items-end'>
+				<div className=''>
+					<label className='block text-sm font-medium text-gray-700 mb-2' htmlFor='date-select'>Date</label>
 					{
 						!dates || dates.length != 0 
-							? 	<select className='form-select' aria-label='Select attendance date' value={date?.toString()} onChange={e => handleDateChange(LocalDate.parse(e.target.value))}>
-									{originalAttendDate ? <option className='text-primary' value={originalAttendDate.toString()}>{originalAttendDate.format(dateFormatter)}</option> : null}
+							? 	<select className='px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500' aria-label='Select attendance date' value={date?.toString()} onChange={e => handleDateChange(LocalDate.parse(e.target.value))}>
+									{originalAttendDate ? <option className='text-blue-600' value={originalAttendDate.toString()}>{originalAttendDate.format(dateFormatter)}</option> : null}
 									{dates?.map(date => (<option value={date.toString()}>{date.format(dateFormatter)}</option>))}
 								</select>
-							:	<input className='form-control' type='date' aria-label='Select attendance date' value={date?.toString()} onChange={e => handleDateChange(LocalDate.parse(e.target.value))} />
+							:	<input className='px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500' type='date' aria-label='Select attendance date' value={date?.toString()} onChange={e => handleDateChange(LocalDate.parse(e.target.value))} />
 					}
 				</div>
 
-				<div className='col-xl-2 col-md-4 col-12'>
-					<label className='form-label'>Start Time</label>
-					{times?.map(schedule => (
-						<TimeInput 
-							id={'start-time-' + schedule.guid} 
-							value={schedule.startTime} 
-							onChange={(time) => setTimeScheduleStartTime(schedule.guid, time)} 
-						/>
-					))}
+				<div className='min-w-[140px]'>
+					{times && 
+						<>
+							<label className='block text-sm font-medium text-gray-700 mb-2'>Start Time</label>
+							{times.map(schedule => (
+								<TimeInput 
+									id={'start-time-' + schedule.guid} 
+									value={schedule.startTime} 
+									onChange={(time) => setTimeScheduleStartTime(schedule.guid, time)} 
+								/>
+							))}
+						</>
+					}
 				</div>
 
-				<div className='col-xl-2 col-md-4 col-12'>
-					<label className='form-label'>End Time</label>
-					{times?.map(schedule => (
-						<TimeInput 
-							id={'end-time-' + schedule.guid} 
-							value={schedule.endTime} 
-							onChange={(time) => setTimeScheduleEndTime(schedule.guid, time)} 
-						/>
-					))}
+				<div className='min-w-[140px]'>
+					{times && 
+						<>
+							<label className='block text-sm font-medium text-gray-700 mb-2'>End Time</label>
+							{times?.map(schedule => (
+								<TimeInput 
+									id={'end-time-' + schedule.guid} 
+									value={schedule.endTime} 
+									onChange={(time) => setTimeScheduleEndTime(schedule.guid, time)} 
+								/>
+							))}
+						</>
+					}
 				</div>
 
-				<div className='col-xl-2 d-flex align-items-end'>
-					<button className='btn btn-primary' onClick={progressFormState} disabled={!stateIsValidToContinue}>Continue</button>
+				<div className=''>
+					{times && <button className='px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed' onClick={progressFormState} disabled={!stateIsValidToContinue}>Continue</button>}
 				</div>	
 			</div>
-			<div className='row mt-3'>
+
+			<div className='mt-3'>
 				{issues.length > 0
-				? <div className='col'>
-					<ul className='px-3 mb-0'>
-						{issues.map(issue => <li className={`${issue.type === DateIssueType.Error? 'text-danger' : 'text-warning'}`}>{issue.text}</li>)}
+				? <div>
+					<ul className='mb-0'>
+						{issues.map(issue => <li className={`${issue.type === DateIssueType.Error? 'text-red-500' : 'text-yellow-500'}`}>{issue.text}</li>)}
 					</ul>
-					<div className={`${issues.some(i => i.type === DateIssueType.Error) ? 'text-danger' : 'text-warning'} fw-bold`}>Are you sure {date.format(dateFormatter)} is the correct date?</div>
+					<div className={`${issues.some(i => i.type === DateIssueType.Error) ? 'text-red-500' : 'text-yellow-500'} font-bold`}>Are you sure {date.format(dateFormatter)} is the correct date?</div>
 				</div>
 				: null
 				}
