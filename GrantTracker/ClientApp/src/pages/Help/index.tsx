@@ -1,4 +1,3 @@
-import { Col, Container, ListGroup, Row, Tab } from 'react-bootstrap'
 import { PageContainer } from 'styles'
 
 export default ({ }) => {
@@ -6,25 +5,21 @@ export default ({ }) => {
 
   return (
     <PageContainer className='p-3'>
-      <Container>
+      <div className="mx-auto px-4 max-w-7xl">
         <h3>FAQ</h3>
         <h6>{'(to be updated frequently)'}</h6>
-        <ListGroup as='ul'>
-          <ListGroup.Item as='li'>
-            <div>
-              <div className="fw-bold">
-                <span className='px-3'>●</span>
-                How do I make sessions?
-              </div>
-              <div style={{ marginLeft: '2.5rem' }}>
-                Sessions can be added under Admin, on the tab labeled 'Sessions'. Here you can view your site's sessions, filter them, and create new ones.
-              </div>
+        <ul className="list-none border border-gray-200 rounded-lg divide-y divide-gray-200">
+          <li className="list-none p-4">
+            <div className="font-bold">
+              How do I make sessions?
             </div>
-          </ListGroup.Item>
-          <ListGroup.Item as='li'>
+            <div style={{ marginLeft: '2.5rem' }}>
+              Sessions can be added under Admin, on the tab labeled 'Sessions'. Here you can view your site's sessions, filter them, and create new ones.
+            </div>
+          </li>
+          <li className="list-none p-4">
             <div>
-              <div className="fw-bold">
-                <span className='px-3'>●</span>
+              <div className="font-bold">
                 I can't find instructors to add to a session, how do I add instructors?
               </div>
               <div style={{ marginLeft: '2.5rem' }}>
@@ -32,11 +27,10 @@ export default ({ }) => {
                 must be added in this manner before they can be used in a Session. In future versions, instructors may be added from the session creation page.
               </div>
             </div>
-          </ListGroup.Item>
-          <ListGroup.Item as='li'>
+          </li>
+          <li className="list-none p-4">
             <div>
-              <div className="fw-bold">
-                <span className='px-3'>●</span>
+              <div className="font-bold">
                 How do I view a single session's details?
               </div>
               <div style={{ marginLeft: '2.5rem' }}>
@@ -44,23 +38,20 @@ export default ({ }) => {
                 on the on you would like to view details for. This should redirect you to the information page.
               </div>
             </div>
-          </ListGroup.Item>
-          <ListGroup.Item as='li'>
+          </li>
+          <li className="list-none p-4">
             <div>
-              <div className="fw-bold">
-                <span className='px-3'>●</span>
+              <div className="font-bold">
                 How do I take attendance?
               </div>
               <div style={{ marginLeft: '2.5rem' }}>
                 Attendance is handled from a session's information page, on the right-hand side.
-                <br />(Note: Attendance for non-recurring sessions has bugs that will be addressed this week. However, a majority of sessions are recurring on a weekly basis.)
               </div>
             </div>
-          </ListGroup.Item>
-          <ListGroup.Item as='li'>
+          </li>
+          <li className="list-none p-4">
             <div>
-              <div className="fw-bold">
-                <span className='px-3'>●</span>
+              <div className="font-bold">
                 How do I add students to a session?
               </div>
               <div style={{ marginLeft: '2.5rem' }}>
@@ -68,47 +59,30 @@ export default ({ }) => {
                 For recurring sessions, the students must have specific weekdays selected at the bottom of the search menu.
               </div>
             </div>
-          </ListGroup.Item>
-        </ListGroup>
-        <ListGroup.Item as='li'>
-          <div>
-            <div className="fw-bold">
-              <span className='px-3'>●</span>
-              Where is the Reporting page? Why can't I see anything on it?
-            </div>
-            <div style={{ marginLeft: '2.5rem' }}>
-              The reporting page is currently under construction, with the ability to record sessions and attendance taking priority.
-            </div>
+          </li>
+        </ul>
+        <li className="list-none p-4 border-t border-gray-200">
+          <div className="font-bold">
+            Help! Something isn't working correctly, what do I do?
           </div>
-        </ListGroup.Item>
-        <ListGroup.Item as='li'>
-          <div>
-            <div className="fw-bold">
-              <span className='px-3'>●</span>
-              Help! Something isn't working correctly, what do I do?
-            </div>
-            <div style={{ marginLeft: '2.5rem' }}>
-              Please <a href='https://forms.office.com/r/0Hq5fsxHze'>report</a> your issue, with all relevant details so that the underlying cause of the issue may be ascertained.
-            </div>
+          <div style={{ marginLeft: '2.5rem' }}>
+            Please <a href='https://forms.office.com/r/0Hq5fsxHze'>report</a> your issue, with all relevant details so that the underlying cause of the issue may be ascertained.
           </div>
-        </ListGroup.Item>
-        <ListGroup.Item as='li'>
-          <div>
-            <div className="fw-bold">
-              <span className='px-3'>●</span>
-              I don't see my question listed.
-            </div>
-            <div style={{ marginLeft: '2.5rem' }}>
-              If there is a pressing question, please email Elizabeth.Baldry@tusd1.org.
-              Otherwise, please fill out an entry at <a href='https://forms.office.com/r/0Hq5fsxHze'>https://forms.office.com/r/0Hq5fsxHze</a>.
-            </div>
+        </li>
+        <li className="list-none p-4 border-t border-gray-200">
+          <div className="font-bold">
+            I don't see my question listed.
           </div>
-        </ListGroup.Item>
-      </Container>
+          <div style={{ marginLeft: '2.5rem' }}>
+            If there is a pressing question, please email Elizabeth.Baldry@tusd1.org.
+            Otherwise, please fill out an entry at <a href='https://forms.office.com/r/0Hq5fsxHze'>https://forms.office.com/r/0Hq5fsxHze</a>.
+          </div>
+        </li>
+      </div>
 
 
 
-    
+
     </PageContainer >
   )
 }
@@ -118,7 +92,7 @@ export default ({ }) => {
         <h3>Changelog</h3>
         <h6>Version 1.1.1 - June 6th, 2022</h6>
         <Tab.Container defaultActiveKey='/home/help#fixes'>
-          <Row>
+          <div className="grid grid-cols-12">
             <Col>
               <ListGroup>
                 <ListGroup.Item action href='/home/help#fixes'>
@@ -189,7 +163,7 @@ export default ({ }) => {
 
               </Tab.Content>
             </Col>
-          </Row>
+          </div>
         </Tab.Container>
       </Container>
       */

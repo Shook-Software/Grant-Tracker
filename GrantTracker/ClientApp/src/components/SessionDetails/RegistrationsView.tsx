@@ -1,9 +1,16 @@
 import { useState, useEffect, useContext } from 'react'
-import { Button, Modal, Form, Card, Spinner, Row, Col } from 'react-bootstrap'
 import { useNavigate } from 'react-router-dom'
-import Select from 'react-select'
+import { ColumnDef } from '@tanstack/react-table'
 
-import Table, { Column } from 'components/BTable'
+import { Button } from '@/components/ui/button'
+import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/Card'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Label } from '@/components/ui/label'
+import { Combobox } from '@/components/ui/combobox'
+import { DataTable } from '@/components/DataTable'
+import { HeaderCell } from '@/components/ui/table'
 
 import { DayOfWeek } from 'Models/DayOfWeek'
 import { StudentSchoolYearWithRecordsView, StudentView } from 'Models/Student'
@@ -15,21 +22,13 @@ import { DayScheduleView } from 'Models/DaySchedule'
 import SearchStudentsModal from './SearchStudentsModal'
 import { OrgYearContext } from 'pages/Admin'
 import api from 'utils/api'
+import { Loader2Icon, User, UserMinus, UserPlus, Users } from 'lucide-react'
 
 function groupRegistrationsByStudent (registrations: StudentRegistrationView[]): RegistrationByStudent[] {
   const registrationsByStudent: object = {}
 
   registrations.forEach(reg => {
-    const student: StudentView = reg.studentSchoolYear.student
-    const group: RegistrationByStudent | undefined = registrationsByStudent[student.guid]
-    if (group) {
-      group.daysOfWeek = [
-        ...group.daysOfWeek,
-        DayOfWeek.toChar(reg.daySchedule.dayOfWeek)
-      ]
-      group.days = [...group.days, reg.daySchedule]
-      return
-    }
+    const student: StudentView = reg.studentSchoolYear.student;
 
     registrationsByStudent[student.guid] = {
       student: {
@@ -38,8 +37,8 @@ function groupRegistrationsByStudent (registrations: StudentRegistrationView[]):
         studentSchoolYearGuid: reg.studentSchoolYear.guid,
         matricNumber: student.matricNumber
       },
-      daysOfWeek: [DayOfWeek.toChar(reg.daySchedule.dayOfWeek)],
-      days: [reg.daySchedule]
+      daysOfWeek: reg.schedule.map(day => DayOfWeek.toChar(day.dayOfWeek)),
+      days: reg.schedule
     }
   })
 
@@ -163,88 +162,135 @@ export default ({
     })
   }
 
-  useState(() => {
+  useEffect(() => {
     getStudentRegistrationsAsync()
   }, [])
 
   const dataset = groupRegistrationsByStudent(registrations || [])
-  const columns: Column[] = createStudentColumns(handleStudentRemoval)
   const distinctStudentGroups: StudentGroup[] = Array.from(new Set(studentGroups.map(g => g.groupGuid))).map(guid => studentGroups.find(g => g.groupGuid == guid) as StudentGroup)
 
   return ( 
-    <Card>
-      <Card.Body>
-        <Card.Title>
-            <h5>Registrations&nbsp;</h5>
-          <Row>
-            <Col sm={6}>
-              <form className='d-flex flex-column' onSubmit={(e => {e.preventDefault(); addStudentGroup(studentGroupState.selectedGroup, studentGroupState.schedules)})}>
-                <div className='input-group'>
-                  <Select 
-                    name='student-list'
-                    className='form-control p-0'
-                    options={distinctStudentGroups?.map(option => ({label: option.name, value: option.groupGuid}) || [])}
-                    onChange={(option) => setStudentGroupState(state => ({...state, selectedGroup: studentGroups.find(g => g.groupGuid == option?.value) || null}))}
-                  />
-                  <button 
-                    type='submit' 
-                    className='btn btn-primary' 
-                    disabled={studentGroupAPIState.isPending || !studentGroupState.selectedGroup || studentGroupState.schedules.length == 0} 
-                    style={{maxHeight: '40px'}}
-                  >
-                    { studentGroupAPIState.isPending ? <Spinner /> : 'Add Student Group'}
-                  </button>
-                </div>
-
-                <div className='d-flex'>
-                  {daySchedules?.map(day => (
-                    <Form.Group
-                      controlId={day.dayOfWeek}
-                    >
-                      <Form.Label className='fw-normal'><small>{day.dayOfWeek}</small></Form.Label>&nbsp;
-                      <Form.Check
-                        inline
-                        defaultChecked={!!studentGroupState.schedules.find(guid => guid === day.dayScheduleGuid) || false}
-                        style={{ display: 'inline-block' }}
-                        onChange={event => {
-                          if (event.target.checked)
-                            setStudentGroupState(state => ({...state, schedules: Array.from(new Set([...state.schedules, day.dayScheduleGuid]))}))
-                          else
-                            setStudentGroupState(state => ({...state, schedules: state.schedules.filter(guid => guid != day.dayScheduleGuid)}))
-                        }}
+    <Card className='border-0'>
+      <CardHeader>
+        <CardTitle className='text-lg font-medium'>Student Registrations</CardTitle>
+      </CardHeader>
+      <CardContent className='space-y-6'>
+        <Tabs defaultValue="individual">
+          <TabsList className={!distinctStudentGroups || distinctStudentGroups.length === 0 ? 'hidden' : 'flex'}>
+            <TabsTrigger value="individual">Individual <User /></TabsTrigger>
+            <TabsTrigger value="groups">Group <Users /></TabsTrigger>
+          </TabsList>
+          <TabsContent value="individual">
+            <Button 
+              onClick={() => setShowStudentModal(true)}
+              variant='outline'
+            >
+              Add 
+              <UserPlus />
+            </Button>
+          </TabsContent>
+          <TabsContent value="groups">
+            <div className='space-y-4'>
+              <form 
+                className='space-y-4' 
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  addStudentGroup(studentGroupState.selectedGroup, studentGroupState.schedules)
+                }}
+              >
+                <div className='flex flex-col w-full'>
+                  <div className='flex items-end w-full gap-2'>
+                    <div>
+                      <Label htmlFor='student-group-select'>Student Group</Label>
+                      <Combobox
+                        id='student-group-select'
+                        className='min-w-64'
+                        options={distinctStudentGroups?.map(option => ({value: option.groupGuid, label: option.name})) || []}
+                        value={studentGroupState.selectedGroup?.groupGuid || ''}
+                        onChange={(value) => setStudentGroupState(state => ({
+                          ...state, 
+                          selectedGroup: studentGroups.find(g => g.groupGuid === value) || null
+                        }))}
+                        placeholder='Search student groups...'
+                        emptyText='No student groups found'
                       />
-                    </Form.Group>
-                  ))}
+                    </div>
+
+                    <Button 
+                      type='submit' 
+                      disabled={studentGroupAPIState.isPending || !studentGroupState.selectedGroup || studentGroupState.schedules.length === 0}
+                      variant='outline'
+                    >
+                      {studentGroupAPIState.isPending ? <Loader2Icon className="animate-spin" /> : 'Add Student Group'}
+                    </Button>
+                  </div>
+                
+                  <div className='mt-3'>
+                    <Label>Days to Register</Label>
+                    <div className='flex flex-wrap gap-3'>
+                      {daySchedules?.map(day => (
+                        <div key={day.dayOfWeek} className='flex items-center space-x-2'>
+                          <Checkbox
+                            id={`day-${day.dayOfWeek}`}
+                            checked={!!studentGroupState.schedules.find(guid => guid === day.dayScheduleGuid)}
+                            onCheckedChange={(checked) => {
+                              if (checked)
+                                setStudentGroupState(state => ({
+                                  ...state, 
+                                  schedules: Array.from(new Set([...state.schedules, day.dayScheduleGuid]))
+                                }))
+                              else
+                                setStudentGroupState(state => ({
+                                  ...state, 
+                                  schedules: state.schedules.filter(guid => guid !== day.dayScheduleGuid)
+                                }))
+                            }}
+                          />
+                          <Label 
+                            htmlFor={`day-${day.dayOfWeek}`} 
+                            className='text-sm font-normal cursor-pointer'
+                          >
+                            {day.dayOfWeek}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </form>
-            </Col>
-            
-            <Col sm={2}>
-              <button type='button' className='btn btn-primary px-2 py-1' style={{ width: 'auto' }} onClick={() => {setShowStudentModal(true)}}>Add Student</button>
-            </Col>
-          </Row>
+              
+              {/* Error Messages */}
+              {studentGroupAPIState.issues.length > 0 && (
+                <div className='bg-red-50 border border-red-200 rounded-md p-3 space-y-1'>
+                  {studentGroupAPIState.issues.map((issue, index) => (
+                    <div key={index} className='text-red-700 text-sm'>
+                      {`${issue.firstName} ${issue.lastName} ${registrations.some(reg => reg.studentSchoolYear.guid === issue.studentSchoolYearGuid) ? 'is already registered' : 'cannot be added'}.`}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
+        {/* Add Student Group Section */}
+        
 
-          <Row className='d-flex flex-column' style={studentGroupAPIState.issues.length > 0 ? {} : { display: 'none' }}>
-            {studentGroupAPIState.issues.map(issue => (
-              <small className='text-danger'>{`${issue.firstName} ${issue.lastName} ${registrations.some(reg => reg.studentSchoolYear.guid == issue.studentSchoolYearGuid) ? 'is already registered' : 'cannot be added'}.`}</small>
-            ))}
-          </Row>
-        </Card.Title>
-        <Card.Text>
-          <div className='position-relative'>
-            <Table
-              dataset={dataset}
-              columns={columns}
-              rowProps={{onClick: (event, row) => navigate(`/home/admin/students/${row.student.studentSchoolYearGuid}`)}}
-            />
-            <RemoveStudentModal
-              registration={modalData}
-              show={showModal}
-              handleClose={handleClose}
-            />
-          </div>
-        </Card.Text>
-      </Card.Body>
+        {/* Students Table */}
+        <div className='space-y-2'>
+          <StudentRegistrationsTable 
+            dataset={dataset}
+            onRemoveStudent={handleStudentRemoval}
+            onRowClick={(row) => navigate(`/home/admin/students/${row.student.studentSchoolYearGuid}`)}
+          />
+        </div>
+
+        <RemoveStudentModal
+          registration={modalData}
+          show={showModal}
+          handleClose={handleClose}
+        />
+      </CardContent>
+      
       <SearchStudentsModal
         orgYearGuid={orgYear.guid}
         show={showStudentModal}
@@ -256,6 +302,78 @@ export default ({
   )
 }
 
+// StudentRegistrationsTable Component
+interface StudentRegistrationsTableProps {
+  dataset: RegistrationByStudent[]
+  onRemoveStudent: (registration: RegistrationByStudent) => void
+  onRowClick: (row: RegistrationByStudent) => void
+}
+
+const StudentRegistrationsTable = ({ dataset, onRemoveStudent, onRowClick }: StudentRegistrationsTableProps): JSX.Element => {
+  const columns: ColumnDef<RegistrationByStudent>[] = [
+    {
+      accessorKey: 'student.firstName',
+      header: 'First Name',
+      enableSorting: true,
+      id: 'firstName'
+    },
+    {
+      accessorKey: 'student.lastName', 
+      header: 'Last Name',
+      enableSorting: true,
+      id: 'lastName'
+    },
+    {
+      accessorKey: 'student.matricNumber',
+      header: 'Matric #',
+      enableSorting: true
+    },
+    {
+      accessorKey: 'daysOfWeek',
+      header: () => <HeaderCell label="Registrations" />,
+      cell: ({ row }) => row.original.daysOfWeek.join(', '),
+      enableSorting: false
+    },
+    {
+      header: '',
+      cell: ({ row }) => (
+        <div className='flex justify-center'>
+          <Button 
+            size='sm' 
+            variant='destructive'
+            onClick={(event) => {
+              event.stopPropagation()
+              onRemoveStudent(row.original)
+            }}
+            aria-label={`Unregister ${row.original.student.firstName} ${row.original.student.lastName}`}
+          >
+            <UserMinus />
+          </Button>
+        </div>
+      ),
+      id: 'actions',
+      enableSorting: false
+    }
+  ]
+
+  return (
+    <DataTable
+      columns={columns}
+      data={dataset}
+      initialSorting={[{
+        id: 'firstName',
+        desc: false
+      }, {
+        id: 'lastName',
+        desc: false
+      }]}
+      emptyMessage="No student registrations found."
+      onRowClick={onRowClick}
+      containerClassName='w-full'
+    />
+  )
+}
+
 const RemoveStudentModal = ({
   registration,
   show,
@@ -263,8 +381,8 @@ const RemoveStudentModal = ({
 }): JSX.Element => {
   const [selectedRemovals, setRemovals] = useState<string[]>([])
 
-  function handleChange (event, day): void {
-    if (event.target.checked) {
+  function handleChange (checked: boolean, day): void {
+    if (checked) {
       setRemovals([...selectedRemovals, day.dayScheduleGuid])
     } else {
       setRemovals(selectedRemovals.filter(guid => guid !== day.dayScheduleGuid))
@@ -272,90 +390,60 @@ const RemoveStudentModal = ({
   }
 
   useEffect(() => {
-    if (show)
+    if (show && registration)
       setRemovals(registration.days.map(day => day.dayScheduleGuid))
-  }, [registration])
+  }, [registration, show])
+
+  if (!registration) return <></>
 
   return (
-    <Modal show={show}>
-      <Modal.Header closeButton onHide={() => handleClose([], '')}>
-        Confirm the removal of {registration?.student?.firstName}{' '}
-        {registration?.student?.lastName} from the session.
-      </Modal.Header>
-      <Modal.Body>
-        <label>Remove from...</label>
-        {registration?.days.map(day => (
-          <Form>
-            <Form.Check
-              type='checkbox'
-              defaultChecked={true}
-              id={day.dayOfWeek}
-              label={day.dayOfWeek}
-              onChange={event => handleChange(event, day)}
-            />
-          </Form>
-        ))}
-      </Modal.Body>
-      <Modal.Footer>
-        <Button
-          onClick={() =>
-            handleClose(
-              selectedRemovals,
-              registration.student.studentSchoolYearGuid
-            )
-          }
-        >
-          Delete Registrations
-        </Button>
-      </Modal.Footer>
-    </Modal>
+    <Dialog open={show} onOpenChange={() => handleClose([], '')}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>
+            Remove {registration.student.firstName} {registration.student.lastName}
+          </DialogTitle>
+        </DialogHeader>
+        
+        <div className='space-y-4'>
+          <p className='text-sm text-gray-600'>
+            Select which days to remove this student from:
+          </p>
+          
+          <div className='space-y-3'>
+            {registration.days.map((day, index) => (
+              <div key={index} className='flex items-center space-x-2'>
+                <Checkbox
+                  id={`remove-${day.dayOfWeek}`}
+                  checked={selectedRemovals.includes(day.dayScheduleGuid)}
+                  onCheckedChange={(checked) => handleChange(checked, day)}
+                />
+                <Label 
+                  htmlFor={`remove-${day.dayOfWeek}`}
+                  className='cursor-pointer'
+                >
+                  {day.dayOfWeek}
+                </Label>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="secondary" onClick={() => handleClose([], '')}>
+            Cancel
+          </Button>
+          <Button
+            variant="destructive"
+            onClick={() => handleClose(selectedRemovals, registration.student.studentSchoolYearGuid)}
+            disabled={selectedRemovals.length === 0}
+          >
+            Remove from Selected Days
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }
 
 
-const createStudentColumns = (handleRemoveStudent): Column[] => [
-  {
-    label: 'First Name',
-    attributeKey: 'student.firstName',
-    sortable: true
-  },
-  {
-    label: 'Last Name',
-    attributeKey: 'student.lastName',
-    sortable: true
-  },
-  {
-    label: 'Matric #',
-    attributeKey: 'student.matricNumber',
-    sortable: true
-  },
-  {
-    label: 'Registrations',
-    attributeKey: 'daysOfWeek',
-    sortable: true, //subject to change,
-    transform: (values: string[]): string[] =>
-      values.map((value, index) =>
-        index === values.length - 1 ? value : `${value}, `
-      )
-  },
-  {
-    label: '',
-    attributeKey: '',
-    sortable: false,
-    transform: (value: string): JSX.Element => (
-      <div className='d-flex justify-content-center'>
-        <Button
-          size='sm'
-          variant='danger'
-          onClick={event => {
-            event.stopPropagation()
-            handleRemoveStudent(value)
-          }}
-        >
-          Remove
-        </Button>
-      </div>
-    ),
-    cellProps: { style: { width: 'min-content' } }
-  }
-]

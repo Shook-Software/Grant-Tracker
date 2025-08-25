@@ -1,5 +1,4 @@
-import { useReducer, useState } from 'react'
-import { Container, Row, Tab, Nav } from 'react-bootstrap'
+import { useEffect, useReducer, useState } from 'react'
 
 import ReportParameterInput, { ReportParameters } from './ReportParameters'
 
@@ -69,7 +68,22 @@ function reducer (state, action: ReducerAction) {
 	}
 }
 
+const tabs = [
+  { key: 'student-attendance', label: 'Student Attendance', countKey: 'studentAttendance' },
+  { key: 'family-attendance', label: 'Family Attendance', countKey: 'family' },
+  { key: 'activities', label: 'Activities', countKey: 'activity' },
+  { key: 'site-sessions', label: 'Site Sessions', countKey: 'site' },
+  { key: 'summary-of-classes', label: 'Summary of Classes', countKey: 'classes' },
+  { key: 'program-overview', label: 'Program Overview', countKey: 'program' },
+  { key: 'staffing', label: 'Staffing', countKey: 'staff' },
+  { key: 'student-survey', label: 'Student Surveys', countKey: 'studentSurvey' },
+  { key: 'attendance-check', label: 'Attendance Check', countKey: 'attendanceCheck' },
+  { key: 'payroll-audit', label: 'Payroll Audit' },
+  { key: 'schedule', label: 'Instructor Schedule' },
+];
+
 export default ({user}): JSX.Element => {
+  	const [activeTab, setActiveTab] = useState('student-attendance');
 	const [reportParameters, setReportParameters] = useState<ReportParameters>({
 		organizationGuid: undefined,
 		organizationName: undefined,
@@ -105,245 +119,170 @@ export default ({user}): JSX.Element => {
 		setReportParameters(form)
 	}
 
+	useEffect(() => {
+		if (user.claim === IdentityClaim.Administrator) {
+			tabs.push({ key: 'cclc10', label: 'GT CCLC10' }, { key: 'all-staff', label: 'All Staff' });
+		}
+	}, [user])
 
 	return (
-		<Container style={{minWidth: '90vw'}}>
+		<div style={{minWidth: '90vw'}}>
 			<ReportParameterInput user={user} onSubmit={handleParameterChange} />
 
 			<hr />
 
-			{ reportParameters.organizationName ?			
-			<Row>
-				<Tab.Container defaultActiveKey='student-attendance'>
-					<Row className='d-flex flex-nowrap'>
-						<div style={{maxWidth: 'fit-content'}}>
-							<Row className='m-0' style={{width: 'fit-content'}}>
-								<h4 className='text-center'>Report Type</h4>
-							</Row>
+			<div className="flex flex-nowrap">
+				<div className="max-w-max">
+					<h4 className="text-center font-bold text-xl my-1">Report Type</h4>
 
-							<Row style={{border: '1px solid black', borderRadius: '0.3rem', height: 'fit-content', width: 'fit-content'}}>
-								<Nav variant='pills' className='flex-column p-0'>
-									<Nav.Item>
-										<Nav.Link eventKey='student-attendance'>
-											Student Attendance ({reportRowCounts.studentAttendance})
-										</Nav.Link>
-									</Nav.Item>
+					<div className="border border-black rounded-md w-max h-max">
+						<ul className="flex flex-col p-0">
+							{tabs.map(tab => (
+								<li key={tab.key}>
+									<button
+										onClick={() => setActiveTab(tab.key)}
+										className={`w-full text-left px-4 py-2 rounded-md ${
+											activeTab === tab.key ? 'bg-blue-500 text-white' : 'hover:bg-gray-200 cursor-pointer'
+										}`}
+									>
+										{tab.label}
+										{tab.countKey && ` (${reportRowCounts[tab.countKey]})`}
+									</button>
+								</li>
+							))}
+						</ul>
+					</div>
+				</div>
 
-									<Nav.Item>
-										<Nav.Link eventKey='family-attendance'>
-											Family Attendance ({reportRowCounts.family})
-										</Nav.Link>
-									</Nav.Item>
+				<div className="flex-grow pl-3">
+					<StudentAttendanceReport
+						params={reportParameters}
+						dateDisplay={reportDateDisplayString}
+						fileOrgName={organizationFileString}
+						fileDate={reportDateFileString}
+						isActive={activeTab === 'student-attendance'}
+						onRowCountChange={(rows: number) =>
+							dispatchRowCounts({ type: 'studentAttendance', payload: rows })
+						}
+					/>
 
-									<Nav.Item>
-										<Nav.Link eventKey='activities'>
-											Activities ({reportRowCounts.activity})
-										</Nav.Link>
-									</Nav.Item>
+					<FamilyAttendanceReport
+						params={reportParameters}
+						dateDisplay={reportDateDisplayString}
+						fileOrgName={organizationFileString}
+						fileDate={reportDateFileString}
+						isActive={activeTab === 'family-attendance'}
+						onRowCountChange={(rows: number) =>
+							dispatchRowCounts({ type: 'family', payload: rows })
+						}
+					/>
 
-									<Nav.Item>
-										<Nav.Link eventKey='site-sessions'>
-											Site Sessions ({reportRowCounts.site})
-										</Nav.Link>
-									</Nav.Item>
+					<ActivityReport
+						params={reportParameters}
+						dateDisplay={reportDateDisplayString}
+						fileOrgName={organizationFileString}
+						fileDate={reportDateFileString}
+						isActive={activeTab === 'activities'}
+						onRowCountChange={(rows: number) =>
+							dispatchRowCounts({ type: 'activity', payload: rows })
+						}
+					/>
 
-									<Nav.Item>
-										<Nav.Link eventKey='summary-of-classes'>
-											Summary of Classes ({reportRowCounts.classes})
-										</Nav.Link>
-									</Nav.Item>
+					<SiteSessionsReport
+						params={reportParameters}
+						dateDisplay={reportDateDisplayString}
+						fileOrgName={organizationFileString}
+						fileDate={reportDateFileString}
+						isActive={activeTab === 'site-sessions'}
+						onRowCountChange={(rows: number) =>
+							dispatchRowCounts({ type: 'site', payload: rows })
+						}
+					/>
 
-									<Nav.Item>
-										<Nav.Link eventKey='program-overview'>
-											Program Overview ({reportRowCounts.program})
-										</Nav.Link>
-									</Nav.Item>
+					<SummaryOfClassesReport
+						params={reportParameters}
+						dateDisplay={reportDateDisplayString}
+						fileOrgName={organizationFileString}
+						fileDate={reportDateFileString}
+						isActive={activeTab === 'summary-of-classes'}
+						onRowCountChange={(rows: number) =>
+							dispatchRowCounts({ type: 'classes', payload: rows })
+						}
+					/>
 
-									<Nav.Item>
-										<Nav.Link eventKey='staffing'>
-											Staffing ({reportRowCounts.staff})
-										</Nav.Link>
-									</Nav.Item>
+					<ProgramOverviewReport
+						params={reportParameters}
+						dateDisplay={reportDateDisplayString}
+						fileOrgName={organizationFileString}
+						fileDate={reportDateFileString}
+						isActive={activeTab === 'program-overview'}
+						onRowCountChange={(rows: number) =>
+							dispatchRowCounts({ type: 'program', payload: rows })
+						}
+					/>
 
-									<Nav.Item>
-										<Nav.Link eventKey='student-survey'>
-											Student Surveys ({reportRowCounts.studentSurvey})
-										</Nav.Link>
-									</Nav.Item>
+					<StaffingReport
+						params={reportParameters}
+						dateDisplay={reportDateDisplayString}
+						fileOrgName={organizationFileString}
+						fileDate={reportDateFileString}
+						isActive={activeTab === 'staffing'}
+						onRowCountChange={(rows: number) =>
+							dispatchRowCounts({ type: 'staff', payload: rows })
+						}
+					/>
 
-									<Nav.Item>
-										<Nav.Link eventKey='attendance-check'>
-											Attendance Check ({reportRowCounts.attendanceCheck})
-										</Nav.Link>
-									</Nav.Item>
+					<StudentSurveyReport
+						params={reportParameters}
+						dateDisplay={reportDateDisplayString}
+						fileOrgName={organizationFileString}
+						fileDate={reportDateFileString}
+						isActive={activeTab === 'student-survey'}
+						onRowCountChange={(rows: number) =>
+							dispatchRowCounts({ type: 'studentSurvey', payload: rows })
+						}
+					/>
 
-									<Nav.Item>
-										<Nav.Link eventKey='payroll-audit'>
-											Payroll Audit
-										</Nav.Link>
-									</Nav.Item>
-									
-									{
-										user.claim == IdentityClaim.Administrator ?
-											<Nav.Item>
-												<Nav.Link eventKey='cclc10'>
-													GT CCLC10
-												</Nav.Link>
-											</Nav.Item>
-										: null
-									}
+					<AttendanceCheckReport
+						params={reportParameters}
+						dateDisplay={reportDateDisplayString}
+						fileOrgName={organizationFileString}
+						fileDate={reportDateFileString}
+						isActive={activeTab === 'attendance-check'}
+						onRowCountChange={(rows: number) =>
+							dispatchRowCounts({ type: 'attendanceCheck', payload: rows })
+						}
+					/>
 
-									<Nav.Item>
-										<Nav.Link eventKey='schedule'>
-											Instructor Schedule
-										</Nav.Link>
-									</Nav.Item>
+					<PayrollAuditReport
+						params={reportParameters}
+						dateDisplay={reportDateDisplayString}
+						fileOrgName={organizationFileString}
+						fileDate={reportDateFileString}
+						isActive={activeTab === 'payroll-audit'}
+						onRowCountChange={(rows: number) =>
+							dispatchRowCounts({ type: 'payroll', payload: rows })
+						}
+					/>
 
-									{
-										user.claim == IdentityClaim.Administrator ?
-											<Nav.Item>
-												<Nav.Link eventKey='all-staff'>
-													All Staff
-												</Nav.Link>
-											</Nav.Item>
-										: null
-									}
-									
-								</Nav>
-							</Row>
-						</div>
-						
-						<div className='flex-fill ps-3'>
-							<Tab.Content>
+					<CCLC10Report
+						params={reportParameters}
+						dateDisplay={reportDateDisplayString}
+						fileOrgName={organizationFileString}
+						isActive={activeTab === 'cclc10'}
+					/>
 
-								<Tab.Pane eventKey='student-attendance'>
-									<StudentAttendanceReport 
-										params={reportParameters}
-										dateDisplay={reportDateDisplayString}
-										fileOrgName={organizationFileString}
-										fileDate={reportDateFileString}
-										onRowCountChange={(rows: number) => dispatchRowCounts({ type: 'studentAttendance', payload: rows })}
-									/>
-								</Tab.Pane>
+					<ScheduleReport
+						params={reportParameters}
+						dateDisplay={reportDateDisplayString}
+						fileOrgName={organizationFileString}
+						fileDate={`${reportParameters?.year?.startDate?.toString()}_${reportParameters?.year?.endDate?.toString()}`}
+						isActive={activeTab === 'schedule'}
+					/>
 
-								<Tab.Pane eventKey='family-attendance'>
-									<FamilyAttendanceReport 
-										params={reportParameters}
-										dateDisplay={reportDateDisplayString}
-										fileOrgName={organizationFileString}
-										fileDate={reportDateFileString}
-										onRowCountChange={(rows: number) => dispatchRowCounts({ type: 'family', payload: rows })}
-									/>
-								</Tab.Pane>
-
-								<Tab.Pane eventKey='activities'>
-									<ActivityReport 
-										params={reportParameters}
-										dateDisplay={reportDateDisplayString}
-										fileOrgName={organizationFileString}
-										fileDate={reportDateFileString}
-										onRowCountChange={(rows: number) => dispatchRowCounts({ type: 'activity', payload: rows })}
-									/>
-								</Tab.Pane>
-
-								<Tab.Pane eventKey='site-sessions'>
-									<SiteSessionsReport 
-										params={reportParameters}
-										dateDisplay={reportDateDisplayString}
-										fileOrgName={organizationFileString}
-										fileDate={reportDateFileString}
-										onRowCountChange={(rows: number) => dispatchRowCounts({ type: 'site', payload: rows })}
-									/>
-								</Tab.Pane>
-
-								<Tab.Pane eventKey='summary-of-classes'>
-									<SummaryOfClassesReport 
-										params={reportParameters}
-										dateDisplay={reportDateDisplayString}
-										fileOrgName={organizationFileString}
-										fileDate={reportDateFileString}
-										onRowCountChange={(rows: number) => dispatchRowCounts({ type: 'classes', payload: rows })}
-									/>
-								</Tab.Pane>
-
-								<Tab.Pane eventKey='program-overview'>
-									<ProgramOverviewReport 
-										params={reportParameters}
-										dateDisplay={reportDateDisplayString}
-										fileOrgName={organizationFileString}
-										fileDate={reportDateFileString}
-										onRowCountChange={(rows: number) => dispatchRowCounts({ type: 'program', payload: rows })}
-									/>
-								</Tab.Pane>
-
-								<Tab.Pane eventKey='staffing'>
-									<StaffingReport 
-										params={reportParameters}
-										dateDisplay={reportDateDisplayString}
-										fileOrgName={organizationFileString}
-										fileDate={reportDateFileString}
-										onRowCountChange={(rows: number) => dispatchRowCounts({ type: 'staff', payload: rows })}
-									/>
-								</Tab.Pane>
-
-								<Tab.Pane eventKey='student-survey'>
-									<StudentSurveyReport
-										params={reportParameters}
-										dateDisplay={reportDateDisplayString}
-										fileOrgName={organizationFileString}
-										fileDate={reportDateFileString}
-										onRowCountChange={(rows: number) => dispatchRowCounts({ type: 'studentSurvey', payload: rows })}
-									/>
-								</Tab.Pane>
-
-								<Tab.Pane eventKey='attendance-check'>
-									<AttendanceCheckReport
-										params={reportParameters}
-										dateDisplay={reportDateDisplayString}
-										fileOrgName={organizationFileString}
-										fileDate={reportDateFileString}
-										onRowCountChange={(rows: number) => dispatchRowCounts({ type: 'attendanceCheck', payload: rows })}
-									/>
-								</Tab.Pane>
-
-								<Tab.Pane eventKey='payroll-audit'>
-									<PayrollAuditReport
-										params={reportParameters}
-										dateDisplay={reportDateDisplayString}
-										fileOrgName={organizationFileString}
-										fileDate={reportDateFileString}
-										onRowCountChange={(rows: number) => dispatchRowCounts({ type: 'payroll', payload: rows })}
-									/>
-								</Tab.Pane>
-
-								<Tab.Pane eventKey='cclc10'>
-									<CCLC10Report
-										params={reportParameters}
-										dateDisplay={reportDateDisplayString}
-										fileOrgName={organizationFileString}
-									/>
-								</Tab.Pane>
-
-								<Tab.Pane eventKey='schedule'>
-									<ScheduleReport
-										params={reportParameters}
-										dateDisplay={reportDateDisplayString}
-										fileOrgName={organizationFileString}
-										fileDate={`${reportParameters?.year?.startDate?.toString()}_${reportParameters?.year?.endDate?.toString()}`}
-									/>
-								</Tab.Pane>
-
-								<Tab.Pane eventKey='all-staff'>
-									<AllStaffReport />
-								</Tab.Pane>
-
-							</Tab.Content>
-						</div>
-					</Row>
-				</Tab.Container>
-			</Row>
-			: null }
-			
-		</Container>
+					<AllStaffReport isActive={activeTab === 'all-staff'} />
+					</div>
+			</div>
+		</div>
 	)
 }

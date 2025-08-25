@@ -32,7 +32,6 @@ const getLatestSunday = (currentDate: Date): Date => {
 //I think we import the start day of a given week with it starting on the Sunday the current week is in
 //Then use that to grab and set the rest
 export default (props): JSX.Element => {
-  console.log(mapEnum(DayOfWeek))
 
   const currentDate = new Date('March 10, 2022')
   let latestSunday: Date = getLatestSunday(currentDate)

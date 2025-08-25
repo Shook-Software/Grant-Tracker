@@ -1,100 +1,105 @@
-import { useState } from 'react'
-import { Form, InputGroup, ListGroup } from 'react-bootstrap'
 import { DateTimeFormatter } from '@js-joda/core'
 import { Locale } from '@js-joda/locale_en-us'
+import { Clock } from 'lucide-react'
 
-import Table, { Column } from 'components/BTable'
-import ListItem from 'components/Item'
+import { DataTable } from 'components/DataTable'
+import { ColumnDef } from '@tanstack/react-table'
+import { HeaderCell } from '@/components/ui/table'
+import { Badge } from '@/components/ui/badge'
 
 import { DaySchedule, DayScheduleDomain, DayScheduleView } from 'Models/DaySchedule'
-import { Input } from 'components/TimeRangeSelector/types'
 import { DayOfWeek } from 'Models/DayOfWeek'
+import TimeRecordDisplay from '@/components/SessionDetails/AttendanceHistory/TimeRecordDisplay'
 
-const enrollmentColumns: Column[] = [
+interface EnrollmentRecord {
+  key: any
+  sessionName: string
+  schedule: DayScheduleDomain[]
+}
+
+const enrollmentColumns: ColumnDef<EnrollmentRecord, any>[] = [
   {
-    label: 'Name',
-    attributeKey: 'sessionName',
-    sortable: true
+    accessorKey: "sessionName",
+    header: ({ column }) => (
+      <HeaderCell 
+        label="Session Name" 
+        sort={column.getIsSorted()} 
+        onSortClick={() => column.toggleSorting()} 
+        filterValue={column.getFilterValue() as string}
+        onFilterChange={(event) => column.setFilterValue(event.target.value.trim())}
+      />
+    ),
+    cell: ({ row }) => (
+      <div>
+        {row.original.sessionName}
+      </div>
+    ),
+    id: 'sessionName'
   },
   {
-    label: 'Scheduling',
-    attributeKey: 'schedule',
-    sortable: false,
-    transform: (scheduleDomain: DayScheduleDomain[]) => {
-      if (!scheduleDomain || scheduleDomain.length === 0)
-        return 'No Schedule'
+    accessorKey: "schedule",
+    header: () => (
+      <div className="flex items-center gap-2 h-full">
+        <Clock className="h-4 w-4" />
+        Schedule
+      </div>
+    ),
+    cell: ({ row }) => {
+      const scheduleDomain = row.original.schedule
+      
+      if (!scheduleDomain || scheduleDomain.length === 0) {
+        return (
+          <div className="text-muted-foreground text-sm italic">
+            No schedule configured
+          </div>
+        )
+      }
 
-      let schedule: DayScheduleView[] = scheduleDomain.map(s => DaySchedule.toViewModel(s))
-        
-      let daysOfWeek = schedule.sort((curr, next) => {
-        if (DayOfWeek.toInt(curr.dayOfWeek)  > DayOfWeek.toInt(next.dayOfWeek))
-          return 1
-        if (DayOfWeek.toInt(curr.dayOfWeek) < DayOfWeek.toInt(next.dayOfWeek))
-          return -1
-        return 0
-      }).map(day => (
-        <ListItem 
-          label={day.dayOfWeek + ':'} 
-          value={day.timeSchedules.map(t => 
-              `${t.startTime
-                  .format(DateTimeFormatter.ofPattern('hh:mm a')
-                  .withLocale(Locale.ENGLISH))
-                } to ${t.endTime
-                  .format(DateTimeFormatter.ofPattern('hh:mm a')
-                  .withLocale(Locale.ENGLISH))
-                }`
-          )} 
-          style={{backgroundColor: 'inherit'}} 
-        />
-      ))
+      const schedule: DayScheduleView[] = scheduleDomain.map(s => DaySchedule.toViewModel(s))
+      const sortedDays = schedule.sort((curr, next) => DayOfWeek.toInt(curr.dayOfWeek) - DayOfWeek.toInt(next.dayOfWeek))
 
       return (
-        <div className='d-flex flex-column'>
-          {daysOfWeek.map((day, index) => 
-          <ListGroup variant='flush' style={{backgroundColor: 'inherit'}}>
-            {day}
-          </ListGroup>
-          )}
+        <div className="space-y-2">
+          {sortedDays.map((day, index) => (
+            <div key={index} className="flex gap-3">
+              <div className="text-sm font-medium text-muted-foreground w-[80px]">
+                {day.dayOfWeek}
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {day.timeSchedules.map((timeSchedule, timeIndex) => (
+                  <TimeRecordDisplay timeRecords={[timeSchedule]} />
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
       )
-    }
+    },
+    enableSorting: false,
+    id: 'schedule'
   }
 ]
 
 interface Props {
-  enrollments: {
-    key: any
-    sessionName: string
-    Schedule: DayScheduleDomain[]
-  }[]
+  enrollments: EnrollmentRecord[]
 }
 
-//should include simplified scheduling (make it compact)
-//Day of week checkboxes to filter
 export default ({enrollments}: Props): JSX.Element => {
-  const [searchTerm, setSearchTerm] = useState<string>('')
-
-  function handleSearchTermChange (term: string) {
-    term = term.toLocaleLowerCase()
-    setSearchTerm(term)
+  if (!enrollments || enrollments.length === 0) {
+    return (
+      <div className="text-center py-8 text-muted-foreground">
+        <div className="text-sm">No session enrollments found</div>
+      </div>
+    )
   }
 
-  enrollments = enrollments.filter(e => e.sessionName.toLocaleLowerCase().includes(searchTerm))
-
   return (
-    <>
-      <Form.Control 
-        type='text' 
-        className='w-25 border-bottom-0'
-        placeholder='Filter sessions...'
-        value={searchTerm} 
-        onChange={(e) => handleSearchTermChange(e.target.value)}
-        style={{borderBottomLeftRadius: 0, borderBottomRightRadius: 0}}
-      />
-      <Table 
-        columns={enrollmentColumns} 
-        dataset={enrollments.filter(e => e.sessionName.toLocaleLowerCase().includes(searchTerm))} 
-      />
-    </>
+    <DataTable
+      columns={enrollmentColumns}
+      data={enrollments}
+      emptyMessage="No session enrollments found"
+      initialSorting={[{ id: 'sessionName', desc: false }]}
+      containerClassName="w-full"
+    />
   )
 }

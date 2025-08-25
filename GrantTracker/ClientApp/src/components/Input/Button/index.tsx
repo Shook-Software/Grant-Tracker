@@ -1,5 +1,5 @@
 import styled from 'styled-components'
-import { Button } from 'react-bootstrap'
+import { Button } from '../../ui/button'
 
 const Plus = styled.div`
 height: 1.2rem;
@@ -16,12 +16,18 @@ border-radius: 50%;
 export default (props): JSX.Element => (
   <Button
     variant='primary'
-    as={props.as}
-    className='d-flex align-items-center'
-    to={props.to}
-    style={{ width: 'fit-content' }}
+    asChild={props.as ? true : false}
+    className='flex items-center w-fit'
     {...props}
   >
-    {props.children} &nbsp;<Plus>+</Plus>
+    {props.as ? (
+      <props.as to={props.to}>
+        {props.children} &nbsp;<Plus>+</Plus>
+      </props.as>
+    ) : (
+      <>
+        {props.children} &nbsp;<Plus>+</Plus>
+      </>
+    )}
   </Button>
 )

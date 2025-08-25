@@ -1,23 +1,10 @@
 import React from 'react'
 import { useSession, Context } from '../index'
-import { Form, Container, Row, Col } from 'react-bootstrap'
 
-import Dropdown from 'components/Input/Dropdown'
-
-//First section - Overview
-////Location - auto filled
-////Grant Type - autofilled per coordinator site
-
-////EditorSession/Class name - text input
-////EditorSession Type - Multiple Response - Student, Family, Parent
-////Activity Category - Dropdown - List of activity types
-////Objective - Multiple Response - 1.1, 1.2, 1.3, 2.1, 2.2, 3.1
-////
-//Done:
-//// EditorSession Name
-//// EditorSession Type
-//// Activity
-//// Objective
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Combobox } from '@/components/ui/combobox'
 
 export default () => {
   const { reducerDispatch, dropdownData, values }: Context = useSession()
@@ -29,84 +16,109 @@ export default () => {
     )
   //make a formcomponents file and handle accordingly on feedback from Liz on editing here and there
   return (
-    <Container>
-      <Row lg={4} className='m-3'>
-        <Col>
-          <Form.Group controlId='validationFormik01'>
-            <Form.Label>Name</Form.Label>
-            <Form.Control
-              required
-              type='text'
-              name='name'
-              placeholder='Session Name..'
-              value={values.name}
-              onChange={(event: React.BaseSyntheticEvent) => {
-                //handleChange(event.target.value)
-                reducerDispatch({ type: 'name', payload: event.target.value })
-              }}
-            />
-            <Form.Control.Feedback type='invalid'>
-              A session name is required!
-            </Form.Control.Feedback>
-          </Form.Group>
-        </Col>
-        <Col className={''}>
-          <Form.Group>
-            <Form.Label>Type</Form.Label>
-            <Dropdown
-              value={values.type}
-              options={dropdownData.sessionTypes}
-              onChange={(value: string) => {
-                //handleChange(value)
-                reducerDispatch({ type: 'type', payload: value })
-              }}
-              disableOverlay
-            />
-          </Form.Group>
-        </Col>
-        <Col className='d-flex justify-content-center'>
-          <Form.Group>
-            <Form.Label>Objective</Form.Label>
-            <Dropdown
-              width='80px'
+    <div className="max-w-7xl mx-auto p-6">
+      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6'>
+        <div className="space-y-2">
+          <Label htmlFor="session-name">Name</Label>
+          <Input
+            id="session-name"
+            required
+            type='text'
+            name='name'
+            placeholder='Session Name..'
+            value={values.name}
+            onChange={(event: React.BaseSyntheticEvent) => {
+              //handleChange(event.target.value)
+              reducerDispatch({ type: 'name', payload: event.target.value })
+            }}
+          />
+          {/* A session name is required! */}
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="session-type">Type</Label>
+          <Select 
+            value={values.type} 
+            onValueChange={(value: string) => {
+              reducerDispatch({ type: 'type', payload: value })
+            }}
+          >
+            <SelectTrigger id="session-type">
+              <SelectValue placeholder="Select session type" />
+            </SelectTrigger>
+            <SelectContent>
+              {dropdownData.sessionTypes.map(option => (
+                <SelectItem key={option.guid} value={option.guid}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div className="space-y-2 flex justify-center">
+          <div className="w-full max-w-[200px]">
+            <Label htmlFor="objectives">Objective</Label>
+            <Combobox
+              id="objectives"
+              options={dropdownData.objectives.map(obj => ({
+                value: obj.guid,
+                label: `(${obj.abbreviation}) ${obj.label}`
+              }))}
               value={values.objectives}
-              options={dropdownData.objectives}
-              onChange={(value: string[]) => {
-                reducerDispatch({ type: 'objective', payload: value })
+              onChange={(selected) => {
+                reducerDispatch({ type: 'objective', payload: selected })
               }}
-              multipleSelect
+              placeholder='Select objectives...'
+              emptyText='No objectives found'
+              multiple={true}
             />
-          </Form.Group>
-        </Col>
-        <Col>
-          <Form.Group>
-            <Form.Label>Activity</Form.Label>
-            <Dropdown
-              value={values.activity}
-              options={dropdownData.activities}
-              onChange={(value: string) => {
-                reducerDispatch({ type: 'activity', payload: value })
-              }}
-            />
-          </Form.Group>
-        </Col>
-      </Row>
-      <Row lg={1} className='m-3'>
-        <Col>
-          <Form.Group>
-            <Form.Label>Grades</Form.Label>
-            <Dropdown
-              width='80px'
+          </div>
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="activity">Activity</Label>
+          <Select 
+            value={values.activity} 
+            onValueChange={(value: string) => {
+              reducerDispatch({ type: 'activity', payload: value })
+            }}
+          >
+            <SelectTrigger id="activity">
+              <SelectValue placeholder="Select activity" />
+            </SelectTrigger>
+            <SelectContent>
+              {dropdownData.activities.map(option => (
+                <SelectItem key={option.guid} value={option.guid}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      
+      <div className='grid grid-cols-1 gap-6'>
+        <div className="space-y-2">
+          <Label htmlFor="grades">Grades</Label>
+          <div className="max-w-[200px]">
+            <Combobox
+              id="grades"
+              options={dropdownData.grades.map(grade => ({
+                value: grade.guid,
+                label: grade.label
+              }))}
               value={values.grades}
-              options={dropdownData.grades}
-              onChange={(value: string[]) => {
-                reducerDispatch({ type: 'grades', payload: value })
+              onChange={(selected) => {
+                reducerDispatch({ type: 'grades', payload: selected })
               }}
-              multipleSelect
+              placeholder='Select grades...'
+              emptyText='No grades found'
+              multiple={true}
             />
-          </Form.Group>
-        </Col>
-      </Row>
-    </Container>
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }

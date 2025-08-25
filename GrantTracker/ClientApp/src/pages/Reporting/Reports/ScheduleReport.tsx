@@ -13,6 +13,7 @@ interface Props {
 	dateDisplay: string
 	fileOrgName: string
 	fileDate: string
+	isActive: boolean
 }
 
 interface ScheduleRow {
@@ -29,7 +30,7 @@ interface ScheduleRow {
 	lastName: string
 }
 
-export default ({params, dateDisplay, fileOrgName, fileDate}: Props) => {
+export default ({params, dateDisplay, fileOrgName, fileDate, isActive}: Props) => {
 	const { isPending, data, error } = useQuery<ScheduleRow[]>({
 		queryKey: [`report/schedule?startDateStr=${params.startDate?.toString()}&endDateStr=${params.endDate?.toString()}&organizationGuid=${params?.organizationGuid}`],
 		enabled: !!params?.startDate && !!params?.endDate,
@@ -44,10 +45,13 @@ export default ({params, dateDisplay, fileOrgName, fileDate}: Props) => {
 		retry: false
 	})
 
+	if (!isActive)
+		return null;
+
 	return (
 		<ReportComponent
 			isLoading={isPending}
-			displayData={data}
+			hasError={!!error}
 			displayName={`Schedule Report for ${params.organizationName}, ${dateDisplay}`}
 			fileData={data?.map(x => ({...x, instructorMissing: !x.firstName && !x.lastName}))}
 			fileName={`${fileOrgName}_Semester_Schedule_${fileDate}`}

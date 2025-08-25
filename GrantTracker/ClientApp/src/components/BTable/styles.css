@@ -1,18 +1,18 @@
 
-import 'bootstrap/dist/css/bootstrap.sccs';
-
 .tableStyle {
-  --bs-table-striped-bg: #CCE2FD;
-  --bs-table-bg: transparent;
-  --bs-table-accent-bg: transparent;
-  --bs-table-striped-color: #212529;
-  --bs-table-active-color: #212529;
-  --bs-table-active-bg: rgba(0, 0, 0, 0.1);
-  --bs-table-hover-color: #212529;
-  --bs-table-hover-bg: rgba(0, 0, 0, 0.075);
-  width: 100%;
-  margin-bottom: 1rem;
-  color: #212529;
+  @apply w-full mb-4 text-gray-800;
   vertical-align: top;
   border-color: #dee2e6;
+}
+
+.tableStyle tr:nth-child(even) {
+  background-color: #CCE2FD;
+}
+
+.tableStyle tr:hover {
+  background-color: rgba(0, 0, 0, 0.075);
+}
+
+.tableStyle tr.active {
+  background-color: rgba(0, 0, 0, 0.1);
 }

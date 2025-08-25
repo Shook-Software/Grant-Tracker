@@ -1,9 +1,10 @@
-﻿import { useNavigate } from 'react-router-dom'
-import { useEffect, useState } from 'react'
-import { Spinner, Card, Row, Col, Button, Modal } from 'react-bootstrap'
+﻿import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 
 import { PageContainer } from 'styles'
 import { ApiResult } from 'components/ApiResultAlert'
+import { Spinner } from '@/components/ui/Spinner'
+import { Button } from '@/components/ui/button'
 import RegistrationsView from './RegistrationsView'
 import AttendanceHistory from './AttendanceHistory'
 
@@ -27,29 +28,21 @@ interface Props {
   user: User
 }
 
+type TabType = 'overview' | 'registrations' | 'attendance'
+
 //Nice to have - Calender visual view, but only something to *come back to*
 export default ({ sessionGuid, user }: Props): JSX.Element => {
-  const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [session, setSession] = useState<SessionView | null>(null)
   const [attendanceRecords, setAttendanceRecords] = useState<SimpleAttendanceView[]>([])
   const [attendanceApiResult, setAttendanceApiResult] = useState<ApiResult | undefined>(undefined)
-  const [attendanceModalParams, setAttendanceModalParams] = useState({
-    show: false,
-    schedule: null
-  })
   const [isLoading, setIsLoading] = useState<boolean>(false)
-
-  /// /Temp stuff
-  const [showSessionDeleteModal, setShowDeleteModal] = useState<boolean>(false)
-
-  function handleSessionDeletion (deleteSession: boolean): void {
-    if (deleteSession) {
-      api
-        .delete(`session/${sessionGuid}`)
-        .then(() => navigate('/home/admin/sessions'))
-        .catch()
-    }
-    setShowDeleteModal(false)
+  
+  // Get current tab from URL params, default to 'overview'
+  const currentTab: TabType = (searchParams.get('tab') as TabType) || 'overview'
+  
+  const setActiveTab = (tab: TabType) => {
+    setSearchParams({ tab })
   }
 
   function getAttendance() {
@@ -86,96 +79,114 @@ export default ({ sessionGuid, user }: Props): JSX.Element => {
   //Display error if loading fails
   if (!session && isLoading) 
     return (
-      <div className="d-flex flex-column align-items-center">
-        <Spinner animation='border' role='status' />
-        <small className='text-muted'>Loading Session...</small>
+      <div className="flex flex-col items-center space-y-2 p-6">
+        <Spinner size='lg' />
+        <small className='text-gray-600'>Loading Session...</small>
       </div>
     )
-  else if (!session && !isLoading) return <p>An error occured while loading the session.</p>
-
-  return (
-    <PageContainer>
-      <Card className='border-0 p-0'>
-        <Card.Body className='p-0'>
-          <Row>
-            <Header session={session} attendanceApiResult={attendanceApiResult} user={user} />
-          </Row>
-          <Row>
-            <Col className='w-50'>
-              <Overview session={session!} />
-            </Col>
-            <Col className='w-50'>
-              <Scheduling session={session} onClick={setAttendanceModalParams} />
-              <Instructors session={session} />
-            </Col>
-          </Row>
-          <Row className='pt-3'>
-            <Col>
-              <RegistrationsView
-                sessionGuid={sessionGuid}
-                daySchedules={session?.daySchedules || []}
-                studentGroups={session?.instructors.reduce((list, isy) => [...list, ...isy.studentGroups], [] as StudentGroup[]) || []}
-              />
-            </Col>
-          </Row>
-          <Row className='pt-3'>
-            <Col>
-              <Card>
-                <Card.Body>
-                  <Card.Title>
-                    <AttendanceHistory 
-                      sessionGuid={sessionGuid}
-                      sessionName={session!.name}
-                      attendanceRecords={attendanceRecords} 
-                      onChange={getAttendance} 
-                      sessionType={session!.sessionType.label.toLowerCase()}
-                    />
-                  </Card.Title>
-                </Card.Body>
-              </Card>
-            </Col>
-          </Row>
-          <Row className='pt-5 d-flex flex-row justify-content-center'>
-            <Button variant='danger' style={{ width: 'fit-content' }} onClick={() => setShowDeleteModal(true)}>
-              Delete Session
-            </Button>
-          </Row>
-        </Card.Body>
-      </Card>
-      <RemoveSessionModal sessionGuid={sessionGuid} session={session} show={showSessionDeleteModal} handleClose={handleSessionDeletion} />
-    </PageContainer>
+  else if (!session && !isLoading) return (
+    <div className='flex justify-center items-center p-6'>
+      <p className='text-red-600'>An error occurred while loading the session.</p>
+    </div>
   )
-}
 
-/*
- 
-          */
+  const TabNavigation = () => (
+    <div className='flex border-b border-gray-200 mb-6'>
+      <button
+        className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
+          currentTab === 'overview'
+            ? 'border-blue-500 text-blue-600 bg-blue-50'
+            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+        }`}
+        onClick={() => setActiveTab('overview')}
+      >
+        Overview
+      </button>
+      <button
+        className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
+          currentTab === 'registrations'
+            ? 'border-blue-500 text-blue-600 bg-blue-50'
+            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+        }`}
+        onClick={() => setActiveTab('registrations')}
+      >
+        Registrations
+      </button>
+      <button
+        className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
+          currentTab === 'attendance'
+            ? 'border-blue-500 text-blue-600 bg-blue-50'
+            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+        }`}
+        onClick={() => setActiveTab('attendance')}
+      >
+        Attendance
+      </button>
+    </div>
+  )
 
-const RemoveSessionModal = ({ sessionGuid, session, show, handleClose }): JSX.Element => {
-  const [deletionAllowed, setStatus] = useState<boolean>(false)
+  const OverviewTab = () => (
+    <div className='space-y-6'>
+      {/* Overview and Details Grid */}
+      <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
+        <div className='space-y-6'>
+          <Overview session={session!} />
+        </div>
+        <div className='space-y-6'>
+          <Scheduling session={session} />
+          <Instructors session={session} />
+        </div>
+      </div>
+    </div>
+  )
 
-  useEffect(() => {
-    api
-      .get(`session/${sessionGuid}/status`)
-      .then(res => {
-        setStatus(res.data || false)
-      })
-      .catch()
-  }, [])
+  const RegistrationsTab = () => (
+    <div>
+      <RegistrationsView
+        sessionGuid={sessionGuid}
+        daySchedules={session?.daySchedules || []}
+        studentGroups={session?.instructors.reduce((list, isy) => [...list, ...isy.studentGroups], [] as StudentGroup[]) || []}
+      />
+    </div>
+  )
 
-  const message = deletionAllowed
-    ? 'Are you sure you want to delete this session from your organization?'
-    : 'Sorry, this session is not able to be deleted as attendance records already exist for it. Please remove all records and reload if you wish to continue.'
+  const AttendanceTab = () => (
+    <div className='p-3'>
+      <AttendanceHistory 
+        sessionGuid={sessionGuid}
+        sessionName={session!.name}
+        attendanceRecords={attendanceRecords} 
+        onChange={() => getAttendance()} 
+        sessionType={session!.sessionType.label.toLowerCase()}
+      />
+    </div>
+  )
 
-  const button = deletionAllowed ? <Button onClick={() => handleClose(true)}>Delete Session</Button> : null
+  const renderTabContent = () => {
+    switch (currentTab) {
+      case 'overview':
+        return <OverviewTab />
+      case 'registrations':
+        return <RegistrationsTab />
+      case 'attendance':
+        return <AttendanceTab />
+      default:
+        return <OverviewTab />
+    }
+  }
 
   return (
-    <Modal show={show}>
-      <Modal.Header closeButton onHide={() => handleClose(false)}>
-        Deletion of {session.name}.
-      </Modal.Header>
-      <Modal.Body>{message}</Modal.Body>
-      <Modal.Footer>{button}</Modal.Footer>
-    </Modal>
+    <PageContainer className='shadow-lg rounded-sm px-2'>
+      <div className='space-y-6'>
+        {/* Header Section */}
+        <Header session={session} attendanceApiResult={attendanceApiResult} user={user} />
+        
+        {/* Tab Navigation */}
+        <TabNavigation />
+        
+        {/* Tab Content */}
+        {renderTabContent()}
+      </div>
+    </PageContainer>
   )
 }

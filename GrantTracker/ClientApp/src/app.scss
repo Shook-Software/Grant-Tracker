@@ -1,5 +1,6 @@
-@import 'bootstrap';
-@import 'bootstrap-icons/font/bootstrap-icons.css';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
   --blue-1: #003f7d;
@@ -20,4 +21,16 @@
   transform: scale(1.02);
   background-color: #e0e0e0;
   transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.text-success {
+  color: #38a169;
+}
+
+.text-warning {
+  color: #d69e2e;
+}
+
+.text-danger {
+  color: #e53e3e;
 }

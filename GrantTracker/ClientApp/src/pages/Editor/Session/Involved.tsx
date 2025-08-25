@@ -1,12 +1,16 @@
 import {useEffect, useState} from 'react'
-import { Form, Container, Row, Col, ListGroup, CloseButton } from 'react-bootstrap'
 
 import { useSession } from '../index'
-import Dropdown from 'components/Input/Dropdown'
 import { DropdownOption } from 'Models/Session'
 
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Combobox } from '@/components/ui/combobox'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { X } from 'lucide-react'
+
 import api from 'utils/api'
-import Select from 'react-select'
 
 //Second Section - Instructor/Funding
 ////Instructor -- Searchable Dropdown
@@ -35,7 +39,6 @@ export default (): JSX.Element => {
   }
 
   useEffect(() => {
-    console.log(orgYearGuid)
     api
       .get('instructor', {params: {orgYearGuid: orgYearGuid}})
       .then(res => {
@@ -50,79 +53,119 @@ export default (): JSX.Element => {
   }, [values.instructors])
 
   return (
-    <Container>
-      <Row lg={3} className='m-3'>
-        <Col>
-          <Form.Group>
-            <Form.Label>Partnership-Type</Form.Label>
-            <Dropdown
-              value={values.partnershipType}
-              options={dropdownData.partnershipTypes}
-              onChange={(value: string) =>
-                reducerDispatch({ type: 'partnership', payload: value })
+    <div className="max-w-7xl mx-auto p-6">
+      <div className='grid grid-cols-1 md:grid-cols-3 gap-6 mb-6'>
+        <div className="space-y-2">
+          <Label htmlFor="partnership-type">Partnership Type</Label>
+          <Select 
+            value={values.partnershipType} 
+            onValueChange={(value: string) =>
+              reducerDispatch({ type: 'partnership', payload: value })
+            }
+          >
+            <SelectTrigger id="partnership-type">
+              <SelectValue placeholder="Select partnership type" />
+            </SelectTrigger>
+            <SelectContent>
+              {dropdownData.partnershipTypes.map(option => (
+                <SelectItem key={option.guid} value={option.guid}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="funding-source">Funding Source</Label>
+          <Select 
+            value={values.fundingSource} 
+            onValueChange={(value: string) =>
+              reducerDispatch({ type: 'funding', payload: value })
+            }
+          >
+            <SelectTrigger id="funding-source">
+              <SelectValue placeholder="Select funding source" />
+            </SelectTrigger>
+            <SelectContent>
+              {dropdownData.fundingSources.map(option => (
+                <SelectItem key={option.guid} value={option.guid}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="organization-type">Organization Type</Label>
+          <Select 
+            value={values.organizationType} 
+            onValueChange={(value: string) =>
+              reducerDispatch({ type: 'organization', payload: value })
+            }
+          >
+            <SelectTrigger id="organization-type">
+              <SelectValue placeholder="Select organization type" />
+            </SelectTrigger>
+            <SelectContent>
+              {dropdownData.organizationTypes.map(option => (
+                <SelectItem key={option.guid} value={option.guid}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      
+      <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
+        <div className="space-y-2">
+          <Label htmlFor="instructors">Instructor(s)</Label>
+          <Combobox
+            id="instructors"
+            options={instructors.map(instructor => ({
+              value: instructor.guid,
+              label: instructor.label
+            }))}
+            value=""
+            onChange={(selected) => {
+              if (selected && typeof selected === 'string') {
+                const instructor = instructors.find(i => i.guid === selected)
+                if (instructor) {
+                  handleInstructorAddition(instructor.guid, instructor.label)
+                }
               }
-              disableOverlay
-            />
-          </Form.Group>
-        </Col>
-        <Col>
-          <Form.Group>
-            <Form.Label>Funding-Source</Form.Label>
-            <Dropdown
-              value={values.fundingSource}
-              options={dropdownData.fundingSources}
-              onChange={(value: string) =>
-                reducerDispatch({ type: 'funding', payload: value })
-              }
-            />
-          </Form.Group>
-        </Col>
-        <Col>
-          <Form.Group>
-            <Form.Label>Organization Type</Form.Label>
-            <Dropdown
-              value={values.organizationType}
-              options={dropdownData.organizationTypes}
-              onChange={(value: string) =>
-                reducerDispatch({ type: 'organization', payload: value })
-              }
-              disableOverlay
-            />
-          </Form.Group>
-        </Col>
-      </Row>
-      <Row className='m-3 pb-5'>
-        <Col>
-          <Form.Group>
-            <Form.Label>Instructor(s)</Form.Label>
-            <Select 
-              id='select-instructors'
-              value={{value: '', label: ''}}
-              options={instructors.map(option => ({label: option.label, value: option.guid}))}
-              onChange={option => {
-                const instructor = instructors.filter(i => i.guid === option.value)[0]
-                handleInstructorAddition(instructor.guid, instructor.label)
-              }}
-            />
-          </Form.Group>
-        </Col>
-        <Col className='position-relative' lg={8} md={12} sm={12}>
-          <Form.Label>Selected Instructors</Form.Label>
-          <ListGroup className='d-flex flex-row flex-wrap position-absolute float-left'>
-            {values.instructors.map(i => (
-              <div>
-                <ListGroup.Item className='d-flex flex-row p-1'>
-                  <CloseButton
-                    onClick={() => handleInstructorRemoval(i.guid)}
-                  />
-                  <div>{i.label}</div>
-                </ListGroup.Item>
-              </div>
-            ))}
-          </ListGroup>
-        </Col>
-      </Row>
-    </Container>
+            }}
+            placeholder='Search instructors...'
+            emptyText='No instructors found'
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <Label>Selected Instructors</Label>
+          <div className='flex flex-wrap gap-2 min-h-[40px] p-2 border rounded-md'>
+            {values.instructors.length === 0 ? (
+              <span className="text-muted-foreground text-sm">No instructors selected</span>
+            ) : (
+              values.instructors.map(instructor => (
+                <Badge key={instructor.guid} variant="secondary" className="flex items-center gap-1">
+                  {instructor.label}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-auto p-0 ml-1"
+                    onClick={() => handleInstructorRemoval(instructor.guid)}
+                  >
+                    <X size={12} />
+                  </Button>
+                </Badge>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }
 

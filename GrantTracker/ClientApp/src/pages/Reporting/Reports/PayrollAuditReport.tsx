@@ -3,7 +3,6 @@ import { TimeOnly } from 'Models/TimeOnly'
 import { DateOnly } from 'Models/DateOnly'
 
 import { ReportParameters } from '../ReportParameters'
-import { createPayrollAuditColumns } from '../Definitions/Columns'
 import { flattenPayrollReport, payrollAuditFields } from '../Definitions/CSV'
 import ReportComponent from '../ReportComponent'
 
@@ -12,10 +11,11 @@ interface Props {
 	dateDisplay: string
 	fileOrgName: string
 	fileDate: string
+	isActive: boolean
 	onRowCountChange: (rows: number) => void
 }
 
-export default ({params, fileOrgName, fileDate, dateDisplay, onRowCountChange}: Props) => {
+export default ({params, fileOrgName, fileDate, dateDisplay, isActive, onRowCountChange}: Props) => {
 	  const { isPending, data, error } = useQuery({		
 		queryKey: [ `report/payrollAudit?startDateStr=${params.startDate?.toString()}&endDateStr=${params.endDate?.toString()}&organizationGuid=${params.organizationGuid}` ],
 		enabled: !!params?.startDate && !!params?.endDate,
@@ -35,14 +35,18 @@ export default ({params, fileOrgName, fileDate, dateDisplay, onRowCountChange}: 
 		retry: false
 	  })
   
+	if (!isActive)
+		return null;
+
 	  return (
 		  <ReportComponent
 			  isLoading={isPending}
-			  displayData={data}
+			  hasError={!!error}
 			  displayName={`Payroll Audit Report  for ${params.organizationName}, ${dateDisplay}`}
 			  fileData={() => flattenPayrollReport(data)}
 			  fileName={`${fileOrgName}_Payroll_Audit_${fileDate}`}
 			  fileFields={payrollAuditFields}
+			  showHeader={true}
 		  >
 			  <div>
 				  For Download Only
@@ -92,7 +96,7 @@ export default ({params, fileOrgName, fileDate, dateDisplay, onRowCountChange}: 
 				</Col>
 			</Form.Group>
 
-			<Row>
+			<div className="grid grid-cols-12">
 				<Table 
 					className='m-0'
 					columns={createPayrollAuditColumns(payrollAuditAttendingFilter, payrollAuditRegisteredFilter)} 
@@ -101,7 +105,7 @@ export default ({params, fileOrgName, fileDate, dateDisplay, onRowCountChange}: 
 					tableProps={{ size: 'sm', style: {minWidth: '1100px', borderCollapse: 'collapse', borderSpacing: '0 3px'}}}
 					maxHeight='45rem'
 				/>
-			</Row>
+			</div>
 		</ReportComponent>
 	)
 		*/

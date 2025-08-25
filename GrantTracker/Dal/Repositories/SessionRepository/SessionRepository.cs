@@ -355,8 +355,13 @@ public class SessionRepository : ISessionRepository
 			.Include(reg => reg.DaySchedule).ThenInclude(d => d.Session)
 			.ToListAsync();
 
-		return registrations.Select(StudentRegistrationView.FromDatabase).ToList();
-	}
+		return registrations.GroupBy(x => x.StudentSchoolYearGuid,
+			(ssyGuid, regs) =>
+			{
+				return StudentRegistrationView.FromDatabase(sessionGuid, regs.First().DaySchedule.Session.Name, regs.First().StudentSchoolYear, regs.Select(x => x.DaySchedule).ToList());
+			})
+		.ToList();
+    }
 
 	public async Task RemoveAttendanceRecordAsync(Guid attendanceGuid)
 	{

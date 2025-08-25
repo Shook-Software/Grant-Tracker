@@ -1,44 +1,49 @@
-import { Col, Nav, Row, Tab } from 'react-bootstrap'
+import { useState } from 'react'
+import { Settings, Calendar, Users } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { BlackoutDateConfig } from './BlackoutDates'
 import { StudentGroupsConfig } from './StudentGroups'
-import { PageContainer } from 'styles'
 
 export default (): JSX.Element => {
+	const [activeTab, setActiveTab] = useState<string>('blackout')
+
 	return (
-		<PageContainer>
-			<Tab.Container defaultActiveKey='blackout'>
-				<Row>
-					<Col md={2} className='p-0 mt-3' >
-						<Row style={{border: '1px solid black', borderRadius: '0.3rem', height: 'fit-content', width: 'fit-content'}}>
-							<Nav variant='pills' className='flex-column p-0'>
-								<Nav.Item>
-									<Nav.Link eventKey='blackout'>
-										Blackout Dates
-									</Nav.Link>
-								</Nav.Item>
+		<div className="mx-auto px-4 w-full pt-3">
 
-								<Nav.Item>
-									<Nav.Link eventKey='student-groups'>
-										Student Groups
-									</Nav.Link>
-								</Nav.Item>
-							</Nav>
-						</Row>
-					</Col>
+			<div className='pt-1'>
+				<div className='flex flex-nowrap -mx-2'>
+					{/* Navigation Sidebar */}
+					<div className={`px-2 flex-1 w-full`} style={{marginLeft: `-250px`, maxWidth: '250px'}}>
+						<div className="border border-border rounded-lg p-1 bg-background">
+							<nav className='flex flex-col space-y-1'>
+								<Button
+									variant={activeTab === 'blackout' ? 'default' : 'ghost'}
+									className="justify-start gap-2 h-10"
+									onClick={() => setActiveTab('blackout')}
+								>
+									<Calendar className="h-4 w-4" />
+									Blackout Dates
+								</Button>
 
-					<Col md={10}>
-						<Tab.Content>
-							<Tab.Pane eventKey='blackout'>
-								<BlackoutDateConfig />
-							</Tab.Pane>
-							
-							<Tab.Pane eventKey='student-groups'>
-								<StudentGroupsConfig />
-							</Tab.Pane>
-						</Tab.Content>
-					</Col>
-				</Row>
-			</Tab.Container>
-		</PageContainer>
+								<Button
+									variant={activeTab === 'student-groups' ? 'default' : 'ghost'}
+									className="justify-start gap-2 h-10"
+									onClick={() => setActiveTab('student-groups')}
+								>
+									<Users className="h-4 w-4" />
+									Student Groups
+								</Button>
+							</nav>
+						</div>
+					</div>
+
+					{/* Main Content */}
+					<div className='flex-1 md:w-9/12'>
+						{activeTab === 'blackout' && <BlackoutDateConfig />}
+						{activeTab === 'student-groups' && <StudentGroupsConfig />}
+					</div>
+				</div>
+			</div>
+		</div>
 	)
 }

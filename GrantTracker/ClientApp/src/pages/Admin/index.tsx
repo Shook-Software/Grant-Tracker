@@ -2,9 +2,10 @@
 import { QueryClient, useQuery, UseQueryResult } from '@tanstack/react-query'
 import { Outlet, useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 
-import Select from 'react-select'
 import { Tabset, Tab } from 'components/Tabset'
 import { PageContainer } from 'styles'
+import { Combobox } from '@/components/ui/combobox'
+import { Label } from '@/components/ui/label'
 
 import { OrganizationYear, OrganizationYearDomain, OrganizationYearView, Quarter, YearView } from 'Models/OrganizationYear'
 
@@ -96,7 +97,7 @@ export default () => {
   return (
     <PageContainer className='rounded-top-left-0'>
       <OrgYearInput value={orgYear} onChange={handleOrgYearChange} defaultOrgYearGuid={user.organizationYear.guid} />
-      <div className='w-100'>
+      <div className='w-full'>
         <TabSelector user={user} />
       </div>
       <OrgYearContext.Provider value={orgYearContextValue}>
@@ -173,24 +174,29 @@ const OrgYearInput = ({value, onChange, defaultOrgYearGuid}): React.ReactElement
   })
 
   return (
-    <div className='row mb-3'>
+    <div className='flex flex-wrap gap-4 mb-3'>
 
-      <div className='col-sm-4'>
-        <label>Organization</label>
-        <Select 
-          value={{value: value?.organization.guid, label: value?.organization.name}}
+      <div className='w-fit max-w-xs'>
+        <Label className='mb-3' htmlFor='org-select'>Organization</Label>
+        <Combobox 
+          id='org-select'
           options={orgs.map(o => ({ value: o.guid, label: o.name }))}
-          onChange={(option => handleInputChange(orgYears, option?.value, value?.year.guid))}
-          isDisabled={orgs.length <= 1}
+          value={value?.organization.guid || ''}
+          onChange={(selectedValue) => handleInputChange(orgYears, selectedValue, value?.year.guid)}
+          placeholder="Search organizations..."
+          emptyText="No organizations found"
         />
       </div>
 
-      <div className='col-sm-4'>
-        <label>Term</label>
-        <Select 
-          value={{value: value?.year.guid, label: `${value?.year.schoolYear} - ${Quarter[value?.year.quarter]}`}}
-          options={years.map(y => ({ value: y.guid, label: `${y.schoolYear} - ${Quarter[y.quarter]}`}))}
-          onChange={(option => handleInputChange(orgYears, value?.organization.guid, option?.value))}
+      <div className='w-fit max-w-xs'>
+        <Label className='mb-3' htmlFor='term-select'>Term</Label>
+        <Combobox 
+          id='term-select'
+          options={years.map(y => ({ value: y.guid, label: `${y.schoolYear} - ${Quarter[y.quarter]}` }))}
+          value={value?.year.guid || ''}
+          onChange={(selectedValue) => handleInputChange(orgYears, value?.organization.guid, selectedValue)}
+          placeholder="Search terms..."
+          emptyText="No terms found"
         />
       </div>
 

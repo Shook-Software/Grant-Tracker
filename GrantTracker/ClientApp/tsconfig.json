@@ -38,6 +38,7 @@
 			"src/global.ts"
 		],
 		"paths": {
+			"@/*": ["*"],
 			"components": ["src/components"],
 			"pages": ["src/pages"],
 			"types": ["src/types"],
@@ -48,6 +49,7 @@
 		"node_modules"
 	],
 	"include": [
-		"src/*"
+		"src/*.ts",
+		"src/*.tsx"
 	]
 }

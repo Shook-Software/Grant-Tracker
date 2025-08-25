@@ -1,4 +1,5 @@
-﻿using GrantTracker.Dal.Schema;
+﻿using DocumentFormat.OpenXml.Drawing;
+using GrantTracker.Dal.Schema;
 
 namespace GrantTracker.Dal.Models.Views
 {
@@ -46,7 +47,11 @@ namespace GrantTracker.Dal.Models.Views
 			Student = StudentViewModel.FromDatabase(ssy.Student),
 			Grade = ssy.Grade,
 			OrganizationYear = OrganizationYearView.FromDatabase(ssy.OrganizationYear),
-			Registrations = ssy.SessionRegistrations?.Select(reg => StudentRegistrationView.FromDatabase(reg)).ToList(),
+			Registrations = ssy.SessionRegistrations.GroupBy(x => x.DaySchedule.SessionGuid,
+				(sesGuid, regs) => {
+					return StudentRegistrationView.FromDatabase(sesGuid, regs.First().DaySchedule.Session.Name, null, regs.Select(x => x.DaySchedule).ToList());
+				})
+			.ToList(),
 			AttendanceRecords = ssy.AttendanceRecords
 				.Select(ar => new StudentAttendanceViewModel()
 				{

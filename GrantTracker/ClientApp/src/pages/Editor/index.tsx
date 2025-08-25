@@ -7,10 +7,10 @@ import {
   useSearchParams
 } from 'react-router-dom'
 import { Formik, FormikErrors } from 'formik'
-import { Form, Spinner } from 'react-bootstrap'
 
 import { Tabset, Tab } from 'components/Tabset'
 import { PageContainer } from 'styles'
+import { Spinner } from '@/components/ui/Spinner'
 
 import { initialState, reducer, ReducerAction } from './Session/state'
 
@@ -19,7 +19,6 @@ import validationSchema from './validation'
 import { fetchAllDropdownOptions, fetchGradeOptions, fetchSession, submitSession, DropdownOptions } from './api'
 import { Session, SessionForm } from 'Models/Session'
 import { User } from 'utils/authentication'
-import { OrgYearContext } from 'pages/Admin'
 
 interface TabProps {
   orgYearGuid: string | undefined
@@ -56,18 +55,20 @@ const TabSelector = ({ orgYearGuid, sessionGuid }: TabProps): JSX.Element => (
   </Tabset>
 )
 
-//finish validation once confirmed with Liz today
-//for now..
 export default ({user}: {user: User}) => {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams();
   const { sessionGuid } = useParams()
-  const [orgYearGuid, setOrgYearGuid] = useState<string | null>(null)
+  const [orgYearGuid, setOrgYearGuid] = useState<string | undefined>(undefined)
   const [validated, setValidated] = useState<boolean>(false)
   const [state, dispatch] = useReducer(reducer, initialState)
   const [dropdownData, setDropdowns] = useState<DropdownOptions | null>(null)
+  const [sessionLoaded, setSessionLoaded] = useState<boolean>(!sessionGuid)
 
   function submitForm (session: SessionForm): void {
+    if (!orgYearGuid)
+      return;
+
     submitSession(orgYearGuid, session)
       .then(res => {
         navigate(
@@ -78,7 +79,7 @@ export default ({user}: {user: User}) => {
   }
 
   useEffect(() => {
-    const orgYearGuid: string | null = searchParams.get('orgYearGuid')
+    const orgYearGuid: string | undefined = searchParams.get('orgYearGuid') ?? undefined;
     setOrgYearGuid(orgYearGuid)
 
     fetchAllDropdownOptions()
@@ -99,6 +100,7 @@ export default ({user}: {user: User}) => {
               setOrgYearGuid(session.organizationYear.guid)
               dispatch({ type: 'all', payload: session })
               navigate(`overview`)
+              setSessionLoaded(true);
             })
           }
         }))
@@ -115,46 +117,51 @@ export default ({user}: {user: User}) => {
 
   if (!dropdownData)
     return (
-      <PageContainer className='d-flex justify-content-center align-items-center'>
-        <Spinner animation='border' />
+      <PageContainer className='flex justify-center items-center'>
+        <Spinner size='lg' />
       </PageContainer>
     )
 
   return (
     <>
-      <h3 className='text-center w-100'>
+      <h3 className='text-center w-full'>
         {sessionGuid ? `Editing ${state.name}` : 'Creating New Session'}
       </h3>
       <PageContainer>
-        <div className='w-100 p-3'>
-          <TabSelector orgYearGuid={orgYearGuid} sessionGuid={sessionGuid} />
-        </div>
-        <Formik
-          enableReinitialize
-          initialValues={state}
-          validateOnMount
-          validationSchema={validationSchema}
-          onSubmit={(values, actions) => {
-            submitForm(values)
-          }}
-        >
-          {({ handleSubmit, values, touched, errors, validateForm }) => (
-            <Form onSubmit={handleSubmit}>
-              <Outlet
-                context={{
-                  orgYearGuid: orgYearGuid,
-                  values,
-                  reducerDispatch: dispatch,
-                  dropdownData,
-                  touched,
-                  errors,
-                  user,
-                  forceValidation: validateForm
-                }}
-              />
-            </Form>
-          )}
-        </Formik>
+      {sessionLoaded && 
+        <>
+          <div className='w-full p-3'>
+            <TabSelector orgYearGuid={orgYearGuid} sessionGuid={sessionGuid} />
+          </div>
+          <Formik
+            enableReinitialize
+            initialValues={state}
+            validateOnMount
+            validationSchema={validationSchema}
+            onSubmit={(values, actions) => {
+              submitForm(values)
+            }}
+          >
+            {({ handleSubmit, values, touched, errors, validateForm }) => (
+              <form onSubmit={handleSubmit}>
+                <Outlet
+                  context={{
+                    orgYearGuid: orgYearGuid,
+                    values,
+                    reducerDispatch: dispatch,
+                    dropdownData,
+                    touched,
+                    errors,
+                    user,
+                    forceValidation: validateForm
+                  }}
+                />
+              </form>
+            )}
+          </Formik>
+        </>
+      }
+      {!sessionLoaded && <Spinner />}
       </PageContainer>
     </>
   )

@@ -1,18 +1,16 @@
-import { Card, ListGroup } from 'react-bootstrap'
+import * as React from 'react';
 
 export default ({ session }): JSX.Element => {
   return (
-    <Card className='mt-3'>
-      <Card.Body>
-        <Card.Title>Instructors</Card.Title>
-        <ListGroup variant='flush' className='d-flex flex-row flex-wrap'>
+      <React.Fragment>
+        <h3 className="text-lg font-semibold m-0">Instructors</h3>
+        <div className='flex flex-row flex-wrap divide-y divide-gray-200'>
           {session!.instructors.map(isy => (
-            <div className='w-50'>
-              <ListGroup.Item className='text-center'>{`${isy.instructor.firstName} ${isy.instructor.lastName}`}</ListGroup.Item>
+            <div className='py-2 px-4 w-1/2 text-sm'>
+              {`${isy.instructor.firstName} ${isy.instructor.lastName}`}
             </div>
           ))}
-        </ListGroup>
-      </Card.Body>
-    </Card>
+        </div>
+      </React.Fragment>
   )
 }

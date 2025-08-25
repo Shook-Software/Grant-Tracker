@@ -1,4 +1,5 @@
-﻿using GrantTracker.Dal.Schema;
+﻿using GrantTracker.Dal.Models.DTO;
+using GrantTracker.Dal.Schema;
 
 namespace GrantTracker.Dal.Models.Views
 {
@@ -55,14 +56,14 @@ namespace GrantTracker.Dal.Models.Views
 		public Guid SessionGuid { get; set; }
 		public string SessionName { get; set; }
 		public StudentSchoolYearViewModel StudentSchoolYear { get; set; }
-		public DayScheduleView DaySchedule { get; set; }
+		public List<DayScheduleView> Schedule { get; set; }
 
-		public static StudentRegistrationView FromDatabase(StudentRegistration registration) => new()
+		public static StudentRegistrationView FromDatabase(Guid SessionGuid, string SessionName, StudentSchoolYear ssy, List<SessionDaySchedule> schedule) => new()
 		{
-			SessionGuid = registration.DaySchedule?.SessionGuid ?? Guid.Empty,
-			StudentSchoolYear = StudentSchoolYearViewModel.FromDatabase(registration.StudentSchoolYear),
-			SessionName = registration.DaySchedule?.Session?.Name,
-			DaySchedule = registration.DaySchedule != null ? DayScheduleView.FromDatabase(registration.DaySchedule) : null
+			SessionGuid = SessionGuid,
+            SessionName = SessionName,
+            StudentSchoolYear = ssy is not null ? StudentSchoolYearViewModel.FromDatabase(ssy) : null,
+            Schedule = schedule.Select(day => DayScheduleView.FromDatabase(day)).ToList()
 		};
 	}
 }

@@ -1,15 +1,18 @@
 import { useState, useEffect, ReactElement } from 'react'
 import { LocalDate, Year as JYear, DateTimeFormatter } from '@js-joda/core'
-import { Row, Col, Modal, Form, Button, Spinner, Tab } from 'react-bootstrap'
+import { Button } from 'components/ui/button'
+import { FormControl, FormGroup, FormLabel } from 'components/Form'
 import { Quarter, YearDomain, YearView, Year } from 'Models/OrganizationYear'
 import { DropdownOption } from 'Models/Session'
-import Table, { Column, SortDirection } from "components/BTable"
+import { DataTable } from 'components/DataTable'
 import api from 'utils/api'
 import Dropdown from 'components/Input/Dropdown'
 import { useQuery } from '@tanstack/react-query'
 import { Locale } from '@js-joda/locale_en-us'
 import { NIL as NullGuid } from 'uuid'
 import { User } from 'utils/authentication'
+import { ColumnDef, SortingState } from '@tanstack/react-table'
+import { CornerDownLeft } from 'lucide-react'
 
 export default (): JSX.Element => {
 	const { isPending: yearsPending, data: years, error: yearFetchError, refetch: refetchYears } = useQuery({
@@ -34,33 +37,57 @@ export default (): JSX.Element => {
 		setEditing(false)
 	}
 
-	const columns: Column[] = createColumns()
+	const columns: ColumnDef<YearView>[] = createColumns()
 	const onRowClick = (event, row: YearView) => {
 		setYearId(row.yearGuid)
 		setEditing(true)
 	}
 
 	if (!years || yearsPending)
-		return <div>Loading...</div>
+		return (
+			<div className="flex flex-col items-center justify-center h-40 gap-3">
+				<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+				<small className='text-gray-500'>Loading Years...</small>
+			</div>
+		)
 
 	return (
-		<>
+		<div className='space-y-6'>
 			{
 				editing 
-					? <><YearEditor years={years} yearId={yearId} users={users} onChange={() => handleFormSubmission()} /><hr /></> 
-					: <button className='btn btn-secondary' type='button' onClick={() => setEditing(true)}>Create</button>
+					? (
+						<>
+							<YearEditor years={years} yearId={yearId} users={users} onChange={() => handleFormSubmission()} />
+							<hr className='border-gray-200' />
+						</>
+					) 
+					: <Button variant='secondary' onClick={() => setEditing(true)}>Create</Button>
 			}
 
 			{
-				yearsPending ? <Spinner className='mt-3' animation='border' role='status' />
-					: yearFetchError ? <div className='text-danger'>{yearFetchError}</div>
-						: <>
-							<Row className='my-3'>
-								<Table dataset={years} columns={columns} rowProps={{ onClick: onRowClick }} />
-							</Row>
-						</>
+				yearsPending ? (
+					<div className="flex justify-center mt-3">
+						<div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+					</div>
+				) : yearFetchError ? (
+					<div className='text-red-500'>{yearFetchError}</div>
+				) : (
+					<div className='mt-6'>
+						<DataTable 
+							columns={columns} 
+							data={years} 
+							onRowClick={onRowClick}
+							initialSorting={[
+								{id: 'schoolYear', desc: true},
+								{id: 'quarter', desc: true}
+							]}
+							emptyMessage="No years found."
+							className="hover:bg-gray-50 cursor-pointer"
+						/>
+					</div>
+				)
 			}
-		</>
+		</div>
 	)
 }
 
@@ -156,13 +183,13 @@ const YearEditor = ({ years, yearId, users, onChange }: YearEditorProps) => {
 	const formIsValid: boolean = true;
 	const originalYear: YearView = {...years.find(y => y.yearGuid == yearId)!}
 
-	const userRowClick = (event, row: UserForm) => {
+	const userRowClick = (row: UserForm) => {
 		const alteredUser: UserForm = {...row};
 		alteredUser.include = !alteredUser.include;
 		alterUser(alteredUser);
 	}
 
-	const userColumns: Column[] = createUserColumns(alterUser)
+	const userColumns: ColumnDef<UserForm>[] = createUserColumns(alterUser)
 
 	useEffect(() => {
 		if (!!yearId && yearForm.yearGuid != yearId) {
@@ -175,147 +202,169 @@ const YearEditor = ({ years, yearId, users, onChange }: YearEditorProps) => {
 	}, [users])
 
 	return (
-		<div className='row'>
-			<h5 className='p-2 bg-secondary text-white'>
-				<button type='button' className='btn btn-sm btn-outline-light me-2' onClick={() => cancelEdit()}>
-					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-return-left" viewBox="0 0 16 16">
-						<path fill-rule="evenodd" d="M14.5 1.5a.5.5 0 0 1 .5.5v4.8a2.5 2.5 0 0 1-2.5 2.5H2.707l3.347 3.346a.5.5 0 0 1-.708.708l-4.2-4.2a.5.5 0 0 1 0-.708l4-4a.5.5 0 1 1 .708.708L2.707 8.3H12.5A1.5 1.5 0 0 0 14 6.8V2a.5.5 0 0 1 .5-.5"/>
-					</svg>
-				</button>
-				{yearId ? `Edit - ${originalYear.schoolYear} ${Quarter[originalYear.quarter]}` : 'Create New Year'}
-			</h5>
-			{hasError && errors.length == 0 ? <h6 className='text-danger'>An unhandled error occured, please check the parameters and try again.</h6> : null}
-			{errors.map(error => <h6 className='text-danger'>{error}</h6>)}
-			<div className='col-lg-9'>
-				<div className='row'>
-					<div className='col-lg-6'>
-						<Form.Group>
-							<Form.Label>Year</Form.Label>
-							<Form.Control
-								type='number'
-								value={yearForm.schoolYear}
-								onChange={(e) => setYearForm({ ...yearForm, schoolYear: e.target.value })}
-							/>
-						</Form.Group>
-					</div>
+		<div className='space-y-6'>
+			<div className='flex items-center gap-3 p-4 bg-gray-600 text-white rounded-t-lg'>
+				<Button variant='outline' size='sm' className='border-white text-gray-600 hover:text-white hover:bg-gray-600' onClick={() => cancelEdit()} aria-label="Cancel edit">
+					<CornerDownLeft aria-hidden />
+				</Button>
+				<h5 className='text-lg font-semibold'>
+					{yearId ? `Edit - ${originalYear.schoolYear} ${Quarter[originalYear.quarter]}` : 'Create New Year'}
+				</h5>
+			</div>
 
-					<div className='col-lg-6'>
-						<Form.Group>
-							<Form.Label>Quarter</Form.Label>
-							<Dropdown
-								options={quarters}
-								value={yearForm.quarter?.toString()}
-								onChange={(quarter: string) => setYearForm({ ...yearForm, quarter: Number(quarter) })}
-								disableOverlay
-							/>
-						</Form.Group>
-					</div>
+			{hasError && errors.length == 0 && (
+				<div className='bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded'>
+					<h6 className='font-medium'>An unhandled error occured, please check the parameters and try again.</h6>
+				</div>
+			)}
+			{errors.map((error, idx) => (
+				<div key={idx} className='bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded'>
+					<h6 className='font-medium'>{error}</h6>
+				</div>
+			))}
 
-					<div className='col-lg-6'>
-						<Form.Group>
-							<Form.Label>Start Date</Form.Label>
-							<Form.Control
-								type='date'
-								value={yearForm.startDate?.toString()}
-								onChange={(e) => {
-									if (e.target.value == '')
-										return;
+			<div className='flex gap-6'>
+				<div className='flex-1 grid grid-cols-2 gap-4'>
+					<FormGroup>
+						<FormLabel>Year</FormLabel>
+						<FormControl
+							type='number'
+							value={yearForm.schoolYear}
+							onChange={(e) => setYearForm({ ...yearForm, schoolYear: e.target.value })}
+						/>
+					</FormGroup>
 
-									const date: number[] = e.target.value.split('-').map(i => Number(i))
-									setYearForm({ ...yearForm, startDate: LocalDate.of(date[0], date[1], date[2]) })
-								}}
-							/>
-						</Form.Group>
-					</div>
+					<FormGroup>
+						<FormLabel>Quarter</FormLabel>
+						<Dropdown
+							options={quarters}
+							value={yearForm.quarter?.toString()}
+							onChange={(quarter: string) => setYearForm({ ...yearForm, quarter: Number(quarter) })}
+							disableOverlay
+						/>
+					</FormGroup>
 
-					<div className='col-lg-6'>
-						<Form.Group>
-							<Form.Label>End Date</Form.Label>
-							<Form.Control
-								type='date'
-								value={yearForm.endDate?.toString()}
-								onChange={(e) => {
-									if (e.target.value == '')
-										return;
+					<FormGroup>
+						<FormLabel>Start Date</FormLabel>
+						<FormControl
+							type='date'
+							value={yearForm.startDate?.toString()}
+							onChange={(e) => {
+								if (e.target.value == '')
+									return;
 
-									const date: number[] = e.target.value.split('-').map(i => Number(i))
-									setYearForm({ ...yearForm, endDate: LocalDate.of(date[0], date[1], date[2]) })
-								}}
-							/>
-						</Form.Group>
-					</div>
+								const date: number[] = e.target.value.split('-').map(i => Number(i))
+								setYearForm({ ...yearForm, startDate: LocalDate.of(date[0], date[1], date[2]) })
+							}}
+						/>
+					</FormGroup>
+
+					<FormGroup>
+						<FormLabel>End Date</FormLabel>
+						<FormControl
+							type='date'
+							value={yearForm.endDate?.toString()}
+							onChange={(e) => {
+								if (e.target.value == '')
+									return;
+
+								const date: number[] = e.target.value.split('-').map(i => Number(i))
+								setYearForm({ ...yearForm, endDate: LocalDate.of(date[0], date[1], date[2]) })
+							}}
+						/>
+					</FormGroup>
+				</div>
+
+				<div className='flex items-end'>
+					<Button disabled={!formIsValid} onClick={() => handleYearSubmission()}>Submit</Button>
 				</div>
 			</div>
 
-			<div className='col-lg-3 d-flex align-items-end'>
-				<button className='btn btn-primary' type='button' disabled={!formIsValid} onClick={() => handleYearSubmission()}>Submit</button>
-			</div>
-
-			<div className={'col-12 p-0 d-flex flex-column' + (!!yearId ? ' d-none' : ' mt-3')}>
-			<small>({yearForm.users.filter(user => user.include).length} users selected)</small>
-				<h5 className='w-100 p-2 bg-secondary text-white mb-0'>Transfer Users</h5>
-				<div style={{maxHeight: '30rem', overflowY: 'auto'}}>
-					<Table columns={userColumns}
-							dataset={yearForm.users}
-							tableProps={{ className: 'm-0'}}
-							defaultSort={{ index: 2, direction: SortDirection.Ascending }}
-							rowProps={{ key: 'userOrganizationYearGuid', onClick: userRowClick }} />
+			{!yearId && (
+				<div className='space-y-3 mt-6'>
+					<small className='text-gray-600'>({yearForm.users.filter(user => user.include).length} users selected)</small>
+					<div className='bg-gray-600 text-white p-3 rounded-t-lg mb-0'>
+						<h5 className='text-lg font-semibold'>Transfer Users</h5>
+					</div>
+					<div className='max-h-96 overflow-y-auto border border-gray-200 rounded-b-lg'>
+						<DataTable 
+							columns={userColumns}
+							data={yearForm.users}
+							initialSorting={[{id: 'lastName', desc: false}]}
+							onRowClick={userRowClick}
+							emptyMessage="No users found."
+							className="hover:bg-gray-50 cursor-pointer"
+							containerClassName="border-0 rounded-none"
+						/>
+					</div>
 				</div>
-			</div>
+			)}
 		</div>
 	)
 }
 
 
 
-const createColumns = (): Column[] => [
+const createColumns = (): ColumnDef<YearView>[] => [
 	{
-		label: 'Year',
-		attributeKey: 'schoolYear',
-		sortable: true
+		header: 'Year',
+		accessorKey: 'schoolYear'
 	},
 	{
-		label: 'Quarter',
-		attributeKey: 'quarter',
-		transform: (quarter) => Quarter[quarter],
-		sortable: true
+		header: 'Quarter',
+		accessorKey: 'quarter',
+		cell: ({ row }) => Quarter[row.original.quarter]
 	},
 	{
-		label: 'Start Date',
-		attributeKey: 'startDate',
-		transform: (value: LocalDate) => value.format(DateTimeFormatter.ofPattern('MM/dd/y').withLocale(Locale.ENGLISH)),
-		sortable: true
+		header: 'Start Date',
+		accessorKey: 'startDate',
+		cell: ({ row }) => row.original.startDate.format(DateTimeFormatter.ofPattern('MM/dd/y').withLocale(Locale.ENGLISH))
 	},
 	{
-		label: 'End Date',
-		attributeKey: 'endDate',
-		transform: (value: LocalDate) => value.format(DateTimeFormatter.ofPattern('MM/dd/y').withLocale(Locale.ENGLISH)),
-		sortable: true
+		header: 'End Date',
+		accessorKey: 'endDate',
+		cell: ({ row }) => row.original.endDate.format(DateTimeFormatter.ofPattern('MM/dd/y').withLocale(Locale.ENGLISH))
 	},
 	{
-		label: 'Is Active',
-		attributeKey: 'isCurrentSchoolYear',
-		transform: (isCurrent: boolean) => isCurrent ? 'Yes' : 'No',
-		sortable: true
+		header: 'Is Active',
+		accessorKey: 'isCurrentSchoolYear',
+		cell: ({ row }) => row.original.isCurrentSchoolYear ? 'Yes' : 'No',
+		filterFn: (row, id, value) => {
+			if (value === '') return true
+			const isActive = row.getValue(id) as boolean
+			return value === 'true' ? isActive : !isActive
+		},
+		meta: {
+			filterOptions: [
+				{ value: 'true', label: 'Yes' },
+				{ value: 'false', label: 'No' }
+			]
+		}
 	},
 	{
-		label: 'Actions',
-		attributeKey: '',
-		transform: (year) => (
-			<div>
-				<button className='btn btn-sm btn-outline-primary w-100 mb-1' onClick={(e) => {
-					e.stopPropagation()
-					year.isCurrentSchoolYear = true
-					api
-						.patch('developer/year', year)
-						.then(res => console.log(res))
-				}}>
-					Set Active Year
-				</button>
-				<SyncSynergyBtn yearGuid={year.yearGuid} />
-			</div>
-		),
-		sortable: false
+		header: 'Actions',
+		id: 'actions',
+		cell: ({ row }) => {
+			const year = row.original
+			return (
+				<div className='space-y-2'>
+					<Button 
+						variant='outline' 
+						size='sm' 
+						className='w-full' 
+						onClick={(e) => {
+							e.stopPropagation()
+							year.isCurrentSchoolYear = true
+							api.patch('developer/year', year).then(res => console.log(res))
+						}}
+					>
+						Set Active Year
+					</Button>
+					<SyncSynergyBtn yearGuid={year.yearGuid} />
+				</div>
+			)
+		},
+		enableSorting: false
 	}
 	//extra statistics
 ]
@@ -326,70 +375,84 @@ const SyncSynergyBtn = ({yearGuid}): ReactElement => {
 
 	return (
 		<div>
-			<button className='btn btn-sm btn-outline-primary w-100' onClick={(e) => {
-				e.stopPropagation()
-				setLoading(true)
-				api
-					.patch(`developer/year/${yearGuid}/grades/sync`)
-					.then(res => {
-						setNumRecordsUpdated(res.data)
-					})
-					.catch(err => {
-						setNumRecordsUpdated(-1)
-					})
-					.finally(() => {
-						setLoading(false)
-					})
-			}}
+			<Button 
+				variant='outline' 
+				size='sm' 
+				className='w-full' 
+				onClick={(e) => {
+					e.stopPropagation()
+					setLoading(true)
+					api
+						.patch(`developer/year/${yearGuid}/grades/sync`)
+						.then(res => {
+							setNumRecordsUpdated(res.data)
+						})
+						.catch(err => {
+							setNumRecordsUpdated(-1)
+						})
+						.finally(() => {
+							setLoading(false)
+						})
+				}}
 				disabled={loading}
 			>
-				{loading ? <Spinner animation="border" role="status" /> : 'Sync Synergy'}
-			</button>
+				{loading ? (
+					<div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+				) : 'Sync Synergy'}
+			</Button>
 			{
-				numRecordsUpdated == -1 ? <div className='text-danger'>Failed to sync</div> : null
+				numRecordsUpdated == -1 && <div className='text-red-500 text-xs mt-1'>Failed to sync</div>
 			}
 		</div>
 	)
 }
 
 
-const createUserColumns = (onChange): Column[] => ([
+const createUserColumns = (onChange): ColumnDef<UserForm>[] => ([
 	{
-		label: 'Transfer',
-		attributeKey: '',
-		sortable: true,
-		sortTransform: (user: UserForm) => user.include.toString(),
-		transform: (user: UserForm) => <div className='form-check'>
-			<input className='form-check-input' type='checkbox' checked={user.include} onChange={() => {
-				const changedUser: UserForm = {...user, include: !user.include}
-				onChange(changedUser)
-			}} />
-		</div>
+		header: 'Transfer',
+		id: 'transfer',
+		cell: ({ row }) => {
+			const user = row.original
+			return (
+				<div className='flex justify-center'>
+					<input 
+						type='checkbox' 
+						className='rounded' 
+						checked={user.include} 
+						onChange={() => {
+							const changedUser: UserForm = {...user, include: !user.include}
+							onChange(changedUser)
+						}} 
+					/>
+				</div>
+			)
+		},
+		sortingFn: (rowA, rowB) => {
+			const a = rowA.original.include.toString()
+			const b = rowB.original.include.toString()
+			return a.localeCompare(b)
+		}
 	},
 	{
-	  label: 'First Name',
-	  attributeKey: 'firstName',
-	  sortable: true
+		header: 'First Name',
+		accessorKey: 'firstName'
 	},
 	{
-	  label: 'Last Name',
-	  attributeKey: 'lastName',
-	  sortable: true
+		header: 'Last Name',
+		accessorKey: 'lastName'
 	},
 	{
-	  label: 'Badge Number',
-	  attributeKey: 'badgeNumber',
-	  sortable: true
+		header: 'Badge Number',
+		accessorKey: 'badgeNumber'
 	},
 	{
-	  label: 'Organization Name',
-	  attributeKey: 'organization.name',
-	  sortable: true
+		header: 'Organization Name',
+		accessorKey: 'organization.name'
 	},
 	{
-	  label: 'User Type',
-	  attributeKey: 'claim',
-	  sortable: true,
-	  transform: (claim: number) => claim === 0 ? 'Administrator' : 'Coordinator'
+		header: 'User Type',
+		accessorKey: 'claim',
+		cell: ({ row }) => row.original.claim === 0 ? 'Administrator' : 'Coordinator'
 	}
   ])

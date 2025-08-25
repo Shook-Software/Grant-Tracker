@@ -1,27 +1,82 @@
-
 import { useQuery } from '@tanstack/react-query'
 import { memo, useEffect, useMemo, useState } from 'react'
-import { Col, Row, Form } from 'react-bootstrap'
 
-import Table, { SortDirection } from 'components/BTable'
+import { ColumnDef } from "@tanstack/react-table"
+import { HeaderCell } from "@/components/ui/table"
+import { DataTable } from "components/DataTable"
 import { ReportParameters } from '../ReportParameters'
 import { familyAttendanceFields, flattenFamilyAttendance } from '../Definitions/CSV'
-import { familyAttendanceColumns } from '../Definitions/Columns'
-import ReportComponent from '../ReportComponent'
+import ReportComponent, { exportToCSV } from '../ReportComponent'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Button } from '@/components/ui/button'
+
+interface FamilyAttendanceRecord {
+	familyMember: string
+	totalDays: number
+	totalHours: number
+}
+
+interface FamilyAttendanceData {
+	lastName: string
+	firstName: string
+	matricNumber: string
+	grade: string
+	familyAttendance: FamilyAttendanceRecord[]
+}
+
+// Nested table component for family members
+const FamilyMembersTable = ({ familyAttendance }: { familyAttendance: FamilyAttendanceRecord[] }) => {
+	const familyColumns: ColumnDef<FamilyAttendanceRecord, any>[] = [
+		{
+			accessorKey: "familyMember",
+			header: () => <div className="font-bold">Family Member</div>,
+			cell: ({ row }) => <div>{row.getValue("familyMember")}</div>,
+			id: 'familyMember'
+		},
+		{
+			accessorKey: "totalDays",
+			header: () => <div className="font-bold text-center">Total Days</div>,
+			cell: ({ row }) => (
+				<div className="text-center">{Math.floor((row.getValue("totalDays") as number) * 100) / 100}</div>
+			),
+			id: 'totalDays'
+		},
+		{
+			accessorKey: "totalHours", 
+			header: () => <div className="font-bold text-center">Total Hours</div>,
+			cell: ({ row }) => (
+				<div className="text-center">{Math.floor((row.getValue("totalHours") as number) * 100) / 100}</div>
+			),
+			id: 'totalHours'
+		}
+	]
+
+	return (
+		<DataTable
+			columns={familyColumns}
+			data={familyAttendance}
+			initialSorting={[{ id: 'familyMember', desc: false }]}
+			containerClassName="border-0"
+			tableClassName="w-full table-auto"
+		/>
+	)
+}
 
 interface Props {
 	params: ReportParameters
 	dateDisplay: string
 	fileOrgName: string
 	fileDate: string
+	isActive: boolean
 	onRowCountChange: (rows: number) => void
 }
 
-export default ({params, dateDisplay, fileOrgName, fileDate, onRowCountChange}: Props) => {
+export default ({params, dateDisplay, fileOrgName, fileDate, isActive, onRowCountChange}: Props) => {
 	const { isPending, error, data: report, refetch } = useQuery({
 		queryKey: [ `report/familyAttendance?startDateStr=${params.startDate?.toString()}&endDateStr=${params.endDate?.toString()}&organizationGuid=${params.organizationGuid}` ],
 		retry: false,
-		staleTime: Infinity
+		staleTime: Infinity,
+		enabled: !!params.startDate && !!params.endDate
 	})
 
 	const { data: regularMatricNumbers } = useQuery({ 
@@ -31,8 +86,6 @@ export default ({params, dateDisplay, fileOrgName, fileDate, onRowCountChange}: 
 		select: filterRegulars
 	})
 	  
-	const [daysAttendedFilter, setDaysAttendedFilter] = useState<string>('0')
-	const [familyType, setFamilyType] = useState<string>('')
 	const [showRegularsOnly, setShowRegularsOnly] = useState<boolean>(false)
 
 	useEffect(() => {
@@ -41,70 +94,131 @@ export default ({params, dateDisplay, fileOrgName, fileDate, onRowCountChange}: 
 
 	const familyTypeOptions: string[] = useMemo<string[]>(() => [...new Set<string>(report?.flatMap(x => x.familyAttendance).map(attend => attend.familyMember))], [report])
 
-	const filteredRecords: any[] = report?.map(x => ({...x, familyAttendance: x.familyAttendance.filter(y => familyType == '' || y.familyMember === familyType).filter(z => z.totalDays >= daysAttendedFilter)}))
-		.filter(x => familyType == '' || x.familyAttendance.some(y => y.familyMember === familyType)) //filter those that don't have the specified family member
-		.filter(x => x.familyAttendance.some(y => y.totalDays >= daysAttendedFilter))
-		.filter(x => !showRegularsOnly || (regularMatricNumbers || []).includes(x.matricNumber)) || []
+	// Column definitions for family attendance table
+	const familyAttendanceColumns = useMemo<ColumnDef<FamilyAttendanceData, any>[]>(() => [
+		{
+			accessorKey: "lastName",
+			header: ({ column }) => (
+				<HeaderCell 
+					label="Last Name" 
+					sort={column.getIsSorted()} 
+					onSortClick={() => column.toggleSorting()} 
+				/>
+			),
+			id: 'lastName'
+		},
+		{
+			accessorKey: "firstName",
+			header: ({ column }) => (
+				<HeaderCell 
+					label="First Name" 
+					sort={column.getIsSorted()} 
+					onSortClick={() => column.toggleSorting()} 
+				/>
+			),
+			id: 'firstName'
+		},
+		{
+			accessorKey: "matricNumber",
+			header: ({ column }) => (
+				<HeaderCell 
+					label="Matric Number" 
+					sort={column.getIsSorted()} 
+					onSortClick={() => column.toggleSorting()} 
+				/>
+			),
+			id: 'matricNumber'
+		},
+		{
+			accessorKey: "grade",
+			header: ({ column }) => (
+				<HeaderCell 
+					label="Grade" 
+					sort={column.getIsSorted()} 
+					onSortClick={() => column.toggleSorting()} 
+				/>
+			),
+			cell: ({ row }) => (
+				<div className='text-center'>{row.getValue("grade")}</div>
+			),
+			id: 'grade'
+		},
+		{
+			accessorKey: "familyAttendance",
+			header: ({ column }) => {
+				const filterOptions = familyTypeOptions.map(type => ({ value: type, label: type }))
+				return (
+					<HeaderCell
+						label="Family Member"
+						filterOptions={filterOptions}
+						filterValue={column.getFilterValue() as string}
+						onFilterSelect={(value) => column.setFilterValue(value)}
+					/>
+				)
+			},
+			filterFn: (row, id, value) => {
+				const familyAttendance = row.getValue(id) as FamilyAttendanceRecord[]
+				if (!value) return true
+				return familyAttendance.some(member => member.familyMember === value)
+			},
+			cell: ({ row }) => (
+				<div className="p-0">
+					<FamilyMembersTable familyAttendance={row.getValue("familyAttendance")} />
+				</div>
+			),
+			id: 'familyAttendance'
+		}
+	], [familyTypeOptions])
+
+	// Apply filters to the data (keep Regular Attendees filter outside the table)
+	const filteredData = useMemo(() => {
+		return report?.filter(x => !showRegularsOnly || (regularMatricNumbers || []).includes(x.matricNumber)) || []
+	}, [report, showRegularsOnly, regularMatricNumbers])
+
+	if (!isActive)
+		return null;
 	
 	return (
 		<ReportComponent
 			isLoading={isPending}
-			displayData={report}
-			displayName={`Family Attendance Attendance for ${params.organizationName}, ${dateDisplay}`}
-			fileData={() => flattenFamilyAttendance(filteredRecords)}
-			fileName={`Family_Attendance_${fileOrgName}_${fileDate}`}
-			fileFields={familyAttendanceFields}
+			hasError={!!error}
 		> 
-			<Row className='my-3'>
-				<Col md={3}>
-					<Form.Select value={familyType} onChange={(e) => setFamilyType(e.target.value)}>
-						{
-							[
-								<option value=''>All</option>,
-								...familyTypeOptions.map(type => <option value={type}>{type}</option>)
-							]
-						}
-					</Form.Select>
-				</Col>
-				<Col md={3}>
-				<div className="form-check">
-					<input className="form-check-input" type="checkbox" checked={showRegularsOnly} onChange={() => setShowRegularsOnly(!showRegularsOnly)} id="regular-attendees" />
-					<label className="form-check-label" htmlFor="regular-attendees">
-						Regular Attendees
-					</label>
-				</div>
-				</Col>
-			</Row>
+			<div className='flex items-center gap-4 mt-4'>
+				<Checkbox
+					id="regular-attendees"
+					checked={showRegularsOnly}
+					onCheckedChange={(_) => setShowRegularsOnly(!showRegularsOnly)}
+				/>
+				<label className="text-sm font-medium" htmlFor="regular-attendees">
+					Regular Attendees Only
+				</label>
+			</div>
 
-			<Row>
-				<Col md={3}>
-					<Form.Control 
-						type='number' 
-						className='border-bottom-0'
-						placeholder='Minimum days...'
-						value={daysAttendedFilter} 
-						onChange={(e) => setDaysAttendedFilter(e.target.value)}
-						style={{borderBottomLeftRadius: 0, borderBottomRightRadius: 0}}
-					/>
-				</Col>
+			<div className="max-h-[45rem] overflow-auto w-fit relative">
+				<DataTable 
+					columns={familyAttendanceColumns}
+					data={filteredData}
+					initialSorting={[{ id: 'lastName', desc: false }]}
+					containerClassName="rounded border w-fit"
+					tableClassName="table-auto"
+					title={`Family Attendance Attendance for ${params.organizationName}, ${dateDisplay}`}
+					renderDownload={(values) => {
+						if (values.length === 0) return <></>
 
-				<Col md={6}>
-					<span className='ms-1'># of family members over {daysAttendedFilter || 0} days: <b>{filteredRecords.reduce((prev, curr, idx) => prev + curr.familyAttendance.length, 0)}</b> </span>
-				</Col>
-			</Row>
-	
-			<Row>
-				<Table 
-					className='m-0'
-					columns={familyAttendanceColumns} 
-					dataset={filteredRecords}
-					defaultSort={{index: 0, direction: SortDirection.Ascending}}
-					maxHeight='45rem'
-					tableProps={{
-					  size: 'sm'
+						const flattened = flattenFamilyAttendance(values)
+
+						return (
+							<Button
+								className='mx-3'
+								onClick={() => exportToCSV(flattened, familyAttendanceFields, `Family_Attendance_${fileOrgName}_${fileDate}`)}
+								size='sm'
+							>
+								Save to CSV {flattened && values.length !== (report.length) ? `(${flattened.length} filtered rows)` : ''}
+							</Button>
+						)
 					}}
 				/>
-			</Row>
+			</div>
 		</ReportComponent>
 	)
 }

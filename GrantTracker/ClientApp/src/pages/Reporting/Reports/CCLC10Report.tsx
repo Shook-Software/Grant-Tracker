@@ -12,6 +12,7 @@ interface Props {
 	params: ReportParameters
 	dateDisplay: string
 	fileOrgName: string
+	isActive: boolean
 }
 
 interface CCLC10Row {
@@ -27,7 +28,7 @@ interface CCLC10Row {
 	activity: string
 }
 
-export default ({params, dateDisplay, fileOrgName}: Props) => {
+export default ({params, dateDisplay, fileOrgName, isActive}: Props) => {
 	const { isPending, data, error } = useQuery<CCLC10Row[]>({
 		queryKey: [`report/CCLC10?startDateStr=${params.startDate}&endDateStr=${params.endDate}`],
 		enabled: !!params?.startDate && !!params?.endDate,
@@ -41,14 +42,18 @@ export default ({params, dateDisplay, fileOrgName}: Props) => {
 		retry: false
 	})
 
+	if (!isActive)
+		return null;
+
 	return (
 		<ReportComponent
 			isLoading={isPending}
-			displayData={data}
+			hasError={!!error}
 			displayName={`GT CCLC10 Report for all Organizations, ${dateDisplay}`}
 			fileData={data}
 			fileName={`GT_CCLC10_Grant_Tracker_${fileOrgName}`}
 			fileFields={cclc10Fields}
+			showHeader={true}
 		>
 			<div>
 				For Download Only

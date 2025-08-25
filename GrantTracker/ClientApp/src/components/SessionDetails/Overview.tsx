@@ -1,7 +1,7 @@
-import { Card, ListGroup } from 'react-bootstrap'
 import { DateTimeFormatter } from '@js-joda/core'
 import { Locale } from '@js-joda/locale_en-us'
 
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import ListItem from 'components/Item'
 
 import { SessionView } from 'Models/Session'
@@ -24,21 +24,19 @@ export default ({ session }: Props): JSX.Element => {
     return 0
   })
 
-  const ObjectivesDisplay = session.objectives.map(obj => (
-    <ListItem label='Objective:' value={`(${obj.abbreviation}) ${obj.label}`} />
-  ))
-
   return (
-    <Card>
-      <Card.Body>
-        <Card.Title>Overview</Card.Title>
-        <ListGroup variant='flush'>
+    <Card className='ps-3'>
+      <CardHeader>
+        <CardTitle className='text-lg font-semibold'>Overview</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className='space-y-4'>
           <ListItem label='Session Type:' value={session!.sessionType.label} />
           <ListItem label='Activity:' value={session!.activity.label} />
           <ListItem
             label='Objective:'
-            value={session.objectives.map(obj => <div>
-              {`(${obj?.abbreviation}) ${obj?.label}`}
+            value={session.objectives.sort((a, b) => (a.abbreviation - b.abbreviation)).map(obj => <div key={obj.abbreviation}>
+              {`(${obj.abbreviation}) ${obj.label}`}
               </div>
             )}
           />
@@ -57,8 +55,8 @@ export default ({ session }: Props): JSX.Element => {
           />
           <ListItem label='First Session:' value={session.firstSession.format(DateTimeFormatter.ofPattern('MMMM d, yyyy').withLocale(Locale.ENGLISH))} />
           <ListItem label='Last Session:' value={session.lastSession.format(DateTimeFormatter.ofPattern('MMMM d, yyyy').withLocale(Locale.ENGLISH))} />
-        </ListGroup>
-      </Card.Body>
+        </div>
+      </CardContent>
     </Card>
   )
 }

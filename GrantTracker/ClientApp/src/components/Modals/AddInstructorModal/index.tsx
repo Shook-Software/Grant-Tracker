@@ -1,10 +1,17 @@
 import { useState, useEffect, forwardRef, useRef } from 'react'
-import { Container, Modal, Button, Form, Popover, OverlayTrigger, Tab, Alert, Nav, Row, Col } from 'react-bootstrap'
 import { Formik } from 'formik'
 import * as yup from 'yup'
 
-import Table, { Column } from 'components/BTable'
-import Dropdown from 'components/Input/Dropdown'
+import { DataTable } from 'components/DataTable'
+import { ColumnDef } from '@tanstack/react-table'
+import { HeaderCell } from '@/components/ui/table'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import Search from './Search'
 import ApiResultAlert, { ApiResult } from 'components/ApiResultAlert'
 
@@ -16,130 +23,184 @@ import { InstructorSchoolYearView, InstructorView } from 'Models/Instructor'
 import { fetchStatusDropdownOptions, fetchSynergyInstructors, fetchGrantTrackerInstructors } from './api'
 //An easy way to add an instructor from Synergy to the GrantTracker.
 //Pop up over the table, set the instructor status, then submit.
-//@ts-ignore
-const InstructorPopover = forwardRef(({ values, dropdownOptions, handleAddInstructor, ...props }, ref): JSX.Element => {
+const InstructorPopover = ({ values, dropdownOptions, handleAddInstructor }): JSX.Element => {
   const [status, setStatus] = useState<string>('')
+  const [open, setOpen] = useState(false)
 
   const fullName: string = `${values.firstName} ${values.lastName}`
   const labelFor: string = `${fullName}-status`
 
+  const handleSubmit = (event) => {
+    event.preventDefault()
+    const newInstructor: StaffDto = {
+      firstName: values.firstName,
+      lastName: values.lastName,
+      badgeNumber: values.badgeNumber,
+      statusGuid: status
+    }
+    handleAddInstructor(newInstructor)
+    setOpen(false)
+    setStatus('')
+  }
+
   return (
-    <Popover
-      key={values.badgeNumber}
-      {...props}
-      //@ts-ignore
-      ref={ref}
-    >
-      <Popover.Header>{fullName}</Popover.Header>
-      <Popover.Body>
-        <Form onSubmit={(event) => {
-          event.preventDefault()
-          const newInstructor: StaffDto = {
-            firstName: values.firstName,
-            lastName: values.lastName,
-            badgeNumber: values.badgeNumber,
-            statusGuid: status
-          }
-          handleAddInstructor(newInstructor)
-        }}>
-          <Form.Group>
-            <Form.Label htmlFor={labelFor}>Instructor Status:</Form.Label>
-            <Dropdown
-              id={labelFor}
-              options={dropdownOptions}
-              value={status}
-              onChange={(guid: string) => setStatus(guid)}
-            />
-          </Form.Group>
-          <Button
-            disabled={status === ''}
-            className='my-2'
-            type='submit'
-          >
-            Add Instructor
-          </Button>
-        </Form>
-      </Popover.Body>
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button size="sm">+</Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-80">
+        <div className="space-y-4">
+          <h4 className="font-medium">{fullName}</h4>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor={labelFor}>Instructor Status:</Label>
+              <Select value={status} onValueChange={(value) => setStatus(value)}>
+                <SelectTrigger id={labelFor}>
+                  <SelectValue placeholder="Select status..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {dropdownOptions.map((option) => (
+                    <SelectItem key={option.guid} value={option.guid}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button
+              disabled={status === ''}
+              type='submit'
+              size="sm"
+            >
+              Add Instructor
+            </Button>
+          </form>
+        </div>
+      </PopoverContent>
     </Popover>
   )
-})
+}
 
-const columnsBuilder = (handleAddInstructor, dropdownOptions): Column[] => ([
+const synergyInstructorColumns = (handleAddInstructor, dropdownOptions): ColumnDef<any, any>[] => ([
   {
-    label: 'First Name',
-    attributeKey: 'firstName',
-    sortable: true
+    accessorKey: 'firstName',
+    header: ({ column }) => (
+      <HeaderCell 
+        label="First Name" 
+        sort={column.getIsSorted()} 
+        onSortClick={() => column.toggleSorting()} 
+      />
+    ),
+    id: 'firstName'
   },
   {
-    label: 'Last Name',
-    attributeKey: 'lastName',
-    sortable: true
+    accessorKey: 'lastName',
+    header: ({ column }) => (
+      <HeaderCell 
+        label="Last Name" 
+        sort={column.getIsSorted()} 
+        onSortClick={() => column.toggleSorting()} 
+      />
+    ),
+    id: 'lastName'
   },
   {
-    label: 'Organization',
-    attributeKey: 'organizationName',
-    sortable: true
+    accessorKey: 'organizationName',
+    header: ({ column }) => (
+      <HeaderCell 
+        label="Organization" 
+        sort={column.getIsSorted()} 
+        onSortClick={() => column.toggleSorting()} 
+      />
+    ),
+    id: 'organizationName'
   },
   {
-    label: 'Badge Number',
-    attributeKey: 'badgeNumber',
-    sortable: true
+    accessorKey: 'badgeNumber',
+    header: ({ column }) => (
+      <HeaderCell 
+        label="Badge Number" 
+        sort={column.getIsSorted()} 
+        onSortClick={() => column.toggleSorting()} 
+      />
+    ),
+    id: 'badgeNumber'
   },
   {
-    key: 'addInstructor',
-    label: 'Add',
-    attributeKey: '',
-    sortable: false,
-    transform: (value: any) => {
-      return (
-        <div className='position-relative'>
-          <OverlayTrigger
-            trigger='click'
-            placement='left'
-            overlay={(<InstructorPopover values={value} dropdownOptions={dropdownOptions} handleAddInstructor={handleAddInstructor} />)}
-            rootClose
-          >
-            <Button>+</Button>
-          </OverlayTrigger>
-        </div>
-      )
-    }
+    id: 'actions',
+    header: () => <HeaderCell label="Add" />,
+    cell: ({ row }) => (
+      <div className='flex justify-center'>
+        <InstructorPopover 
+          values={row.original} 
+          dropdownOptions={dropdownOptions} 
+          handleAddInstructor={handleAddInstructor} 
+        />
+      </div>
+    ),
+    enableSorting: false
   }
 ])
 
-const columnsBuilder2 = (handleAddInstructor): Column[] => ([
+const existingInstructorColumns = (handleAddInstructor): ColumnDef<InstructorSchoolYearView, any>[] => ([
   {
-    label: 'First Name',
-    attributeKey: 'instructor.firstName',
-    sortable: true
+    accessorFn: (row) => row.instructor.firstName,
+    header: ({ column }) => (
+      <HeaderCell 
+        label="First Name" 
+        sort={column.getIsSorted()} 
+        onSortClick={() => column.toggleSorting()} 
+      />
+    ),
+    id: 'firstName'
   },
   {
-    label: 'Last Name',
-    attributeKey: 'instructor.lastName',
-    sortable: true
+    accessorFn: (row) => row.instructor.lastName,
+    header: ({ column }) => (
+      <HeaderCell 
+        label="Last Name" 
+        sort={column.getIsSorted()} 
+        onSortClick={() => column.toggleSorting()} 
+      />
+    ),
+    id: 'lastName'
   },
   {
-    label: 'Badge Number',
-    attributeKey: 'instructor.badgeNumber',
-    sortable: true
+    accessorFn: (row) => row.instructor.badgeNumber,
+    header: ({ column }) => (
+      <HeaderCell 
+        label="Badge Number" 
+        sort={column.getIsSorted()} 
+        onSortClick={() => column.toggleSorting()} 
+      />
+    ),
+    id: 'badgeNumber'
   },
   {
-    label: 'Status',
-    attributeKey: 'status',
-    sortable: true,
-    transform: (value: DropdownOption): string => value.label
+    accessorFn: (row) => row.status.label,
+    header: ({ column }) => (
+      <HeaderCell 
+        label="Status" 
+        sort={column.getIsSorted()} 
+        onSortClick={() => column.toggleSorting()} 
+      />
+    ),
+    id: 'status'
   },
   {
-    label: '',
-    attributeKey: '',
-    sortable: false,
-    transform: (value: InstructorSchoolYearView) => (
-      <div className='d-flex justify-content-center'>
-        <Button onClick={() => handleAddInstructor({...value.instructor, statusGuid: value.status.guid}, value.guid)}>
+    id: 'actions',
+    header: () => <HeaderCell label="" />,
+    cell: ({ row }) => (
+      <div className='flex justify-center'>
+        <Button 
+          size="sm"
+          onClick={() => handleAddInstructor({...row.original.instructor, statusGuid: row.original.status.guid}, row.original.guid)}
+        >
           +
         </Button>
       </div>
-    )
+    ),
+    enableSorting: false
   }
 ])
 
@@ -154,7 +215,7 @@ const ExistingEmployeeTab = ({orgYearGuid, onChange, headerRef}): JSX.Element =>
       .finally(() => headerRef.current.scrollIntoView())
   }
 
-  const columns = columnsBuilder2(handleInstructorAddition)
+  const columns = existingInstructorColumns(handleInstructorAddition)
 
   useEffect(() => {
     fetchGrantTrackerInstructors(orgYearGuid)
@@ -163,10 +224,18 @@ const ExistingEmployeeTab = ({orgYearGuid, onChange, headerRef}): JSX.Element =>
   }, [])
 
   return (
-    <>
+    <div className="space-y-4">
       <ApiResultAlert apiResult={apiResult} scroll={true} />
-      <Table columns={columns} dataset={instructors} />
-    </>
+      <div className="max-h-96 overflow-auto">
+        <DataTable 
+          columns={columns} 
+          data={instructors} 
+          initialSorting={[{ id: 'lastName', desc: false }]}
+          containerClassName="w-full"
+          tableClassName="table-auto"
+        />
+      </div>
+    </div>
   )
 }
 
@@ -193,7 +262,6 @@ const NonDistrictEmployeeTab = ({dropdownOptions, onChange, headerRef}): JSX.Ele
   }
 
   return (
-    
     <Formik
       validationSchema={schema}
       onSubmit={(values, actions) => {
@@ -216,69 +284,80 @@ const NonDistrictEmployeeTab = ({dropdownOptions, onChange, headerRef}): JSX.Ele
         isValid,
         errors
       }) => (
-        <Form
-          noValidate
+        <form
           onSubmit={handleSubmit}
-          className='h-50'
+          className='space-y-4'
         >
           <ApiResultAlert apiResult={apiResult} scroll={false} />
-          <Row>
-            <Form.Group as={Col} controlId='validationFormik-firstName'>
-              <Form.Label>First Name</Form.Label>
-              <Form.Control 
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor='firstName'>First Name</Label>
+              <Input 
+                id='firstName'
                 type='text' 
                 name='firstName'
                 value={values.firstName}
                 onChange={handleChange}
-                isValid={touched.firstName && !errors.firstName}
-                isInvalid={touched.firstName && !!errors.firstName}
+                className={`${
+                  touched.firstName && errors.firstName ? 'border-red-500' : 
+                  touched.firstName && !errors.firstName ? 'border-green-500' : ''
+                }`}
               />
-              <Form.Control.Feedback type='invalid'>
-                {errors.firstName}
-              </Form.Control.Feedback>
-            </Form.Group>
+              {touched.firstName && errors.firstName && (
+                <p className='text-sm text-red-500'>{errors.firstName}</p>
+              )}
+            </div>
 
-            <Form.Group as={Col} controlId='validationFormik-lastName'>
-              <Form.Label>Last Name</Form.Label>
-              <Form.Control 
+            <div className="space-y-2">
+              <Label htmlFor='lastName'>Last Name</Label>
+              <Input 
+                id='lastName'
                 type='text' 
                 name='lastName'
                 value={values.lastName}
                 onChange={handleChange}
-                isValid={touched.lastName && !errors.lastName}
-                isInvalid={touched.lastName && !!errors.lastName}
+                className={`${
+                  touched.lastName && errors.lastName ? 'border-red-500' : 
+                  touched.lastName && !errors.lastName ? 'border-green-500' : ''
+                }`}
               />
-              <Form.Control.Feedback type='invalid'>
-                {errors.lastName}
-              </Form.Control.Feedback>
-            </Form.Group>
+              {touched.lastName && errors.lastName && (
+                <p className='text-sm text-red-500'>{errors.lastName}</p>
+              )}
+            </div>
 
-            <Form.Group as={Col} controlId='validationFormik-statusGuid'>
-              <Form.Label >Status</Form.Label>
-              <Form.Control 
-                as={'div'}
-                className='p-0'
-                style={{height: 'min-content'}}
-                isValid={touched.statusGuid && !errors.statusGuid}
-                isInvalid={touched.statusGuid && !!errors.statusGuid}
+            <div className="space-y-2">
+              <Label htmlFor='statusGuid'>Status</Label>
+              <Select 
+                value={values.statusGuid} 
+                onValueChange={(value) => setFieldValue('statusGuid', value)}
               >
-              <Dropdown 
-                id='statusGuid'
-                className='border-0'
-                value={values.statusGuid}
-                options={dropdownOptions}
-                onChange={(guid: string) => setFieldValue('statusGuid', guid)}
-              />
-              </Form.Control>
-              <Form.Control.Feedback type='invalid'>
-                {errors.statusGuid}
-              </Form.Control.Feedback>
-            </Form.Group>
-          </Row>
-          <Row className='justify-content-left my-3 mx-0'>
-            <Button type='submit' style={{width: 'fit-content'}}>Submit</Button>
-          </Row>
-        </Form>
+                <SelectTrigger 
+                  id='statusGuid'
+                  className={`${
+                    touched.statusGuid && errors.statusGuid ? 'border-red-500' : 
+                    touched.statusGuid && !errors.statusGuid ? 'border-green-500' : ''
+                  }`}
+                >
+                  <SelectValue placeholder="Select status..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {dropdownOptions.map((option) => (
+                    <SelectItem key={option.guid} value={option.guid}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {touched.statusGuid && errors.statusGuid && (
+                <p className='text-sm text-red-500'>{errors.statusGuid}</p>
+              )}
+            </div>
+          </div>
+          <div className='flex justify-start'>
+            <Button type='submit'>Submit</Button>
+          </div>
+        </form>
       )}
     </Formik>
   )
@@ -308,18 +387,24 @@ const DistrictEmployeeTab = ({dropdownOptions, onChange, headerRef}) => {
       .finally(() => headerRef.current.scrollIntoView())
   }
 
-  const columns: Column[] = columnsBuilder(handleChange, dropdownOptions)
+  const columns = synergyInstructorColumns(handleChange, dropdownOptions)
 
   return (
-    <>
-      <ApiResultAlert apiResult={apiResult}  scroll={false} />
-      <Container>
+    <div className="space-y-4">
+      <ApiResultAlert apiResult={apiResult} scroll={false} />
+      <div>
         <Search handleChange={handleInstructorSearch} />
-      </Container>
-      <Container className='my-3'>
-        <Table columns={columns} dataset={state} />
-      </Container>
-    </>
+      </div>
+      <div className="max-h-96 overflow-auto">
+        <DataTable 
+          columns={columns} 
+          data={state} 
+          initialSorting={[{ id: 'lastName', desc: false }]}
+          containerClassName="w-full"
+          tableClassName="table-auto"
+        />
+      </div>
+    </div>
   )
 }
 
@@ -338,58 +423,47 @@ export default ({ show, orgYearGuid, handleClose, onInternalChange, onExternalCh
   }, [])
 
   return (
-    <Modal show={show} onHide={handleClose} centered size='xl' scrollable>
-      <Modal.Header closeButton>
-        <Modal.Title>
-          Adding New Instructor(s)...
-        </Modal.Title>
-      </Modal.Header>
+    <Dialog open={show} onOpenChange={(open) => !open && handleClose()}>
+      <DialogContent className="max-w-6xl max-h-[80vh] overflow-hidden">
+        <DialogHeader>
+          <DialogTitle>
+            Adding New Instructor(s)...
+          </DialogTitle>
+        </DialogHeader>
 
-      <Modal.Body className='d-flex flex-column align-items-center'>
-        <Tab.Container defaultActiveKey='internal'>
-          <Row className='w-75' ref={headerRef}>
-            <Nav variant='tabs' className='justify-content-around'>
-              {
-                isAttendanceVariant 
-                ? <Nav.Item>
-                    <Nav.Link eventKey='existing'>Existing Employees</Nav.Link>
-                  </Nav.Item>
-                : <></>
-              }
-              
-              <Nav.Item>
-                <Nav.Link eventKey='internal'>District Employees</Nav.Link>
-              </Nav.Item>
-              <Nav.Item>
-                <Nav.Link eventKey='external'>Non-District Employees</Nav.Link>
-              </Nav.Item>
-            </Nav>
-          </Row>
-          <Row  className='w-75'>
-            <Tab.Content className='py-3'>
-              {
-                isAttendanceVariant 
-                ? <Tab.Pane eventKey='existing'>
-                    <ExistingEmployeeTab orgYearGuid={orgYearGuid} onChange={onInternalChange} headerRef={headerRef} />
-                  </Tab.Pane>
-                : <></>
-              }
-              <Tab.Pane eventKey='internal'>
+        <div className='flex flex-col items-center overflow-auto'>
+          <Tabs defaultValue={isAttendanceVariant ? "existing" : "internal"} className='w-full'>
+            <div ref={headerRef}>
+              <TabsList className='grid w-full grid-cols-2 md:grid-cols-3'>
+                {isAttendanceVariant && (
+                  <TabsTrigger value='existing'>Existing Employees</TabsTrigger>
+                )}
+                <TabsTrigger value='internal'>District Employees</TabsTrigger>
+                <TabsTrigger value='external'>Non-District Employees</TabsTrigger>
+              </TabsList>
+            </div>
+            <div className='py-6'>
+              {isAttendanceVariant && (
+                <TabsContent value='existing'>
+                  <ExistingEmployeeTab orgYearGuid={orgYearGuid} onChange={onInternalChange} headerRef={headerRef} />
+                </TabsContent>
+              )}
+              <TabsContent value='internal'>
                 <DistrictEmployeeTab dropdownOptions={dropdownOptions} onChange={onInternalChange} headerRef={headerRef} />
-              </Tab.Pane>
-              <Tab.Pane eventKey='external'>
+              </TabsContent>
+              <TabsContent value='external'>
                 <NonDistrictEmployeeTab dropdownOptions={dropdownOptions} onChange={onExternalChange} headerRef={headerRef} />
-              </Tab.Pane>
-            </Tab.Content>
-          </Row>
-        </Tab.Container>
-      </Modal.Body>
+              </TabsContent>
+            </div>
+          </Tabs>
+        </div>
 
-      <Modal.Footer>
-        <Button variant='secondary' onClick={handleClose}>Close</Button>
-      </Modal.Footer>
+        <DialogFooter>
+          <Button variant='secondary' onClick={handleClose}>Close</Button>
+        </DialogFooter>
 
-    </Modal>
+      </DialogContent>
+    </Dialog>
   )
 }
 

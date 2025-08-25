@@ -1,16 +1,19 @@
 import React, { ReactElement, useState } from "react"
-import Table, { Column } from "components/BTable";
+import { DataTable } from 'components/DataTable'
+import { ColumnDef } from '@tanstack/react-table'
+import { HeaderCell } from 'components/ui/table'
 
 import { InstructorRecord } from "Models/StudentAttendance";
 
 import { AttendanceStartTimeInput, AttendanceEndTimeInput } from './TimeComponents'
 import { AttendanceForm, ReducerAction } from './state'
-import { Form } from "react-bootstrap";
+import { Checkbox } from '@/components/ui/checkbox'
 import AddInstructorModal from "components/Modals/AddInstructorModal";
 
 import api from 'utils/api'
 import { DateTimeFormatter } from "@js-joda/core";
 import { Locale } from "@js-joda/locale_en-us";
+import { Button } from "@/components/ui/button";
 
 
 interface IAttendProps {
@@ -70,12 +73,12 @@ export const InstructorAttendance = ({ orgYearGuid, state, dispatch }: IAttendPr
 	return (
 		<div>
 			<div className='mb-3'>
-				<button className='btn btn-sm btn-outline-secondary' type='button' onClick={() => setShowAddModal(true)}>
+				<Button variant='outline' onClick={() => setShowAddModal(true)}>
 					Add Instructor
-				</button>
+				</Button>
 			</div>
 
-			<Table dataset={state.instructorRecords} columns={iColumns} size='sm' tableProps={{ style: {width: '1350px'}}} />
+			<DataTable data={state.instructorRecords} columns={iColumns} className='text-sm' containerClassName='w-full overflow-x-auto' />
 
 			<AddInstructorModal 
 				show={showAddModal} 
@@ -90,67 +93,85 @@ export const InstructorAttendance = ({ orgYearGuid, state, dispatch }: IAttendPr
 }
 
 
-const createInstructorColumns = (dispatch: React.Dispatch<ReducerAction>): Column[] => [
+const createInstructorColumns = (dispatch: React.Dispatch<ReducerAction>): ColumnDef<InstructorRecord, any>[] => [
 	{
-        label: 'Present',
-        attributeKey: '',
-        sortable: false,
-        transform: (record: InstructorRecord) => {
+        id: 'present',
+        header: () => <HeaderCell label='Present' />,
+        accessorKey: 'isPresent',
+        enableSorting: false,
+        cell: ({ row }) => {
+            const record = row.original
             const equalTimes = record.times.filter(x => x.startTime.equals(x.endTime))
             const endBeforeStartTimes = record.times.filter(x => x.endTime.isBefore(x.startTime))
 			
 			return (
 				<div
 					role='button'
-					className='d-flex flex-column justify-content-center align-items-center'
+					className='flex flex-col justify-center items-center'
 					onClick={() => dispatch({ type: 'instructorPresence', payload: { guid: record.id, isPresent: !record.isPresent } })}
 					style={{ minHeight: '100%' }}
 				>
-					<Form.Check checked={record.isPresent} onChange={(e) => { }} />
+					<Checkbox checked={record.isPresent} onCheckedChange={() => {}} />
 					{equalTimes.map(time => (
-						<div className='text-danger text-break' style={{maxWidth: "250px"}}>
+						<div className='text-red-500 break-words' style={{maxWidth: "250px"}}>
 							Start and end times cannot be equal. {time.startTime.format(DateTimeFormatter.ofPattern('hh:mm a').withLocale(Locale.ENGLISH))} to {time.endTime.format(DateTimeFormatter.ofPattern('hh:mm a').withLocale(Locale.ENGLISH))}
 						</div>
 					))}
 					{endBeforeStartTimes.map(time => (
-						<div className='text-danger text-break' style={{maxWidth: "250px"}}>
+						<div className='text-red-500 break-words' style={{maxWidth: "250px"}}>
 							End time cannot be before start. {time.startTime.format(DateTimeFormatter.ofPattern('hh:mm a').withLocale(Locale.ENGLISH))} to {time.endTime.format(DateTimeFormatter.ofPattern('hh:mm a').withLocale(Locale.ENGLISH))}
 						</div>
 					))}
 				</div>
         	)
-		},
-		headerProps: { style: { width: '150px' } },
-        cellProps: {
-            style: { height: '1px', padding: '0px' }
-        }
+		}
     },
 	{
-		label: 'Last Name',
-		attributeKey: '',
-		sortable: true,
-		transform: (record: InstructorRecord) => <span className={record.isSubstitute ? 'text-secondary' : ''}>{record.lastName}</span>
+		id: 'lastName',
+		header: ({ column }) => (
+			<HeaderCell 
+				label='Last Name'
+				sort={column.getIsSorted() === "asc" ? "asc" : column.getIsSorted() === "desc" ? "desc" : false}
+				onSortClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+			/>
+		),
+		accessorKey: 'lastName',
+		enableSorting: true,
+		cell: ({ row }) => {
+			const record = row.original
+			return <span className={record.isSubstitute ? 'text-gray-600' : ''}>{record.lastName}</span>
+		}
 	},
 	{
-		label: 'First Name',
-		attributeKey: '',
-		sortable: true,
-		transform: (record: InstructorRecord) => <span className={record.isSubstitute ? 'text-secondary' : ''}>{record.firstName}</span>
+		id: 'firstName',
+		header: ({ column }) => (
+			<HeaderCell 
+				label='First Name'
+				sort={column.getIsSorted() === "asc" ? "asc" : column.getIsSorted() === "desc" ? "desc" : false}
+				onSortClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+			/>
+		),
+		accessorKey: 'firstName',
+		enableSorting: true,
+		cell: ({ row }) => {
+			const record = row.original
+			return <span className={record.isSubstitute ? 'text-gray-600' : ''}>{record.firstName}</span>
+		}
 	},
 	{
-		key: 'start',
-		label: 'Started at',
-		attributeKey: '',
-		sortable: false,
-		transform: (record: InstructorRecord) =>
-			<AttendanceStartTimeInput personId={record.id} times={record.times} dispatch={dispatch} />
+		id: 'start',
+		header: () => <HeaderCell label='Started at' />,
+		accessorKey: 'id',
+		enableSorting: false,
+		cell: ({ row }) =>
+			<AttendanceStartTimeInput personId={row.original.id} times={row.original.times} dispatch={dispatch} />
 	},
 	{
-		key: 'end',
-		label: 'Ended at',
-		attributeKey: '',
-		sortable: false,
-		transform: (record: InstructorRecord) =>
-			<AttendanceEndTimeInput personId={record.id} times={record.times} dispatch={dispatch} />
+		id: 'end',
+		header: () => <HeaderCell label='Ended at' />,
+		accessorKey: 'id',
+		enableSorting: false,
+		cell: ({ row }) =>
+			<AttendanceEndTimeInput personId={row.original.id} times={row.original.times} dispatch={dispatch} />
 	}
 ]

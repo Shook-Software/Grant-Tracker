@@ -1,56 +1,58 @@
-import { Button, Container, Row, Spinner } from "react-bootstrap"
 import { Options } from 'json2csv'
 import { saveCSVToFile } from './fileSaver'
+import { Spinner } from '@/components/ui/Spinner'
+import { Button } from '@/components/ui/button'
 
 
 
 interface Parameters {
 	children: JSX.Element | JSX.Element[]
 	isLoading: boolean
-	displayData: any[] | undefined
-	displayName: string
+	hasError?: boolean
+	
+	displayName?: string
 	fileData?: () => any[] | any[] | undefined
 	fileName?: string | undefined
 	fileFields?: any[] | undefined
+	filteredData?: any[] | undefined
+	showHeader?: boolean
 }
 
 
-export default ({children, isLoading, displayData, displayName, fileData, fileName, fileFields}: Parameters): JSX.Element => {
+export default ({children, isLoading, hasError, displayName, fileData, fileName, fileFields, filteredData, showHeader = false}: Parameters): JSX.Element => {
 
 	if (isLoading)
 		return (
-			<Spinner animation="border" role="status" />
+			<Spinner className='m-7' role="status" />
 		)
-  	else if (displayData && displayData.length == 0) 
+  	else if (!isLoading && hasError)
 		return (
-			<p className='text-warning'>No records to display...</p>
-		)
-  	else if (!isLoading && !displayData)
-		return (
-			<p className='text-danger'>An error has been encountered in loading the report.</p>
+			<p className='text-danger m-7'>An error has been encountered in loading the report.</p>
 		)
 
 	return (
 		<div>
-			<Row className='d-flex flex-row justify-content-center m-0'>
-				<h4 className='text-center' style={{width: 'fit-content'}}>
-					{displayName}
-				</h4>
-				<Button
-					className={fileData && fileName && fileFields ? '' : 'd-none'}
-					onClick={() => exportToCSV(fileData, fileFields, fileName)}
-					style={{width: 'fit-content', height: 'fit-content'}}
-					size='sm'
-				>
-					Save to CSV
-				</Button>
-			</Row>
+			{showHeader && (
+				<div className='flex items-center m-1'>
+					<h3 style={{width: 'fit-content'}}>
+						{displayName}
+					</h3>
+					<Button
+						className={fileData && fileName && fileFields ? 'mx-3' : 'hidden'}
+						onClick={() => exportToCSV(filteredData || fileData, fileFields, fileName)}
+						size='sm'
+					>
+						Save to CSV {filteredData && filteredData.length !== (typeof fileData === 'function' ? fileData().length : fileData?.length) ? `(${filteredData.length} filtered rows)` : ''}
+					</Button>
+				</div>
+			)}
 			{children}
 		</div>
 	)
 }
 
-function exportToCSV(data, fileFields, fileName) {
+export function exportToCSV(data, fileFields, fileName) {
+	console.log(data)
 
 	const options: Options<undefined> = { 
 	  fields: fileFields, 
@@ -58,5 +60,5 @@ function exportToCSV(data, fileFields, fileName) {
 	  header: true
 	}
   
-	saveCSVToFile(data.length ? data : data(), options, fileName)
+	saveCSVToFile(data.length !== undefined ? data : data(), options, fileName)
 }

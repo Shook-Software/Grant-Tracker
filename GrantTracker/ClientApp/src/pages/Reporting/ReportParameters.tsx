@@ -1,15 +1,17 @@
 import { useContext, useEffect, useState } from "react"
-import { Button, Col, Container, Form, Row, Spinner } from "react-bootstrap"
 import { LocalDate } from "@js-joda/core"
 
-import Dropdown from "components/Input/Dropdown"
+import { Form, FormItem, FormControl, FormLabel, FormField } from '@/components/ui/form'
+import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Combobox } from '@/components/ui/combobox'
 
-import { OrganizationView, OrganizationYearView, Quarter, Year, YearDomain, YearView } from "Models/OrganizationYear"
+import { OrganizationYearView, Quarter, YearView } from "Models/OrganizationYear"
 
-import api from "utils/api"
-import Select from "react-select"
 import { IdentityClaim } from "utils/authentication"
 import { AppContext } from "App"
+import { Input } from "@/components/ui/input"
+import { useForm } from "react-hook-form"
 
 export interface ReportParameters {
 	organizationGuid: string | undefined
@@ -36,7 +38,10 @@ export default ({onSubmit}): JSX.Element => {
 	const [startDate, setStartDate] = useState<LocalDate | undefined>()
 	const [endDate, setEndDate] = useState<LocalDate | undefined>()
 
+	const form = useForm();
+
 	const [isSingleDateQuery, setIsSingleDateQuery] = useState<boolean>(false)
+	const [hasAutoSubmitted, setHasAutoSubmitted] = useState<boolean>(false)
 
 	function setYear(yearGuid: string) {
 		const orgYear: OrganizationYearView | undefined = user.organizationYears.find(oy => oy.organization.guid == user.organization.guid && oy.year.guid == yearGuid)
@@ -50,13 +55,32 @@ export default ({onSubmit}): JSX.Element => {
 		setOrgGuid(orgGuid)
 	}
 
+	function submit(): void {
+		if (orgGuid && user.year && startDate && endDate)
+			onSubmit({
+				organizationGuid: orgGuid,
+				organizationName: user.organizations?.find(x => x.guid == orgGuid)?.name || 'All Organizations',
+				year: user.year,
+				startDate,
+				endDate: isSingleDateQuery ? startDate : endDate
+			});
+	}
+
 	useEffect(() => {
 		if (!user.year)
-			return
+			return;
 
 		setStartDate(user.year.startDate)
 		setEndDate(user.year.endDate)
 	}, [user.year?.guid])
+
+	// Auto-submit when all required fields are defined for the first time
+	useEffect(() => {
+		if (!hasAutoSubmitted && orgGuid && startDate && endDate) {
+			setHasAutoSubmitted(true)
+			submit()
+		}
+	}, [orgGuid, startDate, endDate, hasAutoSubmitted])
 
 	const orgOptions = user.claim == IdentityClaim.Administrator 
 		? [{ value: '', label: 'All' }, ...user.organizations.map(org => ({ value: org.guid, label: org.name }))]
@@ -68,97 +92,137 @@ export default ({onSubmit}): JSX.Element => {
 				return curr.quarter > next.quarter ? -1 : 1
 			
 			return curr.schoolYear > next.schoolYear ? -1 : 1
-			
 		})
 
 	return (
-		<Container className='ms-0'>
-			<Form>
-				<Row className='mb-3'>
-					<Col sm={3} xs={6}> 
-					{console.log()}
-						<Form.Group>
-							<Form.Label htmlFor='org'>Organization</Form.Label>
-								<Select 
-									id='org'
-									options={orgOptions}
-									value={{ value: orgGuid, label: orgGuid == '' ? 'All' : user.organizations.find(o => o.guid == user.organization.guid)?.name}}
-									onChange={option => setOrganization(option.value)}
+		<div className='container'>
+			<Form {...form}>
+				<form onSubmit={(e) => {
+						e.preventDefault();
+						submit();
+					}}
+				>
+					<div className='flex gap-3'>
+						<div className="flex flex-col gap-3">
+							<FormField 
+								control={form.control}
+								name="Organization"
+								render={() => 
+									<FormItem>
+										<FormLabel htmlFor='org'>Organization</FormLabel>
+										<Combobox 
+											id='org'
+											options={orgOptions}
+											value={orgGuid}
+											onChange={value => setOrganization(value)}
+											placeholder="Select Organization"
+										/>
+									</FormItem>
+								}
+							/>
+
+							<div className={isSingleDateQuery ? 'flex items-center justify-around px-0' : 'hidden'}>
+								<Button type='button' size='sm' className='flex' onClick={() => setStartDate(previousMonday(startDate))}>&#11164;&#11164;</Button>
+								<Button type='button' size='sm' className='flex' onClick={() => setStartDate(startDate?.plusDays(-1))}>&#11164;</Button>
+							</div>
+							
+							<div className="">
+								<FormField 
+									control={form.control}
+									name="Start Date"
+									render={() =>
+										<FormItem>
+											<FormLabel htmlFor='start-date'>{isSingleDateQuery ? 'Date' : 'Start Date'}</FormLabel>
+											<FormControl>
+												<Input 
+													type='date' 
+													id='start-date' 
+													value={startDate?.toString()}
+													onChange={(e) => setStartDate(LocalDate.parse(e.target.value))}
+												/>
+											</FormControl>
+										</FormItem>
+									}
 								/>
-						</Form.Group>
-					</Col>
-					<Col sm={3} xs={6}> 
-						<Form.Group>
-							<Form.Label htmlFor='school-year'>School Year <small>(Affects Staffing Only)</small></Form.Label> 
-								<Dropdown
-									id='school-year'
-									options={user.years
-										.map(year => ({
-											guid: year.guid,
-											label: `${year.schoolYear} - ${Quarter[year.quarter]}`
-										}))}
-									value={user.year.guid}
-									onChange={(yearGuid: string) => setYear(yearGuid)}
+							</div>
+
+							<div className={isSingleDateQuery ? 'flex items-center justify-around px-0' : 'hidden'}>
+								<Button type='button' size='sm' className='flex' onClick={() => setStartDate(startDate?.plusDays(1))}>&#11166;</Button>
+								<Button type='button' size='sm' className='flex' onClick={() => setStartDate(nextMonday(startDate))}>&#11166;&#11166;</Button>
+							</div>
+						</div>
+
+						<div className="flex flex-col gap-3">
+							<FormField
+								control={form.control}
+								name="School Year"
+								render={() => 
+									<FormItem>
+										<FormLabel htmlFor='school-year'>School Year <small>(Affects Staffing Only)</small></FormLabel> 
+										<Combobox
+											id='school-year'
+											options={user.years
+												.map(year => ({
+													value: year.guid,
+													label: `${year.schoolYear} - ${Quarter[year.quarter]}`
+												}))}
+											value={user.year.guid}
+											onChange={yearGuid =>  setYear(yearGuid)}
+											placeholder="Select School Year"
+										/>
+									</FormItem>
+								}
+							/>
+
+							<div className={isSingleDateQuery ? 'hidden' : ''}>
+								<FormField
+									control={form.control}
+									name="End Date"
+									render={() => 
+										<FormItem>
+											<FormLabel htmlFor='end-date'>End Date</FormLabel>
+											<FormControl>
+												<Input
+													type='date'
+													id='end-date' 
+													className='flex'
+													value={endDate?.toString()}
+													onChange={(e) => setEndDate(LocalDate.parse(e.target.value))}
+												/>
+											</FormControl>
+										</FormItem>
+									}
 								/>
-						</Form.Group>
-					</Col>
-				</Row>
-				<Row>
+							</div>
+						</div>
 
-					<Col xs={1} className={isSingleDateQuery ? 'd-flex align-items-center justify-content-evenly px-0' : 'd-none'}>
-						<Button type='button' size='sm' className='d-flex' onClick={() => setStartDate(previousMonday(startDate))}>&#11164;&#11164;</Button>
-						<Button type='button' size='sm' className='d-flex' onClick={() => setStartDate(startDate?.plusDays(-1))}>&#11164;</Button>
-					</Col>
-					
-					<Col sm={3} xs={6}>
-						<Form.Group>
-							<Form.Label htmlFor='start-date'>{isSingleDateQuery ? 'Date' : 'Start Date'}</Form.Label>
-							<Form.Control 
-								type='date' 
-								id='start-date' 
-								value={startDate?.toString()}
-								onChange={(e) => setStartDate(LocalDate.parse(e.target.value))}
-							/>
-							<Form.Check
-								type='checkbox'
-								id='single-date-checkbox'
-								label='Query single date'
-								checked={isSingleDateQuery}
-								onChange={(e) => setIsSingleDateQuery(e.target.checked)}
-							/>
-						</Form.Group>
-					</Col>
+						<div className="flex items-end">
+							<Button type='submit'>
+								Submit
+							</Button>
+						</div>
+					</div>
 
-					<Col xs={1} className={isSingleDateQuery ? 'd-flex align-items-center justify-content-evenly px-0' : 'd-none'}>
-						<Button type='button' size='sm' className='d-flex' onClick={() => setStartDate(startDate?.plusDays(1))}>&#11166;</Button>
-						<Button type='button' size='sm' className='d-flex' onClick={() => setStartDate(nextMonday(startDate))}>&#11166;&#11166;</Button>
-					</Col>
-
-					<Col sm={3} xs={6} className={isSingleDateQuery ? 'd-none' : ''}>
-						<Form.Group>
-							<Form.Label htmlFor='end-date'>End Date</Form.Label>
-							<Form.Control 
-								type='date'
-								id='end-date' 
-								value={endDate?.toString()}
-								onChange={(e) => setEndDate(LocalDate.parse(e.target.value))}
-							/>
-						</Form.Group>
-					</Col>
-					
-					<Col sm={3} xs={6} className='d-flex align-items-center'>	
-						<Button onClick={() => onSubmit({
-							organizationGuid: orgGuid,
-							organizationName: user.organizations?.find(x => x.guid == orgGuid)?.name || 'All Organizations',
-							year: user.year,
-							startDate,
-							endDate: isSingleDateQuery ? startDate : endDate
-						})}>
-							Submit
-						</Button>
-					</Col>
-				</Row>
+					<div className="mb-3">
+						<FormField 
+							control={form.control}
+							name="Date"
+							render={() =>
+								<FormItem className="flex flex-row items-center gap-2 mt-3">
+									<FormControl>
+										<Checkbox
+											id='single-date-checkbox'
+											checked={isSingleDateQuery}
+											onCheckedChange={(checked) => setIsSingleDateQuery(checked)}
+										/>
+									</FormControl>
+									<FormLabel htmlFor='single-date-checkbox'>Query single date</FormLabel>
+								</FormItem>
+							}
+						/>
+					</div>
+				</form>
 			</Form>
-		</Container>
+		</div>
 	)
 }

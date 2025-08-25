@@ -1,4 +1,4 @@
-import { LocalDate } from '@js-joda/core'
+import { LocalDate, LocalTime } from '@js-joda/core'
 import {
   TimeSchedule,
   TimeScheduleDomain,
@@ -53,15 +53,33 @@ export function dayScheduleComparer (
   return 0
 }
 
+export function nonEmptyDaysHaveSameSchedules(week: WeeklySchedule): boolean {
+  const toKeyTime = (t: LocalTime) => String(t); // adapt if LocalTime is an object
+  const dayKey = (d: DayScheduleForm) =>
+    d.timeSchedules
+      .map(ts => `${toKeyTime(ts.startTime)}→${toKeyTime(ts.endTime)}`)
+      .sort()                      // ignore order
+      .join("|");                  // canonical string for comparison
+
+  // Find the first non-empty day as reference
+  const firstIdx = week.findIndex(d => d.timeSchedules.length > 0);
+  if (firstIdx === -1) return true; // no schedules at all → true
+
+  const ref = dayKey(week[firstIdx]);
+
+  // Compare every other non-empty day to the reference
+  return week.every((d, i) => d.timeSchedules.length === 0 || dayKey(d) === ref);
+}
+
 export abstract class DaySchedule {
   public static createWeeklySchedule (): WeeklySchedule {
     const today: LocalDate = LocalDate.now()
 
     return [...daysOfWeekNumeric.map(day => ({
       dayOfWeek: DayOfWeek.toString(day),
-      recurs: false,
-      timeSchedules: (day === today.dayOfWeek().value()
-        ? []
+      recurs: [1, 2, 3, 4, 5].includes(day),
+      timeSchedules: ([1, 2, 3, 4, 5].includes(day)
+        ? [{ startTime: LocalTime.MIDNIGHT, endTime: LocalTime.MIDNIGHT }]
         : []) as TimeScheduleForm[]
     })) as WeeklySchedule]
   }

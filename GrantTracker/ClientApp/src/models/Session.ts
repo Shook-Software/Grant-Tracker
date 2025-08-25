@@ -122,11 +122,16 @@ export abstract class Session {
           | undefined = obj.daySchedules.find(
           domainDay => DayOfWeek.toString(domainDay.dayOfWeek) === day.dayOfWeek
         )
+
         if (domainSchedule) {
           day.recurs = true
           day.timeSchedules = domainSchedule.timeSchedules.map(time =>
             TimeSchedule.toFormModel(time)
           )
+        }
+        else {
+          day.recurs = false;
+          day.timeSchedules = [];
         }
         return day
       }) as DaySchedule.WeeklySchedule,

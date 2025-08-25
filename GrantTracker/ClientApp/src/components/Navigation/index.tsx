@@ -3,6 +3,7 @@ import { NavLinkProps } from 'react-router-dom'
 
 import { User, IdentityClaim } from 'utils/authentication'
 import { Container, Nav, Link as NavLink } from './styles'
+import styled from 'styled-components'
 
 
 interface NavigationProps {
@@ -22,7 +23,10 @@ const RenderLinks = (props: {user: User, children: ReactNode}): JSX.Element => {
           )
         })}
       </ul>
-      <div>Authenticated as {`${props.user.firstName} ${props.user.lastName}`}</div>
+      <div className='flex justify-between w-full'>
+        <span>Welcome, {`${props.user.firstName} ${props.user.lastName}`}</span>
+        <TechnicolorSpan><span>C</span><span>o</span><span>l</span><span>o</span><span>r</span> coming soon!</TechnicolorSpan>
+      </div>
     </>
   )
 }
@@ -40,7 +44,7 @@ export const Navigation = (props: NavigationProps): JSX.Element => {
   })
 
   return (
-    <Container className='d-flex justify-content-between position-fixed' style={{zIndex: 1030}}>
+    <Container className='flex justify-between position-fixed' style={{zIndex: 1030}}>
       <Nav linkCount={filteredLinks.length}>
         <RenderLinks user={props.user} children={filteredLinks} />
       </Nav>
@@ -71,3 +75,22 @@ export const ProtectedLink = ({ to, requiredType, ...props }: ProtectedLinkProps
     {props.children}
   </NavLink>
 )
+
+export const TechnicolorSpan = styled.span`
+  --tc1:#FF3B3B;  /* red */
+  --tc2:#FF9F1C;  /* orange */
+  --tc3:#2EC4B6;  /* teal */
+  --tc4:#3A86FF;  /* blue */
+  --tc5:#FF006E;  /* magenta */
+
+  display:inline-block;
+  text-shadow:0 .03em .03em rgba(0,0,0,.15);
+  font-weight:700;
+  letter-spacing:.02em;
+
+  & > span:nth-child(1){ color:var(--tc1); }
+  & > span:nth-child(2){ color:var(--tc2); }
+  & > span:nth-child(3){ color:var(--tc3); }
+  & > span:nth-child(4){ color:var(--tc4); }
+  & > span:nth-child(5){ color:var(--tc5); }
+`

@@ -5,21 +5,21 @@ export interface StudentRegistrationDomain {
  sessionGuid: string
  sessionName: string
  studentSchoolYear: StudentSchoolYearView
- daySchedule: DayScheduleDomain
+ schedule: DayScheduleDomain[]
 }
 
 export interface StudentRegistrationView {
   sessionGuid: string
   sessionName: string
   studentSchoolYear: StudentSchoolYearView
-  daySchedule: DayScheduleView
+  schedule: DayScheduleView[]
 }
 
 export abstract class StudentRegistration {
   public static toViewModel (obj: StudentRegistrationDomain): StudentRegistrationView {
     return {
       ...obj,
-      daySchedule: DaySchedule.toViewModel(obj.daySchedule)
+      schedule: obj.schedule.map(day => DaySchedule.toViewModel(day))
     }
   }
 }

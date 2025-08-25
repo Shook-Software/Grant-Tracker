@@ -1,5 +1,4 @@
 import { BaseSyntheticEvent, useEffect, useState, useRef } from 'react'
-import { Form, InputGroup, Container } from 'react-bootstrap'
 
 import Dropdown from 'components/Input/Dropdown'
 
@@ -54,18 +53,21 @@ export default ({ values, label, onChange }): JSX.Element => {
   }, [])
 
   return (
-    <div className='d-flex flex-column' ref={containerRef} style={{ maxWidth: '250px' }}>
-      <InputGroup>
-        <InputGroup.Text>Search...</InputGroup.Text>
-        <Form.Control
+    <div className='flex flex-col' ref={containerRef} style={{ maxWidth: '250px' }}>
+      <div className="flex">
+        <span className="inline-flex items-center px-3 text-sm text-gray-900 bg-gray-200 border border-r-0 border-gray-300 rounded-l-md">
+          Search...
+        </span>
+        <input
           type='text'
+          className="roundehidden rounded-r-lg bg-gray-50 border border-gray-300 text-gray-900 focus:ring-blue-500 focus:border-blue-500 block flex-1 min-w-0 w-full text-sm p-2.5"
           value={filter.name}
           onChange={(event: BaseSyntheticEvent) => setFilter({ ...filter, name: event.target.value })}
         />
-      </InputGroup>
-      <Container className='position-relative'>
+      </div>
+      <div className='relative'>
         <Dropdown
-          className='position-absolute'
+          className='absolute'
           value={label}
           options={state}
           show={showDropdown}
@@ -73,7 +75,7 @@ export default ({ values, label, onChange }): JSX.Element => {
           style={{ left: '0px' }}
           disableOverlay
         />
-      </Container>
+      </div>
     </div>
   )
 }

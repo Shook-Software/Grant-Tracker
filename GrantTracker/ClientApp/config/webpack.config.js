@@ -57,6 +57,9 @@ module.exports = {
 	],
 
 	resolve: {
+		alias: {
+		  '@': path.resolve(paths.root, 'src')
+		},
 		modules: [
 			paths.modules,
 			paths.src
