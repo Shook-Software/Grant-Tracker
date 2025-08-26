@@ -196,11 +196,11 @@ export default (): JSX.Element => {
   const [showModal, setShowModal] = useState<boolean>(false)
   const navigate = useNavigate()
 
-
   function addInternalInstructor(instructor): Promise<ApiResult> {
     return new Promise((resolve, reject) => {
       addInstructor(orgYear.guid, instructor)
         .then(res => {
+          instructorsQuery?.refetch();
           resolve({
             label: `${instructor.firstName} ${instructor.lastName}`,
             success: true
@@ -219,6 +219,7 @@ export default (): JSX.Element => {
     return new Promise((resolve, reject) => {
       addInstructor(orgYear?.guid, instructor)
         .then(res => {
+          instructorsQuery?.refetch();
           resolve({
             label: `${instructor.firstName} ${instructor.lastName}`,
             success: true

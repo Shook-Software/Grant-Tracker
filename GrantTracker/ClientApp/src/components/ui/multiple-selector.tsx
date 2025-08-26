@@ -77,6 +77,8 @@ interface MultipleSelectorProps {
   >;
   /** hide the clear all button. */
   hideClearAllButton?: boolean;
+  /** Control the position of the dropdown. 'auto' will automatically detect the best position based on available space. */
+  side?: 'top' | 'bottom' | 'auto';
 }
 
 export interface MultipleSelectorRef {
@@ -192,14 +194,17 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
       commandProps,
       inputProps,
       hideClearAllButton = false,
+      side = 'auto',
     }: MultipleSelectorProps,
     ref: React.Ref<MultipleSelectorRef>,
   ) => {
     const inputRef = React.useRef<HTMLInputElement>(null);
+    const containerRef = React.useRef<HTMLDivElement>(null);
     const [open, setOpen] = React.useState(false);
     const [onScrollbar, setOnScrollbar] = React.useState(false);
     const [isLoading, setIsLoading] = React.useState(false);
-    const dropdownRef = React.useRef<HTMLDivElement>(null); // Added this
+    const [dropdownPosition, setDropdownPosition] = React.useState<'top' | 'bottom'>('bottom');
+    const dropdownRef = React.useRef<HTMLDivElement>(null);
 
     const [selected, setSelected] = React.useState<Option[]>(value || []);
     const [options, setOptions] = React.useState<GroupOption>(
@@ -230,6 +235,25 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
         inputRef.current.blur();
       }
     };
+
+    const calculateDropdownPosition = React.useCallback(() => {
+      if (side !== 'auto' || !containerRef.current) {
+        setDropdownPosition(side === 'top' ? 'top' : 'bottom');
+        return;
+      }
+
+      const containerRect = containerRef.current.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const spaceBelow = viewportHeight - containerRect.bottom;
+      const spaceAbove = containerRect.top;
+      const dropdownHeight = 200; // Approximate dropdown height
+
+      if (spaceBelow < dropdownHeight && spaceAbove > spaceBelow) {
+        setDropdownPosition('top');
+      } else {
+        setDropdownPosition('bottom');
+      }
+    }, [side]);
 
     const handleUnselect = React.useCallback(
       (option: Option) => {
@@ -264,18 +288,25 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
 
     useEffect(() => {
       if (open) {
+        calculateDropdownPosition();
         document.addEventListener('mousedown', handleClickOutside);
         document.addEventListener('touchend', handleClickOutside);
+        window.addEventListener('scroll', calculateDropdownPosition);
+        window.addEventListener('resize', calculateDropdownPosition);
       } else {
         document.removeEventListener('mousedown', handleClickOutside);
         document.removeEventListener('touchend', handleClickOutside);
+        window.removeEventListener('scroll', calculateDropdownPosition);
+        window.removeEventListener('resize', calculateDropdownPosition);
       }
 
       return () => {
         document.removeEventListener('mousedown', handleClickOutside);
         document.removeEventListener('touchend', handleClickOutside);
+        window.removeEventListener('scroll', calculateDropdownPosition);
+        window.removeEventListener('resize', calculateDropdownPosition);
       };
-    }, [open]);
+    }, [open, calculateDropdownPosition]);
 
     useEffect(() => {
       if (value) {
@@ -425,19 +456,20 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
     }, [creatable, commandProps?.filter]);
 
     return (
-      <Command
-        ref={dropdownRef}
-        {...commandProps}
-        onKeyDown={(e) => {
-          handleKeyDown(e);
-          commandProps?.onKeyDown?.(e);
-        }}
-        className={cn('h-auto overflow-visible bg-transparent', commandProps?.className)}
-        shouldFilter={
-          commandProps?.shouldFilter !== undefined ? commandProps.shouldFilter : !onSearch
-        } // When onSearch is provided, we don't want to filter the options. You can still override it.
-        filter={commandFilter()}
-      >
+      <div ref={containerRef} className='relative'>
+        <Command
+          ref={dropdownRef}
+          {...commandProps}
+          onKeyDown={(e) => {
+            handleKeyDown(e);
+            commandProps?.onKeyDown?.(e);
+          }}
+          className={cn('h-auto overflow-visible bg-transparent', commandProps?.className)}
+          shouldFilter={
+            commandProps?.shouldFilter !== undefined ? commandProps.shouldFilter : !onSearch
+          } // When onSearch is provided, we don't want to filter the options. You can still override it.
+          filter={commandFilter()}
+        >
         <div
           className={cn(
             'min-h-10 rounded-md border border-input text-base md:text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2',
@@ -538,10 +570,14 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
             </button>
           </div>
         </div>
-        <div className="relative">
-          {open && (
+        {open && (
+        <div className={cn("absolute z-10 w-full rounded-md border bg-popover text-popover-foreground shadow-md outline-none animate-in", 
+          dropdownPosition === 'top' 
+            ? "bottom-full mb-1" 
+            : "top-1"
+        )}>
+          
             <CommandList
-              className="absolute top-1 z-10 w-full rounded-md border bg-popover text-popover-foreground shadow-md outline-none animate-in"
               onMouseLeave={() => {
                 setOnScrollbar(false);
               }}
@@ -597,9 +633,10 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
                 </>
               )}
             </CommandList>
-          )}
         </div>
-      </Command>
+          )}
+        </Command>
+      </div>
     );
   },
 );

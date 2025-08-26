@@ -29,6 +29,7 @@ interface ComboboxProps {
   multiple?: boolean
 	onChange: (value: string | string[]) => void
 	emptyText?: string
+  side?: "top" | "left" | "right" | "bottom"
 }
 
 export function Combobox({ options, placeholder, emptyText, value, multiple = false, onChange, ...props }: React.ComponentProps<"div"> & ComboboxProps) {
@@ -78,7 +79,7 @@ export function Combobox({ options, placeholder, emptyText, value, multiple = fa
           <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[300px] p-0" side="bottom" align="start" avoidCollisions={false}>
+      <PopoverContent className="w-[300px] p-0" side={props.side} align="start" avoidCollisions={!props.side}>
         <Command shouldFilter={false}>
           <CommandInput 
             value={searchValue} 
