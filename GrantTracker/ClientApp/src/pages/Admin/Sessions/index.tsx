@@ -362,10 +362,10 @@ export default ({ user }: { user: User }): JSX.Element => {
                   </section>
 
                   <section>
-                    <h4 className='text-lg font-medium mb-4'>Finished Sessions</h4>
+                    <h4 className='text-lg font-medium mb-4'>Pending Sessions</h4>
                     <SessionDataTable
                       data={sessionsQuery.data.filter(session =>
-                        session.lastSessionDate.isBefore(LocalDate.now())
+                        session.firstSessionDate.isAfter(LocalDate.now())
                       )}
                       missingAttendance={missingAttendance}
                       openSessionGuid={sessionGuid}
@@ -376,10 +376,10 @@ export default ({ user }: { user: User }): JSX.Element => {
                   </section>
 
                   <section>
-                    <h4 className='text-lg font-medium mb-4'>Pending Sessions</h4>
+                    <h4 className='text-lg font-medium mb-4'>Finished Sessions</h4>
                     <SessionDataTable
                       data={sessionsQuery.data.filter(session =>
-                        session.firstSessionDate.isAfter(LocalDate.now())
+                        session.lastSessionDate.isBefore(LocalDate.now())
                       )}
                       missingAttendance={missingAttendance}
                       openSessionGuid={sessionGuid}
