@@ -46,7 +46,7 @@ const InstructorPopover = ({ values, dropdownOptions, handleAddInstructor }): JS
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button size="sm">+</Button>
+        <Button size="sm" onClick={() => setOpen(true)}>+</Button>
       </PopoverTrigger>
       <PopoverContent className="w-80">
         <div className="space-y-4">
@@ -130,7 +130,7 @@ const synergyInstructorColumns = (handleAddInstructor, dropdownOptions): ColumnD
     id: 'actions',
     header: () => <HeaderCell label="Add" />,
     cell: ({ row }) => (
-      <div className='flex justify-center'>
+      <div className='flex justify-center relative'>
         <InstructorPopover 
           values={row.original} 
           dropdownOptions={dropdownOptions} 

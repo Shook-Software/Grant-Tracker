@@ -126,7 +126,7 @@ const HeaderCell = React.forwardRef<
   HTMLDivElement & HeaderCellProps,
   React.HTMLAttributes<HTMLDivElement> & HeaderCellProps
 >(({ className, label, sort, filterValue, onFilterChange, onSortClick, filterPlaceholder, filterOptions, onFilterSelect, ...props }, ref) => (
-  <div className={cn("h-full flex flex-col justify-center items-start", className)} {...props}>
+  <div className={cn("h-fit flex flex-col justify-center items-start", className)} {...props}>
     {onSortClick && <Button className={`flex flex-row justify-start p-0 flex-start w-full has-[>svg]:ps-0 ${onFilterChange ? 'pb-0' : ''}`} variant="ghost" style={{height:"min-content;"}} onClick={onSortClick ? (e) => onSortClick(e) : undefined}>
       {label}
       {sort === "asc" && <ArrowUpWideNarrow className='ml-2 h-4 w-4 inline-block' /> || 

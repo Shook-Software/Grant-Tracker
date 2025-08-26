@@ -230,9 +230,8 @@ const studentPresentColumn: ColumnDef<StudentRecord, any> = {
 const familyAttendColumn: ColumnDef<StudentRecord, any> = {
 	id: 'familyAttendance',
 	header: () => (
-		<HeaderCell>
+		<HeaderCell label='Family Attendance' className='text-center'>
 			<div className='flex flex-wrap w-full'> 
-				<span className='w-full text-center'>Family Attendance</span>
 				<span className='w-1/2 text-center text-xs'>Family Member</span>
 				<span className='w-1/2 text-center text-xs'>Count</span>
 			</div>

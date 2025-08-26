@@ -248,7 +248,7 @@ export default ({
               <StudentSearchTable
                 data={state}
                 onAddStudent={addStudent}
-                scheduleLength={schedule.length}
+                scheduleLength={scheduling ? schedule.length : 99}
               />
             </div>
           </div>
