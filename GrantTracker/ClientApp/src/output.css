@@ -313,6 +313,9 @@
   .right-full {
     right: 100%;
   }
+  .bottom-full {
+    bottom: 100%;
+  }
   .left-0 {
     left: calc(var(--spacing) * 0);
   }
@@ -343,11 +346,20 @@
   .z-1050 {
     z-index: 1050;
   }
+  .z-1060 {
+    z-index: 1060;
+  }
+  .z-1100 {
+    z-index: 1100;
+  }
   .z-2000 {
     z-index: 2000;
   }
   .z-5000 {
     z-index: 5000;
+  }
+  .z-5005 {
+    z-index: 5005;
   }
   .col-1 {
     grid-column: 1;
