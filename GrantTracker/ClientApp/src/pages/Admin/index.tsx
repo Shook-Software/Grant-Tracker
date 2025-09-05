@@ -166,12 +166,12 @@ const OrgYearInput = ({value, onChange, defaultOrgYearGuid}): React.ReactElement
   const orgs: any[] = orgGuids.map(guid => orgYears.find(oy => oy.organization.guid === guid)?.organization)
   const years: YearView[] = orgYears.filter(oy => oy.organization.guid === value?.organization.guid)
     .map(oy => oy.year)
-    .sort((current, next) => {
-      if (current.schoolYear == next.schoolYear && current.quarter == next.quarter) return 0;
-      else if (current.schoolYear > next.schoolYear) return -1;
-      else if (current.quarter > next.quarter) return -1;
-      return 1; 
-  })
+		.sort((curr, next) => {
+			if (curr.schoolYear == next.schoolYear)
+				return curr.quarter > next.quarter ? -1 : 1
+			
+			return curr.schoolYear > next.schoolYear ? -1 : 1
+		})
 
   return (
     <div className='flex flex-wrap gap-4 mb-3'>
