@@ -25,7 +25,7 @@ interface Option {
 interface ComboboxProps {
 	options: Option[]
 	placeholder: string
-	value: string | string[]
+	value: string | string[] | undefined
   multiple?: boolean
 	onChange: (value: string | string[]) => void
 	emptyText?: string
@@ -60,7 +60,7 @@ export function Combobox({ options, placeholder, emptyText, value, multiple = fa
     if (multiple && Array.isArray(value) && value.length > 0) {
       return `${value.length} selected`;
     }
-    if (!multiple && typeof value === 'string' && value) {
+    if (!multiple && typeof value === 'string' && (value || value === '')) {
       return options.find(o => o.value === value)?.label || value;
     }
     return placeholder;

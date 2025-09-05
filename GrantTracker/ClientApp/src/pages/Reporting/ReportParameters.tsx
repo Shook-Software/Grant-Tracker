@@ -56,7 +56,7 @@ export default ({onSubmit}): JSX.Element => {
 	}
 
 	function submit(): void {
-		if (orgGuid && user.year && startDate && endDate)
+		if ((orgGuid || orgGuid === '') && user.year && startDate && endDate)
 			onSubmit({
 				organizationGuid: orgGuid,
 				organizationName: user.organizations?.find(x => x.guid == orgGuid)?.name || 'All Organizations',

@@ -197,7 +197,6 @@ function SessionDataTable({
 
   const styledColumns = React.useMemo(() => {
     const columnsToUse = openSessionGuid ? [createSessionColumns()[0]] : createSessionColumns()
-    console.log(columnsToUse)
 
     return columnsToUse.map((column, index) => {
       if (column.accessorKey === 'activity.label' && activities.length > 0) {

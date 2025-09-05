@@ -56,6 +56,7 @@ export default ({params, dateDisplay, fileOrgName, fileDate, isActive}: Props) =
 			fileData={data?.map(x => ({...x, instructorMissing: !x.firstName && !x.lastName}))}
 			fileName={`${fileOrgName}_Semester_Schedule_${fileDate}`}
 			fileFields={scheduleFields}
+			showHeader={true}
 		>
 			<div>
 				For Download Only
