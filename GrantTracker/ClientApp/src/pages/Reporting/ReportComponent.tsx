@@ -52,13 +52,11 @@ export default ({children, isLoading, hasError, displayName, fileData, fileName,
 }
 
 export function exportToCSV(data, fileFields, fileName) {
-	console.log(data)
-
 	const options: Options<undefined> = { 
 	  fields: fileFields, 
 	  excelStrings: true, 
 	  header: true
 	}
   
-	saveCSVToFile(data.length !== undefined ? data : data(), options, fileName)
+	saveCSVToFile((typeof data !== 'function') ? data : data(), options, fileName)
 }
