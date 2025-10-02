@@ -47,11 +47,14 @@ const sessionIssueTitle = (issue: SessionIssue) => {
 		return "Schedule"
 	else if (issue == SessionIssue.Registrations)
 		return "Registrations"
+	else if (issue = SessionIssue.Setup)
+		return "Setup"
 }
 
 enum SessionIssue {
 	Schedule = 0,
-	Registrations = 1
+	Registrations = 1,
+	Setup = 2
 }
 
 interface IssueDTO<T> {

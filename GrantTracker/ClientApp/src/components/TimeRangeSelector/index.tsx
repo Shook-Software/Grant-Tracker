@@ -40,7 +40,7 @@ export enum Period {
 // Helper functions for input handling
 function handleHourKeyDown (event: React.BaseSyntheticEvent, props): void {
   const [nativeEvent, action]: [KeyboardEvent, InputAction] = handleKeyDown(event)
-  const {hour, setHour, status, setStatus, setFocus} = props
+  const {hour, setHour, status, handleStatusChange: setStatus, setFocus} = props
   
   switch (action) {
     case InputAction.TypeDigit:
@@ -84,7 +84,7 @@ function handleHourKeyDown (event: React.BaseSyntheticEvent, props): void {
 
 function handleMinuteKeyDown (event: React.BaseSyntheticEvent, props): void {
   const [nativeEvent, action]: [KeyboardEvent, InputAction] = handleKeyDown(event)
-  const {minute, setMinute, status, setStatus, setFocus, step} = props
+  const {minute, setMinute, status, handleStatusChange: setStatus, setFocus, step} = props
   
   switch (action) {
     case InputAction.TypeDigit:

@@ -8,12 +8,6 @@ namespace GrantTracker.Dal.Schema
 		public Guid SessionGuid { get; set; }
 		public virtual Session Session { get; set; }
 		public DateOnly InstanceDate { get; set; }
-		/*public DateTime? CreatedAt { get; set; }
-        public Guid? CreatedBy { get; set; }
-		public InstructorSchoolYear? CreatedByInstructor { get; set; } 
-        public DateTime? UpdatedAt { get; set; }
-        public Guid? UpdatedBy { get; set; }
-        public InstructorSchoolYear? UpdatedByInstructor { get; set; }*/
         public virtual ICollection<InstructorAttendanceRecord> InstructorAttendance { get; set; }
 		public virtual ICollection<StudentAttendanceRecord> StudentAttendance { get; set; }
 		public virtual ICollection<FamilyAttendanceRecord> FamilyAttendance { get; set; }

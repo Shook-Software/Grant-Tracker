@@ -382,32 +382,32 @@ public class SessionRepository : ISessionRepository
 
 	public async Task<List<SessionIssuesDTO>> GetIssues(Guid organizationYearGuid)
 	{
-		var sessionHasMalformedScheduleTimes = (Session s) => s.DaySchedules.Any(ds => ds.TimeSchedules.Any(ts => ts.StartTime == ts.EndTime || ts.StartTime > ts.EndTime));
-		var sessionHasDuplicateRegistrations = (Session s) => (
-			s.DaySchedules.SelectMany(ds => ds.StudentRegistrations).DistinctBy(sr => new { sr.StudentSchoolYearGuid, sr.DaySchedule.DayOfWeek }).Count() != s.DaySchedules.SelectMany(ds => ds.StudentRegistrations).Count()
-		);
+        bool sessionHasMalformedScheduleTimes(Session s) => s.DaySchedules.Any(ds => ds.TimeSchedules.Any(ts => ts.StartTime == ts.EndTime || ts.StartTime > ts.EndTime));
+        bool sessionHasDuplicateRegistrations(Session s) => (
+            s.DaySchedules.SelectMany(ds => ds.StudentRegistrations).DistinctBy(sr => new { sr.StudentSchoolYearGuid, sr.DaySchedule.DayOfWeek }).Count() != s.DaySchedules.SelectMany(ds => ds.StudentRegistrations).Count()
+        );
+		bool sessionHasDuplicatedName(List<Session> sessions, Session session) => sessions.Where(s => s.Name == session.Name).Count() > 1;
 
-        var sessionsWithIssues = (await _grantContext.Sessions
-            .AsNoTracking()
-            .Where(s => s.OrganizationYearGuid == organizationYearGuid)
-            .Where(s => _user.IsAdmin()
-                || (_user.IsCoordinator() && _user.HomeOrganizationGuids().Contains(s.OrganizationYear.OrganizationGuid))
-                || (_user.IsTeacher() && s.InstructorRegistrations.Any(ir => ir.InstructorSchoolYear.Instructor.BadgeNumber.Trim() == _user.Id())))
-            .Include(s => s.OrganizationYear)
-            .Include(s => s.Grades).ThenInclude(g => g.Grade)
-            .Include(s => s.SessionType)
-            .Include(s => s.Activity)
-            .Include(s => s.SessionObjectives).ThenInclude(x => x.Objective)
-            .Include(s => s.FundingSource)
-            .Include(s => s.OrganizationType)
-            .Include(s => s.PartnershipType)
-            .Include(s => s.DaySchedules).ThenInclude(ds => ds.StudentRegistrations)
-            .Include(s => s.DaySchedules).ThenInclude(ds => ds.TimeSchedules)
-            .ToListAsync())
-            .Where(s => sessionHasMalformedScheduleTimes(s) || sessionHasDuplicateRegistrations(s))
-			.ToList();
 
-		return sessionsWithIssues
+		var sessions = await _grantContext.Sessions
+			.AsNoTracking()
+			.Where(s => s.OrganizationYearGuid == organizationYearGuid)
+			.Where(s => _user.IsAdmin()
+				|| (_user.IsCoordinator() && _user.HomeOrganizationGuids().Contains(s.OrganizationYear.OrganizationGuid))
+				|| (_user.IsTeacher() && s.InstructorRegistrations.Any(ir => ir.InstructorSchoolYear.Instructor.BadgeNumber.Trim() == _user.Id())))
+			.Include(s => s.OrganizationYear)
+			.Include(s => s.Grades).ThenInclude(g => g.Grade)
+			.Include(s => s.SessionType)
+			.Include(s => s.Activity)
+			.Include(s => s.SessionObjectives).ThenInclude(x => x.Objective)
+			.Include(s => s.FundingSource)
+			.Include(s => s.OrganizationType)
+			.Include(s => s.PartnershipType)
+			.Include(s => s.DaySchedules).ThenInclude(ds => ds.StudentRegistrations)
+			.Include(s => s.DaySchedules).ThenInclude(ds => ds.TimeSchedules)
+			.ToListAsync();
+
+		return sessions
 			.Select(s =>
 			{
 				SessionIssuesDTO sessionDTO = new()
@@ -420,19 +420,27 @@ public class SessionRepository : ISessionRepository
 				if (sessionHasMalformedScheduleTimes(s))
                     sessionDTO.Issues.Add(new IssueDTO<SessionIssue>
                     {
-						Type = SessionIssue.Schedul,
+						Type = SessionIssue.Schedule,
 						Message = "One or more schedule times are invalid."
 					});
 
 				if (sessionHasDuplicateRegistrations(s))
                     sessionDTO.Issues.Add(new IssueDTO<SessionIssue>
                     {
-                        Type = SessionIssue.Schedul,
+                        Type = SessionIssue.Schedule,
                         Message = "One or more students registrations are duplicated."
+                    });
+
+                if (sessionHasDuplicatedName(sessions, s))
+                    sessionDTO.Issues.Add(new IssueDTO<SessionIssue>
+                    {
+                        Type = SessionIssue.Setup,
+                        Message = "This session has a name that is a duplicate of another this semester."
                     });
 
                 return sessionDTO;
 			})
+			.Where(sDTO => sDTO.Issues.Any())
 			.ToList();
     }
 }

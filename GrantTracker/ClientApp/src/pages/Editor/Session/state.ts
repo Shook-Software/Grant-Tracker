@@ -71,7 +71,6 @@ export function reducer (
   switch (action.type) {
 
     case 'all':
-      console.error(action.payload)
       return { ...action.payload }
 
     case 'name':
@@ -136,7 +135,6 @@ export function reducer (
       }
 
     case 'recurring':
-      console.error(action.payload)
       var newSchedule: WeeklySchedule
       //recurring to non-recurring
       if (state.recurring && !action.payload) {
@@ -162,7 +160,6 @@ export function reducer (
       return { ...state, recurring: action.payload, scheduling: newSchedule }
 
     case 'scheduleDayTime':
-      console.error(action.payload)
       var newSchedule: WeeklySchedule = state.scheduling.map(
         (schedule, index) => {
           return index === action.payload.dayIndex
@@ -174,7 +171,6 @@ export function reducer (
       return { ...state, scheduling: [...newSchedule] }
 
     case 'singleSessionTimeSchedule':
-      console.error(action.payload)
       var newScheduling = state.scheduling.map(s => {
         if (s.timeSchedules.length !== 0) {
           s.timeSchedules = action.payload
