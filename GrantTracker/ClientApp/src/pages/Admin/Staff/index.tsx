@@ -1,22 +1,21 @@
 import React, { useEffect, useState, useContext } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { UserCheck, Search, Plus, Users } from 'lucide-react'
+import { Plus, Users } from 'lucide-react'
 
 import AddInstructorsModal from 'components/Modals/AddInstructorModal'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Spinner } from '@/components/ui/Spinner'
 
 import { DropdownOption } from 'types/Session'
-import { addInstructor, fetchGrantTrackerInstructors } from './api'
+import { addInstructor } from './api'
 import { ApiResult } from 'components/ApiResultAlert'
 
 import { ColumnDef } from '@tanstack/react-table'
 import { HeaderCell } from '@/components/ui/table'
 import { DataTable } from 'components/DataTable'
 
-import InstructorPage from 'components/Displays/Instructor'
+import InstructorPage from './Instructor'
 import paths from 'utils/routing/paths'
 import { OrgYearContext } from '..'
 
@@ -57,6 +56,19 @@ const createInstructorColumns = (): ColumnDef<InstructorRecord, any>[] => [
       />
     ),
     id: 'instructor.lastName'
+  },
+  {
+    accessorKey: "title",
+    header: ({ column }) => (
+      <HeaderCell
+        label="Title"
+        sort={column.getIsSorted()}
+        onSortClick={() => column.toggleSorting()}
+        filterValue={column.getFilterValue() as string}
+        onFilterChange={(event) => column.setFilterValue(event.target.value.trim())}
+      />
+    ),
+    id: 'title'
   },
   {
     accessorKey: "instructor.badgeNumber",

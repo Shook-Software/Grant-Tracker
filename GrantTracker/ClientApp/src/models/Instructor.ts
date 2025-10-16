@@ -12,6 +12,7 @@ export interface InstructorView {
 //not enough info
 export interface InstructorSchoolYearView {
   guid: string
+  title: string
   instructor: InstructorView
   year: YearView
   organizationName: string

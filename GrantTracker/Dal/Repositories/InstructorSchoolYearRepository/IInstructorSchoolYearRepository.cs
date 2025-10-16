@@ -5,8 +5,8 @@ namespace GrantTracker.Dal.Repositories.InstructorSchoolYearRepository;
 
 public interface IInstructorSchoolYearRepository
 {
-	Task<InstructorSchoolYearViewModel> CreateIfNotExistsAsync(Guid studentGuid, Guid organizationYearGuid, Guid statusGuid);
-	Task<InstructorSchoolYearViewModel> CreateAsync(Guid studentGuid, Guid organizationYearGuid, Guid statusGuid);
+	Task<InstructorSchoolYearViewModel> CreateIfNotExistsAsync(Guid studentGuid, Guid organizationYearGuid, Guid statusGuid, string title);
+	Task<InstructorSchoolYearViewModel> CreateAsync(Guid studentGuid, Guid organizationYearGuid, Guid statusGuid, string title);
 
 	Task<List<Guid>> GetSchoolYearsIdsAsync(Guid instructorGuid);
     Task<InstructorSchoolYearViewModel?> GetAsync(Guid instructorSchoolYearGuid);

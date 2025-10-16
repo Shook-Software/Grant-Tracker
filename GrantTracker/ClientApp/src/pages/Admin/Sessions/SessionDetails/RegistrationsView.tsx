@@ -19,7 +19,7 @@ import { StudentGroup, StudentGroupStudent } from 'Models/StudentGroup'
 import { addStudentToSession } from './api'
 import { DayScheduleView } from 'Models/DaySchedule'
 
-import SearchStudentsModal from './SearchStudentsModal'
+import SearchStudentsModal from '../../../../components/Modals/SearchStudentsModal'
 import { OrgYearContext } from 'pages/Admin'
 import api from 'utils/api'
 import { Loader2Icon, User, UserMinus, UserPlus, Users } from 'lucide-react'

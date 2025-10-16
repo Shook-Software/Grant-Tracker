@@ -1,14 +1,14 @@
 import { Link } from 'react-router-dom'
-import { LocalDate, DateTimeFormatter, LocalTime } from '@js-joda/core'
+import { DateTimeFormatter } from '@js-joda/core'
 import { Locale } from '@js-joda/locale_en-us'
 
 import { DataTable } from 'components/DataTable'
 import { ColumnDef } from '@tanstack/react-table'
 import { HeaderCell } from '@/components/ui/table'
-import TimeRecordDisplay from 'components/SessionDetails/AttendanceHistory/TimeRecordDisplay'
+import TimeRecordDisplay from '@/components/ui/TimeRecordDisplay'
 
 import { StudentAttendanceView } from 'Models/StudentAttendance'
-import { Button } from '../ui/button'
+import { Button } from '@/components/ui/button'
 import { ExternalLink } from 'lucide-react'
 
 const attendanceColumns: ColumnDef<StudentAttendanceView, any>[] = [

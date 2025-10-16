@@ -42,6 +42,7 @@ namespace GrantTracker.Dal.Models.Views
 		public YearView Year { get; set; }
 		public string OrganizationName { get; set; }
 		public bool IsPendingDeletion { get; set; } = false;
+		public string? Title { get; set; }
 		public StatusView Status { get; set; }
 		public List<OrganizationView> Organizations { get; set; } //populate years with only whichever this staff member has
 		public List<EnrollmentView> EnrollmentRecords { get; set; }
@@ -54,6 +55,7 @@ namespace GrantTracker.Dal.Models.Views
 			Instructor = InstructorView.FromDatabase(instructorSchoolYear.Instructor),
 			Year = instructorSchoolYear.OrganizationYear != null ? YearView.FromDatabase(instructorSchoolYear.OrganizationYear.Year) : null,
 			OrganizationName = instructorSchoolYear.OrganizationYear?.Organization?.Name,
+			Title = instructorSchoolYear.Title,
 			Status = StatusView.FromDatabase(instructorSchoolYear.Status),
 			IsPendingDeletion = instructorSchoolYear.IsPendingDeletion,
 			Organizations = organizationYears?

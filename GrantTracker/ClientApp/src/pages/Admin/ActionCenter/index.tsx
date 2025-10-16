@@ -6,7 +6,7 @@ import { DateTimeFormatter, LocalDate, LocalTime } from "@js-joda/core"
 import { DataTable } from "components/DataTable"
 import { ColumnDef } from "@tanstack/react-table"
 import { HeaderCell } from "@/components/ui/table"
-import { Link, useNavigate } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
 import { Locale } from "@js-joda/locale_en-us"
 
 import paths from 'utils/routing/paths'
