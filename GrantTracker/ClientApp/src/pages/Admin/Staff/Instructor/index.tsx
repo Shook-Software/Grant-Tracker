@@ -1,6 +1,6 @@
-import React, { useEffect, useState, useContext } from 'react'
-import { Link, useParams } from 'react-router-dom'
-import { User, Shield, CalendarDays, BookOpen, Clock, Edit3, Save, X, MoreVertical, Trash2 } from 'lucide-react'
+import { useEffect, useState, useContext } from 'react'
+import { Link } from 'react-router-dom'
+import { User, Shield, CalendarDays, BookOpen, Clock, Edit3, Save, X, Trash2, School } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -120,6 +120,18 @@ const BasicDetails = ({instructor: instructorSchoolYear, onChange, pendingDeleti
           </div>
           <div className="font-mono text-lg p-3 bg-muted/30 rounded-md">
             {instructor.badgeNumber}
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+            <School className="h-4 w-4" />
+            Job Title
+          </div>
+          <div className="p-3">
+            <Badge variant="secondary">
+              {instructorSchoolYear.title}
+            </Badge>
           </div>
         </div>
 

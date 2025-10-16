@@ -7,7 +7,7 @@ import { AttendanceStartTimeInput, AttendanceEndTimeInput } from './TimeComponen
 import { DataTable } from 'components/DataTable'
 import { ColumnDef } from '@tanstack/react-table'
 import { HeaderCell } from 'components/ui/table'
-import SearchStudentsModal from 'components/SessionDetails/SearchStudentsModal'
+import SearchStudentsModal from '@/components/Modals/SearchStudentsModal'
 
 import type { FamilyRecord, StudentRecord } from 'Models/StudentAttendance'
 import FamilyMemberOps, { FamilyMember } from 'Models/FamilyMember'

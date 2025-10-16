@@ -67,7 +67,7 @@ public class InstructorSchoolYearRepository : IInstructorSchoolYearRepository
         return InstructorSchoolYearViewModel.FromDatabase(instructorSchoolYear, organizationYears);
     }
 
-    public async Task<InstructorSchoolYearViewModel> CreateIfNotExistsAsync(Guid instructorGuid, Guid organizationYearGuid, Guid statusGuid)
+    public async Task<InstructorSchoolYearViewModel> CreateIfNotExistsAsync(Guid instructorGuid, Guid organizationYearGuid, Guid statusGuid, string title)
 	{
 		var instructorSchoolYear = await _grantContext
 			.InstructorSchoolYears
@@ -78,13 +78,13 @@ public class InstructorSchoolYearRepository : IInstructorSchoolYearRepository
 
 		if (instructorSchoolYear == null)
 		{
-			return await this.CreateAsync(instructorGuid, organizationYearGuid, statusGuid);
+			return await this.CreateAsync(instructorGuid, organizationYearGuid, statusGuid, title);
 		}
 
 		return InstructorSchoolYearViewModel.FromDatabase(instructorSchoolYear);
 	}
 
-	public async Task<InstructorSchoolYearViewModel> CreateAsync(Guid instructorGuid, Guid organizationYearGuid, Guid statusGuid)
+	public async Task<InstructorSchoolYearViewModel> CreateAsync(Guid instructorGuid, Guid organizationYearGuid, Guid statusGuid, string title)
 	{
 		Guid instructorSchoolYearGuid = Guid.NewGuid();
 
@@ -92,6 +92,7 @@ public class InstructorSchoolYearRepository : IInstructorSchoolYearRepository
 		{
 			InstructorSchoolYearGuid = instructorSchoolYearGuid,
 			InstructorGuid = instructorGuid,
+            Title = title,
 			OrganizationYearGuid = organizationYearGuid
 		};
 

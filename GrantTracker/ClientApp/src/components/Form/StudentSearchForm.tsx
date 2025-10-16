@@ -2,9 +2,8 @@ import { useContext, useEffect, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Spinner } from '@/components/ui/Spinner'
-import MultipleSelector, { MultiSelector, Option } from '@/components/ui/multiple-selector'
+import MultipleSelector, { Option } from '@/components/ui/multiple-selector'
 
 import api from 'utils/api'
 import { OrgYearContext } from 'pages/Admin'

@@ -33,6 +33,7 @@ export const InstructorAttendance = ({ orgYearGuid, state, dispatch }: IAttendPr
 			firstName: instructor.firstName.trim(),
 			lastName: instructor.lastName.trim(),
 			badgeNumber: instructor.badgeNumber.trim(),
+			title: instructor.title.trim(),
 			statusGuid: instructor.statusGuid
 		})
 		.then(res => {
@@ -42,6 +43,7 @@ export const InstructorAttendance = ({ orgYearGuid, state, dispatch }: IAttendPr
 				isSubstitute: true,
 				firstName: instructor.firstName.trim(),
 				lastName: instructor.lastName.trim(),
+				title: instructor.title.trim(),
 				times: []
 			}
 

@@ -36,6 +36,7 @@ const InstructorPopover = ({ values, dropdownOptions, handleAddInstructor }): JS
       firstName: values.firstName,
       lastName: values.lastName,
       badgeNumber: values.badgeNumber,
+      title: values.title,
       statusGuid: status
     }
     handleAddInstructor(newInstructor)
@@ -114,6 +115,17 @@ const synergyInstructorColumns = (handleAddInstructor, dropdownOptions): ColumnD
       />
     ),
     id: 'organizationName'
+  },
+  {
+    accessorKey: 'title',
+    header: ({ column }) => (
+      <HeaderCell 
+        label="Job Title" 
+        sort={column.getIsSorted()} 
+        onSortClick={() => column.toggleSorting()} 
+      />
+    ),
+    id: 'title'
   },
   {
     accessorKey: 'badgeNumber',
@@ -378,7 +390,8 @@ const DistrictEmployeeTab = ({dropdownOptions, onChange, headerRef}) => {
       ...instructor,
       firstName: instructor.firstName.trim(),
       lastName: instructor.lastName.trim(),
-      badgeNumber: instructor.badgeNumber.trim()
+      badgeNumber: instructor.badgeNumber.trim(),
+      title: instructor.title.trim()
     }
 
     onChange(instructor)
@@ -424,7 +437,7 @@ export default ({ show, orgYearGuid, handleClose, onInternalChange, onExternalCh
 
   return (
     <Dialog open={show} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="max-w-6xl max-h-[80vh] overflow-hidden">
+      <DialogContent className="max-w-6xl max-h-[80vh] overflow-x-hidden overflow-y-scroll">
         <DialogHeader>
           <DialogTitle>
             Adding New Instructor(s)...

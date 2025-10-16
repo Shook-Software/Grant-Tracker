@@ -5,11 +5,10 @@ import { ColumnDef } from '@tanstack/react-table'
 import { HeaderCell } from '@/components/ui/table'
 
 import { StudentRegistrationView } from 'Models/StudentRegistration'
-import { Button } from '../ui/button'
+import { Button } from '@/components/ui/button'
 import { Clock, ExternalLink } from 'lucide-react'
-import { DaySchedule, DayScheduleView } from '@/Models/DaySchedule'
 import { DayOfWeek } from '@/Models/DayOfWeek'
-import TimeRecordDisplay from '../SessionDetails/AttendanceHistory/TimeRecordDisplay'
+import TimeRecordDisplay from '@/components/ui/TimeRecordDisplay'
 
 interface Props {
   registrations: StudentRegistrationView[]

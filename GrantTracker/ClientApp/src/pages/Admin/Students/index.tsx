@@ -1,8 +1,8 @@
 import React, { useContext, useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { Users, MoreHorizontal } from 'lucide-react'
+import { Users } from 'lucide-react'
 
-import StudentDetails from 'components/StudentDetails'
+import StudentDetails from './StudentDetails'
 import { OrgYearContext } from '../index'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
