@@ -279,6 +279,10 @@ function SessionDataTable({
       initialColumnFilters={initialColumnFilters}
       emptyMessage="No results."
       onRowClick={onRowClick}
+      initialSorting={[{
+        desc: false,
+        id: 'name'
+      }]}
     />
   )
 }
