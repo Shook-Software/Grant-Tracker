@@ -7,6 +7,7 @@ import { Instructor, InstructorSchoolYearView, InstructorView } from './Instruct
 import * as DaySchedule from './DaySchedule'
 import { TimeSchedule } from './TimeSchedule'
 import { BlackoutDate, SessionBlackoutDateDomain, SessionBlackoutDateView } from './BlackoutDate'
+import { OrganizationYearView } from './OrganizationYear'
 
 export interface DropdownOption {
   guid: string | null
@@ -34,6 +35,7 @@ export interface SessionDomain {
   firstSession: DateOnly
   lastSession: DateOnly
   recurring: boolean
+  organizationYear: OrganizationYearView
   organization: DropdownOption
   sessionType: DropdownOption
   activity: DropdownOption
@@ -53,6 +55,7 @@ export interface SessionView {
   firstSession: LocalDate
   lastSession: LocalDate
   recurring: boolean
+  organizationYear: OrganizationYearView
   organization: DropdownOption
   sessionType: DropdownOption
   activity: DropdownOption
