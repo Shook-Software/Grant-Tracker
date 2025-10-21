@@ -23,10 +23,11 @@ interface SummaryProps {
 	attendanceGuid: string | null
 	date: LocalDate
 	state: AttendanceForm
+	returnUrl: string | null
 	onSuccessfulSave: () => void
 }
 
-export const AttendanceSummary = ({ sessionGuid, sessionType, attendanceGuid, date, state, onSuccessfulSave }: SummaryProps): ReactElement => {
+export const AttendanceSummary = ({ sessionGuid, sessionType, attendanceGuid, date, state, returnUrl, onSuccessfulSave }: SummaryProps): ReactElement => {
 	const navigate = useNavigate();
 	const [criticalError, setCriticalError] = useState<boolean>(false)
 	const [errors, setErrors] = useState<string[]>([])
@@ -37,12 +38,13 @@ export const AttendanceSummary = ({ sessionGuid, sessionType, attendanceGuid, da
 
 		postAttendance(sessionGuid, attendanceGuid, date, state)
 			.then(res => {
-				navigate(`/home/admin/sessions/${sessionGuid}`)
+				const redirectUrl = returnUrl || `/home/admin/sessions/${sessionGuid}`
+				navigate(redirectUrl)
 			})
 			.catch(err => {
 				if (err.response.status == 409)
 					setErrors(err.response.data)
-				else 
+				else
 					setCriticalError(true)
 			})
 			.finally(() => {

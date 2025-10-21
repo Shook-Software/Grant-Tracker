@@ -1,5 +1,6 @@
 ﻿using Castle.Core.Internal;
 using GrantTracker.Dal.Models.DTO;
+using GrantTracker.Dal.Models.DTO.ActionCenter;
 using GrantTracker.Dal.Models.DTO.Attendance;
 using GrantTracker.Dal.Models.DTO.SessionDTO;
 using GrantTracker.Dal.Models.Views;
@@ -435,4 +436,139 @@ public class SessionRepository : ISessionRepository
 			})
 			.ToList();
     }
+
+	public async Task<List<TodayAttendanceDTO>> GetTodayAttendanceAsync(Guid organizationYearGuid, DateOnly date)
+	{
+		// Get organization blackout dates
+		var orgYear = await _grantContext.OrganizationYears
+			.AsNoTracking()
+			.Where(oy => oy.OrganizationYearGuid == organizationYearGuid)
+			.Include(oy => oy.Organization)
+			.FirstOrDefaultAsync();
+
+		if (orgYear == null)
+			return new List<TodayAttendanceDTO>();
+
+		var orgBlackoutDates = await _grantContext.BlackoutDates
+			.AsNoTracking()
+			.Where(bd => bd.OrganizationGuid == orgYear.OrganizationGuid)
+			.Select(bd => bd.Date)
+			.ToListAsync();
+
+		// Get sessions with a day schedule for the current day
+		var dayOfWeek = date.DayOfWeek;
+
+		var todaySessions = await _grantContext.Sessions
+			.AsNoTracking()
+			.Where(s => s.OrganizationYearGuid == organizationYearGuid)
+			.Where(s => s.FirstSession <= date && s.LastSession >= date) // Session is active on this date
+			.Where(s => s.DaySchedules.Any(ds => ds.DayOfWeek == dayOfWeek)) // Has schedule for today's day of week
+			.Where(s => _user.IsAdmin()
+				|| (_user.IsCoordinator() && _user.HomeOrganizationGuids().Contains(s.OrganizationYear.OrganizationGuid))
+				|| (_user.IsTeacher() && s.InstructorRegistrations.Any(ir => ir.InstructorSchoolYear.Instructor.BadgeNumber.Trim() == _user.Id())))
+			.Include(s => s.OrganizationYear)
+			.Include(s => s.BlackoutDates)
+			.Include(s => s.AttendanceRecords)
+			.ToListAsync();
+
+		// Filter out sessions with blackout dates
+		var filteredSessions = todaySessions
+			.Where(s => !orgBlackoutDates.Contains(date)) // Not an organization blackout
+			.Where(s => !s.BlackoutDates.Any(bd => bd.Date == date)) // Not a session blackout
+			.Select(s => new TodayAttendanceDTO
+			{
+				SessionGuid = s.SessionGuid,
+				SessionName = s.Name,
+				InstanceDate = date,
+				HasAttendance = s.AttendanceRecords.Any(ar => ar.InstanceDate == date)
+			})
+			.OrderBy(s => s.SessionName)
+			.ToList();
+
+		return filteredSessions;
+	}
+
+	public async Task<List<OutstandingAttendanceDTO>> GetOutstandingAttendanceAsync(Guid organizationYearGuid)
+	{
+		var today = DateOnly.FromDateTime(DateTime.Now);
+
+		// Get organization blackout dates
+		var orgYear = await _grantContext.OrganizationYears
+			.AsNoTracking()
+			.Where(oy => oy.OrganizationYearGuid == organizationYearGuid)
+			.Include(oy => oy.Organization)
+			.FirstOrDefaultAsync();
+
+		if (orgYear == null)
+			return new List<OutstandingAttendanceDTO>();
+
+		var orgBlackoutDates = await _grantContext.BlackoutDates
+			.AsNoTracking()
+			.Where(bd => bd.OrganizationGuid == orgYear.OrganizationGuid)
+			.Select(bd => bd.Date)
+			.ToListAsync();
+
+		// Get all sessions for this org year
+		var sessions = await _grantContext.Sessions
+			.AsNoTracking()
+			.Where(s => s.OrganizationYearGuid == organizationYearGuid)
+			.Where(s => s.FirstSession < today) // Only sessions that have started
+			.Where(s => _user.IsAdmin()
+				|| (_user.IsCoordinator() && _user.HomeOrganizationGuids().Contains(s.OrganizationYear.OrganizationGuid))
+				|| (_user.IsTeacher() && s.InstructorRegistrations.Any(ir => ir.InstructorSchoolYear.Instructor.BadgeNumber.Trim() == _user.Id())))
+			.Include(s => s.DaySchedules)
+			.Include(s => s.BlackoutDates)
+			.Include(s => s.AttendanceRecords)
+			.ToListAsync();
+
+		var outstandingAttendance = new List<OutstandingAttendanceDTO>();
+
+		foreach (var session in sessions)
+		{
+			// For each session, check all possible dates
+			var sessionStart = session.FirstSession;
+			var sessionEnd = session.LastSession < today ? session.LastSession : today.AddDays(-1);
+
+			// Get all dates for this session's day schedules
+			foreach (var daySchedule in session.DaySchedules)
+			{
+				var currentDate = sessionStart;
+
+				// Find the first occurrence of the day of week
+				while (currentDate <= sessionEnd && currentDate.DayOfWeek != daySchedule.DayOfWeek)
+				{
+					currentDate = currentDate.AddDays(1);
+				}
+
+				// Check each occurrence of this day of week
+				while (currentDate <= sessionEnd)
+				{
+					// Check if attendance exists for this date
+					var hasAttendance = session.AttendanceRecords.Any(ar => ar.InstanceDate == currentDate);
+
+					// Check if this date is a blackout date
+					var isOrgBlackout = orgBlackoutDates.Contains(currentDate);
+					var isSessionBlackout = session.BlackoutDates.Any(bd => bd.Date == currentDate);
+
+					// If no attendance and not a blackout, add to outstanding
+					if (!hasAttendance && !isOrgBlackout && !isSessionBlackout)
+					{
+						outstandingAttendance.Add(new OutstandingAttendanceDTO
+						{
+							SessionGuid = session.SessionGuid,
+							SessionName = session.Name,
+							InstanceDate = currentDate
+						});
+					}
+
+					currentDate = currentDate.AddDays(7); // Move to next week
+				}
+			}
+		}
+
+		return outstandingAttendance
+			.OrderByDescending(o => o.InstanceDate)
+			.ThenBy(o => o.SessionName)
+			.ToList();
+	}
 }

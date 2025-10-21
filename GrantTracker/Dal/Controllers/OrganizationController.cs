@@ -6,6 +6,7 @@ using GrantTracker.Dal.Models.Views;
 using GrantTracker.Dal.Repositories.OrganizationYearRepository;
 using GrantTracker.Utilities;
 using Microsoft.EntityFrameworkCore;
+using GrantTracker.Dal.Models.DTO.ActionCenter;
 using GrantTracker.Dal.Models.DTO.Attendance;
 using GrantTracker.Dal.Repositories.AttendanceRepository;
 using GrantTracker.Dal.Models.DTO.SessionDTO;
@@ -412,6 +413,49 @@ namespace GrantTracker.Dal.Controllers
             {
                 _logger.LogError(ex, "");
                 return StatusCode(500);
+            }
+        }
+
+        [HttpGet("organizationYear/{organizationYearGuid:guid}/attendance/today")]
+        public async Task<ActionResult<List<TodayAttendanceDTO>>> GetTodayAttendanceAsync(Guid organizationYearGuid, string? dateStr = null)
+        {
+            try
+            {
+                Guid orgGuid = (await _organizationRepository.GetOrganizationYearAsync(organizationYearGuid)).Organization.Guid;
+
+                if (!User.IsAdmin() && !User.HomeOrganizationGuids().Contains(orgGuid))
+                    return Unauthorized();
+
+                DateOnly date = string.IsNullOrEmpty(dateStr) ? DateOnly.FromDateTime(DateTime.Now) : DateOnly.Parse(dateStr);
+                var todayAttendance = await _sessionRepository.GetTodayAttendanceAsync(organizationYearGuid, date);
+
+                return Ok(todayAttendance);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "{Function} - An unhandled error occured.", nameof(GetTodayAttendanceAsync));
+                return StatusCode(500, "An unknown error occured while fetching today's attendance.");
+            }
+        }
+
+        [HttpGet("organizationYear/{organizationYearGuid:guid}/attendance/outstanding")]
+        public async Task<ActionResult<List<OutstandingAttendanceDTO>>> GetOutstandingAttendanceAsync(Guid organizationYearGuid)
+        {
+            try
+            {
+                Guid orgGuid = (await _organizationRepository.GetOrganizationYearAsync(organizationYearGuid)).Organization.Guid;
+
+                if (!User.IsAdmin() && !User.HomeOrganizationGuids().Contains(orgGuid))
+                    return Unauthorized();
+
+                var outstandingAttendance = await _sessionRepository.GetOutstandingAttendanceAsync(organizationYearGuid);
+
+                return Ok(outstandingAttendance);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "{Function} - An unhandled error occured.", nameof(GetOutstandingAttendanceAsync));
+                return StatusCode(500, "An unknown error occured while fetching outstanding attendance.");
             }
         }
     }
