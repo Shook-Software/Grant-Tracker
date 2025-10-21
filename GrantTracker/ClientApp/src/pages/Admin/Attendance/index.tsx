@@ -33,7 +33,8 @@ export default (): React.ReactElement => {
 	const attendanceGuid = searchParams.get('attendanceId')
 	const sourceAttendanceGuid = searchParams.get('sourceAttendanceId')
 	const initialDate = searchParams.get('date')
-	
+	const returnUrl = searchParams.get('returnUrl')
+
 	const attendanceMode: 'new' | 'edit' | 'copy' = useAttendanceMode({ sessionGuid: sessionGuid || '', attendanceGuid, sourceAttendanceGuid });
 
 	const [formState, setFormState] = useState<FormState>(FormState.DateTimeSelect)
@@ -204,12 +205,13 @@ export default (): React.ReactElement => {
 				);
 			case FormState.AttendanceRecords:
 				return (
-					<AttendanceForm 
+					<AttendanceForm
 						session={session!}
 						attendanceGuid={attendanceGuid}
 						date={date!}
 						state={attendanceState}
 						dispatch={dispatch}
+						returnUrl={returnUrl}
 						onSuccessfulSave={() => removeFromLocalStorage(createLocalStorageKey())}
 					/>
 				)
@@ -253,10 +255,11 @@ interface AttendanceFormProps {
 	date: LocalDate
 	state: AttendanceFormState
 	dispatch: React.Dispatch<ReducerAction>
+	returnUrl: string | null
 	onSuccessfulSave: () => void
 }
 
-const AttendanceForm = ({session, attendanceGuid, date, state, dispatch, onSuccessfulSave}: AttendanceFormProps): ReactElement => {
+const AttendanceForm = ({session, attendanceGuid, date, state, dispatch, returnUrl, onSuccessfulSave}: AttendanceFormProps): ReactElement => {
 	useEffect(() => {
 		if (session.sessionType.label != 'Parent') {
 			const studentRecords = state.studentRecords.filter(sr => sr.isPresent).map(sr => ({
@@ -305,11 +308,12 @@ const AttendanceForm = ({session, attendanceGuid, date, state, dispatch, onSucce
 
 			<section className='py-3'>
 				<h4 className="font-medium text-lg">Summary</h4>
-				<AttendanceSummary sessionGuid={session.guid} 
-					sessionType={session.sessionType.label} 
-					attendanceGuid={attendanceGuid} 
-					date={date} 
+				<AttendanceSummary sessionGuid={session.guid}
+					sessionType={session.sessionType.label}
+					attendanceGuid={attendanceGuid}
+					date={date}
 					state={state}
+					returnUrl={returnUrl}
 					onSuccessfulSave={onSuccessfulSave} />
 			</section>
 		</div>

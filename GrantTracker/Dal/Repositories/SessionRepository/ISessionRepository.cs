@@ -1,5 +1,6 @@
 ﻿using GrantTracker.Dal.Models;
 using GrantTracker.Dal.Models.DTO;
+using GrantTracker.Dal.Models.DTO.ActionCenter;
 using GrantTracker.Dal.Models.DTO.Attendance;
 using GrantTracker.Dal.Models.DTO.SessionDTO;
 using GrantTracker.Dal.Models.Views;
@@ -25,7 +26,7 @@ public interface ISessionRepository
 
 	Task RegisterStudentAsync(Guid sessionGuid, List<Guid> scheduleGuids, Guid studentGuid);
 
-	//Task CopyStudentRegistrationsAsync(Guid sourceSessionGuid, Guid destinationSessionGuid); 
+	//Task CopyStudentRegistrationsAsync(Guid sourceSessionGuid, Guid destinationSessionGuid);
 	//Task CopyStudentRegistrationsAsync(Guid sessionGuid, List<Guid> studentSchoolYearGuids);
 
 	Task RemoveStudentAsync(Guid studentSchoolYearGuid, List<Guid> dayScheduleGuids);
@@ -34,4 +35,8 @@ public interface ISessionRepository
 	Task RegisterInstructorAsync(Guid sessionGuid, Guid instructorSchoolYearGuid);
 
     Task<List<SessionIssuesDTO>> GetIssues(Guid organizationYearGuid);
+
+	Task<List<TodayAttendanceDTO>> GetTodayAttendanceAsync(Guid organizationYearGuid, DateOnly date);
+
+	Task<List<OutstandingAttendanceDTO>> GetOutstandingAttendanceAsync(Guid organizationYearGuid);
 }

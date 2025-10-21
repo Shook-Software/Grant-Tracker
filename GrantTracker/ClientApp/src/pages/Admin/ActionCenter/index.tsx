@@ -16,30 +16,19 @@ import { Chart, ChartData, LineElement, LinearScale, PointElement, Tooltip, Lege
 import 'chartjs-adapter-date-fns';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 
-Chart.register(LineElement, BarElement, CategoryScale, LinearScale, PointElement, Tooltip, Legend, TimeScale, ChartDataLabels); 
+Chart.register(LineElement, BarElement, CategoryScale, LinearScale, PointElement, Tooltip, Legend, TimeScale, ChartDataLabels);
 
-
-enum AttendanceIssue {
-	Conflict = 0,
-	Malformed = 1
-}
-
-interface AttendanceIssueDomain {
-	attendanceGuid: string
+interface TodayAttendanceDTO {
 	sessionGuid: string
+	sessionName: string
 	instanceDate: DateOnly
-	sessionName: string
-	type: AttendanceIssue
-	message: string
+	hasAttendance: boolean
 }
 
-interface AttendanceIssueDTO {
-	attendanceGuid: string
+interface OutstandingAttendanceDTO {
 	sessionGuid: string
-	instanceDate: LocalDate
 	sessionName: string
-	type: AttendanceIssue
-	message: string
+	instanceDate: DateOnly
 }
 
 const sessionIssueTitle = (issue: SessionIssue) => {
@@ -105,13 +94,19 @@ export default ({}): ReactElement => {
     const { orgYear } = useContext(OrgYearContext)
 	const navigate = useNavigate()
 
-	const { isPending: loadingAttendIssues, data: attendIssues, error: attendError } = useQuery<AttendanceIssueDTO[]>({ 
-		queryKey: [`organization/${orgYear?.organization.guid}/attendance/issues`],
-		select: (issues: AttendanceIssueDomain[]) => issues.map(issue => ({...issue, instanceDate: DateOnly.toLocalDate(issue.instanceDate)})),
-		retry: false
+	const { isPending: loadingTodayAttendance, data: todayAttendance } = useQuery<TodayAttendanceDTO[]>({
+		queryKey: [`organizationYear/${orgYear?.guid}/attendance/today`],
+		retry: false,
+		enabled: !!orgYear
 	})
 
-	const { isPending: loadingSessionIssues, data: sessionIssues, error: sessionsError } = useQuery<SessionIssuesDTO[]>({ 
+	const { isPending: loadingOutstanding, data: outstandingAttendance } = useQuery<OutstandingAttendanceDTO[]>({
+		queryKey: [`organizationYear/${orgYear?.guid}/attendance/outstanding`],
+		retry: false,
+		enabled: !!orgYear
+	})
+
+	const { isPending: loadingSessionIssues, data: sessionIssues, error: sessionsError } = useQuery<SessionIssuesDTO[]>({
 		queryKey: [`organizationYear/${orgYear?.guid}/session/issues`],
 		retry: false
 	})
@@ -132,7 +127,7 @@ export default ({}): ReactElement => {
 		select: groupStudentAttendanceDaysIntoBuckets
 	})
 
-	if (loadingAttendIssues || loadingSessionIssues)
+	if (loadingTodayAttendance || loadingOutstanding || loadingSessionIssues)
 		return <Spinner />
 
 	const timeOfDay: string = LocalTime.now().hour() > 11 
@@ -180,34 +175,75 @@ export default ({}): ReactElement => {
 				</div>
 			</div>
 			<div className='grid grid-cols-1 lg:grid-cols-2 gap-8'>
-				<section className='bg-white rounded-lg shadow-sm border p-6 space-y-4'>
-					<div className='flex items-center justify-between'>
-						<h2 className='text-xl font-semibold text-gray-900'>Attendance Issues</h2>
-						{attendIssues?.length > 0 && (
-							<span className='px-3 py-1 bg-red-100 text-red-800 text-sm font-medium rounded-full'>
-								{attendIssues.length} issue{attendIssues.length !== 1 ? 's' : ''}
+				<section className='bg-white rounded-lg shadow-sm border p-6 space-y-4 flex flex-col items-center'>
+					<div className='flex items-center justify-between w-full'>
+						<h2 className='text-xl font-semibold text-gray-900'>Today's Attendance</h2>
+						{todayAttendance && todayAttendance.length > 0 && (
+							<span className='px-3 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-full'>
+								{todayAttendance.length} session{todayAttendance.length !== 1 ? 's' : ''}
 							</span>
 						)}
 					</div>
-					{attendIssues?.length === 0 
+					{todayAttendance?.length === 0
 						? (
 							<div className='flex items-center justify-center py-12'>
 								<div className='text-center'>
-									<div className='text-green-600 text-4xl mb-3'>✓</div>
-									<p className='text-gray-600'>No attendance issues found, you're good to go!</p>
+									<div className='text-gray-400 text-4xl mb-3'>📅</div>
+									<p className='text-gray-600'>No sessions scheduled for today.</p>
 								</div>
 							</div>
 						)
 						: <>
-							<p className='text-sm text-gray-600'>Click on a row to be taken to edit the record.</p>
-							<DataTable 
-								columns={attendanceIssueColumns} 
-								data={attendIssues || []} 
-								onRowClick={(issue: AttendanceIssueDTO) => navigate(`${paths.Admin.Attendance.path}?session=${issue.sessionGuid}&attendanceId=${issue.attendanceGuid}`)}
+							<p className='text-sm text-gray-600'>Click on a row to view or enter attendance for the session.</p>
+							<DataTable
+								columns={todayAttendanceColumns}
+								data={todayAttendance || []}
+								onRowClick={(attendance: TodayAttendanceDTO) => {
+									const date = DateOnly.toLocalDate(attendance.instanceDate)
+									const returnUrl = encodeURIComponent(`${paths.Admin.path}/${paths.Admin.Tabs.Overview.path}?oyGuid=${orgYear?.guid}`)
+									navigate(`${paths.Admin.Attendance.path}?session=${attendance.sessionGuid}&date=${date.toString()}&returnUrl=${returnUrl}`)
+								}}
+								initialSorting={[{ id: 'sessionName', desc: false }]}
+								containerClassName="rounded-lg border-gray-200 w-fit"
+								className="hover:bg-gray-50 cursor-pointer"
+								emptyMessage="No sessions scheduled for today"
+							/>
+						</>
+					}
+				</section>
+
+				<section className='bg-white rounded-lg shadow-sm border p-6 space-y-4'>
+					<div className='flex items-center justify-between'>
+						<h2 className='text-xl font-semibold text-gray-900'>Outstanding Attendance</h2>
+						{outstandingAttendance && outstandingAttendance.length > 0 && (
+							<span className='px-3 py-1 bg-yellow-100 text-yellow-800 text-sm font-medium rounded-full'>
+								{outstandingAttendance.length} missing
+							</span>
+						)}
+					</div>
+					{outstandingAttendance?.length === 0
+						? (
+							<div className='flex items-center justify-center py-12'>
+								<div className='text-center'>
+									<div className='text-green-600 text-4xl mb-3'>✓</div>
+									<p className='text-gray-600'>All attendance is up to date!</p>
+								</div>
+							</div>
+						)
+						: <>
+							<p className='text-sm text-gray-600'>Click on a row to enter attendance for the session.</p>
+							<DataTable
+								columns={outstandingAttendanceColumns}
+								data={outstandingAttendance || []}
+								onRowClick={(attendance: OutstandingAttendanceDTO) => {
+									const date = DateOnly.toLocalDate(attendance.instanceDate)
+									const returnUrl = encodeURIComponent(`${paths.Admin.path}/${paths.Admin.Tabs.Overview.path}?oyGuid=${orgYear?.guid}`)
+									navigate(`${paths.Admin.Attendance.path}?session=${attendance.sessionGuid}&date=${date.toString()}&returnUrl=${returnUrl}`)
+								}}
 								initialSorting={[{ id: 'instanceDate', desc: true }]}
 								containerClassName="rounded-lg border-gray-200"
-								className="hover:bg-gray-50 cursor-pointer"
-								emptyMessage="No attendance issues found"
+								className="hover:bg-gray-50 cursor-pointer "
+								emptyMessage="No outstanding attendance"
 							/>
 						</>
 					}
@@ -238,7 +274,7 @@ export default ({}): ReactElement => {
 								data={sessionIssues || []} 
 								onRowClick={(session: SessionIssuesDTO) => navigate(`/home/admin/sessions/${session.sessionGuid}`)}
 								initialSorting={[{ id: 'name', desc: false }]}
-								containerClassName="rounded-lg border-gray-200"
+								containerClassName="rounded-lg border-gray-200 w-fit"
 								className="hover:bg-gray-50 cursor-pointer"
 								emptyMessage="No session issues found"
 							/>
@@ -396,13 +432,51 @@ const sessionIssueColumns: ColumnDef<SessionIssuesDTO, any>[] = [
 	}
 ]
 
-const attendanceIssueColumns: ColumnDef<AttendanceIssueDTO, any>[] = [
+const todayAttendanceColumns: ColumnDef<TodayAttendanceDTO, any>[] = [
 	{
 		header: ({ column }) => (
-			<HeaderCell 
-				label="Session" 
-				sort={column.getIsSorted()} 
-				onSortClick={() => column.toggleSorting()} 
+			<HeaderCell
+				label="Session"
+				sort={column.getIsSorted()}
+				onSortClick={() => column.toggleSorting()}
+				filterValue={column.getFilterValue() as string}
+				onFilterChange={(event) => column.setFilterValue(event.target.value)}
+				filterPlaceholder="Filter sessions..."
+			/>
+		),
+		accessorKey: 'sessionName',
+		cell: ({ row }) => row.original.sessionName,
+		filterFn: (row, id, value) => {
+			const sessionName = row.getValue(id) as string
+			return sessionName?.toLowerCase().includes(value.toLowerCase()) || false
+		}
+	},
+	{
+		header: () => <HeaderCell label="Status" />,
+		accessorKey: 'hasAttendance',
+		enableSorting: false,
+		cell: ({ row }) => {
+			const hasAttendance = row.original.hasAttendance
+			return (
+				<span className={`px-2 py-1 text-xs font-medium rounded-full ${
+					hasAttendance
+						? 'bg-green-100 text-green-800'
+						: 'bg-yellow-100 text-yellow-800'
+				}`}>
+					{hasAttendance ? 'Recorded' : 'Pending'}
+				</span>
+			)
+		}
+	}
+]
+
+const outstandingAttendanceColumns: ColumnDef<OutstandingAttendanceDTO, any>[] = [
+	{
+		header: ({ column }) => (
+			<HeaderCell
+				label="Session"
+				sort={column.getIsSorted()}
+				onSortClick={() => column.toggleSorting()}
 				filterValue={column.getFilterValue() as string}
 				onFilterChange={(event) => column.setFilterValue(event.target.value)}
 				filterPlaceholder="Filter sessions..."
@@ -417,17 +491,23 @@ const attendanceIssueColumns: ColumnDef<AttendanceIssueDTO, any>[] = [
 	},
 	{
 		header: ({ column }) => (
-			<HeaderCell 
-				label="Date" 
-				sort={column.getIsSorted()} 
-				onSortClick={() => column.toggleSorting()} 
+			<HeaderCell
+				label="Date"
+				sort={column.getIsSorted()}
+				onSortClick={() => column.toggleSorting()}
 			/>
 		),
 		accessorKey: 'instanceDate',
 		cell: ({ row }) => {
-			const date = row.original.instanceDate
-			return date.format(DateTimeFormatter.ofPattern('eeee, MMMM d, yyyy').withLocale(Locale.ENGLISH))
+			const date = DateOnly.toLocalDate(row.original.instanceDate)
+			return date.format(DateTimeFormatter.ofPattern('eeee, MMM d, yyyy').withLocale(Locale.ENGLISH))
 		},
-		enableSorting: false
+		sortingFn: (rowA, rowB) => {
+			const dateA = rowA.original.instanceDate
+			const dateB = rowB.original.instanceDate
+			if (dateA.year !== dateB.year) return dateA.year - dateB.year
+			if (dateA.month !== dateB.month) return dateA.month - dateB.month
+			return dateA.day - dateB.day
+		}
 	}
 ]
