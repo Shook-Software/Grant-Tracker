@@ -6,6 +6,7 @@ export interface StaffDto {
   firstName: string
   lastName: string
   badgeNumber: string
+  title: string
   statusGuid: string
 }
 

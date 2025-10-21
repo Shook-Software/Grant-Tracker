@@ -9,7 +9,7 @@ import { PlusCircle } from 'lucide-react'
 
 import CopyRegistrations from './CopyRegistrations'
 import RegisterInstructor from 'pages/Admin/Shared/RegisterInstructor'
-import SessionDetails from 'components/SessionDetails'
+import SessionDetails from './SessionDetails'
 import { ColumnDef } from '@tanstack/react-table'
 import { HeaderCell } from '@/components/ui/table'
 import { DataTable } from 'components/DataTable'
@@ -289,6 +289,7 @@ export default ({ user }: { user: User }): JSX.Element => {
   const { sessionGuid } = useParams()
   const { orgYear, setOrgYear, sessionsQuery, instructorsQuery } = useContext(OrgYearContext)
 
+  //move this up a level, then sync with sessionsQuery to grab the session name and display it in Overview
   const { isPending: missingLoading, data: missingAttendance } = useQuery<AttendanceRecord[]>({
     queryKey: [`organizationYear/${orgYear?.guid}/Attendance/Missing`],
     enabled: orgYear?.guid !== undefined

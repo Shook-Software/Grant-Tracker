@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { BookOpen, Clock } from 'lucide-react'
 
-import { Spinner } from '../ui/Spinner'
+import { Spinner } from 'components/ui/Spinner'
 import { ComboboxDropdownMenu, ComboboxDropdownMenuItem, ComboboxDropdownMenuItemClassName } from 'components/Dropdown'
 
 import BasicDetails from './BasicDetails'

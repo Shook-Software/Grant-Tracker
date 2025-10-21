@@ -87,7 +87,8 @@ namespace GrantTracker.Dal.Repositories.InstructorRepository
 			{
 				InstructorGuid = existingInstructor.PersonGuid,
 				OrganizationYearGuid = organizationYearGuid,
-				StatusGuid = instructor.StatusGuid
+				StatusGuid = instructor.StatusGuid,
+				Title = instructor.Title,
 			};
 
 			await _grantContext.InstructorSchoolYears.AddAsync(newInstructorSchoolYear);

@@ -1,4 +1,4 @@
-import { useState, forwardRef, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { ColumnDef } from '@tanstack/react-table'
 
 import { Button } from '@/components/ui/button'
@@ -8,7 +8,7 @@ import { HeaderCell } from '@/components/ui/table'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
 import Alert, { ApiResult } from 'components/ApiResultAlert'
-import Search from './StudentSearchForm'
+import Search from '@/components/Form/StudentSearchForm'
 
 import { DayScheduleView } from 'Models/DaySchedule'
 import api from 'utils/api'

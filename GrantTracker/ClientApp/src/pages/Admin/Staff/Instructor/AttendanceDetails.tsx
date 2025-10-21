@@ -1,6 +1,5 @@
-import React from 'react'
 import { Link } from 'react-router-dom'
-import { LocalDate, DateTimeFormatter, LocalTime } from '@js-joda/core'
+import { DateTimeFormatter } from '@js-joda/core'
 import { Locale } from '@js-joda/locale_en-us'
 import { ExternalLink } from 'lucide-react'
 
@@ -8,11 +7,10 @@ import { DataTable } from 'components/DataTable'
 import { ColumnDef } from '@tanstack/react-table'
 import { HeaderCell } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
-import TimeRecordDisplay from 'components/SessionDetails/AttendanceHistory/TimeRecordDisplay'
+import TimeRecordDisplay from '@/components/ui/TimeRecordDisplay'
 
-import { AttendanceTimeRecordView, AttendanceView, StudentAttendanceView } from 'Models/StudentAttendance'
+import { AttendanceTimeRecordView, AttendanceView } from 'Models/StudentAttendance'
 import { InstructorAttendance } from 'Models/InstructorAttendance'
-import { Badge } from '@/components/ui/badge'
 
 interface AttendanceRecord {
   attendanceRecord: AttendanceView

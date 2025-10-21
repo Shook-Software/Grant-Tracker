@@ -4,7 +4,6 @@ import { useSearchParams } from 'react-router-dom'
 import { PageContainer } from 'styles'
 import { ApiResult } from 'components/ApiResultAlert'
 import { Spinner } from '@/components/ui/Spinner'
-import { Button } from '@/components/ui/button'
 import RegistrationsView from './RegistrationsView'
 import AttendanceHistory from './AttendanceHistory'
 

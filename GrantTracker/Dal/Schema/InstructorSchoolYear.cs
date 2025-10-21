@@ -11,6 +11,7 @@ public class InstructorSchoolYear
     public virtual OrganizationYear OrganizationYear { get; set; }
     public Guid StatusGuid { get; set; }
     public bool IsPendingDeletion { get; set; } = false;
+    public string? Title { get; set; }
     public virtual InstructorStatus Status { get; set; }
     public virtual Identity Identity { get; set; }
 
@@ -48,5 +49,8 @@ public class InstructorSchoolYear
             .UsingEntity<InstructorSchoolYearStudentGroupMap>();
 
         /// /Properties
+        /// 
+
+        entity.Property(e => e.Title).HasMaxLength(40);
     }
 }

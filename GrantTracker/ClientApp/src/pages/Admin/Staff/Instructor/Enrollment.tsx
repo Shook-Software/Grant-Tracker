@@ -1,15 +1,12 @@
-import { DateTimeFormatter } from '@js-joda/core'
-import { Locale } from '@js-joda/locale_en-us'
 import { Clock } from 'lucide-react'
 
 import { DataTable } from 'components/DataTable'
 import { ColumnDef } from '@tanstack/react-table'
 import { HeaderCell } from '@/components/ui/table'
-import { Badge } from '@/components/ui/badge'
 
 import { DaySchedule, DayScheduleDomain, DayScheduleView } from 'Models/DaySchedule'
 import { DayOfWeek } from 'Models/DayOfWeek'
-import TimeRecordDisplay from '@/components/SessionDetails/AttendanceHistory/TimeRecordDisplay'
+import TimeRecordDisplay from '@/components/ui/TimeRecordDisplay'
 
 interface EnrollmentRecord {
   key: any

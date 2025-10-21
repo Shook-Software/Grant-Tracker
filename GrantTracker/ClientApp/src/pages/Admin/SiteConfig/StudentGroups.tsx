@@ -1,6 +1,6 @@
 import { useContext, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { Users, Plus, Trash2, UserPlus, Search } from 'lucide-react'
+import { Users, Plus, Trash2, UserPlus } from 'lucide-react'
 import { Spinner } from '@/components/ui/Spinner'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -8,11 +8,11 @@ import { DataTable } from 'components/DataTable'
 import { ColumnDef } from '@tanstack/react-table'
 import { HeaderCell } from '@/components/ui/table'
 
-import { StudentGroup, StudentGroupStudent, StudentGroupInstructor, StudentGroupTableRow } from 'models/StudentGroup'
+import { StudentGroup, StudentGroupStudent, StudentGroupInstructor } from 'Models/StudentGroup'
 import { InstructorSchoolYearView } from "Models/Instructor"
 import { OrgYearContext } from ".."
 import api from "utils/api"
-import SearchStudentsModal from "components/SessionDetails/SearchStudentsModal"
+import SearchStudentsModal from "@/components/Modals/SearchStudentsModal"
 
 
 export const StudentGroupsConfig = (): JSX.Element => {

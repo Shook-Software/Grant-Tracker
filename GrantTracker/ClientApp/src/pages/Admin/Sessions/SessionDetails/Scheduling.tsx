@@ -1,14 +1,14 @@
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { DateTimeFormatter } from '@js-joda/core'
 import { Locale } from '@js-joda/locale_en-us'
 
-import ListItem, { Item } from 'components/Item'
+import { Item } from 'components/Item'
 import { DayScheduleView } from 'Models/DaySchedule'
 import { SessionView } from 'Models/Session'
 
 import paths from 'utils/routing/paths'
 import { DayOfWeek } from 'Models/DayOfWeek'
-import { Button } from '../ui/button'
+import { Button } from '@/components/ui/button'
 import { CalendarPlus } from 'lucide-react'
 
 interface Props {

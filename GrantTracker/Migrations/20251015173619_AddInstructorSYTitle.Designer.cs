@@ -4,6 +4,7 @@ using GrantTracker.Dal.Schema;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace GrantTracker.Migrations
 {
     [DbContext(typeof(GrantTrackerContext))]
-    partial class GrantTrackerContextModelSnapshot : ModelSnapshot
+    [Migration("20251015173619_AddInstructorSYTitle")]
+    partial class AddInstructorSYTitle
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
