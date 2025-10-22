@@ -13,7 +13,6 @@ import { DayOfWeek } from 'Models/DayOfWeek'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { CalendarPlus } from 'lucide-react'
-import api from 'utils/api'
 
 interface Props {
   session: SessionView
@@ -33,8 +32,6 @@ export default ({ session }: Props): JSX.Element => {
     select: (bDates: OrganizationBlackoutDateDomain[]) => bDates.map(bDate => BlackoutDate.toViewModel(bDate)) as OrganizationBlackoutDateView[],
     enabled: !!session.organizationYear.organization.guid
   })
-
-  console.log(orgBlackoutDates)
 
   // Combine and sort blackout dates
   const combinedBlackoutDates: CombinedBlackoutDate[] = [
