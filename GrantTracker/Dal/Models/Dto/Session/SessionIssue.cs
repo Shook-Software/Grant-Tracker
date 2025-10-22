@@ -2,9 +2,9 @@
 
 public enum SessionIssue
 {
-    Schedul = 0,
-    Registrations = 1
-    
+    Schedule = 0,
+    Registrations = 1,
+    Attendance = 2
 }
 
 public class SessionIssuesDTO

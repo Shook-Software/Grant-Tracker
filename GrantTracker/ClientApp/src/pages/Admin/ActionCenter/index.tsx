@@ -1,12 +1,12 @@
 import { useQuery } from "@tanstack/react-query"
-import { ReactElement, useContext } from "react"
+import { ReactElement, useContext, useState } from "react"
 import { OrgYearContext } from ".."
 import { DateOnly } from "Models/DateOnly"
 import { DateTimeFormatter, LocalDate, LocalTime } from "@js-joda/core"
 import { DataTable } from "components/DataTable"
 import { ColumnDef } from "@tanstack/react-table"
 import { HeaderCell } from "@/components/ui/table"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useSearchParams } from "react-router-dom"
 import { Locale } from "@js-joda/locale_en-us"
 
 import paths from 'utils/routing/paths'
@@ -36,11 +36,14 @@ const sessionIssueTitle = (issue: SessionIssue) => {
 		return "Schedule"
 	else if (issue == SessionIssue.Registrations)
 		return "Registrations"
+	else if (issue == SessionIssue.Attendance)
+		return "Attendance"
 }
 
 enum SessionIssue {
 	Schedule = 0,
-	Registrations = 1
+	Registrations = 1,
+	Attendance = 2
 }
 
 interface IssueDTO<T> {
@@ -90,9 +93,19 @@ function groupStudentAttendanceDaysIntoBuckets(studentDays: StudentDaysDTO[]) {
 
 }
 
+type OverviewSubTab = 'today' | 'outstanding' | 'issues'
+
 export default ({}): ReactElement => {
     const { orgYear } = useContext(OrgYearContext)
 	const navigate = useNavigate()
+	const [searchParams, setSearchParams] = useSearchParams()
+
+	// Get current subtab from URL params, default to 'today'
+	const currentSubTab: OverviewSubTab = (searchParams.get('view') as OverviewSubTab) || 'today'
+
+	const setActiveSubTab = (tab: OverviewSubTab) => {
+		setSearchParams({ view: tab })
+	}
 
 	const { isPending: loadingTodayAttendance, data: todayAttendance } = useQuery<TodayAttendanceDTO[]>({
 		queryKey: [`organizationYear/${orgYear?.guid}/attendance/today`],
@@ -130,9 +143,14 @@ export default ({}): ReactElement => {
 	if (loadingTodayAttendance || loadingOutstanding || loadingSessionIssues)
 		return <Spinner />
 
-	const timeOfDay: string = LocalTime.now().hour() > 11 
+	const timeOfDay: string = LocalTime.now().hour() > 11
 		? LocalTime.now().hour() > 17 ? 'evening' : 'afternoon'
 		: 'morning'
+
+	// Count of items for badges
+	const todayCount = todayAttendance?.filter(a => !a.hasAttendance).length || 0
+	const outstandingCount = outstandingAttendance?.length || 0
+	const issuesCount = sessionIssues?.length || 0
 
 	const lineData = attendanceGoalAggregate?.regularAttendeesByDates.map((attendeeDate, idx) => ({
 		x: new Date(attendeeDate.dateOfRegularAttendance.year, attendeeDate.dateOfRegularAttendance.month - 1, attendeeDate.dateOfRegularAttendance.day),
@@ -165,226 +183,280 @@ export default ({}): ReactElement => {
 
 	const showReports: boolean = !!lineDataset || !!barDataset
 
-	return (
-		<main className='p-6 max-w-7xl mx-auto'>
-			<div className='mb-8'>
-				<h1 className='text-3xl font-bold text-gray-900 mb-3'>Overview for {orgYear?.organization.name}</h1>
-				<div className='space-y-2 text-gray-600'>
-					<p className='text-lg'>Good {timeOfDay}! This page will serve as an action center for your organization.</p>
-					<p className='text-sm'>We'll be expanding this page in the future, but until then please note and rectify any attendance issues as soon as possible.</p>
-				</div>
-			</div>
-			<div className='grid grid-cols-1 lg:grid-cols-2 gap-8'>
-				<section className='bg-white rounded-lg shadow-sm border p-6 space-y-4 flex flex-col items-center'>
-					<div className='flex items-center justify-between w-full'>
-						<h2 className='text-xl font-semibold text-gray-900'>Today's Attendance</h2>
-						{todayAttendance && todayAttendance.length > 0 && (
-							<span className='px-3 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-full'>
-								{todayAttendance.length} session{todayAttendance.length !== 1 ? 's' : ''}
-							</span>
-						)}
-					</div>
-					{todayAttendance?.length === 0
-						? (
-							<div className='flex items-center justify-center py-12'>
-								<div className='text-center'>
-									<div className='text-gray-400 text-4xl mb-3'>📅</div>
-									<p className='text-gray-600'>No sessions scheduled for today.</p>
-								</div>
-							</div>
-						)
-						: <>
-							<p className='text-sm text-gray-600'>Click on a row to view or enter attendance for the session.</p>
-							<DataTable
-								columns={todayAttendanceColumns}
-								data={todayAttendance || []}
-								onRowClick={(attendance: TodayAttendanceDTO) => {
-									const date = DateOnly.toLocalDate(attendance.instanceDate)
-									const returnUrl = encodeURIComponent(`${paths.Admin.path}/${paths.Admin.Tabs.Overview.path}?oyGuid=${orgYear?.guid}`)
-									navigate(`${paths.Admin.Attendance.path}?session=${attendance.sessionGuid}&date=${date.toString()}&returnUrl=${returnUrl}`)
-								}}
-								initialSorting={[{ id: 'sessionName', desc: false }]}
-								containerClassName="rounded-lg border-gray-200 w-fit"
-								className="hover:bg-gray-50 cursor-pointer"
-								emptyMessage="No sessions scheduled for today"
-							/>
-						</>
-					}
-				</section>
+	// Side navigation tabs configuration
+	const tabs = [
+		{ key: 'today' as OverviewSubTab, label: "Today's Attendance", count: todayCount },
+		{ key: 'outstanding' as OverviewSubTab, label: 'Outstanding Attendance', count: outstandingCount },
+		{ key: 'issues' as OverviewSubTab, label: 'Session Issues', count: issuesCount }
+	]
 
-				<section className='bg-white rounded-lg shadow-sm border p-6 space-y-4'>
-					<div className='flex items-center justify-between'>
-						<h2 className='text-xl font-semibold text-gray-900'>Outstanding Attendance</h2>
-						{outstandingAttendance && outstandingAttendance.length > 0 && (
-							<span className='px-3 py-1 bg-yellow-100 text-yellow-800 text-sm font-medium rounded-full'>
-								{outstandingAttendance.length} missing
-							</span>
-						)}
-					</div>
-					{outstandingAttendance?.length === 0
-						? (
-							<div className='flex items-center justify-center py-12'>
-								<div className='text-center'>
-									<div className='text-green-600 text-4xl mb-3'>✓</div>
-									<p className='text-gray-600'>All attendance is up to date!</p>
-								</div>
-							</div>
-						)
-						: <>
-							<p className='text-sm text-gray-600'>Click on a row to enter attendance for the session.</p>
-							<DataTable
-								columns={outstandingAttendanceColumns}
-								data={outstandingAttendance || []}
-								onRowClick={(attendance: OutstandingAttendanceDTO) => {
-									const date = DateOnly.toLocalDate(attendance.instanceDate)
-									const returnUrl = encodeURIComponent(`${paths.Admin.path}/${paths.Admin.Tabs.Overview.path}?oyGuid=${orgYear?.guid}`)
-									navigate(`${paths.Admin.Attendance.path}?session=${attendance.sessionGuid}&date=${date.toString()}&returnUrl=${returnUrl}`)
-								}}
-								initialSorting={[{ id: 'instanceDate', desc: true }]}
-								containerClassName="rounded-lg border-gray-200"
-								className="hover:bg-gray-50 cursor-pointer "
-								emptyMessage="No outstanding attendance"
-							/>
-						</>
-					}
-				</section>
-
-				<section className='bg-white rounded-lg shadow-sm border p-6 space-y-4'>
-					<div className='flex items-center justify-between'>
-						<h2 className='text-xl font-semibold text-gray-900'>Session Issues</h2>
-						{sessionIssues?.length > 0 && (
-							<span className='px-3 py-1 bg-yellow-100 text-yellow-800 text-sm font-medium rounded-full'>
-								{sessionIssues.length} issue{sessionIssues.length !== 1 ? 's' : ''}
-							</span>
-						)}
-					</div>
-					{sessionIssues?.length === 0 
-						? (
-							<div className='flex items-center justify-center py-12'>
-								<div className='text-center'>
-									<div className='text-green-600 text-4xl mb-3'>✓</div>
-									<p className='text-gray-600'>No session issues found, you're good to go!</p>
-								</div>
-							</div>
-						)
-						: <>
-							<p className='text-sm text-gray-600'>Click on a row to be taken to edit the session.</p>
-							<DataTable 
-								columns={sessionIssueColumns} 
-								data={sessionIssues || []} 
-								onRowClick={(session: SessionIssuesDTO) => navigate(`/home/admin/sessions/${session.sessionGuid}`)}
-								initialSorting={[{ id: 'name', desc: false }]}
-								containerClassName="rounded-lg border-gray-200 w-fit"
-								className="hover:bg-gray-50 cursor-pointer"
-								emptyMessage="No session issues found"
-							/>
-						</>
-					}
-				</section>
-			</div>
-
-			{showReports && (
-				<>
-					<hr className='my-8 border-gray-200' />
-					
-					<div className='bg-white rounded-lg shadow-sm border p-6 space-y-4'>
-						<h2 className='text-2xl font-semibold text-gray-900'>Statistics</h2>
-						<div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-							<div className='space-y-2'>
-								<p className='text-sm font-medium text-gray-500'>Reporting Period</p>
-								<p className='text-lg font-semibold'>{attendanceGoalAggregate!.startDate.toString()} to {attendanceGoalAggregate!.endDate.toString()}</p>
-							</div>
-							<div className='space-y-2'>
-								<p className='text-sm font-medium text-gray-500'>Goal Progress</p>
-								<p className='text-lg font-semibold'>
-									{attendanceGoalAggregate!.goal} Regular Attendees - 
-									<span className={attendanceGoalAggregate!.regularAttendeesByDates.length >= attendanceGoalAggregate!.goal ? 'text-green-600 ml-2' : 'text-red-600 ml-2'}>
-										{Math.min((attendanceGoalAggregate!.regularAttendeesByDates.length / attendanceGoalAggregate!.goal * 100), 100).toFixed(0)}%
+	const SideNavigation = () => (
+		<div className="max-w-max">
+			<div className="border border-gray-300 rounded-md w-max h-max">
+				<ul className="flex flex-col p-0">
+					{tabs.map(tab => (
+						<li key={tab.key}>
+							<button
+								onClick={() => setActiveSubTab(tab.key)}
+								className={`w-full text-left px-4 py-2 rounded-md flex items-center justify-between gap-3 ${
+									currentSubTab === tab.key ? 'bg-blue-500 text-white' : 'hover:bg-gray-200 cursor-pointer'
+								}`}
+							>
+								<span>{tab.label}</span>
+								{tab.count > 0 && (
+									<span className={`px-2 py-1 text-xs font-medium rounded-full ${
+										currentSubTab === tab.key
+											? 'bg-white text-blue-600'
+											: 'bg-yellow-100 text-yellow-800'
+									}`}>
+										{tab.count}
 									</span>
-								</p>
-								<div className='w-full bg-gray-200 rounded-full h-2'>
-									<div 
-										className={`h-2 rounded-full transition-all duration-300 ${attendanceGoalAggregate!.regularAttendeesByDates.length >= attendanceGoalAggregate!.goal ? 'bg-green-600' : 'bg-red-600'}`}
-										style={{ width: `${Math.min((attendanceGoalAggregate!.regularAttendeesByDates.length / attendanceGoalAggregate!.goal * 100), 100)}%` }}
-									></div>
+								)}
+							</button>
+						</li>
+					))}
+				</ul>
+			</div>
+		</div>
+	)
+
+	return (
+		<main className='p-6 max-w-7xl'>
+
+			<div>
+				<div className='mb-8'>
+					<h1 className='text-3xl font-bold text-gray-900 mb-3'>Overview for {orgYear?.organization.name}</h1>
+					<div className='space-y-2 text-gray-600'>
+						<p className='text-lg'>Good {timeOfDay}! This page will serve as an action center for your organization.</p>
+						<p className='text-sm'>We'll be expanding this page in the future, but until then please note and rectify any attendance issues as soon as possible.</p>
+					</div>
+				</div>
+
+				<div className='flex flex-nowrap gap-8'>
+
+			<div style={{ marginLeft: `-275px`, maxWidth: '250px' }}>
+				<SideNavigation />
+			</div>
+
+					<div>
+						{currentSubTab === 'today' && (
+							<section className='bg-white rounded-lg shadow-sm border p-6 space-y-4'>
+								<div className='flex items-center justify-between w-full'>
+									<h2 className='text-xl font-semibold text-gray-900'>Today's Attendance</h2>
+									{todayAttendance && todayAttendance.length > 0 && (
+										<span className='px-3 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-full'>
+											{todayAttendance.length} session{todayAttendance.length !== 1 ? 's' : ''}
+										</span>
+									)}
+								</div>
+								{todayAttendance?.length === 0
+									? (
+										<div className='flex items-center justify-center py-12'>
+											<div className='text-center'>
+												<div className='text-gray-400 text-4xl mb-3'>📅</div>
+												<p className='text-gray-600'>No sessions scheduled for today.</p>
+											</div>
+										</div>
+									)
+									: <>
+										<p className='text-sm text-gray-600'>Click on a row to view or enter attendance for the session.</p>
+										<DataTable
+											columns={todayAttendanceColumns}
+											data={todayAttendance || []}
+											onRowClick={(attendance: TodayAttendanceDTO) => {
+												const date = DateOnly.toLocalDate(attendance.instanceDate)
+												const returnUrl = encodeURIComponent(`${paths.Admin.path}/${paths.Admin.Tabs.Overview.path}?oyGuid=${orgYear?.guid}&view=today`)
+												navigate(`${paths.Admin.Attendance.path}?session=${attendance.sessionGuid}&date=${date.toString()}&returnUrl=${returnUrl}`)
+											}}
+											initialSorting={[{ id: 'sessionName', desc: false }]}
+											containerClassName="rounded-lg border-gray-200 w-fit"
+											className="hover:bg-gray-50 cursor-pointer"
+											emptyMessage="No sessions scheduled for today"
+										/>
+									</>
+								}
+							</section>
+						)}
+
+						{currentSubTab === 'outstanding' && (
+							<section className='bg-white rounded-lg shadow-sm border p-6 space-y-4'>
+								<div className='flex items-center justify-between'>
+									<h2 className='text-xl font-semibold text-gray-900'>Outstanding Attendance</h2>
+									{outstandingAttendance && outstandingAttendance.length > 0 && (
+										<span className='px-3 py-1 bg-yellow-100 text-yellow-800 text-sm font-medium rounded-full'>
+											{outstandingAttendance.length} missing
+										</span>
+									)}
+								</div>
+								{outstandingAttendance?.length === 0
+									? (
+										<div className='flex items-center justify-center py-12'>
+											<div className='text-center'>
+												<div className='text-green-600 text-4xl mb-3'>✓</div>
+												<p className='text-gray-600'>All attendance is up to date!</p>
+											</div>
+										</div>
+									)
+									: <>
+										<p className='text-sm text-gray-600'>Click on a row to enter attendance for the session.</p>
+										<DataTable
+											columns={outstandingAttendanceColumns}
+											data={outstandingAttendance || []}
+											onRowClick={(attendance: OutstandingAttendanceDTO) => {
+												const date = DateOnly.toLocalDate(attendance.instanceDate)
+												const returnUrl = encodeURIComponent(`${paths.Admin.path}/${paths.Admin.Tabs.Overview.path}?oyGuid=${orgYear?.guid}&view=outstanding`)
+												navigate(`${paths.Admin.Attendance.path}?session=${attendance.sessionGuid}&date=${date.toString()}&returnUrl=${returnUrl}`)
+											}}
+											initialSorting={[{ id: 'instanceDate', desc: true }]}
+											containerClassName="rounded-lg border-gray-200"
+											className="hover:bg-gray-50 cursor-pointer "
+											emptyMessage="No outstanding attendance"
+										/>
+									</>
+								}
+							</section>
+						)}
+
+						{currentSubTab === 'issues' && (
+							<section className='bg-white rounded-lg shadow-sm border p-6 space-y-4'>
+								<div className='flex items-center justify-between'>
+									<h2 className='text-xl font-semibold text-gray-900'>Session Issues</h2>
+									{sessionIssues?.length > 0 && (
+										<span className='px-3 py-1 bg-yellow-100 text-yellow-800 text-sm font-medium rounded-full'>
+											{sessionIssues.length} issue{sessionIssues.length !== 1 ? 's' : ''}
+										</span>
+									)}
+								</div>
+								{sessionIssues?.length === 0
+									? (
+										<div className='flex items-center justify-center py-12'>
+											<div className='text-center'>
+												<div className='text-green-600 text-4xl mb-3'>✓</div>
+												<p className='text-gray-600'>No session issues found, you're good to go!</p>
+											</div>
+										</div>
+									)
+									: <>
+										<p className='text-sm text-gray-600'>Click on a row to be taken to view the session.</p>
+										<DataTable
+											columns={sessionIssueColumns}
+											data={sessionIssues || []}
+											onRowClick={(session: SessionIssuesDTO) => navigate(`/home/admin/sessions/${session.sessionGuid}`)}
+											initialSorting={[{ id: 'name', desc: false }]}
+											containerClassName="rounded-lg border-gray-200 w-fit"
+											className="hover:bg-gray-50 cursor-pointer"
+											emptyMessage="No session issues found"
+										/>
+									</>
+								}
+							</section>
+						)}
+					</div>
+				</div>
+
+				{showReports && (
+					<>
+						<hr className='my-8 border-gray-200' />
+						
+						<div className='bg-white rounded-lg shadow-sm border p-6 space-y-4'>
+							<h2 className='text-2xl font-semibold text-gray-900'>Statistics</h2>
+							<div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+								<div className='space-y-2'>
+									<p className='text-sm font-medium text-gray-500'>Reporting Period</p>
+									<p className='text-lg font-semibold'>{attendanceGoalAggregate!.startDate.toString()} to {attendanceGoalAggregate!.endDate.toString()}</p>
+								</div>
+								<div className='space-y-2'>
+									<p className='text-sm font-medium text-gray-500'>Goal Progress</p>
+									<p className='text-lg font-semibold'>
+										{attendanceGoalAggregate!.goal} Regular Attendees - 
+										<span className={attendanceGoalAggregate!.regularAttendeesByDates.length >= attendanceGoalAggregate!.goal ? 'text-green-600 ml-2' : 'text-red-600 ml-2'}>
+											{Math.min((attendanceGoalAggregate!.regularAttendeesByDates.length / attendanceGoalAggregate!.goal * 100), 100).toFixed(0)}%
+										</span>
+									</p>
+									<div className='w-full bg-gray-200 rounded-full h-2'>
+										<div 
+											className={`h-2 rounded-full transition-all duration-300 ${attendanceGoalAggregate!.regularAttendeesByDates.length >= attendanceGoalAggregate!.goal ? 'bg-green-600' : 'bg-red-600'}`}
+											style={{ width: `${Math.min((attendanceGoalAggregate!.regularAttendeesByDates.length / attendanceGoalAggregate!.goal * 100), 100)}%` }}
+										></div>
+									</div>
 								</div>
 							</div>
 						</div>
-					</div>
-				</>
-			)}
+					</>
+				)}
 
-			{showReports && (
-				<div className='grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8'>	 
-					{lineDataset && (
-						<div className='bg-white rounded-lg shadow-sm border p-6'>
-							<h3 className='text-lg font-semibold text-gray-900 mb-4'>Regular Attendee Count YTD</h3>
-							<Line 
-								data={lineDataset}
-								options={{
-									responsive: true,
-									maintainAspectRatio: false,
-									plugins: {
-										title: {
-											display: false
+				{showReports && (
+					<div className='grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8'>	 
+						{lineDataset && (
+							<div className='bg-white rounded-lg shadow-sm border p-6'>
+								<h3 className='text-lg font-semibold text-gray-900 mb-4'>Regular Attendee Count YTD</h3>
+								<Line 
+									data={lineDataset}
+									options={{
+										responsive: true,
+										maintainAspectRatio: false,
+										plugins: {
+											title: {
+												display: false
+											},
+											legend: {
+												display: false
+											},
+											datalabels: {
+												display: false
+											}
 										},
-										legend: {
-											display: false
-										},
-										datalabels: {
-											display: false
-										}
-									},
-									scales: {
-										x: {
-											type: 'time',
-											min: `${attendanceGoalAggregate?.startDate.year}-${attendanceGoalAggregate?.startDate.month}-${attendanceGoalAggregate?.startDate.day}`,
-											max: `${attendanceGoalAggregate?.endDate.year}-${attendanceGoalAggregate?.endDate.month}-${attendanceGoalAggregate?.endDate.day}`,
-											ticks: {
-												autoSkip: false
+										scales: {
+											x: {
+												type: 'time',
+												min: `${attendanceGoalAggregate?.startDate.year}-${attendanceGoalAggregate?.startDate.month}-${attendanceGoalAggregate?.startDate.day}`,
+												max: `${attendanceGoalAggregate?.endDate.year}-${attendanceGoalAggregate?.endDate.month}-${attendanceGoalAggregate?.endDate.day}`,
+												ticks: {
+													autoSkip: false
+												}
 											}
 										}
-									}
-								}}
-								height={300}
-							/>
-						</div>
-					)}
+									}}
+									height={300}
+								/>
+							</div>
+						)}
 
-					{barDataset && (
-						<div className='bg-white rounded-lg shadow-sm border p-6'>
-							<h3 className='text-lg font-semibold text-gray-900 mb-4'>Student Attendance by Range of Days</h3>
-							<Bar 
-								data={barDataset}
-								options={{
-									responsive: true,
-									maintainAspectRatio: false,
-									plugins: {
-										title: {
-											display: false
-										},
-										legend: {
-											display: false
-										},
-										datalabels: {
-											anchor: 'end',
-											align: 'end',
-											color: 'black',
-											font: {
-												size: 12,
-												weight: 'bold',
+						{barDataset && (
+							<div className='bg-white rounded-lg shadow-sm border p-6'>
+								<h3 className='text-lg font-semibold text-gray-900 mb-4'>Student Attendance by Range of Days</h3>
+								<Bar 
+									data={barDataset}
+									options={{
+										responsive: true,
+										maintainAspectRatio: false,
+										plugins: {
+											title: {
+												display: false
 											},
-										},
-									}
-								}}
-								height={300}
-							/>
-						</div>
-					)}
-				</div>
-			)}
+											legend: {
+												display: false
+											},
+											datalabels: {
+												anchor: 'end',
+												align: 'end',
+												color: 'black',
+												font: {
+													size: 12,
+													weight: 'bold',
+												},
+											},
+										}
+									}}
+									height={300}
+								/>
+							</div>
+						)}
+					</div>
+				)}
 
-			<hr className={showReports ? 'my-6 border-gray-200' : 'hidden'} />
+				<hr className={showReports ? 'my-6 border-gray-200' : 'hidden'} />
+			</div>
 		</main>
 	)
 }
@@ -423,7 +495,7 @@ const sessionIssueColumns: ColumnDef<SessionIssuesDTO, any>[] = [
 				<div className='flex flex-col space-y-1'>
 					{issues.map((issue, idx) => (
 						<div key={idx} className='text-sm'>
-							{sessionIssueTitle(issue.type)} Issue - {issue.message}
+							{sessionIssueTitle(issue.type)} - {issue.message}
 						</div>
 					))}
 				</div>
@@ -498,6 +570,7 @@ const outstandingAttendanceColumns: ColumnDef<OutstandingAttendanceDTO, any>[] =
 			/>
 		),
 		accessorKey: 'instanceDate',
+		
 		cell: ({ row }) => {
 			const date = DateOnly.toLocalDate(row.original.instanceDate)
 			return date.format(DateTimeFormatter.ofPattern('eeee, MMM d, yyyy').withLocale(Locale.ENGLISH))
