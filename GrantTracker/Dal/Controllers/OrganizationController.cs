@@ -198,40 +198,68 @@ namespace GrantTracker.Dal.Controllers
             }
         }
 
-        [HttpGet("organization/{OrganizationGuid:Guid}/blackout")]
-        public async Task<ActionResult<List<OrganizationBlackoutDate>>> GetBlackoutDates(Guid OrganizationGuid)
+        [HttpGet("organization/{organizationGuid:Guid}/blackout")]
+        public async Task<ActionResult<List<OrganizationBlackoutDate>>> GetBlackoutDates(Guid organizationGuid)
         {
             try
             {
-                if (!User.IsAdmin() && !User.HomeOrganizationGuids().Contains(OrganizationGuid))
+                if (!User.IsAdmin() && !User.HomeOrganizationGuids().Contains(organizationGuid))
                     return Unauthorized();
 
-                var dates = await _organizationRepository.GetBlackoutDatesAsync(OrganizationGuid);
+                var dates = await _organizationRepository.GetBlackoutDatesAsync(organizationGuid);
                 return Ok(dates);
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "");
                 return StatusCode(500, "An unknown error occured while fetching blackout dates.");
             }
         }
 
-        [HttpPost("organization/{OrganizationGuid:Guid}/blackout")]
-        public async Task<IActionResult> AddBlackoutDate(Guid OrganizationGuid, [FromBody] DateOnly BlackoutDate)
+        [HttpGet("organizationYear/{organizationYearGuid:Guid}/blackout")]
+        public async Task<ActionResult<List<OrganizationBlackoutDate>>> GetBlackoutDatesByOrganizationYear(Guid organizationYearGuid)
         {
             try
             {
-                if (!User.IsAdmin() && !User.HomeOrganizationGuids().Contains(OrganizationGuid))
+                var orgYear = await _organizationRepository.GetOrganizationYearAsync(organizationYearGuid);
+
+                if (!User.IsAdmin() && !User.HomeOrganizationGuids().Contains(orgYear.Organization.Guid))
                     return Unauthorized();
 
-                if ((await _organizationRepository.GetBlackoutDatesAsync(OrganizationGuid)).Any(x => x.Date.CompareTo(BlackoutDate) == 0))
+                var blackoutDates = await _organizationRepository.GetBlackoutDatesAsync(orgYear.Organization.Guid);
+
+                // Filter blackout dates to only those within the organization year's date range
+                var filteredDates = blackoutDates
+                    .Where(bd => bd.Date >= orgYear.Year.StartDate && bd.Date <= orgYear.Year.EndDate)
+                    .ToList();
+
+                return Ok(filteredDates);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "");
+                return StatusCode(500, "An unknown error occured while fetching blackout dates for organization year.");
+            }
+        }
+
+        [HttpPost("organization/{organizationGuid:Guid}/blackout")]
+        public async Task<IActionResult> AddBlackoutDate(Guid organizationGuid, [FromBody] DateOnly blackoutDate)
+        {
+            try
+            {
+                if (!User.IsAdmin() && !User.HomeOrganizationGuids().Contains(organizationGuid))
+                    return Unauthorized();
+
+                if ((await _organizationRepository.GetBlackoutDatesAsync(organizationGuid)).Any(x => x.Date.CompareTo(blackoutDate) == 0))
                     return Conflict();
 
-                await _organizationRepository.AddBlackoutDateAsync(OrganizationGuid, BlackoutDate);
+                await _organizationRepository.AddBlackoutDateAsync(organizationGuid, blackoutDate);
                 return NoContent();
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"An unknown error occured while adding the blackout date {BlackoutDate.ToShortDateString()}.");
+                _logger.LogError(ex, "");
+                return StatusCode(500, $"An unknown error occured while adding the blackout date {blackoutDate.ToShortDateString()}.");
             }
         }
 
@@ -305,22 +333,23 @@ namespace GrantTracker.Dal.Controllers
             }
         }
 
-        [HttpDelete("organization/{OrganizationGuid:Guid}/blackout/{BlackoutDateGuid:Guid}")]
-        public async Task<IActionResult> DeleteBlackoutDate(Guid OrganizationGuid, Guid BlackoutDateGuid)
+        [HttpDelete("organization/{organizationGuid:Guid}/blackout/{blackoutDateGuid:Guid}")]
+        public async Task<IActionResult> DeleteBlackoutDate(Guid organizationGuid, Guid blackoutDateGuid)
         {
             try
             {
-                if (!User.IsAdmin() && !User.HomeOrganizationGuids().Contains(OrganizationGuid))
+                if (!User.IsAdmin() && !User.HomeOrganizationGuids().Contains(organizationGuid))
                     return Unauthorized();
 
-                if (!(await _organizationRepository.GetBlackoutDatesAsync(OrganizationGuid)).Any(x => x.Guid == BlackoutDateGuid))
+                if (!(await _organizationRepository.GetBlackoutDatesAsync(organizationGuid)).Any(x => x.Guid == blackoutDateGuid))
                     return NotFound("A blackout date with the given identifier could not be found.");
 
-                await _organizationRepository.DeleteBlackoutDateAsync(BlackoutDateGuid);
+                await _organizationRepository.DeleteBlackoutDateAsync(blackoutDateGuid);
                 return NoContent();
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "");
                 return StatusCode(500, "An unknown error occured while deleting blackout date.");
             }
         }

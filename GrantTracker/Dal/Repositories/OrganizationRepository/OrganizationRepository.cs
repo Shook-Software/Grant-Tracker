@@ -64,6 +64,7 @@ public class OrganizationRepository : IOrganizationRepository
 			.OrganizationYears
 			.Where(oy => oy.OrganizationYearGuid == organizationYearGuid)
 			.Include(oy => oy.Organization)
+			.Include(oy => oy.Year)
 			.SingleAsync();
 
 		return OrganizationYearView.FromDatabase(organizationYear);
