@@ -383,66 +383,108 @@ public class SessionRepository : ISessionRepository
 
 	public async Task<List<SessionIssuesDTO>> GetIssues(Guid organizationYearGuid)
 	{
-		var sessionHasMalformedScheduleTimes = (Session s) => s.DaySchedules.Any(ds => ds.TimeSchedules.Any(ts => ts.StartTime == ts.EndTime || ts.StartTime > ts.EndTime));
-		var sessionHasDuplicateRegistrations = (Session s) => (
-			s.DaySchedules.SelectMany(ds => ds.StudentRegistrations).DistinctBy(sr => new { sr.StudentSchoolYearGuid, sr.DaySchedule.DayOfWeek }).Count() != s.DaySchedules.SelectMany(ds => ds.StudentRegistrations).Count()
-		);
-		var sessionHasPoorAttendance = (Session s) => s.LastSession.CompareTo(DateOnly.FromDateTime(DateTime.Today)) > 0 && //hasn't ended
-			s.AttendanceRecords.OrderByDescending(ar => ar.InstanceDate).Take(s.DaySchedules.Count).All(ar => ar.StudentAttendance.Count < 10);
+		var today = DateOnly.FromDateTime(DateTime.Today);
 
-		return (await _grantContext.Sessions
+		// Fetch only the necessary data with minimal includes
+		var sessions = await _grantContext.Sessions
 			.AsNoTracking()
 			.Where(s => s.OrganizationYearGuid == organizationYearGuid)
 			.Where(s => _user.IsAdmin()
 				|| (_user.IsCoordinator() && _user.HomeOrganizationGuids().Contains(s.OrganizationYear.OrganizationGuid))
 				|| (_user.IsTeacher() && s.InstructorRegistrations.Any(ir => ir.InstructorSchoolYear.Instructor.BadgeNumber.Trim() == _user.Id())))
-			.Include(s => s.OrganizationYear)
-			.Include(s => s.Grades).ThenInclude(g => g.Grade)
-			.Include(s => s.SessionType)
-			.Include(s => s.Activity)
-			.Include(s => s.SessionObjectives).ThenInclude(x => x.Objective)
-			.Include(s => s.FundingSource)
-			.Include(s => s.OrganizationType)
-			.Include(s => s.PartnershipType)
-			.Include(s => s.DaySchedules).ThenInclude(ds => ds.StudentRegistrations)
 			.Include(s => s.DaySchedules).ThenInclude(ds => ds.TimeSchedules)
-			.Include(s => s.AttendanceRecords).ThenInclude(ar => ar.StudentAttendance)
-			.ToListAsync())
-			.Select(s =>
+			.Include(s => s.DaySchedules).ThenInclude(ds => ds.StudentRegistrations)
+			.ToListAsync();
+
+		var activeSessionGuids = sessions.Select(s => s.SessionGuid).ToList();
+
+		//only active sessions
+		Dictionary<Guid, List<int>> attendanceCountsBySession = new Dictionary<Guid, List<int>>();
+
+		if (activeSessionGuids.Any())
+		{
+			var attendanceRecords = await _grantContext.AttendanceRecords
+				.AsNoTracking()
+				.Where(ar => activeSessionGuids.Contains(ar.SessionGuid))
+				.OrderByDescending(ar => ar.InstanceDate)
+				.Select(ar => new
+				{
+					ar.SessionGuid,
+					ar.InstanceDate,
+					StudentCount = ar.StudentAttendance.Count
+				})
+				.ToListAsync();
+
+			// Group in memory and take the past week of attendance
+			attendanceCountsBySession = attendanceRecords
+				.GroupBy(ar => ar.SessionGuid)
+				.ToDictionary(
+					g => g.Key,
+					g => g.OrderByDescending(ar => ar.InstanceDate)
+						.Take(sessions.First(s => s.SessionGuid == g.Key).DaySchedules.Count)
+						.Select(ar => ar.StudentCount)
+						.ToList()
+				);
+		}
+
+		var result = new List<SessionIssuesDTO>();
+
+		foreach (var s in sessions)
+		{
+			var issues = new List<IssueDTO<SessionIssue>>();
+
+			//malformed schedule times
+			var hasMalformedTimes = s.DaySchedules.Any(ds => ds.TimeSchedules.Any(ts => ts.StartTime == ts.EndTime || ts.StartTime > ts.EndTime));
+			if (hasMalformedTimes)
 			{
-				SessionIssuesDTO sessionDTO = new()
+				issues.Add(new IssueDTO<SessionIssue>
+				{
+					Type = SessionIssue.Schedule,
+					Message = "One or more schedule times are invalid."
+				});
+			}
+
+			//duplicate registrations
+			var allRegistrations = s.DaySchedules.SelectMany(ds => ds.StudentRegistrations).ToList();
+			var distinctCount = allRegistrations.DistinctBy(sr => new { sr.StudentSchoolYearGuid, sr.DaySchedule.DayOfWeek }).Count();
+			if (allRegistrations.Count != distinctCount)
+			{
+				issues.Add(new IssueDTO<SessionIssue>
+				{
+					Type = SessionIssue.Schedule,
+					Message = "One or more students registrations are duplicated."
+				});
+			}
+
+			// (only for active sessions)
+			if (s.LastSession.CompareTo(today) > 0)
+			{
+				if (attendanceCountsBySession.TryGetValue(s.SessionGuid, out var recentCounts))
+				{
+					if (recentCounts.Any() && recentCounts.All(count => count < 10))
+					{
+						issues.Add(new IssueDTO<SessionIssue>
+						{
+							Type = SessionIssue.Attendance,
+							Message = "Weekly attendance is fewer than 10 students per scheduled day."
+						});
+					}
+				}
+			}
+
+			if (issues.Any())
+			{
+				result.Add(new SessionIssuesDTO
 				{
 					SessionGuid = s.SessionGuid,
 					Name = s.Name,
-                    Issues = []
-				};
+					Issues = issues
+				});
+			}
+		}
 
-				if (sessionHasMalformedScheduleTimes(s))
-                    sessionDTO.Issues.Add(new IssueDTO<SessionIssue>
-                    {
-						Type = SessionIssue.Schedule,
-						Message = "One or more schedule times are invalid."
-					});
-
-				if (sessionHasDuplicateRegistrations(s))
-                    sessionDTO.Issues.Add(new IssueDTO<SessionIssue>
-                    {
-                        Type = SessionIssue.Schedule,
-                        Message = "One or more students registrations are duplicated."
-                    });
-
-				if (sessionHasPoorAttendance(s))
-					sessionDTO.Issues.Add(new IssueDTO<SessionIssue>
-					{
-						Type = SessionIssue.Attendance,
-						Message = "Weekly attendance is fewer than 10 students per scheduled day."
-					});
-
-                return sessionDTO;
-			})
-			.Where(s => s.Issues.Any())
-			.ToList();
-    }
+		return result;
+	}
 
 	public async Task<List<TodayAttendanceDTO>> GetTodayAttendanceAsync(Guid organizationYearGuid, DateOnly date)
 	{

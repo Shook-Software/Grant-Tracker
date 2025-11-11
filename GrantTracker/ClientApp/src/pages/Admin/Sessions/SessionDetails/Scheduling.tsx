@@ -26,11 +26,11 @@ interface CombinedBlackoutDate {
 export default ({ session }: Props): JSX.Element => {
   const attendanceHref: string = `${paths.Admin.Attendance.path}?session=${session.guid}`
 
-  // Fetch organization blackout dates
+  // Fetch organization blackout dates filtered by organization year
   const { data: orgBlackoutDates = [] } = useQuery({
-    queryKey: [`organization/${session.organizationYear.organization.guid}/blackout`],
+    queryKey: [`organizationYear/${session.organizationYear.guid}/blackout`],
     select: (bDates: OrganizationBlackoutDateDomain[]) => bDates.map(bDate => BlackoutDate.toViewModel(bDate)) as OrganizationBlackoutDateView[],
-    enabled: !!session.organizationYear.organization.guid
+    enabled: !!session.organizationYear.guid
   })
 
   // Combine and sort blackout dates

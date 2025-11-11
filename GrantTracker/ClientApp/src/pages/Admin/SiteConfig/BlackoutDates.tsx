@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from "react"
+import { useContext, useState } from "react"
 import { BlackoutDate, OrganizationBlackoutDateDomain, OrganizationBlackoutDateView } from 'Models/BlackoutDate'
 
 import api from "utils/api"
@@ -11,36 +11,24 @@ import { DataTable } from "@/components/DataTable"
 import { HeaderCell } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/Spinner"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 export const BlackoutDateConfig = (): JSX.Element => {
-	const { orgYear, setOrgYear } = useContext(OrgYearContext)
-	const [blackoutFetchError, setBlackoutFetchError] = useState<string | undefined>()
-	const [blackoutDates, setBlackoutDates] = useState<OrganizationBlackoutDateView[]>([])
-	const [blackoutDatesAreLoading, setBlackoutDatesAreLoading] = useState<boolean>(false)
+	const { orgYear } = useContext(OrgYearContext)
+	const queryClient = useQueryClient()
 
 	const [blackoutDeleteError, setBlackoutDeleteError] = useState<string | undefined>()
 
-	const getAndSetBlackoutDates = (orgGuid: string) => {
-		setBlackoutDatesAreLoading(true)
-		getBlackoutDates(orgGuid)
-			.then(res => {
-				res.sort((first, second) => first.date.isBefore(second.date) ? 1 : -1)
-				setBlackoutDates(res)
-				setBlackoutFetchError(undefined)
-			})
-			.catch(err => {
-				setBlackoutFetchError(err)
-			})
-			.finally(() => {
-				setBlackoutDatesAreLoading(false)
-			})
-	}
+	const { data: blackoutDates = [], isLoading: blackoutDatesAreLoading, error: blackoutFetchError } = useQuery({
+		queryKey: [`organizationYear/${orgYear?.guid}/blackout`],
+		enabled: !!orgYear?.guid,
+		select: (data: OrganizationBlackoutDateDomain[]) => {
+			const mapped = data.map(x => BlackoutDate.toViewModel(x)) as OrganizationBlackoutDateView[]
+			return mapped.sort((first, second) => first.date.isBefore(second.date) ? 1 : -1)
+		}
+	})
 
-	useEffect(() => {
-		getAndSetBlackoutDates(orgYear?.organization.guid)
-	}, [orgYear])
-
-	const blackoutColumns: ColumnDef<OrganizationBlackoutDateView, any>[] = createBlackoutColumns(orgYear?.organization.guid, getAndSetBlackoutDates, setBlackoutDeleteError)
+	const blackoutColumns: ColumnDef<OrganizationBlackoutDateView, any>[] = createBlackoutColumns(orgYear?.organization.guid, orgYear?.guid, queryClient, setBlackoutDeleteError)
 
 
 	return (
@@ -61,7 +49,7 @@ export const BlackoutDateConfig = (): JSX.Element => {
 				</div>
 			)}
 
-			<BlackoutDateInput orgGuid={orgYear?.organization.guid} getAndSetBlackoutDates={getAndSetBlackoutDates} />
+			<BlackoutDateInput orgGuid={orgYear?.organization.guid} orgYearGuid={orgYear?.guid} queryClient={queryClient} />
 
 			<div className='mt-6'>
 				{blackoutDatesAreLoading ? (
@@ -82,27 +70,26 @@ export const BlackoutDateConfig = (): JSX.Element => {
 	)
 }
 
-const BlackoutDateInput = ({orgGuid, getAndSetBlackoutDates}): JSX.Element => {
+const BlackoutDateInput = ({orgGuid, orgYearGuid, queryClient}): JSX.Element => {
 	const [blackoutDate, setBlackoutDate] = useState<LocalDate>(LocalDate.now())
 	const [blackoutAddError, setBlackoutAddError] = useState<string | undefined>()
-	const [isAdding, setIsAdding] = useState<boolean>(false)
+
+	const addMutation = useMutation({
+		mutationFn: (date: LocalDate) => api.post(`organization/${orgGuid}/blackout`, date),
+		onSuccess: () => {
+			setBlackoutAddError(undefined)
+			queryClient.invalidateQueries({ queryKey: [`organizationYear/${orgYearGuid}/blackout`] })
+		},
+		onError: (err: any) => {
+			if (err.response?.status === 409)
+				setBlackoutAddError('A blackout date already exists for this date.')
+			else
+				setBlackoutAddError(err.toString())
+		}
+	})
 
 	const addDate = () => {
-		setIsAdding(true)
-		addBlackoutDate(orgGuid, blackoutDate)
-			.then(res => {
-				setBlackoutAddError(undefined)
-			})
-			.catch(err => {
-				if (err.response.status == 409)
-					setBlackoutAddError('A blackout date already exists for this date.')
-				else
-					setBlackoutAddError(err)
-			})
-			.finally(() => {
-				setIsAdding(false)
-				getAndSetBlackoutDates(orgGuid)
-			})
+		addMutation.mutate(blackoutDate)
 	}
 
 	return (
@@ -116,22 +103,22 @@ const BlackoutDateInput = ({orgGuid, getAndSetBlackoutDates}): JSX.Element => {
 			<div className='flex items-end gap-4'>
 				<div className="">
 					<label className="block text-sm font-medium mb-2">Add Blackout Date</label>
-					<input 
-						type='date' 
-						className="w-fit px-3 py-2 border border-input rounded-md bg-background h-8" 
-						value={blackoutDate.toString()} 
-						onChange={(event) => setBlackoutDate(LocalDate.parse(event.target.value))} 
+					<input
+						type='date'
+						className="w-fit px-3 py-2 border border-input rounded-md bg-background h-8"
+						value={blackoutDate.toString()}
+						onChange={(event) => setBlackoutDate(LocalDate.parse(event.target.value))}
 					/>
 				</div>
 
-				<Button 
+				<Button
 					onClick={addDate}
-					disabled={isAdding}
+					disabled={addMutation.isPending}
 					className="flex items-center gap-2 h-8"
 					variant="outline"
 					aria-label="Add blackout date"
 				>
-					{isAdding ? (
+					{addMutation.isPending ? (
 						<Spinner variant="border" className="h-4 w-4" />
 					) : (
 						<>
@@ -145,14 +132,14 @@ const BlackoutDateInput = ({orgGuid, getAndSetBlackoutDates}): JSX.Element => {
 	)
 }
 
-const createBlackoutColumns = (orgGuid: string, getAndSetBlackoutDates, setBlackoutDeleteError): ColumnDef<OrganizationBlackoutDateView, any>[] => [
+const createBlackoutColumns = (orgGuid: string, orgYearGuid: string, queryClient, setBlackoutDeleteError): ColumnDef<OrganizationBlackoutDateView, any>[] => [
 	{
 		accessorKey: "date",
 		header: ({ column }) => (
-			<HeaderCell 
-				label="Date" 
-				sort={column.getIsSorted()} 
-				onSortClick={() => column.toggleSorting()} 
+			<HeaderCell
+				label="Date"
+				sort={column.getIsSorted()}
+				onSortClick={() => column.toggleSorting()}
 			/>
 		),
 		cell: ({ row }) => (
@@ -171,58 +158,43 @@ const createBlackoutColumns = (orgGuid: string, getAndSetBlackoutDates, setBlack
 	},
 	{
 		header: "",
-		cell: ({ row }) => (
-			<div className='flex justify-center'>
-				<Button 
-					variant="destructive"
-					size="sm"
-					className="flex items-center gap-2"
-					onClick={() => {
-						deleteBlackoutDate(orgGuid, row.original.guid)
-							.then(res => {
-								getAndSetBlackoutDates(orgGuid)
-								setBlackoutDeleteError(undefined)
-							})
-							.catch(err => {
-								if (err.response.status == 404)
-									setBlackoutDeleteError("Could not find a blackout date with the given identifier.")
-								else 
-									setBlackoutDeleteError(err)
-							})
-					}}
-				>
-					<Trash2 className="h-4 w-4" />
-				</Button>
-			</div>
-		),
+		cell: ({ row }) => {
+			const DeleteButton = () => {
+				const deleteMutation = useMutation({
+					mutationFn: (blackoutGuid: string) => api.delete(`organization/${orgGuid}/blackout/${blackoutGuid}`),
+					onSuccess: () => {
+						setBlackoutDeleteError(undefined)
+						queryClient.invalidateQueries({ queryKey: [`organizationYear/${orgYearGuid}/blackout`] })
+					},
+					onError: (err: any) => {
+						if (err.response?.status === 404)
+							setBlackoutDeleteError("Could not find a blackout date with the given identifier.")
+						else
+							setBlackoutDeleteError(err.toString())
+					}
+				})
+
+				return (
+					<div className='flex justify-center'>
+						<Button
+							variant="destructive"
+							size="sm"
+							className="flex items-center gap-2"
+							onClick={() => deleteMutation.mutate(row.original.guid)}
+							disabled={deleteMutation.isPending}
+						>
+							{deleteMutation.isPending ? (
+								<Spinner variant="border" className="h-4 w-4" />
+							) : (
+								<Trash2 className="h-4 w-4" />
+							)}
+						</Button>
+					</div>
+				)
+			}
+			return <DeleteButton />
+		},
 		enableSorting: false,
 		id: 'actions'
 	}
 ]
-
-const getBlackoutDates = (orgGuid: string): Promise<OrganizationBlackoutDateView[]> => {
-	return new Promise<OrganizationBlackoutDateView[]>((resolve, reject) => {
-		api
-			.get<OrganizationBlackoutDateDomain[]>(`organization/${orgGuid}/blackout`)
-			.then(res => resolve(res.data.map(x => BlackoutDate.toViewModel(x))))
-			.catch(err => reject(err))
-	})
-}
-
-const addBlackoutDate = (orgGuid: string, date: LocalDate): Promise<void> => {
-	return new Promise((resolve, reject) => {
-		api
-			.post(`organization/${orgGuid}/blackout`, date)
-			.then(res => resolve())
-			.catch(err => reject(err))
-	})
-}
-
-const deleteBlackoutDate = (orgGuid: string, blackoutGuid: string): Promise<void> => {
-	return new Promise((resolve, reject) => {
-		api
-			.delete(`organization/${orgGuid}/blackout/${blackoutGuid}`)
-			.then(res => resolve())
-			.catch(err => reject(err))
-	})
-}
