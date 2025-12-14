@@ -3,11 +3,13 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authorization.Infrastructure;
 using Microsoft.AspNetCore.Server.IISIntegration;
+using Microsoft.Extensions.Caching.Memory;
 using System.DirectoryServices.AccountManagement;
 using System.Security.Claims;
 using System.Text.RegularExpressions;
 using System.Text.Json.Serialization;
 using System.Text.Json;
+using Serilog;
 
 namespace GrantTracker.Utilities.OnStartup
 {
@@ -15,21 +17,39 @@ namespace GrantTracker.Utilities.OnStartup
 
 	public static class Auth
 	{
-		public static string GetBadgeNumber(ClaimsIdentity identity)
+		public static string GetBadgeNumber(ClaimsIdentity identity, IMemoryCache cache, Microsoft.Extensions.Logging.ILogger logger)
 		{
 			try
 			{
                 if (identity.Name == null)
                     return "";
 
+				// Try to get from cache first
+				string cacheKey = $"BadgeNumber_{identity.Name}";
+				if (cache.TryGetValue(cacheKey, out string cachedBadgeNumber))
+				{
+					logger.LogInformation($"Badge number for {identity.Name} retrieved from cache");
+					return cachedBadgeNumber;
+				}
+
                 string badgeNumber = Regex.Replace(identity.Name, "[^0-9]", ""); //Remove string "TUSD\\" from "TUSD\\######"
 
                 if (!int.TryParse(badgeNumber, out int _))
                 {
+					logger.LogInformation($"Looking up badge number for {identity.Name} in Active Directory");
                     var tusdContext = new PrincipalContext(ContextType.Domain, "admin.tusd.local");
                     var user = UserPrincipal.FindByIdentity(tusdContext, IdentityType.SamAccountName, identity.Name);
                     badgeNumber = user.EmployeeId;
                 }
+
+				// Cache the badge number for 1 hour (badge numbers rarely change)
+				var cacheOptions = new MemoryCacheEntryOptions
+				{
+					AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1),
+					SlidingExpiration = TimeSpan.FromMinutes(30)
+				};
+				cache.Set(cacheKey, badgeNumber, cacheOptions);
+				logger.LogInformation($"Badge number for {identity.Name} cached");
 
                 return badgeNumber;
             }
@@ -49,8 +69,8 @@ namespace GrantTracker.Utilities.OnStartup
                 options.AddPolicy("Teacher", policy => policy.RequireAuthenticatedUser());
             });
 
-			builder.Services.AddTransient<IClaimsTransformation, RoleAuthorizationTransform>();
-			builder.Services.AddScoped<IAuthorizationHandler, AuthorizationHandler>();
+			builder.Services.AddScoped<IClaimsTransformation, RoleAuthorizationTransform>();
+			builder.Services.AddSingleton<IAuthorizationHandler, AuthorizationHandler>();
 		}
 
 		public static void Configure(WebApplication app)
@@ -69,27 +89,83 @@ namespace GrantTracker.Utilities.OnStartup
 	public class RoleAuthorizationTransform : IClaimsTransformation
 	{
 		private readonly IRoleProvider _roleProvider;
+		private readonly ILogger<RoleAuthorizationTransform> _logger;
+		private readonly IMemoryCache _cache;
 
-		public RoleAuthorizationTransform(IRoleProvider roleProvider)
+		public RoleAuthorizationTransform(IRoleProvider roleProvider, ILogger<RoleAuthorizationTransform> logger, IMemoryCache cache)
 		{
 			_roleProvider = roleProvider ?? throw new ArgumentNullException(nameof(roleProvider));
+			_logger = logger;
+			_cache = cache ?? throw new ArgumentNullException(nameof(cache));
+        }
+
+		private async Task<string> GetUserRoleAsync(string badgeNumber)
+		{
+			string cacheKey = $"UserRole_{badgeNumber}";
+
+			// Try to get from cache first
+			if (_cache.TryGetValue(cacheKey, out string cachedRole))
+			{
+				_logger.LogInformation($"User role for badge {badgeNumber} retrieved from cache: {cachedRole}");
+				return cachedRole;
+			}
+
+			// Get from database
+			_logger.LogInformation($"Looking up user role for badge {badgeNumber} in database");
+			var userRole = await _roleProvider.GetUserRoleAsync(badgeNumber);
+
+			// Cache for 30 minutes (roles can change, but not frequently)
+			var cacheOptions = new MemoryCacheEntryOptions
+			{
+				AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(30),
+				SlidingExpiration = TimeSpan.FromMinutes(15)
+			};
+			_cache.Set(cacheKey, userRole, cacheOptions);
+			_logger.LogInformation($"User role for badge {badgeNumber} cached: {userRole}");
+
+			return userRole;
 		}
 
-		private async Task<string> GetUserRole(string BadgeNumber)
+		private async Task<List<Guid>> GetUserOrganizationGuidsAsync(string badgeNumber, string role)
 		{
-			return await _roleProvider.GetUserRoleAsync(BadgeNumber);
+			string cacheKey = $"UserOrgs_{badgeNumber}_{role}";
+
+			// Try to get from cache first
+			if (_cache.TryGetValue(cacheKey, out List<Guid> cachedOrgs))
+			{
+				_logger.LogInformation($"User organizations for badge {badgeNumber} retrieved from cache ({cachedOrgs.Count} orgs)");
+				return cachedOrgs;
+			}
+
+			// Get from database
+			_logger.LogInformation($"Looking up user organizations for badge {badgeNumber} in database");
+			var userOrgs = await _roleProvider.GetCurrentUserOrganizationGuidsAsync(badgeNumber, role);
+
+			// Cache for 30 minutes (org assignments can change, but not frequently)
+			var cacheOptions = new MemoryCacheEntryOptions
+			{
+				AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(30),
+				SlidingExpiration = TimeSpan.FromMinutes(15)
+			};
+			_cache.Set(cacheKey, userOrgs, cacheOptions);
+			_logger.LogInformation($"User organizations for badge {badgeNumber} cached ({userOrgs.Count} orgs)");
+
+			return userOrgs;
 		}
 
 		//Called first to determine authorization level
 		public async Task<ClaimsPrincipal> TransformAsync(ClaimsPrincipal principal)
 		{
-			if (principal.Identity is null) return principal;
+			_logger.LogInformation($"Authorization attempted");
+
+            if (principal.Identity is null) return principal;
 
             ClaimsIdentity identity = new();
-            string badgeNumber = Auth.GetBadgeNumber((ClaimsIdentity)principal.Identity);
+            _logger.LogInformation($"Authorization for identity named: {principal.Identity.Name}");
+            string badgeNumber = Auth.GetBadgeNumber((ClaimsIdentity)principal.Identity, _cache, _logger);
 
-			var userRole = await _roleProvider.GetUserRoleAsync(badgeNumber);
-			var userOrgs = await _roleProvider.GetCurrentUserOrganizationGuidsAsync(badgeNumber, userRole);
+			var userRole = await GetUserRoleAsync(badgeNumber);
+			var userOrgs = await GetUserOrganizationGuidsAsync(badgeNumber, userRole);
 
             Claim roleClaim = new("UserRole", userRole);
 			Claim orgClaim = new("HomeOrg", JsonSerializer.Serialize(userOrgs));
@@ -102,7 +178,8 @@ namespace GrantTracker.Utilities.OnStartup
             principal.AddIdentity(identity);
 			return principal;
 		}
-	}
+
+    }
 
 	#endregion Authorization Transform
 
@@ -112,9 +189,16 @@ namespace GrantTracker.Utilities.OnStartup
 	//Assess policy-based authorization requirements for a given controller and approve or deny access.
 
 	public class AuthorizationHandler : IAuthorizationHandler
-	{
-		//Called when policies are evaluated, after user claims are evaluated and set
-		public async Task HandleAsync(AuthorizationHandlerContext context)
+    {
+        private readonly ILogger<AuthorizationHandler> _logger;
+
+        public AuthorizationHandler(ILogger<AuthorizationHandler> logger)
+        {
+            _logger = logger;
+        }
+
+        //Called when policies are evaluated, after user claims are evaluated and set
+        public async Task HandleAsync(AuthorizationHandlerContext context)
 		{
 			var user = context.User;
 			foreach (var requirement in context.PendingRequirements)
@@ -123,12 +207,20 @@ namespace GrantTracker.Utilities.OnStartup
 				{
 					var requiredClaimType = claimsRequirement.ClaimType;
 					if (user.IsInRole(requiredClaimType)) context.Succeed(requirement);
-					else context.Fail(new AuthorizationFailureReason(this, $"User does not have the required claims. Required claim: {requiredClaimType}"));
+					else
+					{
+						context.Fail(new AuthorizationFailureReason(this, $"User does not have the required claims. Required claim: {requiredClaimType}"));
+                        _logger.LogError($"Failed to authorize requirement for {context.User.Identity.Name}");
+                    }
 				}
 				else if (requirement is AssertionRequirement assertRequirement)
 				{
 					if (await assertRequirement.Handler(context)) context.Succeed(requirement);
-					else context.Fail(new AuthorizationFailureReason(this, $"User does not have the required claims. Required claim: [One of X, can't tell yet]"));
+					else
+					{
+						context.Fail(new AuthorizationFailureReason(this, $"User does not have the required claims. Required claim: [One of X, can't tell yet]"));
+						_logger.LogError($"Failed to authorize requirement for {context.User.Identity.Name}");
+					}
 				}
 			}
 		}
