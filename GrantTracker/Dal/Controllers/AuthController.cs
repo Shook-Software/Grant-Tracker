@@ -65,7 +65,7 @@ namespace GrantTracker.Dal.Controllers
             }
 			catch (Exception ex)
             {
-                _logger.LogError("Unhandled exception.", ex);
+                _logger.LogError(ex, "Unhandled exception.");
                 return StatusCode(500);
 			}
 		}
@@ -101,7 +101,7 @@ namespace GrantTracker.Dal.Controllers
 			}
 			catch (Exception ex)
 			{
-				_logger.LogError("Unhandled exception.", ex);
+				_logger.LogError(ex, "Unhandled exception.");
                 return StatusCode(500);
             }
 		}

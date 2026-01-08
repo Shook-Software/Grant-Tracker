@@ -24,7 +24,6 @@ namespace GrantTracker.Utilities.OnStartup
                 if (identity.Name == null)
                     return "";
 
-				// Try to get from cache first
 				string cacheKey = $"BadgeNumber_{identity.Name}";
 				if (cache.TryGetValue(cacheKey, out string cachedBadgeNumber))
 				{
@@ -42,7 +41,6 @@ namespace GrantTracker.Utilities.OnStartup
                     badgeNumber = user.EmployeeId;
                 }
 
-				// Cache the badge number for 1 hour (badge numbers rarely change)
 				var cacheOptions = new MemoryCacheEntryOptions
 				{
 					AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1),
@@ -103,18 +101,15 @@ namespace GrantTracker.Utilities.OnStartup
 		{
 			string cacheKey = $"UserRole_{badgeNumber}";
 
-			// Try to get from cache first
 			if (_cache.TryGetValue(cacheKey, out string cachedRole))
 			{
 				_logger.LogInformation($"User role for badge {badgeNumber} retrieved from cache: {cachedRole}");
 				return cachedRole;
 			}
 
-			// Get from database
 			_logger.LogInformation($"Looking up user role for badge {badgeNumber} in database");
 			var userRole = await _roleProvider.GetUserRoleAsync(badgeNumber);
 
-			// Cache for 30 minutes (roles can change, but not frequently)
 			var cacheOptions = new MemoryCacheEntryOptions
 			{
 				AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(30),
@@ -130,18 +125,15 @@ namespace GrantTracker.Utilities.OnStartup
 		{
 			string cacheKey = $"UserOrgs_{badgeNumber}_{role}";
 
-			// Try to get from cache first
 			if (_cache.TryGetValue(cacheKey, out List<Guid> cachedOrgs))
 			{
 				_logger.LogInformation($"User organizations for badge {badgeNumber} retrieved from cache ({cachedOrgs.Count} orgs)");
 				return cachedOrgs;
 			}
 
-			// Get from database
 			_logger.LogInformation($"Looking up user organizations for badge {badgeNumber} in database");
 			var userOrgs = await _roleProvider.GetCurrentUserOrganizationGuidsAsync(badgeNumber, role);
 
-			// Cache for 30 minutes (org assignments can change, but not frequently)
 			var cacheOptions = new MemoryCacheEntryOptions
 			{
 				AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(30),
@@ -156,27 +148,35 @@ namespace GrantTracker.Utilities.OnStartup
 		//Called first to determine authorization level
 		public async Task<ClaimsPrincipal> TransformAsync(ClaimsPrincipal principal)
 		{
-			_logger.LogInformation($"Authorization attempted");
+			try
+			{
+				_logger.LogInformation($"Authorization attempted");
 
-            if (principal.Identity is null) return principal;
+				if (principal.Identity is null) return principal;
 
-            ClaimsIdentity identity = new();
-            _logger.LogInformation($"Authorization for identity named: {principal.Identity.Name}");
-            string badgeNumber = Auth.GetBadgeNumber((ClaimsIdentity)principal.Identity, _cache, _logger);
+				ClaimsIdentity identity = new();
+				_logger.LogInformation($"Authorization for identity named: {principal.Identity.Name}");
+				string badgeNumber = Auth.GetBadgeNumber((ClaimsIdentity)principal.Identity, _cache, _logger);
 
-			var userRole = await GetUserRoleAsync(badgeNumber);
-			var userOrgs = await GetUserOrganizationGuidsAsync(badgeNumber, userRole);
+				var userRole = await GetUserRoleAsync(badgeNumber);
+				var userOrgs = await GetUserOrganizationGuidsAsync(badgeNumber, userRole);
 
-            Claim roleClaim = new("UserRole", userRole);
-			Claim orgClaim = new("HomeOrg", JsonSerializer.Serialize(userOrgs));
-			Claim badgeNumberClaim = new Claim("Id", badgeNumber);
+				Claim roleClaim = new("UserRole", userRole);
+				Claim orgClaim = new("HomeOrg", JsonSerializer.Serialize(userOrgs));
+				Claim badgeNumberClaim = new Claim("Id", badgeNumber);
 
-			identity.AddClaim(roleClaim);
-			identity.AddClaim(orgClaim);
-            identity.AddClaim(badgeNumberClaim);
+				identity.AddClaim(roleClaim);
+				identity.AddClaim(orgClaim);
+				identity.AddClaim(badgeNumberClaim);
 
-            principal.AddIdentity(identity);
-			return principal;
+				principal.AddIdentity(identity);
+				return principal;
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex, "Unhandled exception in Auth Transform");
+				throw;
+			}
 		}
 
     }
