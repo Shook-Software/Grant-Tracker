@@ -131,7 +131,7 @@ module.exports = {
 		static: paths.dist, //where to look for files to serve
 		hot: true,
 		historyApiFallback: true,
-		https: false
+		https: true
 	}
 };
 

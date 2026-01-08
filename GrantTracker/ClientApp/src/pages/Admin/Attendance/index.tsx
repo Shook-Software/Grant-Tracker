@@ -6,7 +6,7 @@ import { DateOnly } from "Models/DateOnly";
 import { Session, SessionDomain, SessionView } from "Models/Session";
 import React, { ReactElement, useEffect, useReducer, useState } from "react"
 import { useSearchParams } from "react-router-dom";
-import { TimeInput } from "components/TimeRangeSelector";
+import { TimePickerInput as TimeInput } from "components/TimeRangeSelector";
 import { DayOfWeek } from "Models/DayOfWeek";
 import { TimeScheduleView } from "Models/TimeSchedule";
 import { AttendanceForm, AttendanceForm as AttendanceFormState, ReducerAction, handleStateReduction } from './state'
@@ -151,8 +151,8 @@ export default (): React.ReactElement => {
 						}
 						else { 
 							dispatch({ type: 'populateExistingRecords', payload: { 
-								instructorAttendance: priorAttendance.instructorAttendanceRecords.map(iar => ({...iar, timeRecords: [...timeSchedules]})), 
-								studentAttendance: priorAttendance.studentAttendanceRecords.map(sar => ({...sar, timeRecords: [...timeSchedules]}))
+								instructorAttendance: priorAttendance.instructorAttendanceRecords.map(iar => ({...iar, timeRecords: attendanceMode === 'edit' ? iar.timeRecords: [...timeSchedules]})), 
+								studentAttendance: priorAttendance.studentAttendanceRecords.map(sar => ({...sar, timeRecords: attendanceMode === 'edit' ? sar.timeRecords: [...timeSchedules]}))
 							}})
 						}
 					}
