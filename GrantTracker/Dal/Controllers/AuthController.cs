@@ -8,6 +8,7 @@ using GrantTracker.Dal.Schema;
 using GrantTracker.Dal.Models.Views;
 using Microsoft.EntityFrameworkCore;
 using GrantTracker.Utilities;
+using Microsoft.Extensions.Caching.Memory;
 
 
 namespace GrantTracker.Dal.Controllers
@@ -22,42 +23,85 @@ namespace GrantTracker.Dal.Controllers
 		private readonly IOrganizationYearRepository _organizationYearRepository;
 		private readonly ILogger<AuthController> _logger;
 		private GrantTrackerContext _context;
+		private readonly IMemoryCache _cache;
 
-		public AuthController(IAuthRepository repository, IInstructorRepository staffRepository, IOrganizationYearRepository organizationYearRepository, ILogger<AuthController> logger, GrantTrackerContext context)
+		public AuthController(IAuthRepository repository, IInstructorRepository staffRepository, IOrganizationYearRepository organizationYearRepository, ILogger<AuthController> logger, GrantTrackerContext context, IMemoryCache cache)
 		{
 			_authRepository = repository;
 			_staffRepository = staffRepository;
-			_organizationYearRepository = organizationYearRepository; 
+			_organizationYearRepository = organizationYearRepository;
 			_logger = logger;
             _context = context;
+			_cache = cache;
         }
 
 		[HttpGet("")]
+		[ResponseCache(Duration = 43200, VaryByHeader = "Authorization")] // 12 hours
 		public ActionResult<UserIdentityView> Get()
 		{
 			try
 			{
+				var badgeNumber = User.Id();
+				var cacheKey = $"UserIdentity_{badgeNumber}";
+
+				if (_cache.TryGetValue(cacheKey, out object cachedIdentityObj) && cachedIdentityObj is UserIdentity cachedIdentity)
+				{
+					_logger.LogInformation($"User identity for badge {badgeNumber} retrieved from cache");
+					return Ok(cachedIdentity);
+				}
+
+				_logger.LogInformation($"Looking up user identity for badge {badgeNumber} in database");
                 var identity = _authRepository.GetIdentity();
+
+				var cacheOptions = new MemoryCacheEntryOptions
+				{
+					AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(12),
+					SlidingExpiration = TimeSpan.FromHours(6)
+				};
+				_cache.Set(cacheKey, identity, cacheOptions);
+				_logger.LogInformation($"User identity for badge {badgeNumber} cached");
+
                 return Ok(identity);
             }
 			catch (Exception ex)
             {
-                _logger.LogError("Unhandled exception.", ex);
+                _logger.LogError(ex, "Unhandled exception.");
                 return StatusCode(500);
 			}
 		}
 
 		[HttpGet("orgYear")]
+		[ResponseCache(Duration = 43200, VaryByHeader = "Authorization")] // 12 hours
 		public async Task<ActionResult<List<OrganizationYearView>>> GetAuthorizedOrganizationYearsAsync()
 		{
 			try
 			{
+				var badgeNumber = User.Id();
+				var cacheKey = $"UserOrgYears_{badgeNumber}";
+
+				if (_cache.TryGetValue(cacheKey, out object cachedOrgYearsObj) && cachedOrgYearsObj is List<OrganizationYearView> cachedOrgYears)
+				{
+					_logger.LogInformation($"Organization years for badge {badgeNumber} retrieved from cache ({cachedOrgYears.Count} org years)");
+					return Ok(cachedOrgYears);
+				}
+
+				_logger.LogInformation($"Looking up organization years for badge {badgeNumber} in database");
 				var authorizedOrgYears = await _organizationYearRepository.GetAsync();
-				return Ok(authorizedOrgYears.OrderBy(oy => oy.Organization.Name).Select(OrganizationYearView.FromDatabase));
+				var result = authorizedOrgYears.OrderBy(oy => oy.Organization.Name).Select(OrganizationYearView.FromDatabase).ToList();
+
+				var cacheOptions = new MemoryCacheEntryOptions
+				{
+					AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(12),
+					SlidingExpiration = TimeSpan.FromHours(6)
+				};
+				_cache.Set(cacheKey, result, cacheOptions);
+				_logger.LogInformation($"Organization years for badge {badgeNumber} cached ({result.Count} org years)");
+
+				return Ok(result);
 			}
 			catch (Exception ex)
 			{
-				_logger.LogError("Unhandled exception.", ex);
+				_logger.LogError(ex, "Unhandled exception.");
                 return StatusCode(500);
             }
 		}
