@@ -1,0 +1,184 @@
+/* Override rc-picker default styles to match original TimeInput */
+
+.time-picker-wrapper .rc-picker {
+  height: auto !important;
+  padding: 0.25rem 0.5rem !important;
+  min-height: 38px;
+}
+
+.time-picker-wrapper.small .rc-picker {
+  padding: 0.25rem 0.5rem !important;
+  min-height: 32px;
+  font-size: 0.875rem;
+}
+
+.time-picker-wrapper .rc-picker-input > input {
+  font-size: inherit;
+  height: auto;
+  padding: 0;
+}
+
+.time-picker-wrapper .rc-picker-input {
+  display: flex;
+  align-items: center;
+}
+
+.time-picker-wrapper .rc-picker-suffix {
+  margin-left: auto;
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+}
+
+.time-picker-wrapper .rc-picker-clear {
+  font-size: 0.875rem;
+}
+
+.time-picker-wrapper .rc-picker-focused {
+  border-color: var(--ring) !important;
+  box-shadow: 0 0 0 1px var(--ring) !important;
+}
+
+/* Dropdown styling - globally scoped for portal rendering */
+.rc-picker-dropdown {
+  z-index: 1050 !important;
+  box-shadow: none;
+}
+
+.rc-picker-panel {
+  border: none;
+}
+
+.rc-picker-panel-container {
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05) !important;
+  overflow: hidden;
+  background-color: var(--background);
+  border: 1px solid var(--ring);
+  border-radius: var(--radius);
+}
+
+.rc-picker-time-panel {
+  width: auto !important;
+  min-width: 200px;
+}
+
+.rc-picker-time-panel-column {
+  width: 33.333% !important;
+  overflow-y: auto !important;
+  max-height: 160px !important;
+  background-color: var(--background);
+  padding: 0 !important;
+  overscroll-behavior: contain;
+}
+
+/* Hide scrollbar for minute and period columns that don't need it */
+.rc-picker-time-panel-column:nth-child(2),
+.rc-picker-time-panel-column:nth-child(3) {
+  overflow-y: hidden !important;
+}
+
+.rc-picker-time-panel-column > ul {
+  margin: 0 !important;
+  padding: 0 !important;
+  list-style: none;
+  height: fit-content !important;
+}
+
+/* Minimal scrollbar styling */
+.rc-picker-time-panel-column::-webkit-scrollbar {
+  width: 4px;
+}
+
+.rc-picker-time-panel-column::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.rc-picker-time-panel-column::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 2px;
+}
+
+.rc-picker-time-panel-column::-webkit-scrollbar-thumb:hover {
+  opacity: 0.8;
+}
+
+/* Cell styling */
+.rc-picker-time-panel-cell {
+  width: 100% !important;
+  text-align: center;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  color: var(--foreground);
+}
+
+.rc-picker-time-panel-cell:hover {
+  background-color: var(--accent) !important;
+}
+
+.rc-picker-time-panel-cell-selected {
+  background-color: var(--sidebar-border) !important;
+  color: black;
+  font-weight: 500;
+}
+
+.rc-picker-time-panel-cell-inner {
+  color: inherit !important;
+}
+
+.rc-picker-time-panel-cell-selected:hover {
+  opacity: 0.9;
+}
+
+.rc-picker-time-panel-cell-disabled {
+  color: var(--muted-foreground);
+  cursor: not-allowed;
+}
+
+.rc-picker-time-panel-column > .rc-picker-time-panel-cell-inner {
+  display: block;
+  width: 100%;
+}
+
+/* Panel header */
+.rc-picker-header {
+  padding: 0.5rem;
+  background-color: var(--background);
+}
+
+.rc-picker-header-view {
+  font-weight: 500;
+  color: var(--foreground);
+}
+
+/* Content area */
+.rc-picker-content {
+  background-color: var(--background);
+}
+
+/* Footer styling */
+.rc-picker-footer {
+  background-color: var(--primary-foreground);
+  border-top: 1px solid var(--border);
+  padding: 0.5rem;
+}
+
+.rc-picker-footer > * {
+  padding: 0.25rem 0.5rem;
+  cursor: pointer;
+}
+
+.rc-picker-footer > *:hover {
+  cursor: pointer;
+}
+
+.rc-picker-ranges {
+  padding: 0;
+}
+
+.rc-picker-ranges > li {
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius);
+}
+
+.rc-picker-ranges > li:hover {
+  background-color: var(--accent);
+}

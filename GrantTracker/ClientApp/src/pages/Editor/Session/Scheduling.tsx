@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useSession, Context } from '../index'
 import { DateTimeFormatter, LocalDate, LocalTime } from '@js-joda/core'
 
-import { TimeInput } from 'components/TimeRangeSelector'
+import { TimePickerInput as TimeInput } from 'components/TimeRangeSelector'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label' 
 import { Button } from '@/components/ui/button'

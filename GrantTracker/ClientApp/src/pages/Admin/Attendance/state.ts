@@ -99,6 +99,7 @@ export function handleStateReduction(state: AttendanceForm, action: ReducerActio
                     endTime: y.endTime instanceof LocalTime ? y.endTime : TimeOnly.toLocalTime(y.endTime)
                 }))
             })) as InstructorRecord[] 
+            console.log(instructorRecords)
 
             studentRecords = action.payload.studentAttendance.map(x => ({
                 id: x.studentSchoolYear.guid,
