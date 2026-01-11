@@ -53,7 +53,6 @@ public class ReportRepository : IReportRepository
 						{
 							FirstName = iGrp.First().FirstName,
 							LastName = iGrp.First().LastName,
-							IsSubstitute = iGrp.First().IsSubstitute,
 							TimeRecords = iGrp.Select(x => new PayrollAuditTimeRecord
 							{
 								StartTime = x.EntryTime,

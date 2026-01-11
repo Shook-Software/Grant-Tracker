@@ -587,11 +587,7 @@ export const payrollAuditFields = [
 	{
 		label: 'Instructor First Name',
 		value: 'attendingInstructorFirstName',
-	},
-	{
-		label: 'Substitute?',
-		value: 'isSubstitute',
-	},
+	}
 ]
 
 
@@ -610,8 +606,7 @@ export const flattenPayrollReport = (data) => {
 			endTime: tr.endTime.format(DateTimeFormatter.ofPattern('h:mm a').withLocale(Locale.ENGLISH)),
 			totalTime: tr.totalTime,
 			attendingInstructorLastName: air.lastName,
-			attendingInstructorFirstName: air.firstName,
-			isSubstitute: air.isSubstitute ? 'Y' : 'N'
+			attendingInstructorFirstName: air.firstName
 		})))
 	);
 }

@@ -25,7 +25,6 @@ interface PayrollAuditReportRow {
 	attendingInstructorRecords: {
 		firstName: string,
 		lastName: string,
-		isSubstitute: boolean,
 		totalTime: string,
 		timeRecords: {
 			startTime: LocalTime,

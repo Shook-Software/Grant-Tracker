@@ -13,7 +13,6 @@ public class PayrollAuditDb
     public Guid InstructorSchoolYearGuid { get; set; }
     public string FirstName { get; set; }
     public string LastName { get; set; }
-    public bool IsSubstitute { get; set; }
     public TimeOnly EntryTime { get; set; }
     public TimeOnly ExitTime { get; set; }
     public int TotalAttendees { get; set; }
@@ -35,7 +34,6 @@ public class PayrollAuditInstructorRecord
 {
     public string FirstName { get; set; }
     public string LastName { get; set; }
-    public bool IsSubstitute { get; set; }
     public List<PayrollAuditTimeRecord> TimeRecords { get; set; }
     public string TotalTime
     {
