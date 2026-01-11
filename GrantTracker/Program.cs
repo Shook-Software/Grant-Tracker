@@ -4,6 +4,7 @@ using Serilog;
 using Serilog.Events;
 using Serilog.Formatting.Compact;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.HttpOverrides;
 
 //remember that we had to install something for IIS to make it all work.. maybe
 var builder = WebApplication.CreateBuilder(args);
@@ -42,8 +43,8 @@ builder.Services.AddCors(options =>
 	options.AddPolicy(origins,
 		policy =>
 		{
-			policy.WithOrigins("https://localhost:44398").AllowAnyHeader().AllowAnyMethod().AllowCredentials();
-            policy.WithOrigins("http://localhost:44398").AllowAnyHeader().AllowAnyMethod().AllowCredentials();
+			policy.WithOrigins("https://localhost:44395").AllowAnyHeader().AllowAnyMethod().AllowCredentials();
+            policy.WithOrigins("http://localhost:44395").AllowAnyHeader().AllowAnyMethod().AllowCredentials();
         });
 });
 
@@ -71,7 +72,6 @@ app.UseRouting();
 app.UseCors(origins);
 Auth.Configure(app);
 Swagger.Configure(app);
-
 app.MapControllers();
 app.MapFallbackToFile("index.html");
 

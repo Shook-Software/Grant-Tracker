@@ -37,38 +37,17 @@ public class ReportRepository : IReportRepository
 			.ToListAsync(); 
 		
 		var payrollSessionGuids = payrollAudit.Select(x => x.SessionGuid).ToList();
-        var registeredSessionPayrollAuditInstructors = _grantContext
-            .Sessions
-            .Where(x => payrollSessionGuids.Contains(x.SessionGuid))
-            .Include(x => x.InstructorRegistrations).ThenInclude(ir => ir.InstructorSchoolYear).ThenInclude(isy => isy.Instructor)
-            .SelectMany(x => x.InstructorRegistrations,
-                (s, ir) => new
-                {
-                    SessionGuid = s.SessionGuid,
-                    FirstName = ir.InstructorSchoolYear.Instructor.FirstName,
-                    LastName = ir.InstructorSchoolYear.Instructor.LastName
-                }
-            )
-            .ToList();
 
-        return payrollAudit.GroupBy(x => new { x.School, x.ClassName, x.InstanceDate },
+        return payrollAudit.GroupBy(x => new { x.School, x.ClassName, x.AttendanceGuid, x.InstanceDate },
 				(id, grp) => new PayrollAuditView
 				{
 					SessionGuid = grp.First().SessionGuid,
+					AttendanceGuid = id.AttendanceGuid,
 					School = id.School,
 					ClassName = id.ClassName,
 					Activity = grp.First().Activity,
 					InstanceDate = id.InstanceDate,
 					TotalAttendees = grp.First().TotalAttendees,
-					RegisteredInstructors = registeredSessionPayrollAuditInstructors
-						.Where(x => x.SessionGuid == grp.First().SessionGuid)
-						.Select(x => new Schema.Sprocs.Reporting.Instructor()
-						{
-							FirstName = x.FirstName,
-							LastName = x.LastName
-						})
-						.ToList(),
-
 					AttendingInstructorRecords = grp.GroupBy(x => x.InstructorSchoolYearGuid,
 						(isyGuid, iGrp) => new PayrollAuditInstructorRecord
 						{
@@ -84,6 +63,7 @@ public class ReportRepository : IReportRepository
 						})
 					.ToList()
 				})
+			.OrderBy(x => x.School).ThenByDescending(x => x.InstanceDate).ThenBy(x => x.ClassName)
 			.ToList();
     }
 
