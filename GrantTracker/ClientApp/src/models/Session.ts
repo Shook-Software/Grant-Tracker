@@ -22,6 +22,7 @@ export interface SimpleSessionView {
   name: string
   sessionType: DropdownOption
   activity: DropdownOption
+  objectives: DropdownOption[]
   firstSessionDate: LocalDate
   lastSessionDate: LocalDate
   instructors: InstructorView[]

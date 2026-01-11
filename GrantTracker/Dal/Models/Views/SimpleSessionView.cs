@@ -58,6 +58,7 @@ namespace GrantTracker.Dal.Models.Views
 		public OrganizationYearView OrganizationYear { get; set; }
 		public DropdownOption SessionType { get; set; }
 		public DropdownOption Activity { get; set; }
+		public List<DropdownOption> Objectives { get; set; }
         public DateOnly FirstSessionDate { get; set; }
         public DateOnly LastSessionDate { get; set; }
 		public List<InstructorView> Instructors { get; set; }
@@ -71,6 +72,7 @@ namespace GrantTracker.Dal.Models.Views
 			OrganizationYear = OrganizationYearView.FromDatabase(session.OrganizationYear),
 			SessionType = DropdownOption.FromDatabase(session.SessionType),
 			Activity = DropdownOption.FromDatabase(session.Activity),
+			Objectives = session.SessionObjectives.Select(so => DropdownOption.FromDatabase(so.Objective)).OrderBy(x => x.Abbreviation).ToList(),
 			FirstSessionDate = session.FirstSession,
 			LastSessionDate = session.LastSession,
 			Instructors = session.InstructorRegistrations.Select(ir => new InstructorView()
