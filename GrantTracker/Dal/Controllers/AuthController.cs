@@ -36,15 +36,15 @@ namespace GrantTracker.Dal.Controllers
         }
 
 		[HttpGet("")]
-		[ResponseCache(Duration = 43200, VaryByHeader = "Authorization")] // 12 hours
-		public ActionResult<UserIdentityView> Get()
+        [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)] // 12 hours
+        public ActionResult<UserIdentityView> Get()
 		{
 			try
 			{
 				var badgeNumber = User.Id();
 				var cacheKey = $"UserIdentity_{badgeNumber}";
 
-				if (_cache.TryGetValue(cacheKey, out object cachedIdentityObj) && cachedIdentityObj is UserIdentity cachedIdentity)
+				if (_cache.TryGetValue<UserIdentityView>(cacheKey, out var cachedIdentity))
 				{
 					_logger.LogInformation($"User identity for badge {badgeNumber} retrieved from cache");
 					return Ok(cachedIdentity);
@@ -61,6 +61,7 @@ namespace GrantTracker.Dal.Controllers
 				_cache.Set(cacheKey, identity, cacheOptions);
 				_logger.LogInformation($"User identity for badge {badgeNumber} cached");
 
+                Response.Headers["Cache-Control"] = "no-store, no-cache, must-revalidate, private";
                 return Ok(identity);
             }
 			catch (Exception ex)
@@ -123,7 +124,8 @@ namespace GrantTracker.Dal.Controllers
 		}
 
 		[HttpPost("")]
-		public async Task<IActionResult> AddUser(Props props)
+        [Authorize(Policy = "Administrator")]
+        public async Task<IActionResult> AddUser(Props props)
 		{
 			EmployeeDto employee = (await _staffRepository.SearchSynergyStaffAsync("", props.BadgeNumber)).FirstOrDefault();
 
@@ -140,7 +142,8 @@ namespace GrantTracker.Dal.Controllers
 		}
 
 		[HttpDelete("")]
-		public async Task<IActionResult> DeleteUser(Guid userOrganizationYearGuid)
+        [Authorize(Policy = "Administrator")]
+        public async Task<IActionResult> DeleteUser(Guid userOrganizationYearGuid)
 		{
 			await _authRepository.DeleteUserAsync(userOrganizationYearGuid);
 			return NoContent();

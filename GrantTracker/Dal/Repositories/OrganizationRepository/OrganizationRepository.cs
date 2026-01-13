@@ -6,6 +6,7 @@ using GrantTracker.Dal.Models.Views;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 using GrantTracker.Dal.Schema.Sprocs;
+using System.Text.Json;
 
 namespace GrantTracker.Dal.Repositories.OrganizationRepository;
 
@@ -40,7 +41,7 @@ public class OrganizationRepository : IOrganizationRepository
     public async Task<OrganizationView> GetYearsAsync(Guid OrganizationGuid)
 	{
         if (!_user.IsAuthorizedToViewOrganization(OrganizationGuid))
-            throw new Exception("User is not authorized to view this resource.");
+            throw new Exception($"User is not authorized to view this resource. orgGuid: {OrganizationGuid}. User can only view: {JsonSerializer.Serialize(_user.HomeOrganizationGuids())}");
 
             var organization = await _grantContext
 			.Organizations
@@ -58,7 +59,7 @@ public class OrganizationRepository : IOrganizationRepository
 		Guid organizationGuid = (await _grantContext.OrganizationYears.FindAsync(organizationYearGuid)).OrganizationGuid;
 
 		if (!_user.IsAuthorizedToViewOrganization(organizationGuid))
-			throw new Exception("User is not authorized to view this resource.");
+			throw new Exception($"User is not authorized to view this resource. orgGuid: {organizationGuid}. User can only view: {JsonSerializer.Serialize(_user.HomeOrganizationGuids())}");
 
 		var organizationYear = await _grantContext
 			.OrganizationYears
