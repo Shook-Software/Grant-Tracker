@@ -72,6 +72,35 @@ const createSessionColumns = (): ColumnDef<SimpleSessionView, any>[] => [
     id: 'activity.label'
   },
   {
+    accessorKey: "objectives",
+    header: ({ column }) => (
+      <HeaderCell label="Objectives">
+        <Select
+          value={column.getFilterValue() as string || "all"}
+          onValueChange={(value) => column.setFilterValue(value === "all" ? "" : value)}
+        >
+          <SelectTrigger className="w-32">
+            <SelectValue placeholder="All" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All</SelectItem>
+          </SelectContent>
+        </Select>
+      </HeaderCell>
+    ),
+    cell: ({ row }) => row.original.objectives.map((obj, index) => (
+      <>
+        {`(${obj.abbreviation}) ${obj.label}`}
+        {index === row.original.objectives.length - 1 ? null : <hr className='m-1'/>}
+      </>
+    )),
+    filterFn: (row, id, value) => {
+      if (!value) return true
+      return row.original.objectives.some(obj => obj.label === value)
+    },
+    id: 'objectives'
+  },
+  {
     accessorKey: "sessionType.label",
     header: ({ column }) => (
       <HeaderCell label="Type">
@@ -163,7 +192,8 @@ interface SessionDataTableProps {
   missingAttendance: AttendanceRecord[] | undefined,
   openSessionGuid: string | undefined,
   activities?: DropdownOption[],
-  sessionTypes?: DropdownOption[]
+  sessionTypes?: DropdownOption[],
+  objectives?: DropdownOption[],
   onRowClick?: (row: SimpleSessionView) => void
 }
 
@@ -173,6 +203,7 @@ function SessionDataTable({
   openSessionGuid,
   activities = [],
   sessionTypes = [],
+  objectives = [],
   onRowClick
 }: SessionDataTableProps) {
   const initialColumnFilters = openSessionGuid ? [
@@ -251,6 +282,32 @@ function SessionDataTable({
         }
       }
 
+      if (column.accessorKey === 'objectives' && objectives.length > 0) { //upon revisiting this, this is so dumb ES - 1/11/26
+        return {
+          ...column,
+          header: ({ column: col }) => (
+            <HeaderCell label="Objectives">
+              <Select
+                value={col.getFilterValue() as string || "all"}
+                onValueChange={(value) => col.setFilterValue(value === "all" ? "" : value)}
+              >
+                <SelectTrigger className="w-32">
+                  <SelectValue placeholder="All" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  {objectives.map(obj => (
+                    <SelectItem key={obj.guid} value={obj.label}>
+                      {obj.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </HeaderCell>
+          )
+        }
+      }
+
       return {
         ...column,
         cell: ({ row, ...rest }) => {
@@ -315,6 +372,7 @@ export default ({ user }: { user: User }): JSX.Element => {
   // Extract activities and sessionTypes from dropdown data
   const activities = dropdownData?.activities || []
   const sessionTypes = dropdownData?.sessionTypes || []
+  const objectives = dropdownData?.objectives || []
 
   if (!sessionsQuery || !instructorsQuery || sessionsQuery?.isPending || missingLoading)
     return <Spinner variant='border' />
@@ -361,6 +419,7 @@ export default ({ user }: { user: User }): JSX.Element => {
                       openSessionGuid={sessionGuid}
                       activities={activities}
                       sessionTypes={sessionTypes}
+                      objectives={objectives}
                       onRowClick={sessionGuid ? (session) => navigate(`../${session.sessionGuid}`) : undefined}
                     />
                   </section>
@@ -375,6 +434,7 @@ export default ({ user }: { user: User }): JSX.Element => {
                       openSessionGuid={sessionGuid}
                       activities={activities}
                       sessionTypes={sessionTypes}
+                      objectives={objectives}
                       onRowClick={sessionGuid ? (session) => navigate(`../${session.sessionGuid}`) : undefined}
                     />
                   </section>
@@ -389,6 +449,7 @@ export default ({ user }: { user: User }): JSX.Element => {
                       openSessionGuid={sessionGuid}
                       activities={activities}
                       sessionTypes={sessionTypes}
+                      objectives={objectives}
                       onRowClick={sessionGuid ? (session) => navigate(`../${session.sessionGuid}`) : undefined}
                     />
                   </section>
