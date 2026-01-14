@@ -89,7 +89,7 @@ export interface AttendanceTimeRecordDomain {
 }
 
 export interface AttendanceTimeRecordView {
-  guid: string
+  guid?: string
   startTime: LocalTime
   endTime: LocalTime
 }

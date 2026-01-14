@@ -581,25 +581,13 @@ export const payrollAuditFields = [
 		value: 'activity',
 	},
 	{
-		label: 'Registered Instructor Last Name',
-		value: 'registeredInstructorLastName',
-	},
-	{
-		label: 'Registered Instructor First Name',
-		value: 'registeredInstructorFirstName',
-	},
-	{
-		label: 'Attending Instructor Last Name',
+		label: 'Instructor Last Name',
 		value: 'attendingInstructorLastName',
 	},
 	{
-		label: 'Attending Instructor First Name',
+		label: 'Instructor First Name',
 		value: 'attendingInstructorFirstName',
-	},
-	{
-		label: 'Substitute?',
-		value: 'isSubstitute',
-	},
+	}
 ]
 
 
@@ -607,73 +595,20 @@ export const flattenPayrollReport = (data) => {
 	if (!data)
 		return []
 	
-	let flattenedResults: any[] = []
-	
-	data.forEach(x => {
-
-		let recordsToAdd: any[] = []
-		
-		x.registeredInstructors.forEach(ri => {
-
-			const instructorAttendance = x.attendingInstructorRecords.find(air => air.firstName == ri.firstName && air.lastName == ri.lastName)
-			
-			recordsToAdd = instructorAttendance 
-				? [...recordsToAdd, ...instructorAttendance.timeRecords.map(tr => ({
-					school: x.school,
-					className: x.className,
-					totalAttendees: x.totalAttendees,
-					activity: x.activity,
-					instanceDate: x.instanceDate.toString(),
-					startTime: tr.startTime.format(DateTimeFormatter.ofPattern('h:mm a').withLocale(Locale.ENGLISH)),
-					endTime: tr.endTime.format(DateTimeFormatter.ofPattern('h:mm a').withLocale(Locale.ENGLISH)),
-					totalTime: tr.totalTime,
-					registeredInstructorLastName: ri.lastName,
-					registeredInstructorFirstName: ri.firstName,
-					attendingInstructorLastName: instructorAttendance.lastName,
-					attendingInstructorFirstName: instructorAttendance.firstName,
-					isSubstitute: 'N'
-				}))]
-				: [...recordsToAdd, {
-					school: x.school,
-					className: x.className,
-					totalAttendees: x.totalAttendees,
-					activity: x.activity,
-					instanceDate: x.instanceDate.toString(),
-					startTime: '',
-					endTime: '',
-					totalTime: 0,
-					registeredInstructorLastName: ri.lastName,
-					registeredInstructorFirstName: ri.firstName,
-					attendingInstructorLastName: '',
-					attendingInstructorFirstName: '',
-					isSubstitute: 'N'
-				}]
-		})
-		
-		x.attendingInstructorRecords.filter(air => air.isSubstitute).forEach(air => {
-			recordsToAdd = [...recordsToAdd, 
-				...air.timeRecords.map(tr => ({
-					school: x.school,
-					className: x.className,
-					totalAttendees: x.totalAttendees,
-					activity: x.activity,
-					instanceDate: x.instanceDate.toString(),
-					startTime: tr.startTime.format(DateTimeFormatter.ofPattern('h:mm a').withLocale(Locale.ENGLISH)),
-					endTime: tr.endTime.format(DateTimeFormatter.ofPattern('h:mm a').withLocale(Locale.ENGLISH)),
-					totalTime: tr.totalTime,
-					registeredInstructorLastName: '',
-					registeredInstructorFirstName: '',
-					attendingInstructorLastName: air.lastName,
-					attendingInstructorFirstName: air.firstName,
-					isSubstitute: 'Y'
-				}))
-			]
-		})
-
-		flattenedResults = [...flattenedResults, ...recordsToAdd]
-	})
-
-	return flattenedResults
+	return data.flatMap(x => x.attendingInstructorRecords.flatMap(air => 
+		air.timeRecords.map(tr => ({
+			school: x.school,
+			className: x.className,
+			totalAttendees: x.totalAttendees,
+			activity: x.activity,
+			instanceDate: x.instanceDate.toString(),
+			startTime: tr.startTime.format(DateTimeFormatter.ofPattern('h:mm a').withLocale(Locale.ENGLISH)),
+			endTime: tr.endTime.format(DateTimeFormatter.ofPattern('h:mm a').withLocale(Locale.ENGLISH)),
+			totalTime: tr.totalTime,
+			attendingInstructorLastName: air.lastName,
+			attendingInstructorFirstName: air.firstName
+		})))
+	);
 }
 
 export const scheduleFields = [

@@ -127,11 +127,11 @@ module.exports = {
 	},
 
 	devServer: {
-		port: 44398,
+		port: 44395,
 		static: paths.dist, //where to look for files to serve
 		hot: true,
 		historyApiFallback: true,
-		https: true
+		https: false
 	}
 };
 

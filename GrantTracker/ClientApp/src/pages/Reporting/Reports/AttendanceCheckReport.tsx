@@ -13,6 +13,7 @@ import { DateOnly } from 'Models/DateOnly'
 import { TimeOnly } from 'Models/TimeOnly'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
+import TimeRecordDisplay from '@/components/ui/TimeRecordDisplay'
 
 interface AttendanceCheckData {
 	school: string
@@ -28,28 +29,6 @@ interface AttendanceCheckData {
 		lastName: string
 	}[]
 	attendanceEntry: boolean
-}
-
-const TimeRecordDisplay = ({timeRecords}: {timeRecords: any[]}): JSX.Element => {
-	const sortedRecords = timeRecords
-		.sort((first, second) => {
-			if (first.startTime.isBefore(second.startTime))
-				return -1
-			if (first.endTime.isAfter(second.endTime))
-				return 1
-			return 0
-		})
-  
-	return (
-		<div className='grid grid-cols-2 gap-1 text-center'>
-			{sortedRecords.map((record, index) => (
-				<React.Fragment key={index}>
-					<span className='text-center'>{record.startTime.format(DateTimeFormatter.ofPattern('h:mm a').withLocale(Locale.ENGLISH))}</span>
-					<span className='text-center'>{record.endTime.format(DateTimeFormatter.ofPattern('h:mm a').withLocale(Locale.ENGLISH))}</span>
-				</React.Fragment>
-			))}
-		</div>
-	)
 }
 
 const attendanceCheckColumns: ColumnDef<AttendanceCheckData, any>[] = [

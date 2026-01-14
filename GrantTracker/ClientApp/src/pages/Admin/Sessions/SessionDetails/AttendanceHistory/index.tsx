@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext, useRef } from 'react'
 import { Locale } from '@js-joda/locale_en-us'
 import { DateTimeFormatter } from '@js-joda/core'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
@@ -31,13 +31,17 @@ interface Props {
 }
 
 export default ({sessionGuid, sessionName, attendanceRecords, onChange, sessionType}: Props): JSX.Element => {
+  const [searchParams] = useSearchParams()
   const [showCopyModal, setShowCopyModal] = useState<boolean>(false)
   const [showDeletionModal, setShowDeletionModal] = useState<boolean>(false)
   const [recordToDelete, setRecordToDelete] = useState<SimpleAttendanceView | null>(null)
   const [recordToCopy, setRecordToCopy] = useState<SimpleAttendanceView | null>(null)
   const modalScrollRef = useRef<HTMLDivElement>(null)
+  const accordionRef = useRef<HTMLDivElement>(null)
 
   const { sessionsQuery } = useContext(OrgYearContext)
+
+  const defaultRecordGuid: string | null = searchParams.get("ar")
 
   function handleDeleteClick(record) {
     deleteAttendanceRecord(record.guid)
@@ -70,6 +74,12 @@ export default ({sessionGuid, sessionName, attendanceRecords, onChange, sessionT
       modalScrollRef.current.scrollTop = 0
     }
   }, [showCopyModal])
+
+  useEffect(() => {
+    const activeChild = accordionRef.current?.querySelector("[data-state=\"open\"]")
+    if (activeChild)
+      activeChild.scrollIntoView();
+  }, [defaultRecordGuid])
   
   return (
     <div className='space-y-4'>
@@ -82,9 +92,9 @@ export default ({sessionGuid, sessionName, attendanceRecords, onChange, sessionT
       {attendanceRecords.length === 0 ? (
         <p className='text-gray-600 text-center py-8'>No attendance records found.</p>
       ) : (
-        <Accordion type="multiple" className="space-y-2">
+        <Accordion ref={accordionRef} type="multiple" className="space-y-2" defaultValue={[defaultRecordGuid ?? '']}>
           {attendanceRecords.map((record, index) => (
-            <AccordionItem key={index} value={`record-${index}`} className="border rounded-lg">
+            <AccordionItem key={record.guid} value={record.guid} className="border rounded-lg">
               <AccordionTrigger className="px-4 py-3 hover:bg-gray-50">
                 <div className="flex items-center justify-between w-full mr-4">
                   <span className="font-medium w-50">
