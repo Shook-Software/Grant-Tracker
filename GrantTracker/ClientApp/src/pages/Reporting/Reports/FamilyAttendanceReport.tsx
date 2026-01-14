@@ -89,7 +89,7 @@ export default ({params, dateDisplay, fileOrgName, fileDate, isActive, onRowCoun
 	const [showRegularsOnly, setShowRegularsOnly] = useState<boolean>(false)
 
 	useEffect(() => {
-	  onRowCountChange(report?.length || 0)
+	  onRowCountChange(report?.reduce((acc, row) => acc + row.familyAttendance.length, 0) || 0)
 	}, [report])
 
 	const familyTypeOptions: string[] = useMemo<string[]>(() => [...new Set<string>(report?.flatMap(x => x.familyAttendance).map(attend => attend.familyMember))], [report])
