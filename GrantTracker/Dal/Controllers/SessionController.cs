@@ -65,6 +65,7 @@ public class SessionController : ControllerBase
         }
 		catch (Exception ex)
 		{
+			_logger.LogError(ex, "{Function} - orgYearGuid: {orgYearGuid}", nameof(GetAsync), orgYearGuid);
 			return StatusCode(500);
 		}
 	}
@@ -80,7 +81,7 @@ public class SessionController : ControllerBase
         }
 		catch (Exception ex)
         {
-            _logger.LogError(ex, "");
+            _logger.LogError(ex, "{Function} - sessionGuid: {sessionGuid}", nameof(Get), sessionGuid);
             return StatusCode(500);
         }
 	}
@@ -95,7 +96,7 @@ public class SessionController : ControllerBase
 		}
 		catch (Exception ex)
 		{
-			_logger.LogError(ex, "");
+			_logger.LogError(ex, "{Function} - sessionGuid: {sessionGuid}", nameof(GetOrganizationYearForSessionId), sessionGuid);
 			return StatusCode(500);
 		}
 	}
@@ -103,14 +104,30 @@ public class SessionController : ControllerBase
 	[HttpGet("{sessionGuid:guid}/status")]
 	public async Task<ActionResult<bool>> GetSessionStatus(Guid sessionGuid)
 	{
-		return Ok(await _sessionRepository.GetStatusAsync(sessionGuid));
+		try
+		{
+			return Ok(await _sessionRepository.GetStatusAsync(sessionGuid));
+		}
+		catch (Exception ex)
+		{
+			_logger.LogError(ex, "{Function} - sessionGuid: {sessionGuid}", nameof(GetSessionStatus), sessionGuid);
+			return StatusCode(500);
+		}
 	}
 
 	[HttpGet("{sessionGuid:Guid}/student/registration")]
 	public async Task<ActionResult<List<StudentRegistrationView>>> GetStudents(Guid sessionGuid, int dayOfWeek = -1)
 	{
-		var students = await _sessionRepository.GetStudentRegistrationsAsync(sessionGuid, dayOfWeek);
-		return Ok(students);
+		try
+		{
+			var students = await _sessionRepository.GetStudentRegistrationsAsync(sessionGuid, dayOfWeek);
+			return Ok(students);
+		}
+		catch (Exception ex)
+		{
+			_logger.LogError(ex, "{Function} - sessionGuid: {sessionGuid}, dayOfWeek: {dayOfWeek}", nameof(GetStudents), sessionGuid, dayOfWeek);
+			return StatusCode(500);
+		}
 	}
 
 	////
@@ -120,8 +137,16 @@ public class SessionController : ControllerBase
 	[HttpGet("{sessionGuid}/attendance")]
 	public async Task<ActionResult<SimpleAttendanceViewModel>> GetAttendanceOverview(Guid sessionGuid)
 	{
-		var simpleAttendanceViews = await _attendanceRepository.GetOverviewAsync(sessionGuid);
-		return Ok(simpleAttendanceViews);
+		try
+		{
+			var simpleAttendanceViews = await _attendanceRepository.GetOverviewAsync(sessionGuid);
+			return Ok(simpleAttendanceViews);
+		}
+		catch (Exception ex)
+		{
+			_logger.LogError(ex, "{Function} - sessionGuid: {sessionGuid}", nameof(GetAttendanceOverview), sessionGuid);
+			return StatusCode(500);
+		}
 	}
 
 	////
@@ -131,9 +156,16 @@ public class SessionController : ControllerBase
 	[HttpGet("{sessionGuid:guid}/attendance/{attendanceGuid:guid}")]
 	public async Task<ActionResult<AttendanceViewModel>> GetAttendanceRecords(Guid sessionGuid, Guid attendanceGuid)
 	{
-		var attendanceRecord = await _attendanceRepository.GetAsync(attendanceGuid);
-
-		return Ok(attendanceRecord);
+		try
+		{
+			var attendanceRecord = await _attendanceRepository.GetAsync(attendanceGuid);
+			return Ok(attendanceRecord);
+		}
+		catch (Exception ex)
+		{
+			_logger.LogError(ex, "{Function} - sessionGuid: {sessionGuid}, attendanceGuid: {attendanceGuid}", nameof(GetAttendanceRecords), sessionGuid, attendanceGuid);
+			return StatusCode(500);
+		}
 	}
 
 	[HttpGet("{sessionGuid:guid}/attendance/openDates")]
@@ -211,7 +243,7 @@ public class SessionController : ControllerBase
 		}
         catch (Exception ex)
         {
-            _logger.LogError(ex, "{Function} - An unhandled error occured.", nameof(GetOpenAttendanceDates));
+            _logger.LogError(ex, "{Function} - sessionGuid: {sessionGuid}, dayOfWeek: {dayOfWeek}", nameof(GetOpenAttendanceDates), sessionGuid, dayOfWeek);
             return StatusCode(500);
         }
     }
@@ -226,7 +258,7 @@ public class SessionController : ControllerBase
 		}
 		catch (Exception ex)
 		{
-			_logger.LogError(ex, "{Function} - An unhandled error occured.", nameof(DownloadAttendanceExportAsync));
+			_logger.LogError(ex, "{Function} - sessionGuid: {sessionGuid}, startDate: {startDate}, endDate: {endDate}", nameof(DownloadAttendanceExportAsync), sessionGuid, startDate, endDate);
 			return StatusCode(500);
 		}
 	}
@@ -245,7 +277,7 @@ public class SessionController : ControllerBase
         }
 		catch (Exception ex)
 		{
-            _logger.LogError(ex, "{Function} - An unhandled error occured.", nameof(AddSession));
+            _logger.LogError(ex, "{Function} - Name: {Name}, OrganizationYearGuid: {OrganizationYearGuid}", nameof(AddSession), session.Name, session.OrganizationYearGuid);
 			return StatusCode(500);
         }
 	}
@@ -260,7 +292,7 @@ public class SessionController : ControllerBase
         }
 		catch (Exception ex)
 		{
-			_logger.LogError(ex, "{Function} - An unhandled error occured.", nameof(RegisterStudent));
+			_logger.LogError(ex, "{Function} - sessionGuid: {sessionGuid}, StudentSchoolYearGuid: {StudentSchoolYearGuid}", nameof(RegisterStudent), sessionGuid, newRegistration.StudentSchoolYearGuid);
             return StatusCode(500);
         }
     }
@@ -275,7 +307,7 @@ public class SessionController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "{Function} - An unhandled error occured.", nameof(RegisterInstructor));
+            _logger.LogError(ex, "{Function} - sessionGuid: {sessionGuid}, instructorSchoolYearGuid: {instructorSchoolYearGuid}", nameof(RegisterInstructor), sessionGuid, instructorSchoolYearGuid);
             return StatusCode(500);
         }
     }
@@ -283,16 +315,22 @@ public class SessionController : ControllerBase
     [HttpPost("{destinationSessionGuid:guid}/registration/copy")]
 	public async Task<ActionResult<List<string>>> CopyStudentRegistrations(Guid destinationSessionGuid, [FromBody] List<Guid> studentSchoolYearGuids)
 	{
-		//the student school years are assured to exist, otherwise they wouldn't have been registered already
-		List<Guid> scheduleGuids = (await _sessionRepository.GetAsync(destinationSessionGuid)).DaySchedules.Select(ds => ds.DayScheduleGuid).ToList();
-
-		//we cannot make a list of Tasks without making the requisite repositories transient. Otherwise, thread-unsafe operation occurs.
-		foreach (var studentSchoolYearGuid in studentSchoolYearGuids)
+		try
 		{
-			await _sessionRepository.RegisterStudentAsync(destinationSessionGuid, scheduleGuids, studentSchoolYearGuid);
-		}
+			List<Guid> scheduleGuids = (await _sessionRepository.GetAsync(destinationSessionGuid)).DaySchedules.Select(ds => ds.DayScheduleGuid).ToList();
 
-		return Created($"{destinationSessionGuid}/registration/copy", studentSchoolYearGuids);
+			foreach (var studentSchoolYearGuid in studentSchoolYearGuids)
+			{
+				await _sessionRepository.RegisterStudentAsync(destinationSessionGuid, scheduleGuids, studentSchoolYearGuid);
+			}
+
+			return Created($"{destinationSessionGuid}/registration/copy", studentSchoolYearGuids);
+		}
+		catch (Exception ex)
+		{
+			_logger.LogError(ex, "{Function} - destinationSessionGuid: {destinationSessionGuid}, studentSchoolYearGuids: {studentSchoolYearGuids}", nameof(CopyStudentRegistrations), destinationSessionGuid, string.Join(", ", studentSchoolYearGuids));
+			return StatusCode(500);
+		}
     }
 
     [HttpPost("{sessionGuid:guid}/attendance/verify")]
@@ -313,7 +351,7 @@ public class SessionController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "{Function} - An unhandled error occured.", nameof(VerifyAttendance));
+            _logger.LogError(ex, "{Function} - sessionGuid: {sessionGuid}, instanceDate: {instanceDate}, attendanceGuid: {attendanceGuid}", nameof(VerifyAttendance), sessionGuid, instanceDate, attendanceGuid);
             return StatusCode(500);
         }
     }
@@ -350,7 +388,7 @@ public class SessionController : ControllerBase
         }
 		catch (Exception ex)
         {
-            _logger.LogError(ex, "{Function} - An unhandled error occured.", nameof(SubmitAttendance));
+            _logger.LogError(ex, "{Function} - sessionGuid: {sessionGuid}, Date: {Date}", nameof(SubmitAttendance), sessionGuid, sessionAttendance.Date);
             return StatusCode(500);
 		}
 	}
@@ -368,7 +406,7 @@ public class SessionController : ControllerBase
         }
 		catch (Exception ex)
 		{
-            _logger.LogError(ex, "{Function} - An unhandled error occured.", nameof(EditSession));
+            _logger.LogError(ex, "{Function} - Guid: {Guid}, Name: {Name}", nameof(EditSession), session.Guid, session.Name);
             return StatusCode(500);
         }
 	}
@@ -396,7 +434,7 @@ public class SessionController : ControllerBase
         }
 		catch (Exception ex)
 		{
-            _logger.LogError(ex, "{Function} - An unhandled error occured.", nameof(EditAttendance));
+            _logger.LogError(ex, "{Function} - sessionGuid: {sessionGuid}, attendanceGuid: {attendanceGuid}, Date: {Date}", nameof(EditAttendance), sessionGuid, attendanceGuid, sessionAttendance.Date);
             return StatusCode(500, "An unexpected error occurred while editing attendance. No changes were made.");
 		}
 	}
@@ -418,7 +456,7 @@ public class SessionController : ControllerBase
         }
 		catch (Exception ex)
         {
-            _logger.LogError(ex, "{Function} - An unhandled error occured.", nameof(DeleteSession));
+            _logger.LogError(ex, "{Function} - sessionGuid: {sessionGuid}", nameof(DeleteSession), sessionGuid);
             return StatusCode(500);
         }
 	}
@@ -433,7 +471,7 @@ public class SessionController : ControllerBase
         }
 		catch (Exception ex)
 		{
-            _logger.LogError(ex, "{Function} - An unhandled error occured.", nameof(UnregisterStudent));
+            _logger.LogError(ex, "{Function} - studentSchoolYearGuid: {studentSchoolYearGuid}, dayScheduleGuids: {dayScheduleGuids}", nameof(UnregisterStudent), studentSchoolYearGuid, string.Join(", ", dayScheduleGuids));
             return StatusCode(500);
         }
 	}
@@ -448,7 +486,7 @@ public class SessionController : ControllerBase
         }
 		catch (Exception ex)
 		{
-            _logger.LogError(ex, "{Function} - An unhandled error occured.", nameof(DeleteAttendanceRecord));
+            _logger.LogError(ex, "{Function} - attendanceGuid: {attendanceGuid}", nameof(DeleteAttendanceRecord), attendanceGuid);
             return StatusCode(500);
         }
 	}

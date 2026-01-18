@@ -47,7 +47,7 @@ namespace GrantTracker.Dal.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "");
+                _logger.LogError(ex, "{Function}", nameof(GetOrganizations));
                 return StatusCode(500);
             }
         }
@@ -62,7 +62,7 @@ namespace GrantTracker.Dal.Controllers
             }
 			catch (Exception ex)
             {
-                _logger.LogError(ex, "");
+                _logger.LogError(ex, "{Function} - OrganizationGuid: {OrganizationGuid}", nameof(GetOrganizationYears), OrganizationGuid);
                 return StatusCode(500);
 			}
 		}
@@ -77,7 +77,7 @@ namespace GrantTracker.Dal.Controllers
             }
 			catch (Exception ex)
             {
-                _logger.LogError(ex, "");
+                _logger.LogError(ex, "{Function} - organizationYearGuid: {organizationYearGuid}", nameof(GetOrganizationYear), organizationYearGuid);
                 return StatusCode(500);
 			}
         }
@@ -99,7 +99,7 @@ namespace GrantTracker.Dal.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "");
+                _logger.LogError(ex, "{Function} - organizationYearGuid: {organizationYearGuid}", nameof(GetMissingAttendanceRecordsAsync), organizationYearGuid);
                 return StatusCode(500, "An unknown error occured while fetching missing attendance.");
             }
         }
@@ -116,7 +116,7 @@ namespace GrantTracker.Dal.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "");
+                _logger.LogError(ex, "{Function} - organizationGuid: {organizationGuid}", nameof(GetAttendanceIssuesAsync), organizationGuid);
                 return StatusCode(500, "An unknown error occured while fetching attendance issues.");
             }
         }
@@ -135,7 +135,7 @@ namespace GrantTracker.Dal.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "");
+                _logger.LogError(ex, "{Function} - organizationYearGuid: {organizationYearGuid}", nameof(GetSessionIssues), organizationYearGuid);
                 return StatusCode(500, "An unknown error occured while fetching session issues.");
             }
         }
@@ -150,11 +150,11 @@ namespace GrantTracker.Dal.Controllers
                 OrganizationAttendanceGoal goal = await _organizationRepository.GetAttendanceGoalAsync(organizationGuid, date);
                 List<StudentDaysAttendedDTO> students = await _organizationRepository.GetStudentDaysAttendedAsync(goal.StartDate, goal.EndDate, organizationGuid);
 
-                return Ok(students); 
+                return Ok(students);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "");
+                _logger.LogError(ex, "{Function} - organizationGuid: {organizationGuid}, dateStr: {dateStr}", nameof(GetStudentDaysAttended), organizationGuid, dateStr);
                 return StatusCode(500, "An unknown error occured while fetching student days attended.");
             }
         }
@@ -193,7 +193,7 @@ namespace GrantTracker.Dal.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "");
+                _logger.LogError(ex, "{Function} - organizationGuid: {organizationGuid}, dateStr: {dateStr}", nameof(GetAttendanceGoalAggregates), organizationGuid, dateStr);
                 return StatusCode(500, "An unknown error occured while fetching attendance goal aggregates.");
             }
         }
@@ -211,7 +211,7 @@ namespace GrantTracker.Dal.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "");
+                _logger.LogError(ex, "{Function} - organizationGuid: {organizationGuid}", nameof(GetBlackoutDates), organizationGuid);
                 return StatusCode(500, "An unknown error occured while fetching blackout dates.");
             }
         }
@@ -228,7 +228,6 @@ namespace GrantTracker.Dal.Controllers
 
                 var blackoutDates = await _organizationRepository.GetBlackoutDatesAsync(orgYear.Organization.Guid);
 
-                // Filter blackout dates to only those within the organization year's date range
                 var filteredDates = blackoutDates
                     .Where(bd => bd.Date >= orgYear.Year.StartDate && bd.Date <= orgYear.Year.EndDate)
                     .ToList();
@@ -237,7 +236,7 @@ namespace GrantTracker.Dal.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "");
+                _logger.LogError(ex, "{Function} - organizationYearGuid: {organizationYearGuid}", nameof(GetBlackoutDatesByOrganizationYear), organizationYearGuid);
                 return StatusCode(500, "An unknown error occured while fetching blackout dates for organization year.");
             }
         }
@@ -258,7 +257,7 @@ namespace GrantTracker.Dal.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "");
+                _logger.LogError(ex, "{Function} - organizationGuid: {organizationGuid}, blackoutDate: {blackoutDate}", nameof(AddBlackoutDate), organizationGuid, blackoutDate);
                 return StatusCode(500, $"An unknown error occured while adding the blackout date {blackoutDate.ToShortDateString()}.");
             }
         }
@@ -284,7 +283,7 @@ namespace GrantTracker.Dal.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "");
+                _logger.LogError(ex, "{Function} - organizationGuid: {organizationGuid}", nameof(AddOrganizationAttendanceGoal), organizationGuid);
                 return StatusCode(500);
             }
         }
@@ -309,7 +308,7 @@ namespace GrantTracker.Dal.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "");
+                _logger.LogError(ex, "{Function} - organizationGuid: {organizationGuid}, attendanceGoalGuid: {attendanceGoalGuid}", nameof(AlterOrganizationAttendanceGoal), organizationGuid, attendanceGoalGuid);
                 return StatusCode(500);
             }
         }
@@ -328,7 +327,7 @@ namespace GrantTracker.Dal.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "");
+                _logger.LogError(ex, "{Function} - organizationGuid: {organizationGuid}, attendanceGoalGuid: {attendanceGoalGuid}", nameof(DeleteOrganizationAttendanceGoal), organizationGuid, attendanceGoalGuid);
                 return StatusCode(500);
             }
         }
@@ -349,7 +348,7 @@ namespace GrantTracker.Dal.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "");
+                _logger.LogError(ex, "{Function} - organizationGuid: {organizationGuid}, blackoutDateGuid: {blackoutDateGuid}", nameof(DeleteBlackoutDate), organizationGuid, blackoutDateGuid);
                 return StatusCode(500, "An unknown error occured while deleting blackout date.");
             }
         }
@@ -365,6 +364,7 @@ namespace GrantTracker.Dal.Controllers
             }
 			catch (Exception ex)
 			{
+                _logger.LogError(ex, "{Function} - OrganizationGuid: {OrganizationGuid}", nameof(DeleteOrganization), OrganizationGuid);
                 return StatusCode(500);
             }
         }
@@ -380,7 +380,7 @@ namespace GrantTracker.Dal.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "");
+                _logger.LogError(ex, "{Function} - OrganizationYearGuid: {OrganizationYearGuid}", nameof(DeleteOrganizationYear), OrganizationYearGuid);
                 return StatusCode(500);
             }
         }
@@ -395,7 +395,7 @@ namespace GrantTracker.Dal.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "");
+                _logger.LogError(ex, "{Function} - organizationYearGuid: {organizationYearGuid}", nameof(GetStudentGroupsAsync), organizationYearGuid);
                 return StatusCode(500);
             }
         }
@@ -410,7 +410,7 @@ namespace GrantTracker.Dal.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "");
+                _logger.LogError(ex, "{Function} - studentGroupGuid: {studentGroupGuid}", nameof(GetStudentGroupAsync), studentGroupGuid);
                 return StatusCode(500);
             }
         }
@@ -425,7 +425,7 @@ namespace GrantTracker.Dal.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "");
+                _logger.LogError(ex, "{Function} - organizationYearGuid: {organizationYearGuid}, name: {name}", nameof(CreateStudentGroupAsync), organizationYearGuid, name);
                 return StatusCode(500);
             }
         }
@@ -440,7 +440,7 @@ namespace GrantTracker.Dal.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "");
+                _logger.LogError(ex, "{Function} - studentGroupGuid: {studentGroupGuid}", nameof(DeleteStudentGroupAsync), studentGroupGuid);
                 return StatusCode(500);
             }
         }
@@ -462,7 +462,7 @@ namespace GrantTracker.Dal.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "{Function} - An unhandled error occured.", nameof(GetTodayAttendanceAsync));
+                _logger.LogError(ex, "{Function} - organizationYearGuid: {organizationYearGuid}, dateStr: {dateStr}", nameof(GetTodayAttendanceAsync), organizationYearGuid, dateStr);
                 return StatusCode(500, "An unknown error occured while fetching today's attendance.");
             }
         }
@@ -483,7 +483,7 @@ namespace GrantTracker.Dal.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "{Function} - An unhandled error occured.", nameof(GetOutstandingAttendanceAsync));
+                _logger.LogError(ex, "{Function} - organizationYearGuid: {organizationYearGuid}", nameof(GetOutstandingAttendanceAsync), organizationYearGuid);
                 return StatusCode(500, "An unknown error occured while fetching outstanding attendance.");
             }
         }

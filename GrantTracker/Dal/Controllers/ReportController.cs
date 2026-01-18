@@ -37,7 +37,7 @@ public class ReportController : ControllerBase
         }
 		catch (Exception ex)
 		{
-            _logger.LogError(ex, "{Function} - An unhandled error occured while fetching the CCLC10 report.", nameof(GetSiteSessionsAsync));
+            _logger.LogError(ex, "{Function} - startDateStr: {startDateStr}, endDateStr: {endDateStr}", nameof(GetAzEDSCCLC10ReportAsync), startDateStr, endDateStr);
             return StatusCode(500);
         }
     }
@@ -52,7 +52,7 @@ public class ReportController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "{Function} - An unhandled error occured while fetching the payroll audit report.", nameof(GetPayrollAuditReportAsync));
+            _logger.LogError(ex, "{Function} - startDateStr: {startDateStr}, endDateStr: {endDateStr}, organizationGuid: {organizationGuid}", nameof(GetPayrollAuditReportAsync), startDateStr, endDateStr, organizationGuid);
             return StatusCode(500);
         }
     }
@@ -67,7 +67,7 @@ public class ReportController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "{Function} - An unhandled error occured while fetching the attendance check report.", nameof(GetAttendanceCheckReportAsync));
+            _logger.LogError(ex, "{Function} - startDateStr: {startDateStr}, endDateStr: {endDateStr}, organizationGuid: {organizationGuid}", nameof(GetAttendanceCheckReportAsync), startDateStr, endDateStr, organizationGuid);
             return StatusCode(500);
         }
     }
@@ -82,7 +82,7 @@ public class ReportController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "{Function} - An unhandled error occured while fetching the program overview report.", nameof(GetProgramOverviewReportAsync));
+            _logger.LogError(ex, "{Function} - startDateStr: {startDateStr}, endDateStr: {endDateStr}, organizationGuid: {organizationGuid}", nameof(GetProgramOverviewReportAsync), startDateStr, endDateStr, organizationGuid);
             return StatusCode(500);
         }
     }
@@ -97,7 +97,7 @@ public class ReportController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "{Function} - An unhandled error occured while fetching the staff summary report.", nameof(GetStaffSummaryReportAsync));
+            _logger.LogError(ex, "{Function} - yearGuid: {yearGuid}, organizationGuid: {organizationGuid}", nameof(GetStaffSummaryReportAsync), yearGuid, organizationGuid);
             return StatusCode(500);
         }
     }
@@ -112,7 +112,7 @@ public class ReportController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "{Function} - An unhandled error occured while fetching the student attendance report.", nameof(GetStudentAttendanceReportAsync));
+            _logger.LogError(ex, "{Function} - startDateStr: {startDateStr}, endDateStr: {endDateStr}, organizationGuid: {organizationGuid}", nameof(GetStudentAttendanceReportAsync), startDateStr, endDateStr, organizationGuid);
             return StatusCode(500);
         }
     }
@@ -127,7 +127,7 @@ public class ReportController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "{Function} - An unhandled error occured while fetching the summary of classes report.", nameof(GetStaffSummaryReportAsync));
+            _logger.LogError(ex, "{Function} - startDateStr: {startDateStr}, endDateStr: {endDateStr}, organizationGuid: {organizationGuid}", nameof(GetSummaryOfClassesReportAsync), startDateStr, endDateStr, organizationGuid);
             return StatusCode(500);
         }
     }
@@ -142,7 +142,7 @@ public class ReportController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "{Function} - An unhandled error occured while fetching the total activity report.", nameof(GetTotalActivityReportAsync));
+            _logger.LogError(ex, "{Function} - startDateStr: {startDateStr}, endDateStr: {endDateStr}, organizationGuid: {organizationGuid}", nameof(GetTotalActivityReportAsync), startDateStr, endDateStr, organizationGuid);
             return StatusCode(500);
         }
     }
@@ -157,7 +157,7 @@ public class ReportController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "{Function} - An unhandled error occured while fetching the family report.", nameof(GetFamilyAttendanceReportAsync));
+            _logger.LogError(ex, "{Function} - startDateStr: {startDateStr}, endDateStr: {endDateStr}, organizationGuid: {organizationGuid}", nameof(GetFamilyAttendanceReportAsync), startDateStr, endDateStr, organizationGuid);
             return StatusCode(500);
         }
     }
@@ -172,7 +172,7 @@ public class ReportController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "{Function} - An unhandled error occured while fetching the student survey report.", nameof(GetStudentSurveyReportAsync));
+            _logger.LogError(ex, "{Function} - startDateStr: {startDateStr}, endDateStr: {endDateStr}, organizationGuid: {organizationGuid}", nameof(GetStudentSurveyReportAsync), startDateStr, endDateStr, organizationGuid);
             return StatusCode(500);
         }
     }
@@ -189,7 +189,7 @@ public class ReportController : ControllerBase
 		}
 		catch (Exception ex)
         {
-            _logger.LogError(ex, "{Function} - An unhandled error occured while fetching the site session report.", nameof(GetSiteSessionsAsync));
+            _logger.LogError(ex, "{Function} - startDateStr: {startDateStr}, endDateStr: {endDateStr}, organizationGuid: {organizationGuid}", nameof(GetSiteSessionsAsync), startDateStr, endDateStr, organizationGuid);
             return StatusCode(500);
 		}
     }
@@ -206,7 +206,7 @@ public class ReportController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "{Function} - An unhandled error occured while fetching the site session report.", nameof(GetSiteSessionsAsync));
+            _logger.LogError(ex, "{Function} - startDateStr: {startDateStr}, endDateStr: {endDateStr}, organizationGuid: {organizationGuid}", nameof(GetScheduleReportAsync), startDateStr, endDateStr, organizationGuid);
             return StatusCode(500);
         }
     }
@@ -225,7 +225,7 @@ public class ReportController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "{Function} - An unhandled error occured while fetching the site session report.", nameof(GetSiteSessionsAsync));
+            _logger.LogError(ex, "{Function}", nameof(GetStaffingReportAsync));
             return StatusCode(500);
         }
     }
@@ -240,7 +240,7 @@ public class ReportController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "{Function} - An unhandled error occured while fetching the site session report.", nameof(GetSiteSessionsAsync));
+            _logger.LogError(ex, "{Function} - startDateStr: {startDateStr}, endDateStr: {endDateStr}, organizationGuid: {organizationGuid}", nameof(GetStudentDaysAttendedAsync), startDateStr, endDateStr, organizationGuid);
             return StatusCode(500);
         }
     }

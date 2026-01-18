@@ -30,54 +30,86 @@ namespace GrantTracker.Dal.Controllers
 		[HttpGet("")]
 		public async Task<ActionResult<List<StudentSchoolYearViewModel>>> GetAll(Guid organizationGuid, Guid yearGuid)
 		{
-			var students = await _studentRepository.GetAsync("", organizationGuid, yearGuid);
-			return Ok(students);
+			try
+			{
+				var students = await _studentRepository.GetAsync("", organizationGuid, yearGuid);
+				return Ok(students);
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex, "{Function} - organizationGuid: {organizationGuid}, yearGuid: {yearGuid}", nameof(GetAll), organizationGuid, yearGuid);
+				return StatusCode(500);
+			}
 		}
 
 		[HttpGet("synergy")]
 		public async Task<ActionResult<List<StudentSchoolYearViewModel>>> SearchSynergy(Guid organizationYearGuid, string? firstName = "", string? lastName = "", string? matricNumber = "", [FromQuery(Name = "grades[]")] Guid[]? grades = null)
 		{
-			List<string> synergyGrades = new();
-			List<string> grantTrackerGrades = new();
-
-			foreach (Guid guid in grades)
+			try
 			{
-				string grade = await _lookupRepository.GetValueAsync(guid);
-				string synergyGrade = GradeDto.ToSynergy(grade);
+				List<string> synergyGrades = new();
+				List<string> grantTrackerGrades = new();
 
-				if (!String.IsNullOrEmpty(grade))
-					grantTrackerGrades.Add(grade);
-				if (!String.IsNullOrEmpty(synergyGrade))
-					synergyGrades.Add(synergyGrade);
+				foreach (Guid guid in grades)
+				{
+					string grade = await _lookupRepository.GetValueAsync(guid);
+					string synergyGrade = GradeDto.ToSynergy(grade);
+
+					if (!String.IsNullOrEmpty(grade))
+						grantTrackerGrades.Add(grade);
+					if (!String.IsNullOrEmpty(synergyGrade))
+						synergyGrades.Add(synergyGrade);
+				}
+
+				var filter = new StudentFilter()
+				{
+					FirstName = firstName,
+					LastName = lastName,
+					SynergyGrades = synergyGrades,
+					GrantTrackerGrades = grantTrackerGrades,
+					MatricNumber = matricNumber,
+					OrganizationYearGuid = organizationYearGuid
+				};
+
+				var students = await _studentRepository.SearchSynergyAsync(filter);
+
+				return Ok(students);
 			}
-
-			var filter = new StudentFilter()
+			catch (Exception ex)
 			{
-				FirstName = firstName,
-				LastName = lastName,
-				SynergyGrades = synergyGrades,
-				GrantTrackerGrades = grantTrackerGrades,
-				MatricNumber = matricNumber,
-				OrganizationYearGuid = organizationYearGuid
-			};
-
-			var students = await _studentRepository.SearchSynergyAsync(filter);
-
-			return Ok(students);
+				_logger.LogError(ex, "{Function} - organizationYearGuid: {organizationYearGuid}, firstName: {firstName}, lastName: {lastName}, matricNumber: {matricNumber}", nameof(SearchSynergy), organizationYearGuid, firstName, lastName, matricNumber);
+				return StatusCode(500);
+			}
 		}
 
 		[HttpGet("{studentGuid:guid}")]
 		public async Task<ActionResult<StudentSchoolYearWithRecordsViewModel>> Get(Guid studentGuid)
 		{
-			var student = await _studentRepository.GetAsync(studentGuid);
-			return Ok(student);
+			try
+			{
+				var student = await _studentRepository.GetAsync(studentGuid);
+				return Ok(student);
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex, "{Function} - studentGuid: {studentGuid}", nameof(Get), studentGuid);
+				return StatusCode(500);
+			}
 		}
 
 		[HttpGet("{studentYearGuid:guid}/attendance")]
 		public async Task<ActionResult<List<StudentAttendanceViewModel>>> GetSingle(Guid studentYearGuid)
 		{
-			var studentSchoolYear = await _studentRepository.GetAsync(studentYearGuid);
-			return Ok(studentSchoolYear.AttendanceRecords);
+			try
+			{
+				var studentSchoolYear = await _studentRepository.GetAsync(studentYearGuid);
+				return Ok(studentSchoolYear.AttendanceRecords);
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex, "{Function} - studentYearGuid: {studentYearGuid}", nameof(GetSingle), studentYearGuid);
+				return StatusCode(500);
+			}
 		}
 
 		[HttpPost("")]
@@ -92,7 +124,7 @@ namespace GrantTracker.Dal.Controllers
             }
 			catch (Exception ex)
 			{
-				_logger.LogError(ex, "");
+				_logger.LogError(ex, "{Function} - FirstName: {FirstName}, LastName: {LastName}, MatricNumber: {MatricNumber}, orgYearGuid: {orgYearGuid}", nameof(CreateNewStudentAsync), studentDto.FirstName, studentDto.LastName, studentDto.MatricNumber, orgYearGuid);
 				return StatusCode(500);
 			}
         }
@@ -107,7 +139,7 @@ namespace GrantTracker.Dal.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "");
+                _logger.LogError(ex, "{Function} - studentGroupGuid: {studentGroupGuid}, studentSchoolYearGuid: {studentSchoolYearGuid}", nameof(AddStudentToGroupAsync), studentGroupGuid, studentSchoolYearGuid);
                 return StatusCode(500);
             }
         }
@@ -122,7 +154,7 @@ namespace GrantTracker.Dal.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "");
+                _logger.LogError(ex, "{Function} - studentGroupGuid: {studentGroupGuid}, studentSchoolYearGuid: {studentSchoolYearGuid}", nameof(DeleteStudentGroupItemAsync), studentGroupGuid, studentSchoolYearGuid);
                 return StatusCode(500);
             }
         }

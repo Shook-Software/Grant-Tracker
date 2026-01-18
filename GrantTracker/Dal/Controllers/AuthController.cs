@@ -107,13 +107,19 @@ namespace GrantTracker.Dal.Controllers
             }
 		}
 
-		//this doesn't belong here
 		[HttpGet("organizationYear")]
 		public async Task<ActionResult<Guid>> GetOrganizationYearGuid(Guid organizationGuid, Guid yearGuid)
 		{
-			//if user is an admin
-			Guid organizationYearGuid = await _organizationYearRepository.GetGuidAsync(organizationGuid, yearGuid);
-			return Ok(organizationYearGuid);
+			try
+			{
+				Guid organizationYearGuid = await _organizationYearRepository.GetGuidAsync(organizationGuid, yearGuid);
+				return Ok(organizationYearGuid);
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex, "{Function} - organizationGuid: {organizationGuid}, yearGuid: {yearGuid}", nameof(GetOrganizationYearGuid), organizationGuid, yearGuid);
+				return StatusCode(500);
+			}
 		}
 
 		public class Props
@@ -127,26 +133,42 @@ namespace GrantTracker.Dal.Controllers
         [Authorize(Policy = "Administrator")]
         public async Task<IActionResult> AddUser(Props props)
 		{
-			EmployeeDto employee = (await _staffRepository.SearchSynergyStaffAsync("", props.BadgeNumber)).FirstOrDefault();
-
-			await _authRepository.AddUserAsync(new UserIdentityView()
+			try
 			{
-				FirstName = employee.FirstName,
-				LastName = employee.LastName,
-				BadgeNumber = props.BadgeNumber,
-				OrganizationYearGuid = props.OrganizationYearGuid,
-				Claim = props.ClaimType == 0 ? IdentityClaim.Administrator : IdentityClaim.Coordinator
-			});
+				EmployeeDto employee = (await _staffRepository.SearchSynergyStaffAsync("", props.BadgeNumber)).FirstOrDefault();
 
-			return Ok();
+				await _authRepository.AddUserAsync(new UserIdentityView()
+				{
+					FirstName = employee.FirstName,
+					LastName = employee.LastName,
+					BadgeNumber = props.BadgeNumber,
+					OrganizationYearGuid = props.OrganizationYearGuid,
+					Claim = props.ClaimType == 0 ? IdentityClaim.Administrator : IdentityClaim.Coordinator
+				});
+
+				return Ok();
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex, "{Function} - BadgeNumber: {BadgeNumber}, OrganizationYearGuid: {OrganizationYearGuid}, ClaimType: {ClaimType}", nameof(AddUser), props.BadgeNumber, props.OrganizationYearGuid, props.ClaimType);
+				return StatusCode(500);
+			}
 		}
 
 		[HttpDelete("")]
         [Authorize(Policy = "Administrator")]
         public async Task<IActionResult> DeleteUser(Guid userOrganizationYearGuid)
 		{
-			await _authRepository.DeleteUserAsync(userOrganizationYearGuid);
-			return NoContent();
+			try
+			{
+				await _authRepository.DeleteUserAsync(userOrganizationYearGuid);
+				return NoContent();
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex, "{Function} - userOrganizationYearGuid: {userOrganizationYearGuid}", nameof(DeleteUser), userOrganizationYearGuid);
+				return StatusCode(500);
+			}
 		}
 
 		//[HttpPut("user")]

@@ -28,25 +28,49 @@ public class InstructorController : ControllerBase
 	[HttpGet("")]
 	public async Task<ActionResult<List<InstructorSchoolYearViewModel>>> GetInstructors(Guid orgYearGuid)
 	{
-		var instructors = await _instructorRepository.GetInstructorsAsync(orgYearGuid);
-		return Ok(instructors);
+		try
+		{
+			var instructors = await _instructorRepository.GetInstructorsAsync(orgYearGuid);
+			return Ok(instructors);
+		}
+		catch (Exception ex)
+		{
+			_logger.LogError(ex, "{Function} - orgYearGuid: {orgYearGuid}", nameof(GetInstructors), orgYearGuid);
+			return StatusCode(500);
+		}
 	}
 
 	//should we in some way umbrella this under Organization/OrganizationYear control?
 	[HttpGet("{instructorSchoolYearGuid:guid}")]
 	public async Task<ActionResult<InstructorSchoolYearViewModel>> GetInstructorSchoolYear(Guid instructorSchoolYearGuid)
 	{
-		var instructorSchoolYear = await _instructorSchoolYearRepository.GetAsync(instructorSchoolYearGuid);
-		return Ok(instructorSchoolYear);
+		try
+		{
+			var instructorSchoolYear = await _instructorSchoolYearRepository.GetAsync(instructorSchoolYearGuid);
+			return Ok(instructorSchoolYear);
+		}
+		catch (Exception ex)
+		{
+			_logger.LogError(ex, "{Function} - instructorSchoolYearGuid: {instructorSchoolYearGuid}", nameof(GetInstructorSchoolYear), instructorSchoolYearGuid);
+			return StatusCode(500);
+		}
 	}
 
 	[HttpGet("search")]
 	public async Task<ActionResult<List<EmployeeDto>>> SearchAllDistrictEmployees(string name = "", string badgeNumber = "")
 	{
-		return await _instructorRepository.SearchSynergyStaffAsync(name, badgeNumber);
+		try
+		{
+			return await _instructorRepository.SearchSynergyStaffAsync(name, badgeNumber);
+		}
+		catch (Exception ex)
+		{
+			_logger.LogError(ex, "{Function} - name: {name}, badgeNumber: {badgeNumber}", nameof(SearchAllDistrictEmployees), name, badgeNumber);
+			return StatusCode(500);
+		}
 	}
 
-	[HttpPost("add")] 
+	[HttpPost("add")]
 	public async Task<ActionResult> AddInstructor(InstructorDto instructor, Guid organizationYearGuid)
 	{
 		try
@@ -56,7 +80,7 @@ public class InstructorController : ControllerBase
         }
 		catch (Exception ex)
 		{
-			_logger.LogError(ex, "");
+			_logger.LogError(ex, "{Function} - BadgeNumber: {BadgeNumber}, organizationYearGuid: {organizationYearGuid}", nameof(AddInstructor), instructor.BadgeNumber, organizationYearGuid);
 			return StatusCode(500);
 		}
 	}
@@ -71,7 +95,7 @@ public class InstructorController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "");
+            _logger.LogError(ex, "{Function} - instructorSchoolYearGuid: {instructorSchoolYearGuid}, studentGroupGuid: {studentGroupGuid}", nameof(AttachStudentGroup), instructorSchoolYearGuid, studentGroupGuid);
             return StatusCode(500);
         }
     }
@@ -86,7 +110,7 @@ public class InstructorController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "");
+            _logger.LogError(ex, "{Function} - instructorSchoolYearGuid: {instructorSchoolYearGuid}, studentGroupGuid: {studentGroupGuid}", nameof(DetachStudentGroup), instructorSchoolYearGuid, studentGroupGuid);
             return StatusCode(500);
         }
     }
@@ -107,7 +131,7 @@ public class InstructorController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "");
+            _logger.LogError(ex, "{Function} - instructorSchoolYearGuid: {instructorSchoolYearGuid}", nameof(AlterInstructorStatus), instructorSchoolYearGuid);
             return StatusCode(500);
         }
     }
@@ -122,7 +146,7 @@ public class InstructorController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "");
+            _logger.LogError(ex, "{Function} - instructorSchoolYearGuid: {instructorSchoolYearGuid}", nameof(ToggleInstructorDeletion), instructorSchoolYearGuid);
             return StatusCode(500);
         }
     }

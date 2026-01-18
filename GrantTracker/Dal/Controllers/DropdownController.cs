@@ -33,7 +33,7 @@ public class DropdownController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "");
+            _logger.LogError(ex, "{Function}", nameof(GetAllAsync));
             return StatusCode(500);
         }
     }
@@ -41,33 +41,65 @@ public class DropdownController : ControllerBase
     [HttpGet("view/instructorStatus")]
     public async Task<ActionResult<List<DropdownOption>>> GetStatuses()
     {
-        var instructorStatuses = await _dropdownRepository.GetInstructorStatusesAsync();
-        return Ok(instructorStatuses);
+        try
+        {
+            var instructorStatuses = await _dropdownRepository.GetInstructorStatusesAsync();
+            return Ok(instructorStatuses);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "{Function}", nameof(GetStatuses));
+            return StatusCode(500);
+        }
     }
 
     [HttpGet("view/grades")]
     public async Task<ActionResult<List<DropdownOption>>> GetGrades()
     {
-        var grades = await _dropdownRepository.GetGradesAsync();
-        return Ok(grades);
+        try
+        {
+            var grades = await _dropdownRepository.GetGradesAsync();
+            return Ok(grades);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "{Function}", nameof(GetGrades));
+            return StatusCode(500);
+        }
     }
 
     [HttpGet("organization")]
     public async Task<ActionResult<List<OrganizationView>>> GetOrganizations()
     {
-        var user = HttpContext.User;
-        var organizations = await _dropdownRepository.GetOrganizationsAsync(user.IsAdmin(), User.HomeOrganizationGuids());
-        return Ok(organizations);
+        try
+        {
+            var user = HttpContext.User;
+            var organizations = await _dropdownRepository.GetOrganizationsAsync(user.IsAdmin(), User.HomeOrganizationGuids());
+            return Ok(organizations);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "{Function}", nameof(GetOrganizations));
+            return StatusCode(500);
+        }
     }
 
     [HttpGet("year")]
     public async Task<ActionResult<List<YearView>>> GetYears(Guid? OrganizationGuid = default)
     {
-        if ((OrganizationGuid == default && !HttpContext.User.IsAdmin()) || !HttpContext.User.IsAuthorizedToViewOrganization(OrganizationGuid))
-            return Unauthorized();
+        try
+        {
+            if ((OrganizationGuid == default && !HttpContext.User.IsAdmin()) || !HttpContext.User.IsAuthorizedToViewOrganization(OrganizationGuid))
+                return Unauthorized();
 
-        var years = (await _dropdownRepository.GetYearsAsync(OrganizationGuid)).OrderByDescending(y => y.SchoolYear).ThenByDescending(y => y.Quarter).ToList();
-        return Ok(years);
+            var years = (await _dropdownRepository.GetYearsAsync(OrganizationGuid)).OrderByDescending(y => y.SchoolYear).ThenByDescending(y => y.Quarter).ToList();
+            return Ok(years);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "{Function} - OrganizationGuid: {OrganizationGuid}", nameof(GetYears), OrganizationGuid);
+            return StatusCode(500);
+        }
     }
 
     [HttpGet("payrollYear")]
@@ -95,7 +127,7 @@ public class DropdownController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "");
+            _logger.LogError(ex, "{Function}", nameof(GetPayrollYearAsync));
             return StatusCode(500);
         }
     }

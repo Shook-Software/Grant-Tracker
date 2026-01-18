@@ -52,15 +52,31 @@ public class DevController(
     [HttpGet("dropdowns")]
     public async Task<ActionResult<DropdownOptions>> GetDropdownOptions()
     {
-        var options = await _dropdownRepository.GetAllDropdownOptionsAsync();
-        return Ok(options);
+        try
+        {
+            var options = await _dropdownRepository.GetAllDropdownOptionsAsync();
+            return Ok(options);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "{Function}", nameof(GetDropdownOptions));
+            return StatusCode(500);
+        }
     }
 
     [HttpGet("authentication")]
     public async Task<ActionResult<List<UserIdentity>>> GetUserAuthentication()
     {
-        var users = await _authRepository.GetCurrentUsersAsync();
-        return Ok(users);
+        try
+        {
+            var users = await _authRepository.GetCurrentUsersAsync();
+            return Ok(users);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "{Function}", nameof(GetUserAuthentication));
+            return StatusCode(500);
+        }
     }
 
     [HttpGet("instructors")]
@@ -73,7 +89,7 @@ public class DevController(
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "");
+            _logger.LogError(ex, "{Function}", nameof(GetInstructorsPendingDeletionAsync));
             return StatusCode(500);
         }
     }
@@ -81,8 +97,16 @@ public class DevController(
     [HttpGet("organizationYear")]
     public async Task<ActionResult<List<OrganizationYearView>>> GetOrganizations()
     {
-        var organizationYears = await _authRepository.GetOrganizationYearsForCurrentYear();
-        return Ok(organizationYears);
+        try
+        {
+            var organizationYears = await _authRepository.GetOrganizationYearsForCurrentYear();
+            return Ok(organizationYears);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "{Function}", nameof(GetOrganizations));
+            return StatusCode(500);
+        }
     }
 
     #region School Year Controls
@@ -90,8 +114,16 @@ public class DevController(
     [HttpGet("year")]
     public async Task<ActionResult<List<Year>>> GetYears()
     {
-        var schoolYears = await _yearRepository.GetAsync();
-        return Ok(schoolYears);
+        try
+        {
+            var schoolYears = await _yearRepository.GetAsync();
+            return Ok(schoolYears);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "{Function}", nameof(GetYears));
+            return StatusCode(500);
+        }
     }
 
     [HttpPatch("year")]
@@ -107,6 +139,7 @@ public class DevController(
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "{Function} - YearGuid: {YearGuid}", nameof(UpdateYear), yearModel?.YearGuid);
             return StatusCode(500);
         }
     }
@@ -121,7 +154,7 @@ public class DevController(
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "{Function} - An unhandled error occured.", nameof(SynchronizeSynergyGrades));
+            _logger.LogError(ex, "{Function} - YearGuid: {YearGuid}", nameof(SynchronizeSynergyGrades), YearGuid);
             return StatusCode(500);
         }
     }
@@ -131,8 +164,6 @@ public class DevController(
     {
         try
         {
-            //Ensure no parameters are null, year is 4 digits, start date and end date do not intersect already existing Years
-            //validation
             if (year is null)
                 throw new Exception("Parameter object cannot be null.");
 
@@ -140,13 +171,12 @@ public class DevController(
             if (errors.Count > 0)
                 return BadRequest(errors);
 
-            //yearGuid in model will be entered in DB
             await _yearRepository.AddAsync(year);
             return NoContent();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "{Function} - An unhandled error occured.", nameof(AddYear));
+            _logger.LogError(ex, "{Function} - SchoolYear: {SchoolYear}, Quarter: {Quarter}", nameof(AddYear), year?.SchoolYear, year?.Quarter);
             return StatusCode(500);
         }
     }
@@ -163,7 +193,7 @@ public class DevController(
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "");
+            _logger.LogError(ex, "{Function} - type: {type}, optionLabel: {optionLabel}", nameof(AddDropdownOption), type, option?.Label);
             return StatusCode(500);
         }
     }
@@ -178,7 +208,7 @@ public class DevController(
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "");
+            _logger.LogError(ex, "{Function} - type: {type}, optionsCount: {optionsCount}", nameof(UpdateDropdownOption), type, options?.Length);
             return StatusCode(500);
         }
     }
@@ -273,7 +303,7 @@ public class DevController(
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "");
+            _logger.LogError(ex, "{Function} - Name: {Name}", nameof(UploadPayrollYearPDFAsync), form?.Name);
             return BadRequest(ex.Message);
         }
     }
@@ -296,7 +326,7 @@ public class DevController(
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "");
+            _logger.LogError(ex, "{Function} - instructorSchoolYearGuid: {instructorSchoolYearGuid}", nameof(DeleteInstructorSchoolYearAsync), instructorSchoolYearGuid);
             return BadRequest(ex.Message);
         }
     }
