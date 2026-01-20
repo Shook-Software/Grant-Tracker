@@ -14,54 +14,49 @@ import 'output.css'
 
 
 export const App = (): JSX.Element => {
-  const [user, setUser] = useState<User>(new User(null)) //move into appcontext
-  const [isLoading, setIsLoading] = useState<boolean>(false)
+  const [user, setUser] = useState<User | null>(null)
 
   const { data: payrollYears, refetch: refetchPayrollYears } = useQuery({
     queryKey: ['payrollYear'],
     queryFn: () => api.get('dropdown/payrollYear').then(res => res.data.map(py => PayrollYear.toViewModel(py)))
   }, new QueryClient())
 
-  const { isPending: orgYearsPending, error, data: orgYears } = useQuery({
-    queryKey: ['orgYears'],
-    queryFn: () => api.get('user/orgYear').then(res => res.data),
-    select: (data: OrganizationYearDomain[]) => data.map(oy => OrganizationYear.toViewModel(oy)),
-    enabled: user.isAuthenticated(),
+  const { isPending: userPending, data: userData } = useQuery({
+    queryKey: ['user'],
+    queryFn: () => api.get('user').then(res => res.data),
     retry: 3,
     retryDelay: (attempt) => attempt * 500
   }, new QueryClient())
 
-  const appContextValue = { user, refetchPayrollYears, data: { payrollYears} };
+  const { isPending: orgYearsPending, data: orgYears } = useQuery({
+    queryKey: ['orgYears'],
+    queryFn: () => api.get('user/orgYear').then(res => res.data),
+    select: (data: OrganizationYearDomain[]) => data.map(oy => OrganizationYear.toViewModel(oy)),
+    enabled: !!userData && userData.claim !== IdentityClaim.Unauthenticated,
+    retry: 3,
+    retryDelay: (attempt) => attempt * 500
+  }, new QueryClient())
 
   useEffect(() => {
-    setIsLoading(true)
-
-    User
-      .initUserAsync()
-      .then(res => {
-        setUser(res)
-      })
-      .finally(() => { setIsLoading(false)})
-  }, [])
-
-  useEffect(() => {
-    if (!!orgYears) {
-      user.setOrganizationYears(orgYears)
-      setIsLoading(false)
+    if (userData && orgYears && !user) {
+      const newUser = new User(userData)
+      newUser.setOrganizationYear(OrganizationYear.toViewModel(userData.organizationYear))
+      newUser.setOrganizationYears(orgYears)
+      setUser(newUser)
     }
-    
-  }, [orgYears?.length])
+  }, [userData, orgYears])
 
+  const appContextValue = { user: user || new User(null), setUser, refetchPayrollYears, data: { payrollYears} };
 
+  if (userPending || orgYearsPending)
+      return <p>...Loading user information.</p>
 
-  if (!isLoading && (!user || user.claim == IdentityClaim.Unauthenticated))
+  if (!user || user.claim == IdentityClaim.Unauthenticated || !user.organizationYears || user.organizationYears.length == 0)
     return (
-      <div> Please allow the page a moment to load. 
+      <div> Please allow the page a moment to load.
         You may be unauthenticated, refresh the page or fill out an <a href='https://forms.office.com/r/0Hq5fsxHze'>issue report</a> with your badge number and organization if the issue persists.
       </div>
     )
-  else if (isLoading || orgYearsPending)
-      return <p>...Loading user information.</p>
 
   return (
     <div className=''>
@@ -75,9 +70,9 @@ export const App = (): JSX.Element => {
         style={{ paddingTop: '2rem', minWidth: '95vw' }}
       >
         <AppContext.Provider value={appContextValue}>
-          <RenderRoutes 
-            routes={appRoutes} 
-            user={user} 
+          <RenderRoutes
+            routes={appRoutes}
+            user={user}
           />
         </AppContext.Provider>
       </div>
@@ -87,6 +82,7 @@ export const App = (): JSX.Element => {
 
 interface AppContext {
   user: User,
+  setUser: (user: User | null) => void,
   refetchPayrollYears: () => undefined,
   data: {
     payrollYears: PayrollYear[]
@@ -95,6 +91,7 @@ interface AppContext {
 
 export const AppContext = createContext<AppContext>({
   user: new User(null),
+  setUser: () => {},
   refetchPayrollYears: () => undefined,
   data: {
     payrollYears: []

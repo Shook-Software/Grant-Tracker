@@ -1,13 +1,13 @@
 import React from 'react'
-import { useSession, Context } from '../index'
+import { Context } from 'pages/Admin/Sessions/SessionEditor'
 
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Combobox } from '@/components/ui/combobox'
 
-export default () => {
-  const { reducerDispatch, dropdownData, values }: Context = useSession()
+export default ({ context }: { context: Context }): JSX.Element => {
+  const { reducerDispatch, dropdownData, values }: Context = context
   document.title = `${values.guid ? 'Edit' : 'New'} Session - Overview`
 
   if (!values)
@@ -34,11 +34,11 @@ export default () => {
           />
           {/* A session name is required! */}
         </div>
-        
+
         <div className="space-y-2">
           <Label htmlFor="session-type">Type</Label>
-          <Select 
-            value={values.type} 
+          <Select
+            value={values.type}
             onValueChange={(value: string) => {
               reducerDispatch({ type: 'type', payload: value })
             }}
@@ -55,7 +55,7 @@ export default () => {
             </SelectContent>
           </Select>
         </div>
-        
+
         <div className="space-y-2 flex justify-center">
           <div className="w-full max-w-[200px]">
             <Label htmlFor="objectives">Objective</Label>
@@ -75,11 +75,11 @@ export default () => {
             />
           </div>
         </div>
-        
+
         <div className="space-y-2">
           <Label htmlFor="activity">Activity</Label>
-          <Select 
-            value={values.activity} 
+          <Select
+            value={values.activity}
             onValueChange={(value: string) => {
               reducerDispatch({ type: 'activity', payload: value })
             }}
@@ -97,7 +97,7 @@ export default () => {
           </Select>
         </div>
       </div>
-      
+
       <div className='grid grid-cols-1 gap-6'>
         <div className="space-y-2">
           <Label htmlFor="grades">Grades</Label>

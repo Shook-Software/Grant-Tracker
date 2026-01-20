@@ -62,7 +62,7 @@ export const OrgYearContext = createContext<IOrgYearContext>({
 
 export default () => {
   const navigate = useNavigate()
-  const { user } = useContext(AppContext)
+  const { user, setUser } = useContext(AppContext)
   const [orgYear, setOrgYear] = useState<OrganizationYearView>()
 
   const sessionsQuery = useQuery<SimpleSessionView[]>({
@@ -81,18 +81,33 @@ export default () => {
       enabled: !!orgYear?.guid
   })
 
-  const orgYearContextValue = { orgYear, sessionsQuery, instructorsQuery, setOrgYear }
-
   function handleOrgYearChange(orgYear) {
-    setOrgYear(orgYear) //this can be reworked to only the user later
+    if (!user) return
+    setOrgYear(orgYear)
     user.setOrganizationYear(orgYear)
+    setUser(user)
   }
+
+  const orgYearContextValue = { orgYear, sessionsQuery, instructorsQuery, setOrgYear: handleOrgYearChange }
 
   useEffect(() => {
     if (location.pathname === paths.Admin.path) {
       navigate(paths.Admin.Tabs.Overview.path)
     }
   }, [location.pathname])
+
+  useEffect(() => {
+    if (user && user.organizationYear) {
+      const userOrgYear = user.organizationYear
+      if (!orgYear || orgYear.guid !== userOrgYear.guid) {
+        setOrgYear(userOrgYear)
+      }
+    }
+  }, [user?.organizationYear?.guid])
+
+  if (!user || !user.organizationYear) {
+    return <div>Loading user...</div>
+  }
 
   return (
     <PageContainer className='rounded-top-left-0'>
@@ -124,7 +139,11 @@ const OrgYearInput = ({value, onChange, defaultOrgYearGuid}): React.ReactElement
   const { user } = useContext(AppContext)
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const orgYears: OrganizationYearView[] = user.organizationYears
+  if (!user) {
+    return <div>Loading...</div>
+  }
+
+  const orgYears: OrganizationYearView[] = user.organizationYears || []
 
   function handleInputChange(
     orgYears: OrganizationYearView[] | undefined, 

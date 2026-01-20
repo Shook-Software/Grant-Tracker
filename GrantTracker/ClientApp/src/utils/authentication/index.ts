@@ -64,43 +64,6 @@ export class User implements IUser {
     }
   }
 
-  public static initUserAsync (): Promise<User> {
-    return new Promise((resolve, reject) => {
-
-      api
-        .get<IUser>('user')
-        .then(async res => {
-
-          const user: IUser = {
-            userGuid: res.data.userGuid,
-
-            firstName: res.data.firstName,
-            lastName: res.data.lastName,
-            badgeNumber: res.data.badgeNumber,
-            claim: res.data.claim,
-
-            organization: {
-              guid: res.data.organization.guid,
-              name: res.data.organization.name,
-              organizationYears: []
-            },
-
-            organizationYear: res.data.organizationYear
-          }
-
-          const newUser = new User(user)
-          newUser.setOrganizationYear(OrganizationYear.toViewModel(user.organizationYear))
-
-          resolve(newUser)
-        })
-        .catch(err => {
-          console.warn('Could not fetch user data', err)
-          //What should we do on an unsuccesful authentication??
-          reject()
-        })
-    })
-  }
-
   public setYear (year: YearView | undefined): void {
     if (year) {
       this._currentYear = year
@@ -185,7 +148,7 @@ export class User implements IUser {
   }
 
   public isAuthenticated (): boolean {
-    return this.claim != IdentityClaim.Unauthenticated
+    return this?.claim != IdentityClaim.Unauthenticated
   }
 
   public isAuthorized (requiredClaim: IdentityClaim): boolean {

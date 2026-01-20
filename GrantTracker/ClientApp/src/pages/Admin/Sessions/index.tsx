@@ -2,7 +2,7 @@ import React, { useEffect, useContext } from 'react'
 import { Button } from 'components/ui/button'
 import { Spinner } from 'components/ui/Spinner'
 import { Card, CardHeader, CardContent } from 'components/ui/Card'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { LocalDate } from '@js-joda/core'
 import { PlusCircle } from 'lucide-react'
@@ -10,6 +10,7 @@ import { PlusCircle } from 'lucide-react'
 import CopyRegistrations from './CopyRegistrations'
 import RegisterInstructor from 'pages/Admin/Shared/RegisterInstructor'
 import SessionDetails from './SessionDetails'
+import SessionEditor from './SessionEditor'
 import { ColumnDef } from '@tanstack/react-table'
 import { HeaderCell } from '@/components/ui/table'
 import { DataTable } from 'components/DataTable'
@@ -29,7 +30,6 @@ import { SimpleSessionView } from 'Models/Session'
 import { DropdownOption } from 'types/Session'
 import { OrgYearContext } from 'pages/Admin'
 
-import paths from 'utils/routing/paths'
 import api from 'utils/api'
 import { IdentityClaim, User } from 'utils/authentication'
 
@@ -191,6 +191,7 @@ interface SessionDataTableProps {
   data: SimpleSessionView[],
   missingAttendance: AttendanceRecord[] | undefined,
   openSessionGuid: string | undefined,
+  displaySingleColumn: boolean,
   activities?: DropdownOption[],
   sessionTypes?: DropdownOption[],
   objectives?: DropdownOption[],
@@ -201,6 +202,7 @@ function SessionDataTable({
   data,
   missingAttendance,
   openSessionGuid,
+  displaySingleColumn = false,
   activities = [],
   sessionTypes = [],
   objectives = [],
@@ -227,7 +229,7 @@ function SessionDataTable({
   }, [openSessionGuid, missingAttendance])
 
   const styledColumns = React.useMemo(() => {
-    const columnsToUse = openSessionGuid ? [createSessionColumns()[0]] : createSessionColumns()
+    const columnsToUse = displaySingleColumn ? [createSessionColumns()[0]] : createSessionColumns()
 
     return columnsToUse.map((column, index) => {
       if (column.accessorKey === 'activity.label' && activities.length > 0) {
@@ -326,7 +328,7 @@ function SessionDataTable({
         }
       }
     })
-  }, [openSessionGuid, getCustomCellClassName, activities, sessionTypes])
+  }, [openSessionGuid, displaySingleColumn, getCustomCellClassName, activities, sessionTypes])
 
   return (
     <DataTable
@@ -348,7 +350,13 @@ export default ({ user }: { user: User }): JSX.Element => {
   document.title = 'GT - Admin / Sessions'
   const navigate = useNavigate()
   const { sessionGuid } = useParams()
+  const [searchParams] = useSearchParams()
+  const [isEditing, setIsEditing] = React.useState(false)
   const { orgYear, setOrgYear, sessionsQuery, instructorsQuery } = useContext(OrgYearContext)
+
+  React.useEffect(() => {
+    setIsEditing(searchParams.get('edit') === 'true')
+  }, [searchParams.get('edit')])
 
   //move this up a level, then sync with sessionsQuery to grab the session name and display it in Overview
   const { isPending: missingLoading, data: missingAttendance } = useQuery<AttendanceRecord[]>({
@@ -376,7 +384,6 @@ export default ({ user }: { user: User }): JSX.Element => {
 
   if (!sessionsQuery || !instructorsQuery || sessionsQuery?.isPending || missingLoading)
     return <Spinner variant='border' />
-
   return (
     <div>
       <div className='mx-auto px-4 w-full pt-3'>
@@ -388,11 +395,9 @@ export default ({ user }: { user: User }): JSX.Element => {
             </div>
 
             <div className={user.claim == IdentityClaim.Teacher ? 'hidden' : 'block'}>
-              <Button asChild>
-                <Link to={`${paths.Edit.path}/${paths.Edit.Sessions.path}/overview?orgYearGuid=${orgYear?.guid}`}>
+              <Button onClick={() => setIsEditing(true)}>
                   Add Session
                   <PlusCircle />
-                </Link>
               </Button>
             </div>
           </div>
@@ -405,7 +410,7 @@ export default ({ user }: { user: User }): JSX.Element => {
         ) : (
           <div className='pt-1'>
             <div className='flex flex-nowrap -mx-2'>
-              <div className={`px-2 flex-1 w-full`} style={sessionGuid ? { marginLeft: `-250px`, maxWidth: '250px' } : {}}>
+              <div className={`px-2 flex-1 w-full`} style={sessionGuid || isEditing ? { marginLeft: `-250px`, maxWidth: '250px' } : {}}>
 
                 <div className='space-y-6'>
                   <section>
@@ -415,6 +420,7 @@ export default ({ user }: { user: User }): JSX.Element => {
                         !session.lastSessionDate.isBefore(LocalDate.now()) &&
                         !session.firstSessionDate.isAfter(LocalDate.now())
                       )}
+                      displaySingleColumn={!!sessionGuid || isEditing}
                       missingAttendance={missingAttendance}
                       openSessionGuid={sessionGuid}
                       activities={activities}
@@ -430,6 +436,7 @@ export default ({ user }: { user: User }): JSX.Element => {
                       data={sessionsQuery.data.filter(session =>
                         session.firstSessionDate.isAfter(LocalDate.now())
                       )}
+                      displaySingleColumn={!!sessionGuid || isEditing}
                       missingAttendance={missingAttendance}
                       openSessionGuid={sessionGuid}
                       activities={activities}
@@ -445,6 +452,7 @@ export default ({ user }: { user: User }): JSX.Element => {
                       data={sessionsQuery.data.filter(session =>
                         session.lastSessionDate.isBefore(LocalDate.now())
                       )}
+                      displaySingleColumn={!!sessionGuid || isEditing}
                       missingAttendance={missingAttendance}
                       openSessionGuid={sessionGuid}
                       activities={activities}
@@ -455,8 +463,12 @@ export default ({ user }: { user: User }): JSX.Element => {
                   </section>
                 </div>
               </div>
-              <div className={`flex-1 ${!sessionGuid ? 'hidden' : 'md:w-9/12'}`}>
-                {sessionGuid && <SessionDetails sessionGuid={sessionGuid} user={user} />}
+              <div className={`flex-1 ${!sessionGuid && !isEditing ? 'hidden' : 'md:w-9/12'}`}>
+                {isEditing ? (
+                  <SessionEditor sessionGuid={sessionGuid} user={user} orgYear={orgYear} setOrgYear={setOrgYear} />
+                ) : (
+                  sessionGuid && <SessionDetails sessionGuid={sessionGuid} user={user} />
+                )}
               </div>
             </div>
           </div>
