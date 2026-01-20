@@ -14,7 +14,7 @@
   "profiles": {
     "GrantTracker": {
       "commandName": "IIS",
-      "launchBrowser": true,
+      "launchBrowser": false,
       "launchUrl": "http://localhost/GrantTracker",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
@@ -33,7 +33,7 @@
     },
     "IIS Express": {
       "commandName": "IISExpress",
-      "launchBrowser": true,
+      "launchBrowser": false,
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
         "ASPNETCORE_HOSTINGSTARTUPASSEMBLIES": "Microsoft.AspNetCore.SpaProxy"

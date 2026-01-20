@@ -9,10 +9,10 @@ export default Yup.object().shape({
     .required('Required.'),
 
   type: Yup.string()
-    .required(),
+    .required('Required.'),
 
   activity: Yup.string()
-    .required(),
+    .required('Required.'),
 
   objectives: Yup.array().of(Yup.string().required())
     .min(1, 'At least one objective is required.')
@@ -42,7 +42,7 @@ export default Yup.object().shape({
             message: `Start and end times cannot be equivalent.`,
             path: 'timeSchedules'
           })
-        
+
         return true
       })
       )

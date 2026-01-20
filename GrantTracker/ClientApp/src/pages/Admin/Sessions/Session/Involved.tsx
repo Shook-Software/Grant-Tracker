@@ -1,6 +1,6 @@
 import {useEffect, useState} from 'react'
 
-import { useSession } from '../index'
+import { Context } from 'pages/Admin/Sessions/SessionEditor'
 import { DropdownOption } from 'Models/Session'
 
 import { Label } from '@/components/ui/label'
@@ -19,8 +19,8 @@ import api from 'utils/api'
 ////Organization Type -- Dropdown
 ////Partnership Type -- Dropdown
 
-export default (): JSX.Element => {
-  const { reducerDispatch, dropdownData, values, orgYearGuid } = useSession()
+export default ({ context }: { context: Context }): JSX.Element => {
+  const { reducerDispatch, dropdownData, values, orgYearGuid } = context
   const [instructors, setInstructors] = useState<DropdownOption[]>([])
   document.title = `${values.guid ? 'Edit' : 'New'} Session - Involved`
 
@@ -57,8 +57,8 @@ export default (): JSX.Element => {
       <div className='grid grid-cols-1 md:grid-cols-3 gap-6 mb-6'>
         <div className="space-y-2">
           <Label htmlFor="partnership-type">Partnership Type</Label>
-          <Select 
-            value={values.partnershipType} 
+          <Select
+            value={values.partnershipType}
             onValueChange={(value: string) =>
               reducerDispatch({ type: 'partnership', payload: value })
             }
@@ -75,11 +75,11 @@ export default (): JSX.Element => {
             </SelectContent>
           </Select>
         </div>
-        
+
         <div className="space-y-2">
           <Label htmlFor="funding-source">Funding Source</Label>
-          <Select 
-            value={values.fundingSource} 
+          <Select
+            value={values.fundingSource}
             onValueChange={(value: string) =>
               reducerDispatch({ type: 'funding', payload: value })
             }
@@ -96,11 +96,11 @@ export default (): JSX.Element => {
             </SelectContent>
           </Select>
         </div>
-        
+
         <div className="space-y-2">
           <Label htmlFor="organization-type">Organization Type</Label>
-          <Select 
-            value={values.organizationType} 
+          <Select
+            value={values.organizationType}
             onValueChange={(value: string) =>
               reducerDispatch({ type: 'organization', payload: value })
             }
@@ -118,7 +118,7 @@ export default (): JSX.Element => {
           </Select>
         </div>
       </div>
-      
+
       <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
         <div className="space-y-2">
           <Label htmlFor="instructors">Instructor(s)</Label>
@@ -141,7 +141,7 @@ export default (): JSX.Element => {
             emptyText='No instructors found'
           />
         </div>
-        
+
         <div className="space-y-2">
           <Label>Selected Instructors</Label>
           <div className='flex flex-wrap gap-2 min-h-[40px] p-2 border rounded-md'>

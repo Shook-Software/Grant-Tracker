@@ -66,11 +66,10 @@ export default ({ session, attendanceApiResult, user }: Props): JSX.Element => {
 
           {user.claim !== IdentityClaim.Teacher && (
             <div className={ComboboxDropdownMenuItemClassName}>
-              <Link 
-                className='block w-full' 
-                to={`${paths.Edit.path}/${paths.Edit.Sessions.path}/${session.guid}`}
+              <Link
+                className='block w-full'
+                to={`?edit=true`}
                 aria-label={`Edit ${session.name} session`}
-                replace={false}
               >
                 Edit
               </Link>

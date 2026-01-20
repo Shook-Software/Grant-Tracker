@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react'
-import { useSession, Context } from '../index'
+import { Context } from 'pages/Admin/Sessions/SessionEditor'
 import { DateTimeFormatter, LocalDate, LocalTime } from '@js-joda/core'
 
 import { TimePickerInput as TimeInput } from 'components/TimeRangeSelector'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label' 
+import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { DataTable } from '@/components/DataTable'
@@ -150,8 +150,8 @@ interface WeeklyScheduleBuilderProps {
 
 const WeeklyScheduleBuilder = ({ schedule, dispatch, recurring }: WeeklyScheduleBuilderProps): JSX.Element => {
   const [useCommonSchedule, setUseCommonSchedule] = useState(nonEmptyDaysHaveSameSchedules(schedule));
-  const [commonTimeSchedules, setCommonTimeSchedules] = useState(useCommonSchedule && schedule.filter(s => s.timeSchedules.length > 0)[0] 
-    ? schedule.filter(s => s.timeSchedules.length > 0)[0].timeSchedules 
+  const [commonTimeSchedules, setCommonTimeSchedules] = useState(useCommonSchedule && schedule.filter(s => s.timeSchedules.length > 0)[0]
+    ? schedule.filter(s => s.timeSchedules.length > 0)[0].timeSchedules
     : [ { startTime: LocalTime.MIDNIGHT, endTime: LocalTime.MIDNIGHT } ]
   )
 
@@ -173,7 +173,7 @@ const WeeklyScheduleBuilder = ({ schedule, dispatch, recurring }: WeeklySchedule
     const dayIndex = DayOfWeek.toInt(day as DayOfWeekString)
     const daySchedule = { ...schedule[dayIndex] }
     daySchedule.recurs = checked
-    
+
     if (checked) {
       daySchedule.timeSchedules = useCommonSchedule ? [...commonTimeSchedules] : [
         { startTime: LocalTime.MIDNIGHT, endTime: LocalTime.MIDNIGHT }
@@ -250,7 +250,7 @@ const WeeklyScheduleBuilder = ({ schedule, dispatch, recurring }: WeeklySchedule
                 </div>
               </CardHeader>
               <CardContent className="pt-0">
-                <CommonTimeScheduling 
+                <CommonTimeScheduling
                   timeSchedules={commonTimeSchedules}
                   onChange={(schedules) => {
                     setCommonTimeSchedules(schedules)
@@ -367,8 +367,8 @@ const CommonTimeScheduling = ({ timeSchedules, onChange }: {
   )
 }
 
-export default (): JSX.Element => {
-  const { reducerDispatch, values, errors }: Context = useSession()
+export default ({ context }: { context: Context }): JSX.Element => {
+  const { reducerDispatch, values, errors }: Context = context
   document.title = `${values.guid ? 'Edit' : 'New'} Session - Scheduling`
   const schedule: WeeklySchedule = values.scheduling
 
@@ -418,10 +418,10 @@ export default (): JSX.Element => {
       </section>
 
       <hr />
-      
+
       <section className='mb-8'>
-        <WeeklyScheduleBuilder 
-          schedule={schedule} 
+        <WeeklyScheduleBuilder
+          schedule={schedule}
           dispatch={reducerDispatch}
           recurring={values.recurring}
         />
@@ -459,16 +459,16 @@ function BlackoutDateForm({dates, dispatch}): JSX.Element {
 
   return (
     <div className="flex gap-2">
-      <Input 
-        type='date' 
-        value={date.toString()} 
-        onChange={(e) => setDate(LocalDate.parse(e.target?.value))} 
+      <Input
+        type='date'
+        value={date.toString()}
+        onChange={(e) => setDate(LocalDate.parse(e.target?.value))}
         className="w-fit"
         aria-label='blackout date'
       />
-      <Button 
-        variant="outline" 
-        type='button' 
+      <Button
+        variant="outline"
+        type='button'
         onClick={() => addDate(date)}
       >
         <>
@@ -494,9 +494,9 @@ const createBlackoutColumns = (onDelete) => [
   {
     header: '',
     cell: ({ row }) => (
-      <Button 
-        type='button' 
-        variant='destructive' 
+      <Button
+        type='button'
+        variant='destructive'
         size="sm"
         onClick={() => onDelete(row.original.date)}
       >

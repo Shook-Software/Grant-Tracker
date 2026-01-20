@@ -1,4 +1,4 @@
-﻿import { Session, SessionForm, SessionDomain } from 'Models/Session'
+import { Session, SessionForm, SessionDomain } from 'Models/Session'
 import { DropdownOption } from 'types/Session'
 
 import api from 'utils/api'
@@ -48,7 +48,7 @@ export function fetchSession(sessionGuid: string): Promise<SessionForm> {
 	})
 }
 
-export function submitSession(orgYearGuid: string, sessionState: SessionForm): Promise<SessionDomain | void> {
+export function submitSession(sessionState: SessionForm): Promise<string> {
 	return new Promise((resolve, reject) => {
 
 		sessionState.instructors = sessionState.instructors?.map(instructor => instructor.guid)
@@ -57,22 +57,21 @@ export function submitSession(orgYearGuid: string, sessionState: SessionForm): P
 			api
 				.patch('session', sessionState)
 				.then(res => {
-					resolve(res.data)
+					resolve(res.data.guid)
 				})
-				.catch(err => { reject() })
+				.catch(err => { reject(err) })
 		}
 		else {
 
-			delete sessionState.organizationYearGuid
+			delete sessionState.guid
 
 			api
 				.post('session', {
 					...sessionState,
-					organizationYearGuid: orgYearGuid
 				})
 				.then(res => { resolve(res.data.guid) })
-				.catch(err => { reject() })
-		
+				.catch(err => { reject(err) })
+
 		}
 	})
 }

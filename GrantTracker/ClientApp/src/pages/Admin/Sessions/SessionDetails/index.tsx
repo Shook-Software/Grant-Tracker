@@ -1,5 +1,7 @@
 ﻿import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { DateTimeFormatter } from '@js-joda/core'
+import { Locale } from '@js-joda/locale_en-us'
 
 import { PageContainer } from 'styles'
 import { ApiResult } from 'components/ApiResultAlert'
@@ -124,20 +126,49 @@ export default ({ sessionGuid, user }: Props): JSX.Element => {
     </div>
   )
 
-  const OverviewTab = () => (
-    <div className='space-y-6'>
-      {/* Overview and Details Grid */}
-      <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
-        <div className='space-y-6'>
-          <Overview session={session!} />
-        </div>
-        <div className='space-y-6'>
-          <Scheduling session={session} />
-          <Instructors session={session} />
+  const OverviewTab = () => {
+    const activeYear = user.organizationYears?.find(
+      oy => oy.organization.guid === session?.organizationYear.organization.guid && oy.year.isCurrentYear
+    )
+
+    const sessionOutsideActiveYear = activeYear && session && (
+      session.firstSession.isBefore(activeYear.year.startDate) ||
+      session.firstSession.isAfter(activeYear.year.endDate) ||
+      session.lastSession.isBefore(activeYear.year.startDate) ||
+      session.lastSession.isAfter(activeYear.year.endDate)
+    )
+
+    return (
+      <div className='space-y-6'>
+        {sessionOutsideActiveYear && (
+          <div className='p-4 border-2 border-yellow-500 bg-yellow-50 rounded-md'>
+            <div className='flex items-start gap-3'>
+              <svg className='w-6 h-6 text-yellow-600 flex-shrink-0 mt-0.5' fill='none' viewBox='0 0 24 24' stroke='currentColor'>
+                <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z' />
+              </svg>
+              <div>
+                <h4 className='font-semibold text-yellow-900'>Session dates outside active year bounds</h4>
+                <p className='text-sm text-yellow-800 mt-1'>
+                  This session's start and/or end dates are not within the active year's date range ({activeYear.year.startDate.format(DateTimeFormatter.ofPattern('MMM d, yyyy').withLocale(Locale.ENGLISH))} - {activeYear.year.endDate.format(DateTimeFormatter.ofPattern('MMM d, yyyy').withLocale(Locale.ENGLISH))}). Consider editing your session dates to align with the active year.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Overview and Details Grid */}
+        <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
+          <div className='space-y-6'>
+            <Overview session={session!} />
+          </div>
+          <div className='space-y-6'>
+            <Scheduling session={session} />
+            <Instructors session={session} />
+          </div>
         </div>
       </div>
-    </div>
-  )
+    )
+  }
 
   const RegistrationsTab = () => (
     <div>

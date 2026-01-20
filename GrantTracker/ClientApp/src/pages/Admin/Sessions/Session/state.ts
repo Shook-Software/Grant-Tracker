@@ -12,35 +12,6 @@ import { SessionBlackoutDateView } from 'Models/BlackoutDate'
 
 export const initialState: SessionForm = Session.createDefaultForm()
 
-/*function handleTimeChange(bound: 'start' | 'end', time: LocalTime, state: SessionForm): SessionForm {
-
-  if (bound === 'start') {
-    state.scheduling.forEach(schedule => {
-      if (!schedule.recurs || schedule.startTime.equals(state.startTime)) {
-        schedule.startTime = time
-        if (schedule.endTime.isBefore(time))
-          schedule.endTime = time
-      }
-    })
-
-    if (time.isAfter(state.endTime))
-      state.endTime = time
-  }
-  else if (bound === 'end') {
-    state.scheduling.forEach(schedule => {
-      if (!schedule.recurs || schedule.endTime.equals(state.endTime)) {
-        schedule.endTime = time
-        if (schedule.startTime.isAfter(time))
-          schedule.startTime = time
-      }
-    })
-
-    if (time.isBefore(state.startTime))
-      state.startTime = time
-  }
-  return state
-}*/
-
 export type ReducerAction =
   | { type: 'all'; payload: SessionForm }
   | { type: 'name'; payload: string }
@@ -62,6 +33,7 @@ export type ReducerAction =
     }
   | { type: 'singleSessionTimeSchedule'; payload: TimeScheduleForm[] }
   | { type: 'setBlackoutDates'; payload: SessionBlackoutDateView[] }
+  | { type: 'setOrgYearGuid'; payload: string }
 
 //add in validation
 export function reducer (
@@ -71,7 +43,6 @@ export function reducer (
   switch (action.type) {
 
     case 'all':
-      console.error(action.payload)
       return { ...action.payload }
 
     case 'name':
@@ -136,7 +107,6 @@ export function reducer (
       }
 
     case 'recurring':
-      console.error(action.payload)
       var newSchedule: WeeklySchedule
       //recurring to non-recurring
       if (state.recurring && !action.payload) {
@@ -162,7 +132,6 @@ export function reducer (
       return { ...state, recurring: action.payload, scheduling: newSchedule }
 
     case 'scheduleDayTime':
-      console.error(action.payload)
       var newSchedule: WeeklySchedule = state.scheduling.map(
         (schedule, index) => {
           return index === action.payload.dayIndex
@@ -174,7 +143,6 @@ export function reducer (
       return { ...state, scheduling: [...newSchedule] }
 
     case 'singleSessionTimeSchedule':
-      console.error(action.payload)
       var newScheduling = state.scheduling.map(s => {
         if (s.timeSchedules.length !== 0) {
           s.timeSchedules = action.payload
@@ -183,9 +151,12 @@ export function reducer (
       })
       return { ...state, scheduling: [...newScheduling] }
 
-    case 'setBlackoutDates': 
+    case 'setBlackoutDates':
       action.payload.sort((first, second) => first.date.isBefore(second.date) ? 1 : -1)
       return { ...state, blackoutDates: action.payload }
+
+    case 'setOrgYearGuid':
+      return { ...state, organizationYearGuid: action.payload }
 
     default:
       return state

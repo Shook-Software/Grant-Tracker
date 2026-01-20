@@ -72,6 +72,7 @@ export interface SessionView {
 
 export interface SessionForm {
   guid?: string
+  organizationYearGuid: string
   name: string
   type: string
   activity: string

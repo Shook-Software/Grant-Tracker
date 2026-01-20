@@ -6,12 +6,6 @@ import AdminPage from 'pages/Admin'
 
 import Reporting from 'pages/Reporting'
 
-import SessionEditor from 'pages/Editor'
-import SessionOverview from 'pages/Editor/Session/Overview'
-import SessionInvolved from 'pages/Editor/Session/Involved'
-import SessionScheduling from 'pages/Editor/Session/Scheduling'
-import SessionSubmit from 'pages/Editor/Session/Submit'
-
 import AttendancePage from 'pages/Admin/Attendance'
 
 import AdminOverview from 'pages/Admin/ActionCenter'
@@ -34,25 +28,6 @@ export const RenderRoutes = ({ routes, user }) => (
   useRoutes(routes(user))
 )
 
-const editSessionChildren = [
-  {
-    path: paths.Edit.Sessions.Overview.path,
-    element: <SessionOverview />
-  },
-  {
-    path: paths.Edit.Sessions.Involved.path,
-    element: <SessionInvolved />
-  },
-  {
-    path: paths.Edit.Sessions.Scheduling.path,
-    element: <SessionScheduling />
-  },
-  {
-    path: paths.Edit.Sessions.Submit.path,
-    element: <SessionSubmit />
-  }
-]
-
 export default (user: User): RouteObject[] => [
   {
     path: paths.Root.path,
@@ -65,21 +40,6 @@ export default (user: User): RouteObject[] => [
   {
     path: paths.Reports.path,
     element: <Reporting user={user} />
-  },
-  {
-    path: paths.Edit.path,
-    children: [
-      {
-        path: paths.Edit.Sessions.path,
-        element: <SessionEditor user={user} />,
-        children: editSessionChildren
-      },
-      {
-        path: paths.Edit.Sessions.path + '/:sessionGuid',
-        element: <SessionEditor user={user} />,
-        children: editSessionChildren
-      }
-    ]
   },
   {
     path: paths.Admin.Attendance.path,

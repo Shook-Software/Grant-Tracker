@@ -26,12 +26,12 @@ export const Modal: React.FC<ModalProps> = ({
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50"
+      className="fixed inset-0 z-50 flex items-center  p-4 justify-centerbg-black bg-opacity-50"
       onClick={onHide}
     >
       <div 
         className={cn(
-          'bg-white rounded-lg shadow-xl w-full',
+          'bg-white rounded-lg shadow-xl w-full p-3',
           sizeClasses[size],
           centered && 'mx-auto'
         )}
