@@ -1,7 +1,4 @@
-import {useEffect, useState} from 'react'
-
 import { Context } from 'pages/Admin/Sessions/SessionEditor'
-import { DropdownOption } from 'Models/Session'
 
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -11,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { X } from 'lucide-react'
 
 import api from 'utils/api'
+import { useQuery } from '@tanstack/react-query'
 
 //Second Section - Instructor/Funding
 ////Instructor -- Searchable Dropdown
@@ -21,13 +19,37 @@ import api from 'utils/api'
 
 export default ({ context }: { context: Context }): JSX.Element => {
   const { reducerDispatch, dropdownData, values, orgYearGuid } = context
-  const [instructors, setInstructors] = useState<DropdownOption[]>([])
   document.title = `${values.guid ? 'Edit' : 'New'} Session - Involved`
 
   if (!values)
     return (
       <p style={{ textAlign: 'center' }}>Error in loading Session details...</p>
     )
+
+  const { data: instructors = [] } = useQuery({
+    queryKey: ['instructors', orgYearGuid, values.instructors],
+    queryFn: async () => {
+      const res = await api.get('instructor', { params: { orgYearGuid } })
+
+      // Filter out already selected instructors
+      const filtered = res.data.filter(
+        item => !values.instructors.find(value => value.guid === item.guid)
+      )
+
+      // Sort alphabetically by lastName, then firstName
+      const sorted = filtered.sort((a, b) => {
+        const lastNameCompare = a.instructor.lastName.localeCompare(b.instructor.lastName)
+        if (lastNameCompare !== 0) return lastNameCompare
+        return a.instructor.firstName.localeCompare(b.instructor.firstName)
+      })
+
+      // Map to DropdownOption format
+      return sorted.map(isy => ({
+        guid: isy.guid,
+        label: `${isy.instructor.firstName} ${isy.instructor.lastName}`
+      }))
+    }
+  })
 
   function handleInstructorAddition (guid: string, label: string): void {
     if (!values.instructors.find(i => i.guid === guid))
@@ -37,20 +59,6 @@ export default ({ context }: { context: Context }): JSX.Element => {
   function handleInstructorRemoval (guid: string): void {
     reducerDispatch({ type: 'removeInstructor', payload: guid })
   }
-
-  useEffect(() => {
-    api
-      .get('instructor', {params: {orgYearGuid: orgYearGuid}})
-      .then(res => {
-        res.data = res.data.filter(item => !values.instructors.find(value => value.guid === item.guid))
-        setInstructors(res.data.map(isy => ({
-            guid: isy.guid,
-            label: `${isy.instructor.firstName} ${isy.instructor.lastName}`
-          })
-        ))
-      })
-      .catch(err => console.warn(err))
-  }, [values.instructors])
 
   return (
     <div className="max-w-7xl mx-auto p-6">
