@@ -36,7 +36,6 @@ namespace GrantTracker.Dal.Controllers
         }
 
 		[HttpGet("")]
-        [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)] // 12 hours
         public ActionResult<UserIdentityView> Get()
 		{
 			try
@@ -72,7 +71,6 @@ namespace GrantTracker.Dal.Controllers
 		}
 
 		[HttpGet("orgYear")]
-		[ResponseCache(Duration = 43200, VaryByHeader = "Authorization")] // 12 hours
 		public async Task<ActionResult<List<OrganizationYearView>>> GetAuthorizedOrganizationYearsAsync()
 		{
 			try
