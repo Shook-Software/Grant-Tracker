@@ -72,15 +72,16 @@ interface Props {
 }
 
 export default ({params, dateDisplay, fileOrgName, fileDate, isActive, onRowCountChange}: Props) => {
+	const orgGuidsParam = params.organizationGuids?.map(g => `organizationGuids=${g}`).join('&') || ''
 	const { isPending, error, data: report, refetch } = useQuery({
-		queryKey: [ `report/familyAttendance?startDateStr=${params.startDate?.toString()}&endDateStr=${params.endDate?.toString()}&organizationGuid=${params.organizationGuid}` ],
+		queryKey: [ `report/familyAttendance?startDateStr=${params.startDate?.toString()}&endDateStr=${params.endDate?.toString()}&${orgGuidsParam}` ],
 		retry: false,
 		staleTime: Infinity,
 		enabled: !!params.startDate && !!params.endDate
 	})
 
-	const { data: regularMatricNumbers } = useQuery({ 
-		queryKey: [`report/studentDaysAttended?startDateStr=${params.startDate?.toString()}&endDateStr=${params.endDate?.toString()}&organizationGuid=${params.organizationGuid}`],
+	const { data: regularMatricNumbers } = useQuery({
+		queryKey: [`report/studentDaysAttended?startDateStr=${params.startDate?.toString()}&endDateStr=${params.endDate?.toString()}&${orgGuidsParam}`],
 		retry: false,
 		staleTime: Infinity,
 		select: filterRegulars

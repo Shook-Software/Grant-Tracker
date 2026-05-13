@@ -15,6 +15,7 @@ import StaffingReport from './Reports/StaffingReport'
 import CCLC10Report from './Reports/CCLC10Report'
 import ScheduleReport from './Reports/ScheduleReport'
 import AllStaffReport from './Reports/StaffMemberReport'
+import FamilySessionReport from './Reports/FamilySessionReport'
 
 import { IdentityClaim } from 'utils/authentication'
 
@@ -85,8 +86,9 @@ const tabs = [
 export default ({user}): JSX.Element => {
   	const [activeTab, setActiveTab] = useState('student-attendance');
 	const [reportParameters, setReportParameters] = useState<ReportParameters>({
-		organizationGuid: undefined,
+		organizationGuids: [],
 		organizationName: undefined,
+		organizationNames: [],
 		year: undefined,
 		startDate: undefined,
 		endDate: undefined
@@ -105,7 +107,7 @@ export default ({user}): JSX.Element => {
 		classes: 0
 	})
 
-	const organizationFileString: string = reportParameters.organizationName?.replace(' ', '-') ?? ''
+	const organizationFileString: string = reportParameters.organizationName?.replace(/\s+/g, '_') ?? ''
 
 	const reportDateDisplayString: string = reportParameters.startDate && reportParameters.startDate == reportParameters.endDate 
 		? `${reportParameters.startDate?.toString()}`
@@ -121,7 +123,7 @@ export default ({user}): JSX.Element => {
 
 	useEffect(() => {
 		if (user.claim === IdentityClaim.Administrator) {
-			tabs.push({ key: 'cclc10', label: 'GT CCLC10' }, { key: 'all-staff', label: 'All Staff' });
+			tabs.push({ key: 'cclc10', label: 'GT CCLC10' }, { key: 'all-staff', label: 'All Staff' },  { key: 'family-session', label: "Family Session" });
 		}
 	}, [user])
 
@@ -281,7 +283,14 @@ export default ({user}): JSX.Element => {
 					/>
 
 					<AllStaffReport isActive={activeTab === 'all-staff'} />
-					</div>
+
+					<FamilySessionReport
+						params={reportParameters}
+						dateDisplay={reportDateDisplayString}
+						fileOrgName={organizationFileString} 
+						isActive={activeTab === 'family-session'} 
+					/>
+				</div>
 			</div>
 		</div>
 	)

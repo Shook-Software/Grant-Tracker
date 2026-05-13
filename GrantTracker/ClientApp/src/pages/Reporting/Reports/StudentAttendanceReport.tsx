@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { Bar } from "react-chartjs-2"
 import { Chart, ChartData, LineElement, LinearScale, PointElement, Tooltip, Legend, TimeScale, CategoryScale, BarElement, Title} from "chart.js"
 import ChartDataLabels from 'chartjs-plugin-datalabels';
@@ -118,55 +118,33 @@ interface Props {
 	onRowCountChange: (rows: number) => void
 }
 
-interface StudentDaysDTO {
-	organizationGuid: string
-	studentGuid: string
-	daysAttended: number
-}
-
-function groupStudentAttendanceDaysIntoBuckets(studentDays: StudentDaysDTO[]) {
-	return studentDays.reduce((dayRange, student) => {
-		if (student.daysAttended >= 1)
-			dayRange[0]++;
-		if (student.daysAttended <= 10)
-			dayRange[1]++;
-		else if (student.daysAttended <= 20)
-			dayRange[2]++;
-		else if (student.daysAttended < 30)
-			dayRange[3]++;
-		else
-			dayRange[4]++;
-
-		return dayRange;
-	}, [0, 0, 0, 0, 0])
+interface StudentAttendanceResponse {
+	students: StudentAttendanceData[]
+	attendanceBuckets: number[]
 }
 
 export default ({params, dateDisplay, fileOrgName, fileDate, isActive, onRowCountChange}: Props) => {
-	const { isPending, error, data: report, refetch } = useQuery({
-		queryKey: [ `report/studentAttendance?startDateStr=${params.startDate?.toString()}&endDateStr=${params.endDate?.toString()}&organizationGuid=${params.organizationGuid}` ],
+	const orgGuidsParam = params.organizationGuids?.map(g => `organizationGuids=${g}`).join('&') || ''
+	const { isPending, error, data: report } = useQuery<StudentAttendanceResponse>({
+		queryKey: [ `report/studentAttendance?startDateStr=${params.startDate?.toString()}&endDateStr=${params.endDate?.toString()}&${orgGuidsParam}` ],
 		retry: false,
 		staleTime: Infinity,
 		enabled: !!params.startDate && !!params.endDate
 	  })
 
-	const { data: studentAttendanceDayCounts } = useQuery({ 
-		queryKey: [`report/studentDaysAttended?startDateStr=${params.startDate?.toString()}&endDateStr=${params.endDate?.toString()}&organizationGuid=${params.organizationGuid}`],
-		retry: false,
-		staleTime: Infinity,
-		select: groupStudentAttendanceDaysIntoBuckets,
-		enabled: !!params.startDate && !!params.endDate
-	})
+	const students = report?.students
+	const attendanceBuckets = report?.attendanceBuckets
 
 	useEffect(() => {
-		onRowCountChange(report?.length || 0)
-	}, [report])
-	
-	const barDataset: ChartData<"bar"> | undefined = studentAttendanceDayCounts ? {
+		onRowCountChange(students?.length || 0)
+	}, [students])
+
+	const barDataset: ChartData<"bar"> | undefined = attendanceBuckets ? {
 		labels: ['>=1 Day', '1-10 Days', '11-20 Days', '21-29 Days', '30+ Days'],
 		datasets: [
 			{
 				label: 'Student Count',
-				data: studentAttendanceDayCounts,
+				data: attendanceBuckets,
 				backgroundColor: '#C43138',
 			}
 		]
@@ -213,9 +191,9 @@ export default ({params, dateDisplay, fileOrgName, fileDate, isActive, onRowCoun
 				}
 
 				<div className="max-h-[45rem] overflow-auto relative">
-					<DataTable 
+					<DataTable
 						columns={studentAttendanceColumns}
-						data={report || []}
+						data={students || []}
 						initialSorting={[{ id: 'lastName', desc: false }]}
 						containerClassName="rounded border w-fit"
 						tableClassName="table-auto w-auto self-start"
@@ -229,7 +207,7 @@ export default ({params, dateDisplay, fileOrgName, fileDate, isActive, onRowCoun
 									onClick={() => exportToCSV(values, studentAttendanceFields, `Student_Attendance_${fileOrgName}_${fileDate}`)}
 									size='sm'
 								>
-									Save to CSV {values && values.length !== (report.length) ? `(${values.length} filtered rows)` : ''}
+									Save to CSV {values && values.length !== (students?.length ?? 0) ? `(${values.length} filtered rows)` : ''}
 								</Button>
 							)
 						}}

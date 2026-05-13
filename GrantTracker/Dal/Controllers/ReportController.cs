@@ -43,11 +43,11 @@ public class ReportController : ControllerBase
     }
 
     [HttpGet("payrollAudit")]
-    public async Task<ActionResult<List<PayrollAuditView>>> GetPayrollAuditReportAsync(string startDateStr, string endDateStr, Guid? organizationGuid = null)
+    public async Task<ActionResult<List<PayrollAuditView>>> GetPayrollAuditReportAsync(string startDateStr, string endDateStr, [FromQuery] Guid[]? organizationGuids = null)
     {
         try
         {
-            var report = await _reportRepository.GetPayrollAuditAsync(DateOnly.Parse(startDateStr), DateOnly.Parse(endDateStr), organizationGuid);
+            var report = await _reportRepository.GetPayrollAuditAsync(DateOnly.Parse(startDateStr), DateOnly.Parse(endDateStr), organizationGuids);
             return Ok(report);
         }
         catch (Exception ex)
@@ -58,11 +58,11 @@ public class ReportController : ControllerBase
     }
 
     [HttpGet("attendanceCheck")]
-    public async Task<ActionResult<List<AttendanceCheckViewModel>>> GetAttendanceCheckReportAsync(string startDateStr, string endDateStr, Guid? organizationGuid = null)
+    public async Task<ActionResult<List<AttendanceCheckViewModel>>> GetAttendanceCheckReportAsync(string startDateStr, string endDateStr, [FromQuery] Guid[]? organizationGuids = null)
     {
         try
         {
-            var report = await _reportRepository.GetAttendanceCheckAsync(DateOnly.Parse(startDateStr), DateOnly.Parse(endDateStr), organizationGuid);
+            var report = await _reportRepository.GetAttendanceCheckAsync(DateOnly.Parse(startDateStr), DateOnly.Parse(endDateStr), organizationGuids);
             return Ok(report);
         }
         catch (Exception ex)
@@ -73,11 +73,11 @@ public class ReportController : ControllerBase
     }
 
     [HttpGet("programOverview")]
-    public async Task<ActionResult<List<ProgramViewModel>>> GetProgramOverviewReportAsync(string startDateStr, string endDateStr, Guid? organizationGuid = null)
+    public async Task<ActionResult<List<ProgramViewModel>>> GetProgramOverviewReportAsync(string startDateStr, string endDateStr, [FromQuery] Guid[]? organizationGuids = null)
     {
         try
         {
-            var report = await _reportRepository.GetProgramOverviewAsync(DateOnly.Parse(startDateStr), DateOnly.Parse(endDateStr), organizationGuid);
+            var report = await _reportRepository.GetProgramOverviewAsync(DateOnly.Parse(startDateStr), DateOnly.Parse(endDateStr), organizationGuids);
             return Ok(report);
         }
         catch (Exception ex)
@@ -88,11 +88,11 @@ public class ReportController : ControllerBase
     }
 
     [HttpGet("staffSummary")]
-    public async Task<ActionResult<List<StaffSummaryViewModel>>> GetStaffSummaryReportAsync(Guid yearGuid, Guid? organizationGuid = null)
+    public async Task<ActionResult<List<StaffSummaryViewModel>>> GetStaffSummaryReportAsync(Guid yearGuid, [FromQuery] Guid[]? organizationGuids = null)
     {
         try
         {
-            var report = await _reportRepository.GetStaffSummaryAsync(yearGuid, organizationGuid);
+            var report = await _reportRepository.GetStaffSummaryAsync(yearGuid, organizationGuids);
             return Ok(report);
         }
         catch (Exception ex)
@@ -103,11 +103,11 @@ public class ReportController : ControllerBase
     }
 
     [HttpGet("studentAttendance")]
-    public async Task<ActionResult<List<TotalStudentAttendanceViewModel>>> GetStudentAttendanceReportAsync(string startDateStr, string endDateStr, Guid? organizationGuid = null)
+    public async Task<ActionResult<StudentAttendanceReportViewModel>> GetStudentAttendanceReportAsync(string startDateStr, string endDateStr, [FromQuery] Guid[]? organizationGuids = null)
     {
         try
         {
-            var report = await _reportRepository.GetStudentAttendanceAsync(DateOnly.Parse(startDateStr), DateOnly.Parse(endDateStr), organizationGuid);
+            var report = await _reportRepository.GetStudentAttendanceAsync(DateOnly.Parse(startDateStr), DateOnly.Parse(endDateStr), organizationGuids);
             return Ok(report);
         }
         catch (Exception ex)
@@ -118,11 +118,11 @@ public class ReportController : ControllerBase
     }
 
     [HttpGet("summaryOfClasses")]
-    public async Task<ActionResult<List<ClassSummaryViewModel>>> GetSummaryOfClassesReportAsync(string startDateStr, string endDateStr, Guid? organizationGuid = null)
+    public async Task<ActionResult<List<ClassSummaryViewModel>>> GetSummaryOfClassesReportAsync(string startDateStr, string endDateStr, [FromQuery] Guid[]? organizationGuids = null)
     {
         try
         {
-            var report = await _reportRepository.GetSummaryOfClassesAsync(DateOnly.Parse(startDateStr), DateOnly.Parse(endDateStr), organizationGuid);
+            var report = await _reportRepository.GetSummaryOfClassesAsync(DateOnly.Parse(startDateStr), DateOnly.Parse(endDateStr), organizationGuids);
             return Ok(report);
         }
         catch (Exception ex)
@@ -133,11 +133,11 @@ public class ReportController : ControllerBase
     }
 
     [HttpGet("totalActivity")]
-    public async Task<ActionResult<List<TotalActivityViewModel>>> GetTotalActivityReportAsync(string startDateStr, string endDateStr, Guid? organizationGuid = null)
+    public async Task<ActionResult<List<TotalActivityViewModel>>> GetTotalActivityReportAsync(string startDateStr, string endDateStr, [FromQuery] Guid[]? organizationGuids = null)
     {
         try
         {
-            var report = await _reportRepository.GetTotalActivityAsync(DateOnly.Parse(startDateStr), DateOnly.Parse(endDateStr), organizationGuid);
+            var report = await _reportRepository.GetTotalActivityAsync(DateOnly.Parse(startDateStr), DateOnly.Parse(endDateStr), organizationGuids);
             return Ok(report);
         }
         catch (Exception ex)
@@ -148,11 +148,11 @@ public class ReportController : ControllerBase
     }
 
     [HttpGet("familyAttendance")]
-    public async Task<ActionResult<List<TotalFamilyAttendanceViewModel>>> GetFamilyAttendanceReportAsync(string startDateStr, string endDateStr, Guid? organizationGuid = null)
+    public async Task<ActionResult<List<TotalFamilyAttendanceViewModel>>> GetFamilyAttendanceReportAsync(string startDateStr, string endDateStr, [FromQuery] Guid[]? organizationGuids = null)
     {
         try
         {
-            var report = await _reportRepository.GetFamilyAttendanceAsync(DateOnly.Parse(startDateStr), DateOnly.Parse(endDateStr), organizationGuid);
+            var report = await _reportRepository.GetFamilyAttendanceAsync(DateOnly.Parse(startDateStr), DateOnly.Parse(endDateStr), organizationGuids);
             return Ok(report);
         }
         catch (Exception ex)
@@ -163,11 +163,11 @@ public class ReportController : ControllerBase
     }
 
     [HttpGet("studentSurvey")]
-    public async Task<ActionResult<List<StudentSurveyViewModel>>> GetStudentSurveyReportAsync(string startDateStr, string endDateStr, Guid? organizationGuid = null)
+    public async Task<ActionResult<List<StudentSurveyViewModel>>> GetStudentSurveyReportAsync(string startDateStr, string endDateStr, [FromQuery] Guid[]? organizationGuids = null, [FromQuery] bool regularAttendeesOnly = false)
     {
         try
         {
-            var report = await _reportRepository.GetStudentSurveyAsync(DateOnly.Parse(startDateStr), DateOnly.Parse(endDateStr), organizationGuid);
+            var report = await _reportRepository.GetStudentSurveyAsync(DateOnly.Parse(startDateStr), DateOnly.Parse(endDateStr), organizationGuids, regularAttendeesOnly);
             return Ok(report);
         }
         catch (Exception ex)
@@ -178,13 +178,13 @@ public class ReportController : ControllerBase
     }
 
     [HttpGet("siteSessions")]
-	public async Task<ActionResult<List<SiteSessionViewModel>>> GetSiteSessionsAsync(string startDateStr, string endDateStr, Guid? organizationGuid = null)
+	public async Task<ActionResult<List<SiteSessionViewModel>>> GetSiteSessionsAsync(string startDateStr, string endDateStr, [FromQuery] Guid[]? organizationGuids = null)
 	{
 		try
         {
             DateOnly startDate = DateOnly.Parse(startDateStr);
 			DateOnly endDate = DateOnly.Parse(endDateStr);
-			var siteSessions = await _reportRepository.GetSiteSessionsAsync(startDate, endDate, organizationGuid);
+			var siteSessions = await _reportRepository.GetSiteSessionsAsync(startDate, endDate, organizationGuids);
 			return Ok(siteSessions);
 		}
 		catch (Exception ex)
@@ -195,13 +195,13 @@ public class ReportController : ControllerBase
     }
 
     [HttpGet("schedule")]
-    public async Task<ActionResult<List<ScheduleReport>>> GetScheduleReportAsync(string startDateStr, string endDateStr, Guid? organizationGuid = null)
+    public async Task<ActionResult<List<ScheduleReport>>> GetScheduleReportAsync(string startDateStr, string endDateStr, [FromQuery] Guid[]? organizationGuids = null)
     {
         try
         {
             DateOnly startDate = DateOnly.Parse(startDateStr);
             DateOnly endDate = DateOnly.Parse(endDateStr);
-            var scheduleReport = await _reportRepository.GetScheduleReportAsync(startDate, endDate, organizationGuid);
+            var scheduleReport = await _reportRepository.GetScheduleReportAsync(startDate, endDate, organizationGuids);
             return Ok(scheduleReport);
         }
         catch (Exception ex)
@@ -230,18 +230,25 @@ public class ReportController : ControllerBase
         }
     }
 
-    [HttpGet("studentDaysAttended")]
-    public async Task<ActionResult<List<StudentDaysAttendedDTO>>> GetStudentDaysAttendedAsync(string startDateStr, string endDateStr, Guid? organizationGuid = null)
+    [HttpGet("family-session")]
+    [Authorize(Policy = "Administrator")]
+    public async Task<ActionResult<List<FamilySessionRow>>> GetFamilySessionReportAsync(string startDateStr, string endDateStr)
     {
         try
         {
-            DateOnly startDate = DateOnly.Parse(startDateStr), endDate = DateOnly.Parse(endDateStr);
-            return Ok(await _reportRepository.GetStudentDaysAttendedAsync(startDate, endDate, organizationGuid));
+            if (!HttpContext.User.IsAdmin())
+                return Unauthorized();
+
+            DateOnly startDate = DateOnly.Parse(startDateStr);
+            DateOnly endDate = DateOnly.Parse(endDateStr);
+            var familySessionRows = await _reportRepository.GetFamilySessionReportAsync(startDate, endDate);
+            return Ok(familySessionRows.OrderBy(x => x.Site).ThenBy(x => x.LastName).ThenBy(x => x.FirstName).ToList());
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "{Function} - An unhandled error occured while fetching the site session report.", nameof(GetSiteSessionsAsync));
+            _logger.LogError(ex, "{Function} - An unhandled error occured while fetching the site session report.", nameof(GetFamilySessionReportAsync));
             return StatusCode(500);
         }
     }
+
 }

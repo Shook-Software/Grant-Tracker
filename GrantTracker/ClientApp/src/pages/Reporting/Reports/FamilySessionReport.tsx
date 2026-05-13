@@ -1,9 +1,5 @@
 import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { LocalDate, LocalTime } from '@js-joda/core'
-
-import { TimeOnly } from 'Models/TimeOnly'
-import { DateOnly } from 'Models/DateOnly'
 
 import { ReportParameters } from '../ReportParameters'
 import { cclc10Fields } from '../Definitions/CSV'
@@ -17,17 +13,17 @@ interface Props {
 	isActive: boolean
 }
 
-interface CCLC10Row {
-	school: string
-	matricNumber: string
-	grade: string
-	lastName: string
-	firstName: string
-	session: string
-	date: LocalDate
-	startTime: LocalTime
-	endTime: LocalTime
-	activity: string
+interface FamilySessionRow {
+	site: string;
+	firstName: string;
+	lastName: string;
+	matricNumber: string;
+	grade: string;
+	familyMember: string;
+	sessionName: string;
+	sessionType: string;
+	sessionDate: string;
+	totalTime: string
 }
 
 export default ({params, dateDisplay, fileOrgName, isActive}: Props) => {
@@ -38,15 +34,9 @@ export default ({params, dateDisplay, fileOrgName, isActive}: Props) => {
 		setRunRequested(false)
 	}, [params.startDate, params.endDate])
 
-	const { isPending, isFetching, data, error, refetch } = useQuery<CCLC10Row[]>({
-		queryKey: [`report/CCLC10?startDateStr=${params.startDate}&endDateStr=${params.endDate}`],
+	const { isPending, isFetching, data, error, refetch } = useQuery<FamilySessionRow[]>({
+		queryKey: [`report/family-session?startDateStr=${params.startDate}&endDateStr=${params.endDate}`],
 		enabled: runRequested && hasParams,
-		select: (rows: any[]) => rows.map(row => ({
-			...row,
-			date: DateOnly.toLocalDate(row.date),
-			startTime: TimeOnly.toLocalTime(row.startTime),
-			endTime: TimeOnly.toLocalTime(row.endTime)
-		})),
 		staleTime: Infinity,
 		retry: false
 	})
@@ -57,15 +47,11 @@ export default ({params, dateDisplay, fileOrgName, isActive}: Props) => {
 	if (!runRequested) {
 		return (
 			<div className='m-1'>
-				<p>
-					The CCLC10 report often returns more than 15MB of data and can take a while to generate.
-					Click below to run it.
-				</p>
 				<Button
 					onClick={() => setRunRequested(true)}
 					disabled={!hasParams}
 				>
-					Run CCLC10 Report
+					Run Family Session Report
 				</Button>
 				{!hasParams && (
 					<p className='text-sm text-gray-500 mt-1'>
@@ -81,9 +67,9 @@ export default ({params, dateDisplay, fileOrgName, isActive}: Props) => {
 			<ReportComponent
 				isLoading={isPending || isFetching}
 				hasError={!!error}
-				displayName={`GT CCLC10 Report for all Organizations, ${dateDisplay}`}
+				displayName={`Family Session Report for all Organizations, ${dateDisplay}`}
 				fileData={data}
-				fileName={`GT_CCLC10_Grant_Tracker_${fileOrgName}`}
+				fileName={`Family_Session_Grant_Tracker`}
 				fileFields={cclc10Fields}
 				showHeader={true}
 			>

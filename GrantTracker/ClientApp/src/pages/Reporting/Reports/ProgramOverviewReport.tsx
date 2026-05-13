@@ -29,8 +29,9 @@ interface Props {
 }
 
 export default ({params, dateDisplay, fileOrgName, fileDate, isActive, onRowCountChange}: Props) => {
+	const orgGuidsParam = params.organizationGuids?.map(g => `organizationGuids=${g}`).join('&') || ''
 	const { isPending, error, data: report, refetch } = useQuery({
-		queryKey: [ `report/programOverview?startDateStr=${params.startDate?.toString()}&endDateStr=${params.endDate?.toString()}&organizationGuid=${params.organizationGuid}` ],
+		queryKey: [ `report/programOverview?startDateStr=${params.startDate?.toString()}&endDateStr=${params.endDate?.toString()}&${orgGuidsParam}` ],
 		retry: false,
 		staleTime: Infinity,
 		enabled: !!params.startDate && !!params.endDate

@@ -92,6 +92,7 @@ namespace GrantTracker.Dal.Schema
 			builder.Entity<SessionAttendance>().HasNoKey().ToView(null);
             builder.Entity<ScheduleReport>().HasNoKey().ToView(null);
             builder.Entity<StaffMember>().HasNoKey().ToView(null);
+            builder.Entity<FamilySessionRow>().HasNoKey().ToView(null);
 
             builder.Entity<RegularAttendeeDate>().HasNoKey().ToView(null);
             builder.Entity<StudentDaysAttendedDTO>().HasNoKey().ToView(null);
