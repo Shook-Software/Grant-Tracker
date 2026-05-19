@@ -13,6 +13,29 @@ interface SubmitProps {
   context: Context
 }
 
+const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+
+function humanizeKey(key: string): string {
+  return key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1').trim()
+}
+
+function flattenErrors(err: any, path: string[] = []): { path: string; message: string }[] {
+  if (err == null) return []
+  if (typeof err === 'string') return [{ path: path.join(' → ') || 'Error', message: err }]
+  if (Array.isArray(err)) {
+    const isScheduling = path[path.length - 1] === 'Scheduling'
+    return err.flatMap((item, idx) => {
+      const label = isScheduling && DAY_NAMES[idx]
+        ? DAY_NAMES[idx]
+        : `slot ${idx + 1}`
+      return flattenErrors(item, [...path, label])
+    })
+  }
+  if (typeof err === 'object')
+    return Object.entries(err).flatMap(([key, val]) => flattenErrors(val, [...path, humanizeKey(key)]))
+  return []
+}
+
 export default function Submit (props: SubmitProps): JSX.Element {
   const { values, errors, touched, dropdownData, user } = props.context
   const [showNonActiveYearWarning, setShowNonActiveYearWarning] = useState<boolean>(false)
@@ -162,13 +185,21 @@ export default function Submit (props: SubmitProps): JSX.Element {
                     <div key={day.dayOfWeek} className='flex gap-4 items-center'>
                       <span className='font-medium min-w-[100px]'>{day.dayOfWeek}</span>
                       <div className='flex flex-wrap gap-2'>
-                        {day.timeSchedules.map((time, idx) => (
-                          <span key={idx} className='px-2 py-1 bg-secondary rounded text-sm'>
-                            {time.startTime.format(DateTimeFormatter.ofPattern('h:mm a').withLocale(Locale.ENGLISH))}
-                            {' '}-{' '}
-                            {time.endTime.format(DateTimeFormatter.ofPattern('h:mm a').withLocale(Locale.ENGLISH))}
-                          </span>
-                        ))}
+                        {day.timeSchedules.map((time, idx) => {
+                          const invalid = !!time.startTime?.equals?.(time.endTime)
+                          return (
+                            <span
+                              key={idx}
+                              className={`px-2 py-1 rounded text-sm ${invalid ? 'bg-destructive/10 text-destructive border border-destructive' : 'bg-secondary'}`}
+                              title={invalid ? 'Start and end times must differ.' : undefined}
+                            >
+                              {time.startTime.format(DateTimeFormatter.ofPattern('h:mm a').withLocale(Locale.ENGLISH))}
+                              {' '}-{' '}
+                              {time.endTime.format(DateTimeFormatter.ofPattern('h:mm a').withLocale(Locale.ENGLISH))}
+                              {invalid && ' — invalid'}
+                            </span>
+                          )
+                        })}
                       </div>
                     </div>
                   ))}
@@ -194,15 +225,11 @@ export default function Submit (props: SubmitProps): JSX.Element {
           <div className='p-4 border-2 border-destructive bg-destructive/10 rounded-md'>
             <h4 className='text-base font-semibold text-destructive mb-3'>Please fix the following errors before submitting:</h4>
             <ul className='list-disc list-inside space-y-1 text-sm'>
-              {Object.entries(errors).map(([field, error]) => {
-                const fieldName = field.charAt(0).toUpperCase() + field.slice(1).replace(/([A-Z])/g, ' $1')
-                const errorMessage = typeof error === 'string' ? error : JSON.stringify(error)
-                return (
-                  <li key={field} className='text-destructive'>
-                    <strong>{fieldName}:</strong> {errorMessage}
-                  </li>
-                )
-              })}
+              {flattenErrors(errors).map(({ path, message }, i) => (
+                <li key={i} className='text-destructive'>
+                  <strong>{path}:</strong> {message}
+                </li>
+              ))}
             </ul>
           </div>
         )}

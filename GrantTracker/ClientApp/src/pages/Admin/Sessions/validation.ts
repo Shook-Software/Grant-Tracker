@@ -36,15 +36,11 @@ export default Yup.object().shape({
           startTime: Yup.mixed<LocalTime>().required(),
           endTime: Yup.mixed<LocalTime>().required()
         })
-      .test((x, { createError }) => {
-        if (x.startTime?.equals(x.endTime))
-          return createError({
-            message: `Start and end times cannot be equivalent.`,
-            path: 'timeSchedules'
-          })
-
-        return true
-      })
+        .test('start-end-differ', 'Start and end times cannot be equivalent.', (x) => {
+          console.log(x)
+          if (!x?.startTime || !x?.endTime) return true
+          return !x.startTime.equals(x.endTime)
+        })
       )
     })
     .required()
