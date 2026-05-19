@@ -665,3 +665,46 @@ export const scheduleFields = [
 		value: 'instructorMissing'
 	}
 ]
+
+export const familySessionFields = [
+	{
+		label: 'Site',
+		value: 'site'
+	},
+	{
+		label: 'Student Last Name',
+		value: 'lastName'
+	},
+	{
+		label: 'Student First Name',
+		value: 'firstName'
+	},
+	{
+		label: 'Student Matric #',
+		value: 'matricNumber'
+	},
+	{
+		label: 'Student Grade',
+		value: 'grade'
+	},
+	{
+		label: 'Family Member',
+		value: 'familyMember'
+	},
+	{
+		label: 'Session Name',
+		value: 'sessionName'
+	},
+	{
+		label: 'Session Type',
+		value: 'sessionType'
+	},
+	{
+		label: 'Session Date',
+		value: 'sessionDate'
+	},
+	{
+		label: 'Total Time',
+		value: 'totalTime'
+	},
+]

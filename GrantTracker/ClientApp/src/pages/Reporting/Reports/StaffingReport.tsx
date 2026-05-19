@@ -17,6 +17,7 @@ interface StaffMember {
 }
 
 interface StatusGroup {
+	organizationName: string;
 	status: string
 	instructors: Omit<StaffMember, 'status'>[]
 }
@@ -31,19 +32,23 @@ interface Props {
 }
 
 export default ({params, dateDisplay, fileOrgName, fileDate, isActive, onRowCountChange}: Props) => {
+	const orgGuidsParam = params.organizationGuids?.map(g => `organizationGuids=${g}`).join('&') || ''
 	const { isPending, error, data: report, refetch } = useQuery({
-		queryKey: [ `report/staffSummary?yearGuid=${params?.year?.guid}&organizationGuid=${params.organizationGuid}` ],
+		queryKey: [ `report/staffSummary?yearGuid=${params?.year?.guid}&${orgGuidsParam}` ],
 		retry: false,
 		staleTime: Infinity,
 		enabled: !!params?.year?.guid
 	  })
 
+
 	// Flatten the grouped data structure
 	const flattenedStaffData = useMemo<StaffMember[]>(() => {
 		if (!Array.isArray(report)) return []
 		
+		
 		return report.flatMap((statusGroup: StatusGroup) =>
 			statusGroup.instructors.map(instructor => ({
+				organizationName: statusGroup.organizationName,
 				...instructor,
 				status: statusGroup.status
 			}))

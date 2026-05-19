@@ -10,29 +10,29 @@ public interface IReportRepository
 
 	Task<List<CCLC10ViewModel>> GetCCLC10Async(DateOnly startDate, DateOnly endDate);
 
-	Task<List<SiteSessionViewModel>> GetSiteSessionsAsync(DateOnly startDate, DateOnly endDate, Guid? organizationGuid = null);
+	Task<List<SiteSessionViewModel>> GetSiteSessionsAsync(DateOnly startDate, DateOnly endDate, Guid[]? organizationGuids = null);
 
-	Task<List<PayrollAuditView>> GetPayrollAuditAsync(DateOnly startDate, DateOnly endDate, Guid? organizationGuid = null);
+	Task<List<PayrollAuditView>> GetPayrollAuditAsync(DateOnly startDate, DateOnly endDate, Guid[]? organizationGuids = null);
 
-	Task<List<AttendanceCheckViewModel>> GetAttendanceCheckAsync(DateOnly startDate, DateOnly endDate, Guid? organizationGuid = null);
+	Task<List<AttendanceCheckViewModel>> GetAttendanceCheckAsync(DateOnly startDate, DateOnly endDate, Guid[]? organizationGuids = null);
 
-    Task<List<ProgramViewModel>> GetProgramOverviewAsync(DateOnly startDate, DateOnly endDate, Guid? organizationGuid = null);
+    Task<List<ProgramViewModel>> GetProgramOverviewAsync(DateOnly startDate, DateOnly endDate, Guid[]? organizationGuids = null);
 
-	Task<List<StaffSummaryViewModel>> GetStaffSummaryAsync(Guid yearGuid, Guid? organizationGuid = null);
+	Task<List<StaffSummaryViewModel>> GetStaffSummaryAsync(Guid yearGuid, Guid[]? organizationGuids = null);
 
 	Task<List<StaffMember>> GetStaffMembersAsync();
 
-    Task<List<TotalStudentAttendanceViewModel>> GetStudentAttendanceAsync(DateOnly startDate, DateOnly endDate, Guid? organizationGuid = null);
+    Task<StudentAttendanceReportViewModel> GetStudentAttendanceAsync(DateOnly startDate, DateOnly endDate, Guid[]? organizationGuids = null);
 
-	Task<List<ClassSummaryViewModel>> GetSummaryOfClassesAsync(DateOnly startDate, DateOnly endDate, Guid? organizationGuid = null);
+	Task<List<ClassSummaryViewModel>> GetSummaryOfClassesAsync(DateOnly startDate, DateOnly endDate, Guid[]? organizationGuids = null);
 
-    Task<List<TotalActivityViewModel>> GetTotalActivityAsync(DateOnly startDate, DateOnly endDate, Guid? organizationGuid = null);
+    Task<List<TotalActivityViewModel>> GetTotalActivityAsync(DateOnly startDate, DateOnly endDate, Guid[]? organizationGuids = null);
 
-	Task<List<TotalFamilyAttendanceViewModel>> GetFamilyAttendanceAsync(DateOnly startDate, DateOnly endDate, Guid? organizationGuid = null);
+	Task<List<TotalFamilyAttendanceViewModel>> GetFamilyAttendanceAsync(DateOnly startDate, DateOnly endDate, Guid[]? organizationGuids = null);
 
-	Task<List<StudentSurveyViewModel>> GetStudentSurveyAsync(DateOnly startDate, DateOnly endDate, Guid? organizationGuid = null);
+	Task<List<StudentSurveyViewModel>> GetStudentSurveyAsync(DateOnly startDate, DateOnly endDate, Guid[]? organizationGuids = null, bool regularAttendeesOnly = false);
 
-	Task<List<ScheduleReport>> GetScheduleReportAsync(DateOnly startDate, DateOnly endDate, Guid? organizationGuid = null);
+	Task<List<ScheduleReport>> GetScheduleReportAsync(DateOnly startDate, DateOnly endDate, Guid[]? organizationGuids = null);
 
-	Task<List<StudentDaysAttendedDTO>> GetStudentDaysAttendedAsync(DateOnly startDate, DateOnly endDate, Guid? organizationGuid = null);
+	Task<List<FamilySessionRow>> GetFamilySessionReportAsync(DateOnly startDate, DateOnly endDate);
 }

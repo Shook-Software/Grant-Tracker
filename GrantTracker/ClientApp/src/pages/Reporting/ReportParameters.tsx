@@ -14,8 +14,9 @@ import { Input } from "@/components/ui/input"
 import { useForm } from "react-hook-form"
 
 export interface ReportParameters {
-	organizationGuid: string | undefined
-	organizationName: string | undefined
+	organizationGuids: string[]
+	organizationName: string  // Single display name: org name or "Multiple Orgs"
+	organizationNames: string[]
 	year: YearView | undefined
 	startDate: LocalDate | undefined
 	endDate: LocalDate | undefined
@@ -32,7 +33,7 @@ function previousMonday(date: LocalDate) {
 export default ({onSubmit}): JSX.Element => {
 	const { user } = useContext(AppContext)
 
-	const [orgGuid, setOrgGuid] = useState<string>(user.organization.guid)
+	const [orgGuids, setOrgGuids] = useState<string[]>([user.organization.guid])
 	const [yearGuid, setYearGuid] = useState<string>(user.year.guid)
 
 	const [startDate, setStartDate] = useState<LocalDate | undefined>()
@@ -49,21 +50,52 @@ export default ({onSubmit}): JSX.Element => {
 		setYearGuid(yearGuid)
 	}
 
-	function setOrganization(orgGuid: string) {
-		const orgYear: OrganizationYearView | undefined = user.organizationYears.find(oy => oy.organization.guid == orgGuid && oy.year.guid == user.year.guid)
-		user.setOrganizationYear(orgYear)
-		setOrgGuid(orgGuid)
+	function setOrganizations(selectedValue: string | string[]) {
+		const selectedGuids = Array.isArray(selectedValue) ? selectedValue : [selectedValue]
+
+		// Handle "All" exclusivity - if "All" (empty string) is newly selected, deselect everything else
+		// If something else is selected while "All" is selected, deselect "All"
+		let finalGuids = selectedGuids
+		const allWasSelected = orgGuids.includes('')
+		const allIsNowSelected = selectedGuids.includes('')
+
+		if (allIsNowSelected && !allWasSelected) {
+			// "All" was just selected - keep only "All"
+			finalGuids = ['']
+		} else if (allIsNowSelected && allWasSelected && selectedGuids.length > 1) {
+			// "All" was already selected and another option was added - remove "All"
+			finalGuids = selectedGuids.filter(g => g !== '')
+		}
+
+		setOrgGuids(finalGuids)
+		// Note: We intentionally don't update user.setOrganizationYear() here
+		// Reports org selection is local and doesn't affect other pages
 	}
 
 	function submit(): void {
-		if ((orgGuid || orgGuid === '') && user.year && startDate && endDate)
+		if (orgGuids.length > 0 && user.year && startDate && endDate) {
+			// Get organization names for the selected guids
+			const orgNames = orgGuids.map(guid =>
+				guid === '' ? 'All Organizations' : user.organizations?.find(x => x.guid == guid)?.name || 'Unknown'
+			)
+
+			// Determine display name: single org name, "All Organizations", or "Multiple Orgs"
+			let displayName: string
+			if (orgGuids.length === 1) {
+				displayName = orgNames[0]
+			} else {
+				displayName = 'Multiple Orgs'
+			}
+
 			onSubmit({
-				organizationGuid: orgGuid,
-				organizationName: user.organizations?.find(x => x.guid == orgGuid)?.name || 'All Organizations',
+				organizationGuids: orgGuids,
+				organizationName: displayName,
+				organizationNames: orgNames,
 				year: user.year,
 				startDate,
 				endDate: isSingleDateQuery ? startDate : endDate
 			});
+		}
 	}
 
 	useEffect(() => {
@@ -76,13 +108,13 @@ export default ({onSubmit}): JSX.Element => {
 
 	// Auto-submit when all required fields are defined for the first time
 	useEffect(() => {
-		if (!hasAutoSubmitted && orgGuid && startDate && endDate) {
+		if (!hasAutoSubmitted && orgGuids.length > 0 && startDate && endDate) {
 			setHasAutoSubmitted(true)
 			submit()
 		}
-	}, [orgGuid, startDate, endDate, hasAutoSubmitted])
+	}, [orgGuids, startDate, endDate, hasAutoSubmitted])
 
-	const orgOptions = user.claim == IdentityClaim.Administrator 
+	const orgOptions = user.claim == IdentityClaim.Administrator
 		? [{ value: '', label: 'All' }, ...user.organizations.map(org => ({ value: org.guid, label: org.name }))]
 		: user.organizations.map(org => ({ value: org.guid, label: org.name }))
 
@@ -104,18 +136,22 @@ export default ({onSubmit}): JSX.Element => {
 				>
 					<div className='flex gap-3'>
 						<div className="flex flex-col gap-3">
-							<FormField 
+							<FormField
 								control={form.control}
 								name="Organization"
-								render={() => 
+								render={() =>
 									<FormItem>
-										<FormLabel htmlFor='org'>Organization</FormLabel>
-										<Combobox 
+										<FormLabel htmlFor='org'>
+											Organizations {orgGuids.length > 1 && `(${orgGuids.length})`}
+										</FormLabel>
+										<Combobox
 											id='org'
+											multiple={true}
 											options={orgOptions}
-											value={orgGuid}
-											onChange={value => setOrganization(value)}
-											placeholder="Select Organization"
+											value={orgGuids}
+											onChange={setOrganizations}
+											placeholder="Select Organizations..."
+											sortSelectedToTop={true}
 										/>
 									</FormItem>
 								}
@@ -201,6 +237,23 @@ export default ({onSubmit}): JSX.Element => {
 								Submit
 							</Button>
 						</div>
+
+						{/* Selected Organizations Display */}
+						{orgGuids.length > 0 && (
+							<div className="flex flex-col gap-1 ml-4 pl-4 border-l border-gray-300">
+								<span className="text-sm font-medium text-gray-600">Selected Organizations:</span>
+								<div className="flex flex-col gap-1 max-h-32 overflow-y-auto pl-1">
+									{orgGuids.map(guid => {
+										const orgName = guid === '' ? 'All Organizations' : user.organizations?.find(x => x.guid === guid)?.name || 'Unknown'
+										return (
+											<span key={guid} className="text-sm bg-blue-100 text-blue-800 px-2 py-0.5 rounded">
+												{orgName}
+											</span>
+										)
+									})}
+								</div>
+							</div>
+						)}
 					</div>
 
 					<div className="mb-3">

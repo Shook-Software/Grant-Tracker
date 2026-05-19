@@ -10,3 +10,9 @@ public class TotalStudentAttendanceViewModel
     public int TotalDays { get; set; }
     public double TotalHours { get; set; }
 }
+
+public class StudentAttendanceReportViewModel
+{
+    public List<TotalStudentAttendanceViewModel> Students { get; set; }
+    public int[] AttendanceBuckets { get; set; }
+}

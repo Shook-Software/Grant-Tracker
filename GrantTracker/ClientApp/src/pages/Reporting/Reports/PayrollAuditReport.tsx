@@ -44,8 +44,9 @@ interface Props {
 }
 
 export default ({params, fileOrgName, fileDate, dateDisplay, isActive, onRowCountChange}: Props) => {
-	  const { isPending, data, error } = useQuery<PayrollAuditReportRow[]>({		
-		queryKey: [ `report/payrollAudit?startDateStr=${params.startDate?.toString()}&endDateStr=${params.endDate?.toString()}&organizationGuid=${params.organizationGuid}` ],
+	const orgGuidsParam = params.organizationGuids?.map(g => `organizationGuids=${g}`).join('&') || ''
+	  const { isPending, data, error } = useQuery<PayrollAuditReportRow[]>({
+		queryKey: [ `report/payrollAudit?startDateStr=${params.startDate?.toString()}&endDateStr=${params.endDate?.toString()}&${orgGuidsParam}` ],
 		enabled: !!params?.startDate && !!params?.endDate,
 		select: (rows: any[]) => rows.map(row => ({
 			...row,

@@ -141,8 +141,9 @@ interface Props {
 }
 
 export default ({params, dateDisplay, fileOrgName, fileDate, isActive, onRowCountChange}: Props) => {
+	const orgGuidsParam = params.organizationGuids?.map(g => `organizationGuids=${g}`).join('&') || ''
 	const { isPending, error, data: report, refetch } = useQuery({
-		queryKey: [ `report/attendanceCheck?startDateStr=${params.startDate?.toString()}&endDateStr=${params.endDate?.toString()}&organizationGuid=${params.organizationGuid}` ],
+		queryKey: [ `report/attendanceCheck?startDateStr=${params.startDate?.toString()}&endDateStr=${params.endDate?.toString()}&${orgGuidsParam}` ],
 		select: (data) => data.map(x => ({
 			...x,
 			instanceDate: DateOnly.toLocalDate(x.instanceDate),

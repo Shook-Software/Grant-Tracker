@@ -30,9 +30,10 @@ interface ComboboxProps {
 	onChange: (value: string | string[]) => void
 	emptyText?: string
   side?: "top" | "left" | "right" | "bottom"
+  sortSelectedToTop?: boolean
 }
 
-export function Combobox({ options, placeholder, emptyText, value, multiple = false, onChange, ...props }: React.ComponentProps<"div"> & ComboboxProps) {
+export function Combobox({ options, placeholder, emptyText, value, multiple = false, onChange, sortSelectedToTop = false, ...props }: React.ComponentProps<"div"> & ComboboxProps) {
   const [open, setOpen] = React.useState(false);
   const [searchValue, setSearchValue] = React.useState("");
 
@@ -42,6 +43,19 @@ export function Combobox({ options, placeholder, emptyText, value, multiple = fa
     }
     return typeof value === 'string' ? [value] : [];
   }, [value, multiple]);
+
+  // Sort options with selected items at the top when sortSelectedToTop is enabled
+  const sortedOptions = React.useMemo(() => {
+    if (!sortSelectedToTop || !multiple) return options;
+
+    return [...options].sort((a, b) => {
+      const aSelected = selectedValues.includes(a.value);
+      const bSelected = selectedValues.includes(b.value);
+      if (aSelected && !bSelected) return -1;
+      if (!aSelected && bSelected) return 1;
+      return 0;
+    });
+  }, [options, selectedValues, sortSelectedToTop, multiple]);
 
   const handleSelect = (selectedValue: string) => {
     if (multiple) {
@@ -89,8 +103,8 @@ export function Combobox({ options, placeholder, emptyText, value, multiple = fa
           <CommandList>
             <CommandEmpty>{emptyText || "No options found"}</CommandEmpty>
             <CommandGroup>
-              {options
-                .filter(o => 
+              {sortedOptions
+                .filter(o =>
                   o.label.toString().toLowerCase().includes(searchValue.toLowerCase())
                 )
                 .map((o) => {

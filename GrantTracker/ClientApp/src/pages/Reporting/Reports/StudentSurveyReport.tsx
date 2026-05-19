@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import { ColumnDef } from "@tanstack/react-table"
 import { HeaderCell } from "@/components/ui/table"
@@ -8,6 +8,7 @@ import { ReportParameters } from '../ReportParameters'
 import { studentSurveyFields } from '../Definitions/CSV'
 import ReportComponent, { exportToCSV } from '../ReportComponent'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 
 interface StudentSurveyData {
 	lastName: string
@@ -29,8 +30,10 @@ interface Props {
 }
 
 export default ({params, dateDisplay, fileOrgName, fileDate, isActive, onRowCountChange}: Props) => {
+	const [regularAttendeesOnly, setRegularAttendeesOnly] = useState(false)
+	const orgGuidsParam = params.organizationGuids?.map(g => `organizationGuids=${g}`).join('&') || ''
 	const { isPending, error, data: report, refetch } = useQuery({
-		queryKey: [ `report/studentSurvey?startDateStr=${params.startDate?.toString()}&endDateStr=${params.endDate?.toString()}&organizationGuid=${params.organizationGuid}` ],
+		queryKey: [ `report/studentSurvey?startDateStr=${params.startDate?.toString()}&endDateStr=${params.endDate?.toString()}&${orgGuidsParam}&regularAttendeesOnly=${regularAttendeesOnly}` ],
 		retry: false,
 		staleTime: Infinity,
 		enabled: !!params.startDate && !!params.endDate
@@ -192,9 +195,16 @@ export default ({params, dateDisplay, fileOrgName, fileDate, isActive, onRowCoun
 		<ReportComponent
 			isLoading={isPending}
 			hasError={!!error}
-		> 
+		>
+			<label className="flex items-center gap-2 m-1 cursor-pointer w-fit">
+				<Checkbox
+					checked={regularAttendeesOnly}
+					onCheckedChange={(checked) => setRegularAttendeesOnly(checked === true)}
+				/>
+				<span>Regular attendees only (30+ days)</span>
+			</label>
 			<div className="max-h-[45rem] overflow-auto w-fit relative">
-				<DataTable 
+				<DataTable
 					columns={studentSurveyColumns}
 					data={report || []}
 					initialSorting={[{ id: 'lastName', desc: false }]}
