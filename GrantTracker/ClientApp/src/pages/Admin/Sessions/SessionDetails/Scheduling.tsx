@@ -67,7 +67,7 @@ export default ({ session }: Props): JSX.Element => {
       </div>
     </section>
     {combinedBlackoutDates.length > 0 && (
-      <section>
+      <section className="max-h-[200px] overflow-auto">
         <h3 className='text-lg font-semibold'>Blackout Dates</h3>
         <div className="flex flex-wrap gap-3 px-4 py-3">
           {combinedBlackoutDates.map((blackout, index) => (

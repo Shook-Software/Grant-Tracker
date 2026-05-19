@@ -82,22 +82,24 @@ export function reducer (
 
     case 'startDate':
       const newDate: LocalDate = LocalDate.parse(action.payload)
-      var scheduling = state.scheduling
+      let nextStartDateScheduling: typeof state.scheduling = state.scheduling
       if (!state.recurring) {
-        const currentDay = scheduling.find(s => s.timeSchedules.length !== 0)
-        scheduling = scheduling.map(s => {
-          if (newDate.dayOfWeek().value() === DayOfWeek.toInt(s.dayOfWeek)) {
-            s.timeSchedules = currentDay?.timeSchedules
-          }
+        const currentDay = state.scheduling.find(s => s.timeSchedules.length !== 0)
+        const targetDayIndex = newDate.dayOfWeek().value()
+        nextStartDateScheduling = state.scheduling.map(s => {
+          const isTarget = targetDayIndex === DayOfWeek.toInt(s.dayOfWeek)
+          if (isTarget)
+            return { ...s, timeSchedules: (currentDay?.timeSchedules ?? []).map(ts => ({ ...ts })) }
+          if (s === currentDay)
+            return { ...s, timeSchedules: [] }
           return s
-        })
-        currentDay?.timeSchedules = []
+        }) as WeeklySchedule
       }
 
       return {
         ...state,
         firstSessionDate: newDate,
-        scheduling: [...scheduling]
+        scheduling: nextStartDateScheduling
       }
 
     case 'endDate':
@@ -107,21 +109,18 @@ export function reducer (
       }
 
     case 'recurring':
-      var newSchedule: WeeklySchedule
+      let newSchedule: WeeklySchedule
       //recurring to non-recurring
       if (state.recurring && !action.payload) {
+        const targetDay = state.firstSessionDate.dayOfWeek().value()
         newSchedule = state.scheduling.map(s => {
-          if (
-            state.firstSessionDate.dayOfWeek().value() ===
-            DayOfWeek.toInt(s.dayOfWeek)
-          ) {
-            s.timeSchedules = [
-              { startTime: LocalTime.MIDNIGHT, endTime: LocalTime.MIDNIGHT }
-            ]
-          } else {
-            s.timeSchedules = []
+          const isTarget = targetDay === DayOfWeek.toInt(s.dayOfWeek)
+          return {
+            ...s,
+            timeSchedules: isTarget
+              ? [{ startTime: LocalTime.MIDNIGHT, endTime: LocalTime.MIDNIGHT }]
+              : []
           }
-          return s
         }) as WeeklySchedule
       }
       //non-recurring to recurring
@@ -132,24 +131,22 @@ export function reducer (
       return { ...state, recurring: action.payload, scheduling: newSchedule }
 
     case 'scheduleDayTime':
-      var newSchedule: WeeklySchedule = state.scheduling.map(
-        (schedule, index) => {
-          return index === action.payload.dayIndex
-            ? action.payload.day
-            : schedule
-        }
-      ) as WeeklySchedule
-
-      return { ...state, scheduling: [...newSchedule] }
+      return {
+        ...state,
+        scheduling: state.scheduling.map((schedule, index) =>
+          index === action.payload.dayIndex ? action.payload.day : schedule
+        ) as WeeklySchedule
+      }
 
     case 'singleSessionTimeSchedule':
-      var newScheduling = state.scheduling.map(s => {
-        if (s.timeSchedules.length !== 0) {
-          s.timeSchedules = action.payload
-        }
-        return s
-      })
-      return { ...state, scheduling: [...newScheduling] }
+      return {
+        ...state,
+        scheduling: state.scheduling.map(s =>
+          s.timeSchedules.length !== 0
+            ? { ...s, timeSchedules: action.payload.map(ts => ({ ...ts })) }
+            : s
+        ) as WeeklySchedule
+      }
 
     case 'setBlackoutDates':
       action.payload.sort((first, second) => first.date.isBefore(second.date) ? 1 : -1)

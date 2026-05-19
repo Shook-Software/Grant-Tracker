@@ -31,35 +31,41 @@ const TimeScheduling = ({
     startTime: LocalTime,
     endTime: LocalTime,
     changeType: 'start' | 'end',
-    index
+    index: number
   ): void {
 
-    let scheduleToAlter = today.timeSchedules[index]
+    const existing = today.timeSchedules[index]
 
-    if (scheduleToAlter.startTime === startTime && scheduleToAlter.endTime === endTime)
-      return
+    let nextStart = existing.startTime
+    let nextEnd = existing.endTime
 
     if (changeType === 'start') {
+      nextStart = startTime
       if (endTime.isBefore(startTime))
-        scheduleToAlter.endTime = startTime
-
-      scheduleToAlter.startTime = startTime
+        nextEnd = startTime
     }
-    else if (changeType === 'end'){
+    else if (changeType === 'end') {
+      nextEnd = endTime
       if (startTime.isAfter(endTime))
-        scheduleToAlter.startTime = endTime
-
-      scheduleToAlter.endTime = endTime
+        nextStart = endTime
     }
+
+    if (nextStart.equals(existing.startTime) && nextEnd.equals(existing.endTime))
+      return
+
+    const nextTimeSchedules = today.timeSchedules.map((ts, i) =>
+      i === index ? { ...ts, startTime: nextStart, endTime: nextEnd } : ts
+    )
+    const nextDay: DayScheduleForm = { ...today, timeSchedules: nextTimeSchedules }
 
     if (today.recurs) {
-      dispatch({ type: 'scheduleDayTime', payload: { dayIndex, day: today } })
+      dispatch({ type: 'scheduleDayTime', payload: { dayIndex, day: nextDay } })
       return
     }
 
     dispatch({
       type: 'singleSessionTimeSchedule',
-      payload: today.timeSchedules
+      payload: nextDay.timeSchedules
     })
   }
 
@@ -91,21 +97,21 @@ const TimeScheduling = ({
               <Button
                 variant="outline"
                 onClick={() => {
-                  today.timeSchedules = [
-                    ...today.timeSchedules,
-                    {
-                      startTime: LocalTime.MIDNIGHT,
-                      endTime: LocalTime.MIDNIGHT
-                    }
-                  ]
+                  const nextDay: DayScheduleForm = {
+                    ...today,
+                    timeSchedules: [
+                      ...today.timeSchedules,
+                      { startTime: LocalTime.MIDNIGHT, endTime: LocalTime.MIDNIGHT }
+                    ]
+                  }
                   today.recurs
                     ? dispatch({
                         type: 'scheduleDayTime',
-                        payload: { dayIndex, day: today }
+                        payload: { dayIndex, day: nextDay }
                       })
                     : dispatch({
                         type: 'singleSessionTimeSchedule',
-                        payload: today.timeSchedules
+                        payload: nextDay.timeSchedules
                       })
                 }}
                 aria-label='Add a time slot'
@@ -161,7 +167,10 @@ const WeeklyScheduleBuilder = ({ schedule, dispatch, recurring }: WeeklySchedule
   const applyCommonSchedule = (timeSchedules: any[]) => {
     selectedDays.forEach(day => {
       const dayIndex = DayOfWeek.toInt(day as DayOfWeekString)
-      const daySchedule = { ...schedule[dayIndex], timeSchedules: [...timeSchedules] }
+      const daySchedule = {
+        ...schedule[dayIndex],
+        timeSchedules: timeSchedules.map(ts => ({ ...ts }))
+      }
       dispatch({
         type: 'scheduleDayTime',
         payload: { dayIndex, day: daySchedule }
@@ -175,9 +184,9 @@ const WeeklyScheduleBuilder = ({ schedule, dispatch, recurring }: WeeklySchedule
     daySchedule.recurs = checked
 
     if (checked) {
-      daySchedule.timeSchedules = useCommonSchedule ? [...commonTimeSchedules] : [
-        { startTime: LocalTime.MIDNIGHT, endTime: LocalTime.MIDNIGHT }
-      ]
+      daySchedule.timeSchedules = useCommonSchedule
+        ? commonTimeSchedules.map(ts => ({ ...ts }))
+        : [{ startTime: LocalTime.MIDNIGHT, endTime: LocalTime.MIDNIGHT }]
     } else {
       daySchedule.timeSchedules = []
     }
@@ -295,20 +304,28 @@ const CommonTimeScheduling = ({ timeSchedules, onChange }: {
     changeType: 'start' | 'end',
     index: number
   ): void => {
-    const newSchedules = [...timeSchedules]
-    const scheduleToAlter = newSchedules[index]
+    const existing = timeSchedules[index]
+    let nextStart = existing.startTime
+    let nextEnd = existing.endTime
 
     if (changeType === 'start') {
+      nextStart = startTime
       if (endTime.isBefore(startTime))
-        scheduleToAlter.endTime = startTime
-      scheduleToAlter.startTime = startTime
+        nextEnd = startTime
     } else if (changeType === 'end') {
+      nextEnd = endTime
       if (startTime.isAfter(endTime))
-        scheduleToAlter.startTime = endTime
-      scheduleToAlter.endTime = endTime
+        nextStart = endTime
     }
 
-    onChange(newSchedules)
+    if (nextStart.equals(existing.startTime) && nextEnd.equals(existing.endTime))
+      return
+
+    onChange(
+      timeSchedules.map((ts, i) =>
+        i === index ? { ...ts, startTime: nextStart, endTime: nextEnd } : ts
+      )
+    )
   }
 
   const addTimeSlot = () => {
