@@ -12,6 +12,7 @@ export interface DropdownOptions {
 	fundingSources: DropdownOption[]
 	organizationTypes: DropdownOption[]
 	partnershipTypes: DropdownOption[]
+	familyEngagementCategories: DropdownOption[]
 	grades: DropdownOption[]
 }
 

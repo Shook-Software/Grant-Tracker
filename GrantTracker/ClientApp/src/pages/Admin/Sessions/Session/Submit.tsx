@@ -96,6 +96,19 @@ export default function Submit (props: SubmitProps): JSX.Element {
               </p>
             </div>
 
+            {values.familyEngagementCategory && (
+              <div>
+                <h4 className='text-sm font-medium text-muted-foreground'>Family Engagement Category</h4>
+                <p className='text-lg'>
+                  {(() => {
+                    const cat = dropdownData.familyEngagementCategories?.find(c => c.guid === values.familyEngagementCategory)
+                    if (!cat) return 'Not specified'
+                    return cat.abbreviation ? `(${cat.abbreviation}) ${cat.label}` : cat.label
+                  })()}
+                </p>
+              </div>
+            )}
+
             <div>
               <h4 className='text-sm font-medium text-muted-foreground'>Activity</h4>
               <p className='text-lg'>

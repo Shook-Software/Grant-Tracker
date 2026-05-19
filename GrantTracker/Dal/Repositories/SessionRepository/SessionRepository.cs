@@ -43,6 +43,7 @@ public class SessionRepository : ISessionRepository
             .Include(s => s.FundingSource)
 			.Include(s => s.OrganizationType)
 			.Include(s => s.PartnershipType)
+			.Include(s => s.FamilyEngagementCategory)
             .Include(s => s.InstructorRegistrations).ThenInclude(i => i.InstructorSchoolYear).ThenInclude(i => i.StudentGroups).ThenInclude(g => g.Items).ThenInclude(i => i.StudentSchoolYear).ThenInclude(ssy => ssy.Student)
             .Include(s => s.InstructorRegistrations).ThenInclude(i => i.InstructorSchoolYear).ThenInclude(i => i.Status)
 			.Include(s => s.InstructorRegistrations).ThenInclude(i => i.InstructorSchoolYear).ThenInclude(i => i.Instructor)

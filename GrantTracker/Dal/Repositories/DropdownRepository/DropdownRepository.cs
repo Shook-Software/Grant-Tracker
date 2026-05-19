@@ -48,7 +48,8 @@ public class DropdownRepository : IDropdownRepository
             Objectives = await GetDropdownOptionsAsync(_grantContext.Objectives, filterInactive),
             FundingSources = await GetDropdownOptionsAsync(_grantContext.FundingSources, filterInactive),
             OrganizationTypes = await GetDropdownOptionsAsync(_grantContext.OrganizationTypes, filterInactive),
-            PartnershipTypes = await GetDropdownOptionsAsync(_grantContext.Partnerships, filterInactive)
+            PartnershipTypes = await GetDropdownOptionsAsync(_grantContext.Partnerships, filterInactive),
+            FamilyEngagementCategories = await GetDropdownOptionsAsync(_grantContext.FamilyEngagementCategories, filterInactive)
         };
     }
 
@@ -63,6 +64,7 @@ public class DropdownRepository : IDropdownRepository
             FundingSources = await GetDropdownOptionsAsync(_grantContext.FundingSources, filterInactive),
             OrganizationTypes = await GetDropdownOptionsAsync(_grantContext.OrganizationTypes, filterInactive),
             PartnershipTypes = await GetDropdownOptionsAsync(_grantContext.Partnerships, filterInactive),
+            FamilyEngagementCategories = await GetDropdownOptionsAsync(_grantContext.FamilyEngagementCategories, filterInactive),
             Grades = await GetGradesAsync()
         };
     }
@@ -140,6 +142,7 @@ public class DropdownRepository : IDropdownRepository
             DropdownOptionType.OrganizationType => _grantContext.OrganizationTypes.Add(option.Convert<OrganizationType>()),
             DropdownOptionType.PartnershipType => _grantContext.Partnerships.Add(option.Convert<PartnershipType>()),
             DropdownOptionType.SessionType => _grantContext.SessionTypes.Add(option.Convert<SessionType>()),
+            DropdownOptionType.FamilyEngagementCategory => _grantContext.FamilyEngagementCategories.Add(option.Convert<FamilyEngagementCategory>()),
             _ => throw new InvalidEnumArgumentException()
         };
 
@@ -157,6 +160,7 @@ public class DropdownRepository : IDropdownRepository
             DropdownOptionType.OrganizationType => _grantContext.OrganizationTypes.Update(option.Convert<OrganizationType>()),
             DropdownOptionType.PartnershipType => _grantContext.Partnerships.Update(option.Convert<PartnershipType>()),
             DropdownOptionType.SessionType => _grantContext.SessionTypes.Update(option.Convert<SessionType>()),
+            DropdownOptionType.FamilyEngagementCategory => _grantContext.FamilyEngagementCategories.Update(option.Convert<FamilyEngagementCategory>()),
             _ => throw new InvalidEnumArgumentException()
         };
 
@@ -182,6 +186,7 @@ public class DropdownRepository : IDropdownRepository
                     DropdownOptionType.OrganizationType => _grantContext.OrganizationTypes.Update(option.Convert<OrganizationType>()),
                     DropdownOptionType.PartnershipType => _grantContext.Partnerships.Update(option.Convert<PartnershipType>()),
                     DropdownOptionType.SessionType => _grantContext.SessionTypes.Update(option.Convert<SessionType>()),
+                    DropdownOptionType.FamilyEngagementCategory => _grantContext.FamilyEngagementCategories.Update(option.Convert<FamilyEngagementCategory>()),
                     _ => throw new InvalidEnumArgumentException()
                 }); ;
             }

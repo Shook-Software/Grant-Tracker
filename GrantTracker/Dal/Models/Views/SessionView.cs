@@ -17,6 +17,7 @@ namespace GrantTracker.Dal.Models.Views
 		public DropdownOption FundingSource { get; set; }
 		public DropdownOption OrganizationType { get; set; }
 		public DropdownOption PartnershipType { get; set; }
+		public DropdownOption FamilyEngagementCategory { get; set; }
 
 		public List<DayScheduleView> DaySchedules { get; set; }
 		public List<InstructorSchoolYearViewModel> Instructors { get; set; }
@@ -36,6 +37,7 @@ namespace GrantTracker.Dal.Models.Views
 			FundingSource = DropdownOption.FromDatabase(session.FundingSource),
 			OrganizationType = DropdownOption.FromDatabase(session.OrganizationType),
 			PartnershipType = DropdownOption.FromDatabase(session.PartnershipType),
+			FamilyEngagementCategory = session.FamilyEngagementCategory is not null ? DropdownOption.FromDatabase(session.FamilyEngagementCategory) : null,
 			DaySchedules = session.DaySchedules.Select(d => DayScheduleView.FromDatabase(d)).ToList(),
 			Instructors = session.InstructorRegistrations.Select(reg => InstructorSchoolYearViewModel.FromDatabase(reg.InstructorSchoolYear)).ToList(),
 			SessionGrades = session.Grades.Select(GradeView.FromDatabase).ToList(),

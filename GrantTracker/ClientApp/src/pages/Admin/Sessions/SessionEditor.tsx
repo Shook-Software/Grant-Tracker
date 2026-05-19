@@ -169,7 +169,7 @@ export default function SessionEditor({ sessionGuid, user, orgYear, setOrgYear }
         enableReinitialize
         initialValues={state}
         validateOnMount
-        validationSchema={validationSchema}
+        validationSchema={validationSchema(dropdownData.sessionTypes)}
         onSubmit={(values, actions) => {
           submitForm(values)
         }}

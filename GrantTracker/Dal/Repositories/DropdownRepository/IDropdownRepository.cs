@@ -12,7 +12,8 @@ public enum DropdownOptionType
     InstructorStatus = 3,
     OrganizationType = 4,
     PartnershipType = 5,
-    SessionType = 6
+    SessionType = 6,
+    FamilyEngagementCategory = 7
 }
 
 public interface IDropdownRepository

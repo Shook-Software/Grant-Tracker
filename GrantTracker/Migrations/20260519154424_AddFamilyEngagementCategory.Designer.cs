@@ -4,6 +4,7 @@ using GrantTracker.Dal.Schema;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace GrantTracker.Migrations
 {
     [DbContext(typeof(GrantTrackerContext))]
-    partial class GrantTrackerContextModelSnapshot : ModelSnapshot
+    [Migration("20260519154424_AddFamilyEngagementCategory")]
+    partial class AddFamilyEngagementCategory
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -829,10 +832,6 @@ namespace GrantTracker.Migrations
                     b.Property<Guid>("ActivityGuid")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid?>("FamilyEngagementCategoryGuid")
-                        .HasColumnType("uniqueidentifier")
-                        .HasComment("Required when SessionType is Parent or Family; null otherwise.");
-
                     b.Property<DateTime>("FirstSession")
                         .HasColumnType("date")
                         .HasComment("Date of the first session.");
@@ -870,8 +869,6 @@ namespace GrantTracker.Migrations
                     b.HasKey("SessionGuid");
 
                     b.HasIndex("ActivityGuid");
-
-                    b.HasIndex("FamilyEngagementCategoryGuid");
 
                     b.HasIndex("FundingSourceGuid");
 
@@ -1952,10 +1949,6 @@ namespace GrantTracker.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("GrantTracker.Dal.Schema.FamilyEngagementCategory", "FamilyEngagementCategory")
-                        .WithMany()
-                        .HasForeignKey("FamilyEngagementCategoryGuid");
-
                     b.HasOne("GrantTracker.Dal.Schema.FundingSource", "FundingSource")
                         .WithMany("Sessions")
                         .HasForeignKey("FundingSourceGuid")
@@ -1987,8 +1980,6 @@ namespace GrantTracker.Migrations
                         .IsRequired();
 
                     b.Navigation("Activity");
-
-                    b.Navigation("FamilyEngagementCategory");
 
                     b.Navigation("FundingSource");
 

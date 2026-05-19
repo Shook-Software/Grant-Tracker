@@ -6,6 +6,8 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Combobox } from '@/components/ui/combobox'
 
+const FAMILY_ENGAGEMENT_SESSION_TYPE_LABELS = ['parent', 'family']
+
 export default ({ context }: { context: Context }): JSX.Element => {
   const { reducerDispatch, dropdownData, values }: Context = context
   document.title = `${values.guid ? 'Edit' : 'New'} Session - Overview`
@@ -14,6 +16,9 @@ export default ({ context }: { context: Context }): JSX.Element => {
     return (
       <p style={{ textAlign: 'center' }}>Error in loading Session details...</p>
     )
+
+  const selectedSessionType = dropdownData.sessionTypes.find(t => t.guid === values.type)
+  const requiresFamilyEngagementCategory = !!selectedSessionType && FAMILY_ENGAGEMENT_SESSION_TYPE_LABELS.includes(selectedSessionType.label?.trim().toLowerCase())
   //make a formcomponents file and handle accordingly on feedback from Liz on editing here and there
   return (
     <div className="max-w-7xl mx-auto p-6">
@@ -40,7 +45,9 @@ export default ({ context }: { context: Context }): JSX.Element => {
           <Select
             value={values.type}
             onValueChange={(value: string) => {
-              reducerDispatch({ type: 'type', payload: value })
+              const nextType = dropdownData.sessionTypes.find(t => t.guid === value)
+              const nextRequires = !!nextType && FAMILY_ENGAGEMENT_SESSION_TYPE_LABELS.includes(nextType.label?.trim().toLowerCase())
+              reducerDispatch({ type: 'typeWithCategoryReset', payload: { sessionTypeGuid: value, clearCategory: !nextRequires } })
             }}
           >
             <SelectTrigger id="session-type">
@@ -55,6 +62,29 @@ export default ({ context }: { context: Context }): JSX.Element => {
             </SelectContent>
           </Select>
         </div>
+
+        {requiresFamilyEngagementCategory && (
+          <div className="space-y-2">
+            <Label htmlFor="family-engagement-category">Family Engagement Category</Label>
+            <Select
+              value={values.familyEngagementCategory ?? ''}
+              onValueChange={(value: string) =>
+                reducerDispatch({ type: 'familyEngagementCategory', payload: value || null })
+              }
+            >
+              <SelectTrigger id="family-engagement-category">
+                <SelectValue placeholder="Select category" />
+              </SelectTrigger>
+              <SelectContent>
+                {dropdownData.familyEngagementCategories?.map(option => (
+                  <SelectItem key={option.guid} value={option.guid}>
+                    {option.abbreviation ? `(${option.abbreviation}) ${option.label}` : option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
 
         <div className="space-y-2 flex justify-center">
           <div className="w-full max-w-[200px]">
