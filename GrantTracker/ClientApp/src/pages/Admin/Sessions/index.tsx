@@ -403,67 +403,78 @@ export default ({ user }: { user: User }): JSX.Element => {
           </div>
         }
 
-        {!sessionsQuery.data || sessionsQuery.data.length === 0 ? (
-          <div className='flex items-center justify-center'>
-            <p>No sessions found...</p>
-          </div>
-        ) : (
+        {(() => {
+          const hasSessions = !!sessionsQuery.data && sessionsQuery.data.length > 0
+          const sidePanelOpen = !!sessionGuid || isEditing
+
+          if (!hasSessions && !sidePanelOpen)
+            return (
+              <div className='flex items-center justify-center'>
+                <p>No sessions found...</p>
+              </div>
+            )
+
+          const sessions = sessionsQuery.data || []
+
+          return (
           <div className='pt-1'>
             <div className='flex flex-nowrap -mx-2'>
-              <div className={`px-2 flex-1 w-full`} style={sessionGuid || isEditing ? { marginLeft: `-250px`, maxWidth: '250px' } : {}}>
+              <div className={`px-2 flex-1 w-full`} style={sidePanelOpen ? { marginLeft: `-250px`, maxWidth: '250px' } : {}}>
 
-                <div className='space-y-6'>
-                  <section>
-                    <h4 className='text-lg font-medium mb-4'>Active Sessions</h4>
-                    <SessionDataTable
-                      data={sessionsQuery.data.filter(session =>
-                        !session.lastSessionDate.isBefore(LocalDate.now()) &&
-                        !session.firstSessionDate.isAfter(LocalDate.now())
-                      )}
-                      displaySingleColumn={!!sessionGuid || isEditing}
-                      missingAttendance={missingAttendance}
-                      openSessionGuid={sessionGuid}
-                      activities={activities}
-                      sessionTypes={sessionTypes}
-                      objectives={objectives}
-                      onRowClick={sessionGuid ? (session) => navigate(`../${session.sessionGuid}`) : undefined}
-                    />
-                  </section>
+                {hasSessions ? (
+                  <div className='space-y-6'>
+                    <section>
+                      <h4 className='text-lg font-medium mb-4'>Active Sessions</h4>
+                      <SessionDataTable
+                        data={sessions.filter(session =>
+                          !session.lastSessionDate.isBefore(LocalDate.now()) &&
+                          !session.firstSessionDate.isAfter(LocalDate.now())
+                        )}
+                        displaySingleColumn={!!sessionGuid || isEditing}
+                        missingAttendance={missingAttendance}
+                        openSessionGuid={sessionGuid}
+                        activities={activities}
+                        sessionTypes={sessionTypes}
+                        objectives={objectives}
+                        onRowClick={sessionGuid ? (session) => navigate(`../${session.sessionGuid}`) : undefined}
+                      />
+                    </section>
 
-                  <section>
-                    <h4 className='text-lg font-medium mb-4'>Pending Sessions</h4>
-                    <SessionDataTable
-                      data={sessionsQuery.data.filter(session =>
-                        session.firstSessionDate.isAfter(LocalDate.now())
-                      )}
-                      displaySingleColumn={!!sessionGuid || isEditing}
-                      missingAttendance={missingAttendance}
-                      openSessionGuid={sessionGuid}
-                      activities={activities}
-                      sessionTypes={sessionTypes}
-                      objectives={objectives}
-                      onRowClick={sessionGuid ? (session) => navigate(`../${session.sessionGuid}`) : undefined}
-                    />
-                  </section>
+                    <section>
+                      <h4 className='text-lg font-medium mb-4'>Pending Sessions</h4>
+                      <SessionDataTable
+                        data={sessions.filter(session =>
+                          session.firstSessionDate.isAfter(LocalDate.now())
+                        )}
+                        displaySingleColumn={!!sessionGuid || isEditing}
+                        missingAttendance={missingAttendance}
+                        openSessionGuid={sessionGuid}
+                        activities={activities}
+                        sessionTypes={sessionTypes}
+                        objectives={objectives}
+                        onRowClick={sessionGuid ? (session) => navigate(`../${session.sessionGuid}`) : undefined}
+                      />
+                    </section>
 
-                  <section>
-                    <h4 className='text-lg font-medium mb-4'>Finished Sessions</h4>
-                    <SessionDataTable
-                      data={sessionsQuery.data.filter(session =>
-                        session.lastSessionDate.isBefore(LocalDate.now())
-                      )}
-                      displaySingleColumn={!!sessionGuid || isEditing}
-                      missingAttendance={missingAttendance}
-                      openSessionGuid={sessionGuid}
-                      activities={activities}
-                      sessionTypes={sessionTypes}
-                      objectives={objectives}
-                      onRowClick={sessionGuid ? (session) => navigate(`../${session.sessionGuid}`) : undefined}
-                    />
-                  </section>
-                </div>
+                    <section>
+                      <h4 className='text-lg font-medium mb-4'>Finished Sessions</h4>
+                      <SessionDataTable
+                        data={sessions.filter(session =>
+                          session.lastSessionDate.isBefore(LocalDate.now())
+                        )}
+                        displaySingleColumn={!!sessionGuid || isEditing}
+                        missingAttendance={missingAttendance}
+                        openSessionGuid={sessionGuid}
+                        activities={activities}
+                        sessionTypes={sessionTypes}
+                        objectives={objectives}
+                        onRowClick={sessionGuid ? (session) => navigate(`../${session.sessionGuid}`) : undefined}
+                      />
+                    </section>
+                  </div>
+                ) : null}
               </div>
-              <div className={`flex-1 ${!sessionGuid && !isEditing ? 'hidden' : 'md:w-9/12'}`}>
+              <div className={`flex-1 ${!sidePanelOpen ? 'hidden' : 'md:w-9/12'}`}>
                 {isEditing ? (
                   <SessionEditor sessionGuid={sessionGuid} user={user} orgYear={orgYear} setOrgYear={setOrgYear} />
                 ) : (
@@ -472,7 +483,8 @@ export default ({ user }: { user: User }): JSX.Element => {
               </div>
             </div>
           </div>
-        )}
+          )
+        })()}
       </div>
 
       <Card className='mt-3 mx-2'>
