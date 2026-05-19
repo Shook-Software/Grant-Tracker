@@ -23,6 +23,7 @@ public class FormSessionDto
 			FundingSourceGuid = FundingSource,
 			OrganizationTypeGuid = OrganizationType,
 			PartnershipTypeGuid = PartnershipType,
+			FamilyEngagementCategoryGuid = FamilyEngagementCategory,
 			FirstSession = FirstSessionDate,
 			LastSession = LastSessionDate,
 			Recurring = Recurring,
@@ -119,6 +120,7 @@ public class FormSessionDto
 	public Guid FundingSource { get; set; }
 	public Guid OrganizationType { get; set; }
 	public Guid PartnershipType { get; set; }
+	public Guid? FamilyEngagementCategory { get; set; }
 	public DateOnly FirstSessionDate { get; set; }
 	public DateOnly LastSessionDate { get; set; }
 	public bool Recurring { get; set; }

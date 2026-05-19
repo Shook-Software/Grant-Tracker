@@ -24,6 +24,8 @@ export type ReducerAction =
   | { type: 'funding'; payload: string }
   | { type: 'organization'; payload: string }
   | { type: 'partnership'; payload: string }
+  | { type: 'familyEngagementCategory'; payload: string | null }
+  | { type: 'typeWithCategoryReset'; payload: { sessionTypeGuid: string; clearCategory: boolean } }
   | { type: 'startDate'; payload: string }
   | { type: 'endDate'; payload: string }
   | { type: 'recurring'; payload: boolean }
@@ -79,6 +81,16 @@ export function reducer (
 
     case 'partnership':
       return { ...state, partnershipType: action.payload }
+
+    case 'familyEngagementCategory':
+      return { ...state, familyEngagementCategory: action.payload }
+
+    case 'typeWithCategoryReset':
+      return {
+        ...state,
+        type: action.payload.sessionTypeGuid,
+        familyEngagementCategory: action.payload.clearCategory ? null : state.familyEngagementCategory
+      }
 
     case 'startDate':
       const newDate: LocalDate = LocalDate.parse(action.payload)

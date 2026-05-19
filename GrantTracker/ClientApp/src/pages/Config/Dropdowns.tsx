@@ -239,7 +239,8 @@ export default (): JSX.Element => {
     { key: 'instructorStatus', label: 'Instructor Status', type: 3, data: state.instructorStatuses },
     { key: 'organizationTypes', label: 'Organization Types', type: 4, data: state.organizationTypes },
     { key: 'partnershipTypes', label: 'Partnership Types', type: 5, data: state.partnershipTypes },
-    { key: 'sessionTypes', label: 'Session Types', type: 6, data: state.sessionTypes }
+    { key: 'sessionTypes', label: 'Session Types', type: 6, data: state.sessionTypes },
+    { key: 'familyEngagementCategories', label: 'Family Engagement Categories', type: 7, data: state.familyEngagementCategories }
   ]
 
   const currentTab = tabs.find(tab => tab.key === activeTab)

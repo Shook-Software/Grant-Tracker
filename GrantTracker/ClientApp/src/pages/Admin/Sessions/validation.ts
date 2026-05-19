@@ -1,7 +1,10 @@
 import { LocalTime } from '@js-joda/core'
 import * as Yup from 'yup'
+import { DropdownOption } from 'Models/Session'
 
-export default Yup.object().shape({
+const FAMILY_ENGAGEMENT_SESSION_TYPE_LABELS = ['parent', 'family']
+
+export default (sessionTypes: DropdownOption[] = []) => Yup.object().shape({
 
   name: Yup.string()
     .min(2, 'Session name must be at least two characters in length.')
@@ -10,6 +13,15 @@ export default Yup.object().shape({
 
   type: Yup.string()
     .required('Required.'),
+
+  familyEngagementCategory: Yup.string()
+    .nullable()
+    .test('required-when-family-or-parent', 'Required when session type is Parent or Family.', function (value) {
+      const typeGuid = (this.parent as { type?: string })?.type
+      const selected = sessionTypes.find(t => t.guid === typeGuid)
+      const requires = !!selected && FAMILY_ENGAGEMENT_SESSION_TYPE_LABELS.includes(selected.label?.trim().toLowerCase())
+      return !requires || !!value
+    }),
 
   activity: Yup.string()
     .required('Required.'),

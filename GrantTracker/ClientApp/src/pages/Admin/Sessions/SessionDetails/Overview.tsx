@@ -43,6 +43,14 @@ export default ({ session }: Props): JSX.Element => {
           <ListItem label='Funding Source:' value={session!.fundingSource.label} />
           <ListItem label='Organization Type:' value={session!.organizationType.label} />
           <ListItem label='Partnership Type:' value={session!.partnershipType.label} />
+          {session.familyEngagementCategory && (
+            <ListItem
+              label='Family Engagement Category:'
+              value={session.familyEngagementCategory.abbreviation
+                ? `(${session.familyEngagementCategory.abbreviation}) ${session.familyEngagementCategory.label}`
+                : session.familyEngagementCategory.label}
+            />
+          )}
           <ListItem
             label='Grade Levels:'
             value={

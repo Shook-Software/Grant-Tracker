@@ -73,6 +73,7 @@ public class SessionDropdownOptions
 	public List<DropdownOption> FundingSources { get; set; }
 	public List<DropdownOption> OrganizationTypes { get; set; }
 	public List<DropdownOption> PartnershipTypes { get; set; }
+	public List<DropdownOption> FamilyEngagementCategories { get; set; }
 }
 
 public class DropdownOptions : SessionDropdownOptions

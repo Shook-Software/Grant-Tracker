@@ -44,6 +44,7 @@ export interface SessionDomain {
   fundingSource: DropdownOption
   organizationType: DropdownOption
   partnershipType: DropdownOption
+  familyEngagementCategory: DropdownOption | null
   daySchedules: DaySchedule.DayScheduleDomain[]
   instructors: InstructorSchoolYearView[]
   sessionGrades: GradeDomain[]
@@ -64,6 +65,7 @@ export interface SessionView {
   fundingSource: DropdownOption
   organizationType: DropdownOption
   partnershipType: DropdownOption
+  familyEngagementCategory: DropdownOption | null
   daySchedules: DaySchedule.DayScheduleView[]
   instructors: InstructorSchoolYearView[]
   grades: GradeView[]
@@ -80,6 +82,7 @@ export interface SessionForm {
   fundingSource: string
   organizationType: string
   partnershipType: string
+  familyEngagementCategory: string | null
   firstSessionDate: LocalDate
   lastSessionDate: LocalDate
   recurring: boolean
@@ -117,6 +120,7 @@ export abstract class Session {
       fundingSource: obj.fundingSource.guid,
       organizationType: obj.organizationType.guid,
       partnershipType: obj.partnershipType.guid,
+      familyEngagementCategory: obj.familyEngagementCategory?.guid ?? null,
       firstSessionDate: firstSession,
       lastSessionDate: DateOnly.toLocalDate(obj.lastSession),
       recurring: true,
@@ -168,6 +172,7 @@ export abstract class Session {
       fundingSource: '',
       organizationType: '',
       partnershipType: '',
+      familyEngagementCategory: null,
       firstSessionDate: today,
       lastSessionDate: today,
       recurring: true,

@@ -21,6 +21,8 @@ namespace GrantTracker.Dal.Schema
 		public virtual OrganizationType OrganizationType { get; set; }
 		public Guid PartnershipTypeGuid { get; set; }
 		public virtual PartnershipType PartnershipType { get; set; }
+		public Guid? FamilyEngagementCategoryGuid { get; set; }
+		public virtual FamilyEngagementCategory FamilyEngagementCategory { get; set; }
 		public string Name { get; set; }
 		public DateOnly FirstSession { get; set; }
 		public DateOnly LastSession { get; set; }
@@ -76,6 +78,11 @@ namespace GrantTracker.Dal.Schema
 				.HasForeignKey(e => e.PartnershipTypeGuid)
 				.IsRequired();
 
+			entity.HasOne(e => e.FamilyEngagementCategory)
+				.WithMany()
+				.HasForeignKey(e => e.FamilyEngagementCategoryGuid)
+				.IsRequired(false);
+
 			entity.HasMany(e => e.Grades)
 				.WithOne(e => e.Session)
 				.HasForeignKey(e => e.SessionGuid);
@@ -116,6 +123,10 @@ namespace GrantTracker.Dal.Schema
 			entity.Property(e => e.PartnershipTypeGuid)
 				.IsRequired()
 				.HasColumnType("uniqueidentifier");
+
+			entity.Property(e => e.FamilyEngagementCategoryGuid)
+				.HasColumnType("uniqueidentifier")
+				.HasComment("Required when SessionType is Parent or Family; null otherwise.");
 
 			entity.Property(e => e.Name)
 				.IsRequired()
