@@ -87,8 +87,12 @@ export default ({onSubmit}): JSX.Element => {
 				displayName = 'Multiple Orgs'
 			}
 
+			// "All" is represented by the empty-string sentinel; strip it so the
+			// backend receives an empty array (sprocs treat null/empty as "all orgs").
+			const submittedGuids = orgGuids.filter(g => g !== '')
+
 			onSubmit({
-				organizationGuids: orgGuids,
+				organizationGuids: submittedGuids,
 				organizationName: displayName,
 				organizationNames: orgNames,
 				year: user.year,

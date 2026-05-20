@@ -89,12 +89,23 @@ public class ReportRepository : IReportRepository
 
     private async Task<List<AttendanceCheckViewModel>> GroupAndFillAttendanceCheckAsync(DateOnly StartDate, DateOnly EndDate, Guid[]? OrganizationGuids, List<AttendanceCheckDbModel> AttendanceChecks)
     {
-        var sessions = await _grantContext.Sessions
+        var sessionsQuery = _grantContext.Sessions
 			.AsNoTracking()
 			.Where(s => s.OrganizationYear.Organization.Name.ToLower() != "administration")
-            .Where(x => OrganizationGuids == null || OrganizationGuids.Length == 0 || OrganizationGuids.Contains(x.OrganizationYear.OrganizationGuid))
             .Where(x => x.FirstSession <= EndDate)
-            .Where(x => x.LastSession >= StartDate)
+            .Where(x => x.LastSession >= StartDate);
+
+        // Hoist the org filter out of the predicate; combining a captured-array .Contains
+        // with DateOnly converter parameters in a single lambda crashes EF Core 7's
+        // expression compiler ("Cannot create boxed ByRef-like values"). Materializing
+        // to a List also avoids the Span-based IL path used for array.Contains.
+        if (OrganizationGuids != null && OrganizationGuids.Length > 0)
+        {
+            var orgGuidsList = OrganizationGuids.ToList();
+            sessionsQuery = sessionsQuery.Where(x => orgGuidsList.Contains(x.OrganizationYear.OrganizationGuid));
+        }
+
+        var sessions = await sessionsQuery
             .Include(x => x.OrganizationYear).ThenInclude(x => x.Organization)
             .Include(x => x.DaySchedules).ThenInclude(ds => ds.TimeSchedules)
             .Include(x => x.InstructorRegistrations).ThenInclude(ir => ir.InstructorSchoolYear).ThenInclude(isy => isy.Instructor)
