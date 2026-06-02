@@ -476,7 +476,15 @@ export default ({ user }: { user: User }): JSX.Element => {
               </div>
               <div className={`flex-1 ${!sidePanelOpen ? 'hidden' : 'md:w-9/12'}`}>
                 {isEditing ? (
-                  <SessionEditor sessionGuid={sessionGuid} user={user} orgYear={orgYear} setOrgYear={setOrgYear} />
+                  <SessionEditor
+                    sessionGuid={sessionGuid}
+                    copySessionGuid={searchParams.get('copySessionGuid') || undefined}
+                    targetOrgYearGuid={searchParams.get('targetOrgYearGuid') || undefined}
+                    copyFromPreviousYear={searchParams.get('copyFromPreviousYear') === 'true'}
+                    user={user}
+                    orgYear={orgYear}
+                    setOrgYear={setOrgYear}
+                  />
                 ) : (
                   sessionGuid && <SessionDetails sessionGuid={sessionGuid} user={user} />
                 )}

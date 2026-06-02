@@ -22,6 +22,22 @@ export default ({ session, attendanceApiResult, user }: Props): JSX.Element => {
   const navigate = useNavigate()
   const [showDeletionModal, setShowDeletionModal] = useState<boolean>(false)
 
+  // The organization-year for this session's organization in the active (current) school year.
+  // Copies are always created here, regardless of which year the source session belongs to.
+  const activeOrgYear = user.organizationYears?.find(
+    oy => oy.organization.guid === session.organizationYear.organization.guid && oy.year.isCurrentYear
+  )
+
+  function handleCopy(): void {
+    if (!activeOrgYear)
+      return
+
+    const copyFromPreviousYear = !session.organizationYear.year.isCurrentYear
+    const sessionsPath = `${paths.Admin.path}/${paths.Admin.Tabs.Sessions.path}`
+
+    navigate(`${sessionsPath}?edit=true&copySessionGuid=${session.guid}&targetOrgYearGuid=${activeOrgYear.guid}&copyFromPreviousYear=${copyFromPreviousYear}`)
+  }
+
   function handleSessionDeletion (deleteSession: boolean): void {
     if (deleteSession) {
       api
@@ -75,8 +91,16 @@ export default ({ session, attendanceApiResult, user }: Props): JSX.Element => {
               </Link>
             </div>
           )}
-              
-          <ComboboxDropdownMenuItem 
+
+          {user.claim !== IdentityClaim.Teacher && (
+            <ComboboxDropdownMenuItem
+              label='Copy to Active Year'
+              disabled={!activeOrgYear}
+              onClick={handleCopy}
+            />
+          )}
+
+          <ComboboxDropdownMenuItem
             variant='destructive'
             label='Delete'
             onClick={() => openDeleteDialog()}

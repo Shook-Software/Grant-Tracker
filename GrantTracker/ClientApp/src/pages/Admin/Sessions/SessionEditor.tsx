@@ -21,6 +21,9 @@ import { User } from 'utils/authentication'
 
 interface SessionEditorProps {
   sessionGuid: string | undefined
+  copySessionGuid?: string | undefined
+  targetOrgYearGuid?: string | undefined
+  copyFromPreviousYear?: boolean
   user: User
   orgYear: OrganizationYearView | undefined
   setOrgYear: (orgYear: OrganizationYearView) => void
@@ -28,7 +31,7 @@ interface SessionEditorProps {
 
 type TabKey = 'overview' | 'involved' | 'scheduling' | 'submit'
 
-export default function SessionEditor({ sessionGuid, user, orgYear, setOrgYear }: SessionEditorProps): JSX.Element {
+export default function SessionEditor({ sessionGuid, copySessionGuid, targetOrgYearGuid, copyFromPreviousYear, user, orgYear, setOrgYear }: SessionEditorProps): JSX.Element {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState<TabKey>('overview')
@@ -70,6 +73,49 @@ export default function SessionEditor({ sessionGuid, user, orgYear, setOrgYear }
                 dispatch({ type: 'all', payload: session })
                 setSessionLoaded(true)
               })
+            } else if (copySessionGuid) {
+              fetchSession(copySessionGuid).then(source => {
+                const targetOrgYear = user.organizationYears?.find(oy => oy.guid === targetOrgYearGuid) ?? orgYear
+
+                const copyForm: SessionForm = {
+                  ...source,
+                  organizationYearGuid: targetOrgYear?.guid ?? source.organizationYearGuid,
+                  // Carry blackout dates only within the same active year, and strip their ids so they
+                  // attach to the new session instead of colliding with the source's records.
+                  blackoutDates: copyFromPreviousYear
+                    ? []
+                    : source.blackoutDates.map(bd => ({ ...bd, guid: undefined, sessionGuid: undefined })) as SessionForm['blackoutDates'],
+                  // Regenerate time-schedule ids so the copy's schedule doesn't collide with the source's.
+                  scheduling: source.scheduling.map(day => ({
+                    ...day,
+                    timeSchedules: day.timeSchedules.map(ts => ({ ...ts, guid: undefined }))
+                  })) as SessionForm['scheduling']
+                }
+                delete copyForm.guid
+
+                if (copyFromPreviousYear) {
+                  // Across school years, don't prepopulate instructors (they're tied to the source
+                  // year) or the session dates.
+                  copyForm.instructors = []
+
+                  if (targetOrgYear?.year) {
+                    const startDate = targetOrgYear.year.startDate
+                    const endDate = targetOrgYear.year.endDate
+                    copyForm.firstSessionDate = startDate instanceof LocalDate
+                      ? startDate
+                      : LocalDate.of(startDate.year, startDate.month, startDate.day)
+                    copyForm.lastSessionDate = endDate instanceof LocalDate
+                      ? endDate
+                      : LocalDate.of(endDate.year, endDate.month, endDate.day)
+                  }
+                }
+
+                if (targetOrgYear && targetOrgYear.guid !== orgYear?.guid) {
+                  setOrgYear(targetOrgYear)
+                }
+                dispatch({ type: 'all', payload: copyForm })
+                setSessionLoaded(true)
+              })
             } else {
               const defaultForm = Session.createDefaultForm()
               if (orgYear?.year) {
@@ -88,7 +134,7 @@ export default function SessionEditor({ sessionGuid, user, orgYear, setOrgYear }
             }
           }))
       .catch(exception => console.warn(exception))
-  }, [sessionGuid])
+  }, [sessionGuid, copySessionGuid])
 
   if (!dropdownData || !sessionLoaded)
     return (
@@ -120,7 +166,7 @@ export default function SessionEditor({ sessionGuid, user, orgYear, setOrgYear }
     <div className='border rounded overflow-hidden'>
       <div className='bg-blue-600 text-white px-4 py-3 flex justify-between items-center'>
         <h3 className='text-xl font-semibold'>
-          {sessionGuid ? `Editing ${state.name}` : 'Creating New Session'}
+          {sessionGuid ? `Editing ${state.name}` : copySessionGuid ? `Copying ${state.name}` : 'Creating New Session'}
         </h3>
         <button
           type='button'
