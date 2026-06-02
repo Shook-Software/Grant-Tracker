@@ -87,35 +87,43 @@ export function handleStateReduction(state: AttendanceForm, action: ReducerActio
 
             return { ...state, studentRecords }
 
-        case 'populateExistingRecords':
-            instructorRecords = action.payload.instructorAttendance.map(x => ({
-                id: x.instructorSchoolYear.guid,
-                isPresent: true,
-                isSubstitute: x.isSubstitute,
-                firstName: x.instructorSchoolYear.instructor.firstName,
-                lastName: x.instructorSchoolYear.instructor.lastName,
-                times: x.timeRecords.map(y => ({
-                    startTime: y.startTime instanceof LocalTime ? y.startTime : TimeOnly.toLocalTime(y.startTime),
-                    endTime: y.endTime instanceof LocalTime ? y.endTime : TimeOnly.toLocalTime(y.endTime)
-                }))
-            })) as InstructorRecord[] 
-            console.log(instructorRecords)
+        case 'populateExistingRecords': {
+            let nextState = { ...state }
 
-            studentRecords = action.payload.studentAttendance.map(x => ({
-                id: x.studentSchoolYear.guid,
-                isPresent: true,
-                firstName: x.studentSchoolYear.student.firstName,
-                lastName: x.studentSchoolYear.student.lastName,
-                matricNumber: x.studentSchoolYear.student.matricNumber,
-                times: x.timeRecords?.map(y => ({
-                    startTime: y.startTime instanceof LocalTime ? y.startTime : TimeOnly.toLocalTime(y.startTime),
-                    endTime: y.endTime instanceof LocalTime ? y.endTime : TimeOnly.toLocalTime(y.endTime)
-                })),
-                familyAttendance: x.familyAttendance?.slice() || [],
-                conflicts: []
-            })) as StudentRecord[]
+            // instructorAttendance may be omitted (e.g. when copying, the target session's
+            // instructors are populated separately rather than carried over from the source).
+            if (action.payload.instructorAttendance) {
+                nextState.instructorRecords = action.payload.instructorAttendance.map(x => ({
+                    id: x.instructorSchoolYear.guid,
+                    isPresent: true,
+                    isSubstitute: x.isSubstitute,
+                    firstName: x.instructorSchoolYear.instructor.firstName,
+                    lastName: x.instructorSchoolYear.instructor.lastName,
+                    times: x.timeRecords.map(y => ({
+                        startTime: y.startTime instanceof LocalTime ? y.startTime : TimeOnly.toLocalTime(y.startTime),
+                        endTime: y.endTime instanceof LocalTime ? y.endTime : TimeOnly.toLocalTime(y.endTime)
+                    }))
+                })) as InstructorRecord[]
+            }
 
-            return {...state, instructorRecords, studentRecords }
+            if (action.payload.studentAttendance) {
+                nextState.studentRecords = action.payload.studentAttendance.map(x => ({
+                    id: x.studentSchoolYear.guid,
+                    isPresent: true,
+                    firstName: x.studentSchoolYear.student.firstName,
+                    lastName: x.studentSchoolYear.student.lastName,
+                    matricNumber: x.studentSchoolYear.student.matricNumber,
+                    times: x.timeRecords?.map(y => ({
+                        startTime: y.startTime instanceof LocalTime ? y.startTime : TimeOnly.toLocalTime(y.startTime),
+                        endTime: y.endTime instanceof LocalTime ? y.endTime : TimeOnly.toLocalTime(y.endTime)
+                    })),
+                    familyAttendance: x.familyAttendance?.slice() || [],
+                    conflicts: []
+                })) as StudentRecord[]
+            }
+
+            return nextState
+        }
 
         case 'setAttendanceStartTime':
             if (getStudentRecord(state, action.payload.personId)) {

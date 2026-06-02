@@ -149,9 +149,15 @@ export default (): React.ReactElement => {
 							dispatch({ type: 'populateInstructors', payload: { instructors: session?.instructors, times: timeSchedules }})
 							dispatch({ type: 'populateStudents', payload: { students: studentRegs.map(reg => reg.studentSchoolYear), times: timeSchedules }})
 						}
-						else { 
-							dispatch({ type: 'populateExistingRecords', payload: { 
-								instructorAttendance: priorAttendance.instructorAttendanceRecords.map(iar => ({...iar, timeRecords: attendanceMode === 'edit' ? iar.timeRecords: [...timeSchedules]})), 
+						else {
+							// When copying, use the target session's instructors rather than carrying
+							// over the source session's. Edit mode keeps the existing instructor records.
+							if (attendanceMode === 'copy') {
+								dispatch({ type: 'populateInstructors', payload: { instructors: session.instructors, times: timeSchedules }})
+							}
+
+							dispatch({ type: 'populateExistingRecords', payload: {
+								instructorAttendance: attendanceMode === 'copy' ? null : priorAttendance.instructorAttendanceRecords.map(iar => ({...iar, timeRecords: iar.timeRecords})),
 								studentAttendance: priorAttendance.studentAttendanceRecords.map(sar => ({...sar, timeRecords: attendanceMode === 'edit' ? sar.timeRecords: [...timeSchedules]}))
 							}})
 						}
