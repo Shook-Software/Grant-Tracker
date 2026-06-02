@@ -668,43 +668,51 @@ export const scheduleFields = [
 
 export const familySessionFields = [
 	{
-		label: 'Site',
-		value: 'site'
+		label: 'School',
+		value: 'school'
 	},
 	{
-		label: 'Student Last Name',
+		label: 'Last Name',
 		value: 'lastName'
 	},
 	{
-		label: 'Student First Name',
+		label: 'First Name',
 		value: 'firstName'
 	},
 	{
-		label: 'Student Matric #',
+		label: 'Matric Number',
 		value: 'matricNumber'
 	},
 	{
-		label: 'Student Grade',
+		label: 'Grade',
 		value: 'grade'
 	},
 	{
-		label: 'Family Member',
-		value: 'familyMember'
+		label: 'Relationship',
+		value: 'relationship'
 	},
 	{
-		label: 'Session Name',
-		value: 'sessionName'
+		label: 'Session',
+		value: 'session'
+	},
+	{
+		label: 'Date',
+		value: 'date'
+	},
+	{
+		label: 'Total Time',
+		value: 'totalTime'
+	},
+	{
+		label: 'Activity',
+		value: 'activity'
 	},
 	{
 		label: 'Session Type',
 		value: 'sessionType'
 	},
 	{
-		label: 'Session Date',
-		value: 'sessionDate'
-	},
-	{
-		label: 'Total Time',
-		value: 'totalTime'
+		label: 'Family Engagement Category',
+		value: 'familyEngagementCategory'
 	},
 ]

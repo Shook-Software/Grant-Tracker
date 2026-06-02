@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 
 import { ReportParameters } from '../ReportParameters'
-import { cclc10Fields } from '../Definitions/CSV'
+import { familySessionFields } from '../Definitions/CSV'
 import ReportComponent from '../ReportComponent'
 import { Button } from '@/components/ui/button'
 
@@ -14,7 +14,7 @@ interface Props {
 }
 
 interface FamilySessionRow {
-	site: string;
+	school: string;
 	firstName: string;
 	lastName: string;
 	matricNumber: string;
@@ -23,7 +23,9 @@ interface FamilySessionRow {
 	sessionName: string;
 	sessionType: string;
 	sessionDate: string;
-	totalTime: string
+	totalTime: string;
+	activity: string;
+	familyEngagementCategory;
 }
 
 export default ({params, dateDisplay, fileOrgName, isActive}: Props) => {
@@ -70,7 +72,7 @@ export default ({params, dateDisplay, fileOrgName, isActive}: Props) => {
 				displayName={`Family Session Report for all Organizations, ${dateDisplay}`}
 				fileData={data}
 				fileName={`Family_Session_Grant_Tracker`}
-				fileFields={cclc10Fields}
+				fileFields={familySessionFields}
 				showHeader={true}
 			>
 				<div>
