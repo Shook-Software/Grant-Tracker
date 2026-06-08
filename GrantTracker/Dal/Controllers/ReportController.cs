@@ -242,7 +242,7 @@ public class ReportController : ControllerBase
             DateOnly startDate = DateOnly.Parse(startDateStr);
             DateOnly endDate = DateOnly.Parse(endDateStr);
             var familySessionRows = await _reportRepository.GetFamilySessionReportAsync(startDate, endDate);
-            return Ok(familySessionRows.OrderBy(x => x.Site).ThenBy(x => x.LastName).ThenBy(x => x.FirstName).ToList());
+            return Ok(familySessionRows.OrderBy(x => x.School).ThenBy(x => x.LastName).ThenBy(x => x.FirstName).ToList());
         }
         catch (Exception ex)
         {
