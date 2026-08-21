@@ -68,6 +68,13 @@ const Dropdown = ({ type, state: initialState, reloadOptions }): JSX.Element => 
     setDropdownOptions(editedOptions)
   }
 
+  const scrollToNewOption = useRef<boolean>(false)
+
+  const addOption = (): void => {
+    scrollToNewOption.current = true
+    setDropdownOptions([...dropdownOptions, { guid: null, label: '', abbreviation: '', description: '', deactivatedAt: null }])
+  }
+
   const sortAlphabetically = (): void => {
     setDropdownOptions([...dropdownOptions
       .sort((a, b) => (a.abbreviation ?? a.label) > (b.abbreviation ?? b.label) ? 1 : -1)]
@@ -110,6 +117,14 @@ const Dropdown = ({ type, state: initialState, reloadOptions }): JSX.Element => 
     setValues(dropdownOptions || [])
   }, [dropdownOptions])
 
+  // rows updates a render after addOption's state change, so the new <li> exists by the time this runs
+  useEffect(() => {
+    if (scrollToNewOption.current && body.current?.lastElementChild) {
+      scrollToNewOption.current = false
+      body.current.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+  }, [rows])
+
   if (!initialState || type === undefined) return <></>
 
   if (changesPending)
@@ -118,20 +133,15 @@ const Dropdown = ({ type, state: initialState, reloadOptions }): JSX.Element => 
   return (
     <div className='relative'>
       <div className='mb-3 flex gap-3'>
-        {
-          edit
-            ?
+        {edit && (
             <>
               <Button onClick={() => submitChanges()}>Submit</Button>
               <Button variant="outline" onClick={() => setEdit(false)}>Cancel</Button>
+              <Button variant='secondary' onClick={() => sortAlphabetically()}>Sort Alphabetically</Button>
+              <Button variant="outline" className='ml-auto' onClick={() => addOption()}>Add</Button>
             </>
-            : <Button onClick={() => setEdit(true)}>Edit</Button>
-        }
-        {
-          edit ?
-            <Button variant='secondary' onClick={() => sortAlphabetically()}>Sort Alphabetically</Button>
-            : null
-        }
+          )}
+        {!edit && <Button onClick={() => setEdit(true)}>Edit</Button>}
       </div>
 
       <div className='text-red-500'>
@@ -140,8 +150,10 @@ const Dropdown = ({ type, state: initialState, reloadOptions }): JSX.Element => 
         }
       </div>
 
-      <ul ref={body} className={`w-full border border-gray-200 rounded absolute ${edit ? 'left-[0px] right-[0px]' : 'left-[9999px] right-[9999px]'}`}> 
-        {/*Silly solution to ensure formkit drag and drop initializes appropriately rather than on a null element ^^^ */}
+      {/* Must stay mounted even when not editing — formkit's useDragAndDrop only initializes while the ref points at a
+          mounted element during a values update, and never retries on a null ref. Hiding via display keeps the ref alive
+          without pulling the list out of document flow. */}
+      <ul ref={body} className={`w-full border border-gray-200 rounded ${edit ? '' : 'hidden'}`}>
         <li id='no-drag' className='bg-gray-50 border-b border-gray-200 flex items-center py-2'>
           <div className='flex-[2] px-3 font-medium'>Label</div>
           <div className='flex-1 px-3 font-medium'>Abbreviation</div>
@@ -199,14 +211,6 @@ const Dropdown = ({ type, state: initialState, reloadOptions }): JSX.Element => 
           containerClassName="w-full"
         />
       }
-
-      <div className='mt-3'>
-        {
-          edit
-            ? <Button variant="outline" onClick={() => setDropdownOptions([...dropdownOptions, { guid: null, label: '', abbreviation: '', description: '', deactivatedAt: null }])}>Add</Button>
-            : null
-        }
-      </div>
     </div>
   )
 }
