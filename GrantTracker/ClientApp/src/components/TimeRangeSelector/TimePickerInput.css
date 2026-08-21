@@ -38,6 +38,15 @@
   box-shadow: 0 0 0 1px var(--ring) !important;
 }
 
+.time-picker-wrapper.invalid .rc-picker {
+  border-color: var(--destructive, #ef4444) !important;
+}
+
+.time-picker-wrapper.invalid .rc-picker-focused {
+  border-color: var(--destructive, #ef4444) !important;
+  box-shadow: 0 0 0 1px var(--destructive, #ef4444) !important;
+}
+
 /* Dropdown styling - globally scoped for portal rendering */
 .rc-picker-dropdown {
   z-index: 1050 !important;

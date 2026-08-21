@@ -48,10 +48,9 @@ export default (sessionTypes: DropdownOption[] = []) => Yup.object().shape({
           startTime: Yup.mixed<LocalTime>().required(),
           endTime: Yup.mixed<LocalTime>().required()
         })
-        .test('start-end-differ', 'Start and end times cannot be equivalent.', (x) => {
-          console.log(x)
+        .test('start-before-end', 'End time must be after start time.', (x) => {
           if (!x?.startTime || !x?.endTime) return true
-          return !x.startTime.equals(x.endTime)
+          return x.startTime.isBefore(x.endTime)
         })
       )
     })
