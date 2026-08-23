@@ -10,6 +10,8 @@ namespace GrantTracker.Dal.Schema
 		public Guid AttendanceRecordGuid { get; set; }
 		public virtual AttendanceRecord AttendanceRecord { get; set; }
         public bool IsSubstitute { get; set; }
+		public Guid? FundingSourceGuid { get; set; }
+		public virtual FundingSource FundingSource { get; set; }
 
         public ICollection<InstructorAttendanceTimeRecord> TimeRecords { get; set; }
 
@@ -41,6 +43,11 @@ namespace GrantTracker.Dal.Schema
 				.HasForeignKey(e => e.InstructorAttendanceRecordGuid)
 				.OnDelete(DeleteBehavior.Cascade);
 
+			entity.HasOne(e => e.FundingSource)
+				.WithMany()
+				.HasForeignKey(e => e.FundingSourceGuid)
+				.OnDelete(DeleteBehavior.NoAction);
+
 			/// /Properties
 
 			entity.Property(e => e.InstructorSchoolYearGuid)
@@ -55,6 +62,9 @@ namespace GrantTracker.Dal.Schema
                 .IsRequired()
                 .HasDefaultValue(0)
 				.HasColumnType("bit");
+
+			entity.Property(e => e.FundingSourceGuid)
+				.HasComment("Snapshot of the instructor's registration funding source at the time attendance was taken, so session edits do not retroactively alter attendance records.");
 		}
 	}
 }
