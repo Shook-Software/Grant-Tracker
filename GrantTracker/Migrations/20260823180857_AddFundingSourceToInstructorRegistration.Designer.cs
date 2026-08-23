@@ -4,6 +4,7 @@ using GrantTracker.Dal.Schema;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace GrantTracker.Migrations
 {
     [DbContext(typeof(GrantTrackerContext))]
-    partial class GrantTrackerContextModelSnapshot : ModelSnapshot
+    [Migration("20260823180857_AddFundingSourceToInstructorRegistration")]
+    partial class AddFundingSourceToInstructorRegistration
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -261,10 +264,6 @@ namespace GrantTracker.Migrations
                     b.Property<Guid>("AttendanceRecordGuid")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid?>("FundingSourceGuid")
-                        .HasColumnType("uniqueidentifier")
-                        .HasComment("Snapshot of the instructor's registration funding source at the time attendance was taken, so session edits do not retroactively alter attendance records.");
-
                     b.Property<Guid>("InstructorSchoolYearGuid")
                         .HasColumnType("uniqueidentifier");
 
@@ -276,8 +275,6 @@ namespace GrantTracker.Migrations
                     b.HasKey("Guid");
 
                     b.HasIndex("AttendanceRecordGuid");
-
-                    b.HasIndex("FundingSourceGuid");
 
                     b.HasIndex("InstructorSchoolYearGuid", "AttendanceRecordGuid")
                         .IsUnique();
@@ -1396,9 +1393,6 @@ namespace GrantTracker.Migrations
                     b.Property<string>("FirstName")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("FundingSources")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<Guid>("InstructorSchoolYearGuid")
                         .HasColumnType("uniqueidentifier");
 
@@ -1425,9 +1419,6 @@ namespace GrantTracker.Migrations
             modelBuilder.Entity("GrantTracker.Dal.Schema.Sprocs.Reporting.StaffSummaryDbModel", b =>
                 {
                     b.Property<string>("FirstName")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("FundingSources")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<Guid>("InstructorSchoolYearGuid")
@@ -1836,11 +1827,6 @@ namespace GrantTracker.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("GrantTracker.Dal.Schema.FundingSource", "FundingSource")
-                        .WithMany()
-                        .HasForeignKey("FundingSourceGuid")
-                        .OnDelete(DeleteBehavior.NoAction);
-
                     b.HasOne("GrantTracker.Dal.Schema.InstructorSchoolYear", "InstructorSchoolYear")
                         .WithMany("AttendanceRecords")
                         .HasForeignKey("InstructorSchoolYearGuid")
@@ -1848,8 +1834,6 @@ namespace GrantTracker.Migrations
                         .IsRequired();
 
                     b.Navigation("AttendanceRecord");
-
-                    b.Navigation("FundingSource");
 
                     b.Navigation("InstructorSchoolYear");
                 });

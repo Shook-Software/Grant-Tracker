@@ -9,7 +9,6 @@ export interface InstructorView {
   badgeNumber: string
 }
 
-//not enough info
 export interface InstructorSchoolYearView {
   guid: string
   title: string
@@ -22,6 +21,7 @@ export interface InstructorSchoolYearView {
   enrollmentRecords: any[]
   attendanceRecords: any[]
   studentGroups: StudentGroup[]
+  fundingSource?: DropdownOption | null // registration-level; only populated in the context of a session
 }
 
 export abstract class Instructor {}

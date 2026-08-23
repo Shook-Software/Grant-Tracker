@@ -52,7 +52,10 @@ export function fetchSession(sessionGuid: string): Promise<SessionForm> {
 export function submitSession(sessionState: SessionForm): Promise<string> {
 	return new Promise((resolve, reject) => {
 
-		sessionState.instructors = sessionState.instructors?.map(instructor => instructor.guid)
+		sessionState.instructors = sessionState.instructors?.map(instructor => ({
+			guid: instructor.guid,
+			fundingSourceGuid: instructor.fundingSourceGuid ?? null
+		}))
 
 		if (sessionState.guid) {
 			api

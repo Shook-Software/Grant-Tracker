@@ -93,6 +93,9 @@ export default function SessionEditor({ sessionGuid, copySessionGuid, targetOrgY
                 }
                 delete copyForm.guid
 
+                // Funding may differ per copy, so each instructor's funding source must be chosen anew.
+                copyForm.instructors = copyForm.instructors.map(i => ({ ...i, fundingSourceGuid: null }))
+
                 if (copyFromPreviousYear) {
                   // Across school years, don't prepopulate instructors (they're tied to the source
                   // year) or the session dates.

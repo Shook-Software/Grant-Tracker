@@ -39,7 +39,12 @@ namespace GrantTracker.Dal.Models.Views
 			PartnershipType = DropdownOption.FromDatabase(session.PartnershipType),
 			FamilyEngagementCategory = session.FamilyEngagementCategory is not null ? DropdownOption.FromDatabase(session.FamilyEngagementCategory) : null,
 			DaySchedules = session.DaySchedules.Select(d => DayScheduleView.FromDatabase(d)).ToList(),
-			Instructors = session.InstructorRegistrations.Select(reg => InstructorSchoolYearViewModel.FromDatabase(reg.InstructorSchoolYear)).ToList(),
+			Instructors = session.InstructorRegistrations.Select(reg =>
+			{
+				var instructorSchoolYear = InstructorSchoolYearViewModel.FromDatabase(reg.InstructorSchoolYear);
+				instructorSchoolYear.FundingSource = reg.FundingSource is not null ? DropdownOption.FromDatabase(reg.FundingSource) : null;
+				return instructorSchoolYear;
+			}).ToList(),
 			SessionGrades = session.Grades.Select(GradeView.FromDatabase).ToList(),
             Objectives = session.SessionObjectives
 				.Select(x => DropdownOption.FromDatabase(x.Objective))

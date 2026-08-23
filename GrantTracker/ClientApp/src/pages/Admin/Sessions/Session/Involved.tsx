@@ -4,7 +4,6 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Combobox } from '@/components/ui/combobox'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { X } from 'lucide-react'
 
 import api from 'utils/api'
@@ -53,7 +52,8 @@ export default ({ context }: { context: Context }): JSX.Element => {
 
   function handleInstructorAddition (guid: string, label: string): void {
     if (!values.instructors.find(i => i.guid === guid))
-      reducerDispatch({ type: 'addInstructor', payload: { guid, label } })
+      // default each instructor to the session's funding source; adjustable per-instructor below
+      reducerDispatch({ type: 'addInstructor', payload: { guid, label, fundingSourceGuid: values.fundingSource || null } })
   }
 
   function handleInstructorRemoval (guid: string): void {
@@ -152,22 +152,40 @@ export default ({ context }: { context: Context }): JSX.Element => {
 
         <div className="space-y-2">
           <Label>Selected Instructors</Label>
-          <div className='flex flex-wrap gap-2 min-h-[40px] p-2 border rounded-md'>
+          <div className='flex flex-col gap-2 min-h-[40px] p-2 border rounded-md'>
             {values.instructors.length === 0 ? (
               <span className="text-muted-foreground text-sm">No instructors selected</span>
             ) : (
               values.instructors.map(instructor => (
-                <Badge key={instructor.guid} variant="secondary" className="flex items-center gap-1">
-                  {instructor.label}
+                <div key={instructor.guid} className='flex items-center gap-2'>
+                  <span className='flex-1 text-sm truncate'>{instructor.label}</span>
+                  <Select
+                    value={instructor.fundingSourceGuid ?? ''}
+                    onValueChange={(value: string) =>
+                      reducerDispatch({ type: 'instructorFunding', payload: { guid: instructor.guid, fundingSourceGuid: value || null } })
+                    }
+                  >
+                    <SelectTrigger className='w-44 h-8' aria-label={`Funding source for ${instructor.label}`}>
+                      <SelectValue placeholder="Funding source" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {dropdownData.fundingSources.map(option => (
+                        <SelectItem key={option.guid} value={option.guid}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-auto p-0 ml-1"
+                    className="h-auto p-1"
+                    aria-label={`Remove ${instructor.label}`}
                     onClick={() => handleInstructorRemoval(instructor.guid)}
                   >
-                    <X size={12} />
+                    <X size={14} />
                   </Button>
-                </Badge>
+                </div>
               ))
             )}
           </div>

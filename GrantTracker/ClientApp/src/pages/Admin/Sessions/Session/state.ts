@@ -19,8 +19,9 @@ export type ReducerAction =
   | { type: 'activity'; payload: string }
   | { type: 'objective'; payload: string[] }
   | { type: 'grades'; payload: string[] }
-  | { type: 'addInstructor'; payload: { guid: string; label: string } }
+  | { type: 'addInstructor'; payload: { guid: string; label: string; fundingSourceGuid: string | null } }
   | { type: 'removeInstructor'; payload: string }
+  | { type: 'instructorFunding'; payload: { guid: string; fundingSourceGuid: string | null } }
   | { type: 'funding'; payload: string }
   | { type: 'organization'; payload: string }
   | { type: 'partnership'; payload: string }
@@ -70,6 +71,16 @@ export function reducer (
         ...state,
         instructors: state.instructors.filter(
           instructor => instructor.guid !== action.payload
+        )
+      }
+
+    case 'instructorFunding':
+      return {
+        ...state,
+        instructors: state.instructors.map(instructor =>
+          instructor.guid === action.payload.guid
+            ? { ...instructor, fundingSourceGuid: action.payload.fundingSourceGuid }
+            : instructor
         )
       }
 
