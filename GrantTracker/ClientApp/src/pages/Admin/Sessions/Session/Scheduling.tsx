@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { Context } from 'pages/Admin/Sessions/SessionEditor'
 import { DateTimeFormatter, LocalDate, LocalTime } from '@js-joda/core'
 
-import { TimePickerInput as TimeInput } from 'components/TimeRangeSelector'
+import { TimePickerInput as TimeInput, isInvalidTimeRange, TimeRangeError } from 'components/TimeRangeSelector'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
@@ -26,6 +26,7 @@ const TimeScheduling = ({
   dispatch
 }: TimeSchedulingProps): React.ReactNode | null => {
   const dayIndex: number = DayOfWeek.toInt(today.dayOfWeek)
+  const [touched, setTouched] = useState<Record<number, boolean>>({})
 
   function handleTimeChange (
     startTime: LocalTime,
@@ -35,20 +36,10 @@ const TimeScheduling = ({
   ): void {
 
     const existing = today.timeSchedules[index]
+    setTouched(prev => ({ ...prev, [index]: true }))
 
-    let nextStart = existing.startTime
-    let nextEnd = existing.endTime
-
-    if (changeType === 'start') {
-      nextStart = startTime
-      if (endTime.isBefore(startTime))
-        nextEnd = startTime
-    }
-    else if (changeType === 'end') {
-      nextEnd = endTime
-      if (startTime.isAfter(endTime))
-        nextStart = endTime
-    }
+    const nextStart = changeType === 'start' ? startTime : existing.startTime
+    const nextEnd = changeType === 'end' ? endTime : existing.endTime
 
     if (nextStart.equals(existing.startTime) && nextEnd.equals(existing.endTime))
       return
@@ -71,13 +62,16 @@ const TimeScheduling = ({
 
   return (
     <div className="space-y-3">
-      {today?.timeSchedules?.map((timeSchedule, index) => (
+      {today?.timeSchedules?.map((timeSchedule, index) => {
+        const rangeInvalid = touched[index] && isInvalidTimeRange(timeSchedule.startTime, timeSchedule.endTime)
+        return (
         <div key={index} className='space-y-2'>
           <div className="flex items-end flex-nowrap gap-3">
             <div>
               <Label className="text-xs text-muted-foreground">Start</Label>
               <TimeInput
                 value={timeSchedule.startTime}
+                invalid={rangeInvalid}
                 onChange={value => {
                   handleTimeChange(value, timeSchedule.endTime, 'start', index)
                 }}
@@ -87,6 +81,7 @@ const TimeScheduling = ({
               <Label className="text-xs text-muted-foreground">End</Label>
               <TimeInput
                 value={timeSchedule.endTime}
+                invalid={rangeInvalid}
                 onChange={value => {
                   handleTimeChange(timeSchedule.startTime, value, 'end', index)
                 }}
@@ -142,8 +137,10 @@ const TimeScheduling = ({
               </Button>
             )}
           </div>
+          <TimeRangeError show={rangeInvalid} />
         </div>
-      ))}
+        )
+      })}
     </div>
   )
 }
@@ -298,6 +295,8 @@ const CommonTimeScheduling = ({ timeSchedules, onChange }: {
   timeSchedules: any[]
   onChange: (schedules: any[]) => void
 }): JSX.Element => {
+  const [touched, setTouched] = useState<Record<number, boolean>>({})
+
   const handleTimeChange = (
     startTime: LocalTime,
     endTime: LocalTime,
@@ -305,18 +304,10 @@ const CommonTimeScheduling = ({ timeSchedules, onChange }: {
     index: number
   ): void => {
     const existing = timeSchedules[index]
-    let nextStart = existing.startTime
-    let nextEnd = existing.endTime
+    setTouched(prev => ({ ...prev, [index]: true }))
 
-    if (changeType === 'start') {
-      nextStart = startTime
-      if (endTime.isBefore(startTime))
-        nextEnd = startTime
-    } else if (changeType === 'end') {
-      nextEnd = endTime
-      if (startTime.isAfter(endTime))
-        nextStart = endTime
-    }
+    const nextStart = changeType === 'start' ? startTime : existing.startTime
+    const nextEnd = changeType === 'end' ? endTime : existing.endTime
 
     if (nextStart.equals(existing.startTime) && nextEnd.equals(existing.endTime))
       return
@@ -338,13 +329,16 @@ const CommonTimeScheduling = ({ timeSchedules, onChange }: {
 
   return (
     <div className="space-y-3">
-      {timeSchedules.map((timeSchedule, index) => (
+      {timeSchedules.map((timeSchedule, index) => {
+        const rangeInvalid = touched[index] && isInvalidTimeRange(timeSchedule.startTime, timeSchedule.endTime)
+        return (
         <div key={index} className='space-y-2'>
           <div className="flex items-end flex-nowrap gap-3">
             <div>
               <Label className="text-xs text-muted-foreground">Start</Label>
               <TimeInput
                 value={timeSchedule.startTime}
+                invalid={rangeInvalid}
                 onChange={value => {
                   handleTimeChange(value, timeSchedule.endTime, 'start', index)
                 }}
@@ -354,6 +348,7 @@ const CommonTimeScheduling = ({ timeSchedules, onChange }: {
               <Label className="text-xs text-muted-foreground">End</Label>
               <TimeInput
                 value={timeSchedule.endTime}
+                invalid={rangeInvalid}
                 onChange={value => {
                   handleTimeChange(timeSchedule.startTime, value, 'end', index)
                 }}
@@ -378,8 +373,10 @@ const CommonTimeScheduling = ({ timeSchedules, onChange }: {
               </Button>
             )}
           </div>
+          <TimeRangeError show={rangeInvalid} />
         </div>
-      ))}
+        )
+      })}
     </div>
   )
 }

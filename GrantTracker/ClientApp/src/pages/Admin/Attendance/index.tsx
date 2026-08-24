@@ -6,7 +6,7 @@ import { DateOnly } from "Models/DateOnly";
 import { Session, SessionDomain, SessionView } from "Models/Session";
 import React, { ReactElement, useEffect, useReducer, useState } from "react"
 import { useSearchParams } from "react-router-dom";
-import { TimePickerInput as TimeInput } from "components/TimeRangeSelector";
+import { TimePickerInput as TimeInput, isInvalidTimeRange, TimeRangeError } from "components/TimeRangeSelector";
 import { DayOfWeek } from "Models/DayOfWeek";
 import { TimeScheduleView } from "Models/TimeSchedule";
 import { AttendanceForm, AttendanceForm as AttendanceFormState, ReducerAction, handleStateReduction } from './state'
@@ -384,6 +384,8 @@ const DateTimeSelection = ({session, date, onDateChange, times, onTimeChange, pr
 
 	const dateFormatter = DateTimeFormatter.ofPattern('eeee, MMMM dd').withLocale(Locale.ENGLISH)
 
+	const hasInvalidTimeRange: boolean = !!times?.some(schedule => isInvalidTimeRange(schedule.startTime, schedule.endTime))
+
 	let issues: {text:string, type:DateIssueType}[] = [];
 	issues = date && (!times || times?.length === 0)
 		? [...issues, {text:`No schedule found for ${date.dayOfWeek().toString().charAt(0) + date.dayOfWeek().toString().substring(1).toLowerCase()}s`, type: DateIssueType.Error}] 
@@ -413,10 +415,11 @@ const DateTimeSelection = ({session, date, onDateChange, times, onTimeChange, pr
 						<>
 							<label className='block text-sm font-medium text-gray-700 mb-2'>Start Time</label>
 							{times.map(schedule => (
-								<TimeInput 
-									id={'start-time-' + schedule.guid} 
-									value={schedule.startTime} 
-									onChange={(time) => setTimeScheduleStartTime(schedule.guid, time)} 
+								<TimeInput
+									id={'start-time-' + schedule.guid}
+									value={schedule.startTime}
+									invalid={isInvalidTimeRange(schedule.startTime, schedule.endTime)}
+									onChange={(time) => setTimeScheduleStartTime(schedule.guid, time)}
 								/>
 							))}
 						</>
@@ -428,10 +431,11 @@ const DateTimeSelection = ({session, date, onDateChange, times, onTimeChange, pr
 						<>
 							<label className='block text-sm font-medium text-gray-700 mb-2'>End Time</label>
 							{times?.map(schedule => (
-								<TimeInput 
-									id={'end-time-' + schedule.guid} 
-									value={schedule.endTime} 
-									onChange={(time) => setTimeScheduleEndTime(schedule.guid, time)} 
+								<TimeInput
+									id={'end-time-' + schedule.guid}
+									value={schedule.endTime}
+									invalid={isInvalidTimeRange(schedule.startTime, schedule.endTime)}
+									onChange={(time) => setTimeScheduleEndTime(schedule.guid, time)}
 								/>
 							))}
 						</>
@@ -439,9 +443,11 @@ const DateTimeSelection = ({session, date, onDateChange, times, onTimeChange, pr
 				</div>
 
 				<div className=''>
-					{times && <button className='px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed' onClick={progressFormState} disabled={!stateIsValidToContinue}>Continue</button>}
-				</div>	
+					{times && <button className='px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed' onClick={progressFormState} disabled={!stateIsValidToContinue || hasInvalidTimeRange}>Continue</button>}
+				</div>
 			</div>
+
+			<TimeRangeError show={hasInvalidTimeRange} className='text-sm' />
 
 			<div className='mt-3'>
 				{issues.length > 0
