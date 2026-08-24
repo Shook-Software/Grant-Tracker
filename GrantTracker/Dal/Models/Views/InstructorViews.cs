@@ -48,6 +48,7 @@ namespace GrantTracker.Dal.Models.Views
 		public List<EnrollmentView> EnrollmentRecords { get; set; }
 		public List<InstructorAttendanceViewModel> AttendanceRecords { get; set; }
 		public List<StudentGroupView> StudentGroups { get; set; }
+		public DropdownOption FundingSource { get; set; } //registration-level; only populated when viewed in the context of a session
 
 		public static InstructorSchoolYearViewModel FromDatabase(InstructorSchoolYear instructorSchoolYear, List<OrganizationYear>? organizationYears = null) => new()
 		{

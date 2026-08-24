@@ -8,6 +8,8 @@ namespace GrantTracker.Dal.Schema
 		public virtual Session Session { get; set; }
 		public Guid InstructorSchoolYearGuid { get; set; }
 		public virtual InstructorSchoolYear InstructorSchoolYear { get; set; }
+		public Guid? FundingSourceGuid { get; set; }
+		public virtual FundingSource FundingSource { get; set; }
 
 		public static void Setup(ModelBuilder builder)
 		{
@@ -26,6 +28,14 @@ namespace GrantTracker.Dal.Schema
 				.WithMany(e => e.SessionRegistrations)
 				.HasForeignKey(e => e.InstructorSchoolYearGuid)
 				.OnDelete(DeleteBehavior.NoAction);
+
+			entity.HasOne(e => e.FundingSource)
+				.WithMany()
+				.HasForeignKey(e => e.FundingSourceGuid)
+				.OnDelete(DeleteBehavior.NoAction);
+
+			entity.Property(e => e.FundingSourceGuid)
+				.HasComment("Funding source paying for this instructor's involvement in the session.");
 		}
 	}
 }

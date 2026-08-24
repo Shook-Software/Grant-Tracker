@@ -47,6 +47,7 @@ public class SessionRepository : ISessionRepository
             .Include(s => s.InstructorRegistrations).ThenInclude(i => i.InstructorSchoolYear).ThenInclude(i => i.StudentGroups).ThenInclude(g => g.Items).ThenInclude(i => i.StudentSchoolYear).ThenInclude(ssy => ssy.Student)
             .Include(s => s.InstructorRegistrations).ThenInclude(i => i.InstructorSchoolYear).ThenInclude(i => i.Status)
 			.Include(s => s.InstructorRegistrations).ThenInclude(i => i.InstructorSchoolYear).ThenInclude(i => i.Instructor)
+			.Include(s => s.InstructorRegistrations).ThenInclude(i => i.FundingSource)
 			.Include(s => s.DaySchedules).ThenInclude(w => w.TimeSchedules)
 			.Include(s => s.BlackoutDates)
 			.Select(s => SessionView.FromDatabase(s))

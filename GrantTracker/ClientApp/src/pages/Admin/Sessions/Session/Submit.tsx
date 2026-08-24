@@ -170,11 +170,18 @@ export default function Submit (props: SubmitProps): JSX.Element {
             <div>
               <h4 className='text-sm font-medium text-muted-foreground'>Instructors</h4>
               <div className='flex flex-wrap gap-2'>
-                {values.instructors.map(instructor => (
-                  <span key={instructor.guid} className='px-2 py-1 bg-secondary rounded text-sm'>
-                    {instructor.label}
-                  </span>
-                ))}
+                {values.instructors.map(instructor => {
+                  const funding = dropdownData.fundingSources.find(f => f.guid === instructor.fundingSourceGuid)
+                  return (
+                    <span
+                      key={instructor.guid}
+                      className={`px-2 py-1 rounded text-sm ${funding ? 'bg-secondary' : 'bg-destructive/10 text-destructive border border-destructive'}`}
+                      title={funding ? funding.label : 'A funding source is required.'}
+                    >
+                      {instructor.label} — {funding ? (funding.abbreviation || funding.label) : 'no funding source'}
+                    </span>
+                  )
+                })}
               </div>
             </div>
           </div>

@@ -88,7 +88,7 @@ export interface SessionForm {
   recurring: boolean
   scheduling: DaySchedule.WeeklySchedule
   grades: string[]
-  instructors: { guid: string; label: string }[]
+  instructors: { guid: string; label: string; fundingSourceGuid: string | null }[]
   blackoutDates: SessionBlackoutDateView[]
 }
 
@@ -115,7 +115,8 @@ export abstract class Session {
       type: obj.sessionType.guid,
       instructors: obj.instructors.map(reg => ({
         guid: reg.guid,
-        label: `${reg.instructor.firstName} ${reg.instructor.lastName}`
+        label: `${reg.instructor.firstName} ${reg.instructor.lastName}`,
+        fundingSourceGuid: reg.fundingSource?.guid ?? null
       })),
       fundingSource: obj.fundingSource.guid,
       organizationType: obj.organizationType.guid,

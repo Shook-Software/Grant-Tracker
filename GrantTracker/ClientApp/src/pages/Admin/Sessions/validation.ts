@@ -34,6 +34,16 @@ export default (sessionTypes: DropdownOption[] = []) => Yup.object().shape({
   fundingSource: Yup.string()
     .required('Required.'),
 
+  instructors: Yup.array().of(
+    Yup.object()
+      .test('instructor-funding-required', 'A funding source is required.', function (x: any) {
+        if (!x || !!x.fundingSourceGuid) return true
+        return this.createError({
+          message: `${x.label ?? 'Instructor'} requires a funding source.`
+        })
+      })
+  ),
+
   partnershipType: Yup.string()
     .required('Required.'),
 

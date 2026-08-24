@@ -11,6 +11,12 @@ public class FormSessionDto
 		public DayOfWeek ToDay { get; set; }
 	}
 
+	public class SessionInstructorDto
+	{
+		public Guid Guid { get; set; } //InstructorSchoolYearGuid
+		public Guid? FundingSourceGuid { get; set; }
+	}
+
 	public Session ToDbSession()
 	{
 		return new Session()
@@ -103,10 +109,11 @@ public class FormSessionDto
 	public List<InstructorRegistration> GetInstructors()
 	{
 		return Instructors
-			.Select(guid => new InstructorRegistration()
+			.Select(instructor => new InstructorRegistration()
 			{
 				SessionGuid = Guid,
-				InstructorSchoolYearGuid = guid
+				InstructorSchoolYearGuid = instructor.Guid,
+				FundingSourceGuid = instructor.FundingSourceGuid
 			})
 			.ToList();
 	}
@@ -126,7 +133,7 @@ public class FormSessionDto
 	public bool Recurring { get; set; }
 	public List<DaySchedule> Scheduling { get; set; }
 	public List<Guid> Grades { get; set; }
-	public List<Guid> Instructors { get; set; }
+	public List<SessionInstructorDto> Instructors { get; set; }
 	public List<ScheduleRegistrationShift> RegistrationShift { get; set; } = new();
 	public List<SessionBlackoutDate> BlackoutDates { get; set; }
 }

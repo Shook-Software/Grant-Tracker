@@ -121,6 +121,13 @@ public class AttendanceRepository : IAttendanceRepository
         Guid attendanceGuid = Guid.NewGuid();
         List<FamilyAttendanceRecord> familyAttendance = new();
 
+		//Snapshot each instructor's registration-level funding source as it stands right now, so that
+		//later session edits do not retroactively alter existing attendance records.
+		var registrationFundingSources = await _grantContext.InstructorRegistrations
+			.AsNoTracking()
+			.Where(ir => ir.SessionGuid == sessionGuid)
+			.ToDictionaryAsync(ir => ir.InstructorSchoolYearGuid, ir => ir.FundingSourceGuid);
+
 		sessionAttendance.StudentRecords
 			.ForEach(sr =>
 			{
@@ -151,6 +158,7 @@ public class AttendanceRepository : IAttendanceRepository
 					InstructorSchoolYearGuid = i.Id,
 					AttendanceRecordGuid = attendanceGuid,
 					IsSubstitute = i.IsSubstitute,
+					FundingSourceGuid = registrationFundingSources.GetValueOrDefault(i.Id),
 					TimeRecords = i.Times
 					.Select(time => new InstructorAttendanceTimeRecord()
 					{
