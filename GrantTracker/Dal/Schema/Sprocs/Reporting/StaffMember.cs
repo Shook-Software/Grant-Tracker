@@ -10,4 +10,6 @@ public record StaffMember
     public string Status { get; set; }
     public string FirstName { get; set; }
     public string LastName { get; set; }
+    public string Title { get; set; }
+    public string FundingSource { get; set; } //one row per distinct funding source snapshotted on the staff member's attendance records; null when none
 }

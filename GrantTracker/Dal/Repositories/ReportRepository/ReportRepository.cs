@@ -268,7 +268,7 @@ public class ReportRepository : IReportRepository
     {
 		return await _grantContext
             .Set<StaffMember>()
-            .FromSqlInterpolated($"exec GTkr.ReportQuery_Staffing")
+            .FromSqlInterpolated($"exec GTkr.ReportQuery_AllStaff")
             .ToListAsync();
     }
 
